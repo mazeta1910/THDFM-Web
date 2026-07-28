@@ -255,8 +255,9 @@
                 </div>
               </div>
               {% if p.celular %}
-              {% set wa = p.celular if p.celular.startswith('55') else '55' ~ p.celular %}
-              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">{{ p.celular }}</a></div>
+              {% set wa = p.celular|celular_wa %}
+              {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
+              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></div>
               {% endif %}
               <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
               {% if p.comprovante_path %}
@@ -283,8 +284,9 @@
                 </div>
               </div>
               {% if p.celular %}
-              {% set wa = p.celular if p.celular.startswith('55') else '55' ~ p.celular %}
-              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">{{ p.celular }}</a></div>
+              {% set wa = p.celular|celular_wa %}
+              {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
+              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></div>
               {% endif %}
               <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
               {% if p.comprovante_path %}

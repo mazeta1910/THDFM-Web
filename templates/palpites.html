@@ -5,13 +5,30 @@
 <p class="badge">Janela: {{ janela|capitalize }} · Fase: {{ fase_atual }}</p>
 <h1>Olá, {{ participante.nome }}!</h1>
 <p>Faça aqui os seus palpites.</p>
-{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
-{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
 {% if janela == 'fechado' %}
 <p class="erro">Palpites fechados no momento.</p>
 {% endif %}
 
+{% if msg %}
+<div class="modal-backdrop is-open" id="modal-palpites-msg">
+  <div class="inscricao-modal sucesso-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-msg-title">
+    <h3 id="modal-palpites-msg-title" class="sucesso-titulo">Palpites salvos!</h3>
+    <p class="sucesso-lead">Você pode alterar enquanto a janela estiver aberta — é só enviar de novo.</p>
+    <button type="button" class="modal-ok" id="modal-palpites-msg-ok">Ok</button>
+  </div>
+</div>
+{% endif %}
+
+{% if erro %}
+<div class="modal-backdrop is-open" id="modal-palpites-erro">
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-erro-title">
+    <h3 id="modal-palpites-erro-title">Não foi possível salvar</h3>
+    <p style="margin:0 0 1rem">{{ erro.replace('+', ' ') }}</p>
+    <button type="button" class="modal-ok" id="modal-palpites-erro-ok">Ok</button>
+  </div>
+</div>
+{% endif %}
 <div class="transparencia-nav" id="palpites-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
   <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
@@ -197,6 +214,32 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+(() => {
+  const bindModal = (id, okId, param, { autoCloseMs } = {}) => {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    document.body.appendChild(modal);
+    let closed = false;
+    const fechar = () => {
+      if (closed) return;
+      closed = true;
+      modal.classList.remove("is-open");
+      modal.setAttribute("hidden", "");
+      const url = new URL(window.location.href);
+      url.searchParams.delete(param);
+      window.history.replaceState({}, "", url.pathname + url.search);
+    };
+    document.getElementById(okId)?.addEventListener("click", fechar);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) fechar();
+    });
+    if (autoCloseMs) setTimeout(fechar, autoCloseMs);
+  };
+  bindModal("modal-palpites-msg", "modal-palpites-msg-ok", "msg", { autoCloseMs: 2800 });
+  bindModal("modal-palpites-erro", "modal-palpites-erro-ok", "erro");
+})();
+</script>
 <script>
 (() => {
   const nav = document.getElementById("palpites-nav");

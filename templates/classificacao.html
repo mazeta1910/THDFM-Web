@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Classificação — Bolão THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
 {% block content %}
 <p class="badge">
   {% if modo_historico %}
@@ -88,7 +89,11 @@
     </thead>
     <tbody>
       {% for r in linhas %}
-      <tr class="zona-{{ r.zona }}">
+      {% set sou_eu = participante_nav and (
+        (r.participante_id is defined and r.participante_id == participante_nav.id)
+        or r.participante == participante_nav.nome
+      ) %}
+      <tr class="zona-{{ r.zona }}{% if sou_eu %} is-eu{% endif %}">
         <td class="classificacao-pos">
           <span class="pos-num">{{ r.posicao }}</span>
           {% if r.movimento is not none and r.movimento != 0 %}
@@ -105,6 +110,7 @@
             <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
             {% endif %}
             <span class="classificacao-nome">{{ r.participante }}</span>
+            {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
           </div>
         </td>
         <td>{{ r.placar }}</td>
@@ -130,6 +136,7 @@
   {% endif %}
   <li><span class="leg-swatch zona-meio"></span> Meio de tabela</li>
   <li><span class="leg-swatch zona-risco"></span> Zona de risco ({{ zona_faixa }})</li>
+  <li><span class="leg-swatch zona-eu"></span> Sua posição</li>
 </ul>
 <p class="classificacao-zona-hint">
   Regra de 3 com o Brasileirão (4 em 20 ≈ 20% no topo e 20% embaixo). Com {{ linhas|length }} participante(s): 1 campeão · {% if zona_faixa > 1 %}{{ zona_faixa - 1 }} zona alta · {% endif %}{{ zona_faixa }} zona de risco.

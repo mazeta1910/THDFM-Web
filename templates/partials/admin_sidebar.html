@@ -4,6 +4,7 @@
 {% set on_conta = participante_nav and path == '/p/' ~ participante_nav.token ~ '/conta' %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
+{% set on_admin_palpites = path.startswith('/admin/palpites') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set pend_n = admin_pendentes_count|default(0) %}
 
@@ -22,7 +23,7 @@
       {% endif %}
       <span class="admin-brand-user-text">
         <span class="admin-brand-name">{{ admin_nome }}</span>
-        <span class="admin-brand-hint">Minha conta / foto</span>
+        <span class="admin-brand-hint">Minha conta</span>
       </span>
     </a>
     {% else %}
@@ -35,7 +36,8 @@
       <div class="admin-menu-items">
         <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">Classificação</a>
         <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">Portal da Transparência</a>
-        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin and admin_sec == 'resultados' %}active{% endif %}" data-sec="resultados">Resultados</a>
+        <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">Palpites</a>
+        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin and admin_sec == 'resultados' and not on_admin_palpites %}active{% endif %}" data-sec="resultados">Resultados</a>
       </div>
     </details>
 

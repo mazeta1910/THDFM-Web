@@ -36,8 +36,12 @@ def _vencedor_oficial_label(
     return "—"
 
 
-def montar_portal(fase: str) -> list[dict]:
-    """Tabelas por jogo com placar oficial, para a fase pedida."""
+def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
+    """Tabelas por jogo com palpites dos liberados, para a fase pedida.
+
+    exigir_resultado=True (público): só jogos com placar oficial.
+    exigir_resultado=False (admin): todos os jogos; inclui quem ainda não palpitou.
+    """
     confrontos = list_confrontos_completos(fase)
     liberados = [p for p in list_participantes() if p.get("status") == "liberado"]
     liberados.sort(key=lambda p: (p.get("nome") or "").casefold())
@@ -47,80 +51,120 @@ def montar_portal(fase: str) -> list[dict]:
 
     for c in confrontos:
         for jogo in c.get("jogos") or []:
-            if jogo.get("gols_mandante") is None or jogo.get("gols_visitante") is None:
+            tem_resultado = (
+                jogo.get("gols_mandante") is not None
+                and jogo.get("gols_visitante") is not None
+            )
+            if exigir_resultado and not tem_resultado:
                 continue
 
             mandante_id = jogo["mandante_clube_id"]
             visitante_id = _visitante_id(mandante_id)
             clube_casa = _clube_nome(c, mandante_id)
             clube_fora = _clube_nome(c, visitante_id)
-            real_m = int(jogo["gols_mandante"])
-            real_v = int(jogo["gols_visitante"])
-            real_pen = jogo.get("penaltis_clube_id")
+            real_m = int(jogo["gols_mandante"]) if tem_resultado else None
+            real_v = int(jogo["gols_visitante"]) if tem_resultado else None
+            real_pen = jogo.get("penaltis_clube_id") if tem_resultado else None
             perna = jogo.get("perna") or ""
             perna_label = {"ida": "Ida", "volta": "Volta", "unico": "Jogo"}.get(perna, perna)
 
-            linhas: list[dict] = [
-                {
-                    "tipo": "placar",
-                    "nome": "PLACAR",
-                    "gols_m": real_m,
-                    "gols_v": real_v,
-                    "penaltis": _clube_nome(c, real_pen) if real_pen in ("a", "b") else "",
-                    "acertou": "",
-                    "vencedor": _vencedor_oficial_label(
-                        c,
-                        gols_m=real_m,
-                        gols_v=real_v,
-                        mandante_clube_id=mandante_id,
-                        penaltis=real_pen,
-                    ),
-                    "acertou_class": "",
-                    "vencedor_class": "cell-venc-oficial",
-                }
-            ]
+            linhas: list[dict] = []
+            if tem_resultado:
+                linhas.append(
+                    {
+                        "tipo": "placar",
+                        "nome": "PLACAR",
+                        "gols_m": real_m,
+                        "gols_v": real_v,
+                        "penaltis": _clube_nome(c, real_pen) if real_pen in ("a", "b") else "",
+                        "acertou": "",
+                        "vencedor": _vencedor_oficial_label(
+                            c,
+                            gols_m=real_m,
+                            gols_v=real_v,
+                            mandante_clube_id=mandante_id,
+                            penaltis=real_pen,
+                        ),
+                        "acertou_class": "",
+                        "vencedor_class": "cell-venc-oficial",
+                        "sem_palpite": False,
+                    }
+                )
 
             for p in liberados:
                 palp = cache_palpites[p["id"]]
                 pj = palp["jogos"].get(jogo["id"])
                 if not pj:
+                    if exigir_resultado:
+                        continue
+                    linhas.append(
+                        {
+                            "tipo": "palpite",
+                            "nome": p["nome"],
+                            "gols_m": "—",
+                            "gols_v": "—",
+                            "penaltis": "",
+                            "acertou": "",
+                            "vencedor": "",
+                            "acertou_class": "",
+                            "vencedor_class": "",
+                            "sem_palpite": True,
+                        }
+                    )
                     continue
+
                 pen_row = palp["penaltis"].get(c["id"])
                 palpite_pen = pen_row["penaltis_clube_id"] if pen_row else None
                 pen_label = ""
                 if pj["gols_mandante"] == pj["gols_visitante"] and palpite_pen in ("a", "b"):
                     pen_label = _clube_nome(c, palpite_pen)
 
-                categoria, acertou_venc = classificar_palpite(
-                    int(pj["gols_mandante"]),
-                    int(pj["gols_visitante"]),
-                    real_m,
-                    real_v,
-                    clube_casa_id=mandante_id,
-                    palpite_penaltis=palpite_pen,
-                    real_penaltis=real_pen,
-                    permite_empate=True,
-                )
-                acertou_slug = {
-                    "Placar": "placar",
-                    "Gols Casa": "gols-casa",
-                    "Gols fora": "gols-fora",
-                    "Nada": "nada",
-                }.get(categoria, "nada")
-
-                linhas.append(
-                    {
-                        "tipo": "palpite",
-                        "nome": p["nome"],
-                        "gols_m": pj["gols_mandante"],
-                        "gols_v": pj["gols_visitante"],
-                        "penaltis": pen_label,
-                        "acertou": categoria,
-                        "vencedor": "Acertou" if acertou_venc else "Errou",
-                        "acertou_class": f"cell-acertou-{acertou_slug}",
-                        "vencedor_class": "cell-venc-ok" if acertou_venc else "cell-venc-erro",
-                    }
-                )
+                if tem_resultado:
+                    categoria, acertou_venc = classificar_palpite(
+                        int(pj["gols_mandante"]),
+                        int(pj["gols_visitante"]),
+                        real_m,
+                        real_v,
+                        clube_casa_id=mandante_id,
+                        palpite_penaltis=palpite_pen,
+                        real_penaltis=real_pen,
+                        permite_empate=True,
+                    )
+                    acertou_slug = {
+                        "Placar": "placar",
+                        "Gols Casa": "gols-casa",
+                        "Gols fora": "gols-fora",
+                        "Nada": "nada",
+                    }.get(categoria, "nada")
+                    linhas.append(
+                        {
+                            "tipo": "palpite",
+                            "nome": p["nome"],
+                            "gols_m": pj["gols_mandante"],
+                            "gols_v": pj["gols_visitante"],
+                            "penaltis": pen_label,
+                            "acertou": categoria,
+                            "vencedor": "Acertou" if acertou_venc else "Errou",
+                            "acertou_class": f"cell-acertou-{acertou_slug}",
+                            "vencedor_class": "cell-venc-ok" if acertou_venc else "cell-venc-erro",
+                            "sem_palpite": False,
+                        }
+                    )
+                else:
+                    linhas.append(
+                        {
+                            "tipo": "palpite",
+                            "nome": p["nome"],
+                            "gols_m": pj["gols_mandante"],
+                            "gols_v": pj["gols_visitante"],
+                            "penaltis": pen_label,
+                            "acertou": "",
+                            "vencedor": "",
+                            "acertou_class": "",
+                            "vencedor_class": "",
+                            "sem_palpite": False,
+                        }
+                    )
 
             tabelas.append(
                 {
@@ -132,6 +176,7 @@ def montar_portal(fase: str) -> list[dict]:
                     "clube_casa": clube_casa,
                     "clube_fora": clube_fora,
                     "titulo": f"{clube_casa} x {clube_fora} · {perna_label}",
+                    "tem_resultado": tem_resultado,
                     "linhas": linhas,
                 }
             )

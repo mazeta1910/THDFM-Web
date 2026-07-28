@@ -128,6 +128,7 @@ def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
         _migrate_participantes(conn)
+        _migrar_celulares_br(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -238,10 +239,73 @@ def criar_participante(
 
 
 def normalizar_celular(celular: str) -> str:
+    """Retorna só dígitos no formato internacional BR (55 + DDD + número).
+
+    Números com 10/11 dígitos (DDD local) ganham o 55.
+    Não confundir DDD 55 (RS) com código do país: só trata como
+    internacional se já tiver 12 ou 13 dígitos começando com 55.
+    """
     digits = re.sub(r"\D+", "", celular or "")
-    if len(digits) < 10 or len(digits) > 13:
-        raise ValueError("Celular inválido")
-    return digits
+    if digits.startswith("55") and len(digits) in (12, 13):
+        return digits
+    if len(digits) in (10, 11):
+        return "55" + digits
+    raise ValueError("Celular inválido")
+
+
+def celular_whatsapp(celular: str | None) -> str | None:
+    """Dígitos para wa.me (com 55). Aceita dados antigos sem país."""
+    if not celular:
+        return None
+    try:
+        return normalizar_celular(celular)
+    except ValueError:
+        digits = re.sub(r"\D+", "", celular)
+        return digits or None
+
+
+def formatar_celular(celular: str | None) -> str:
+    """Exibição: +55 (11) 99999-9999."""
+    digits = celular_whatsapp(celular)
+    if not digits:
+        return ""
+    local = digits[2:] if digits.startswith("55") and len(digits) >= 12 else digits
+    if len(local) == 11:
+        return f"+55 ({local[:2]}) {local[2:7]}-{local[7:]}"
+    if len(local) == 10:
+        return f"+55 ({local[:2]}) {local[2:6]}-{local[6:]}"
+    return f"+{digits}" if not digits.startswith("+") else digits
+
+
+def mensagem_whatsapp_link(nome: str, base_url: str, token: str) -> str:
+    link = f"{base_url.rstrip('/')}/p/{token}"
+    primeiro = (nome or "").strip().split()[0] if (nome or "").strip() else ""
+    oi = f"Oi, {primeiro}!" if primeiro else "Oi!"
+    return (
+        f"{oi} Esse é o seu link único do Bolão THDFM (Copa do Brasil):\n\n"
+        f"{link}\n\n"
+        "Guarda esse link — é pessoal e intransferível. "
+        "Por ele você faz os palpites e acompanha sua conta."
+    )
+
+
+def _migrar_celulares_br(conn: sqlite3.Connection) -> None:
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(participantes)").fetchall()}
+    if "celular" not in cols:
+        return
+    rows = conn.execute(
+        "SELECT id, celular FROM participantes WHERE celular IS NOT NULL AND celular != ''"
+    ).fetchall()
+    for row in rows:
+        try:
+            novo = normalizar_celular(row["celular"])
+        except ValueError:
+            continue
+        if novo != row["celular"]:
+            conn.execute(
+                "UPDATE participantes SET celular = ? WHERE id = ?",
+                (novo, row["id"]),
+            )
 
 
 def get_participante_por_token(token: str) -> dict[str, Any] | None:

@@ -45,6 +45,9 @@ app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SECRET_KEY", SE
 
 TEMPLATES = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
 TEMPLATES.env.globals["emblema_url"] = emblema_url
+TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
+TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
+TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 
 STATIC = ROOT_DIR / "static"
 STATIC.mkdir(exist_ok=True)
@@ -175,6 +178,48 @@ def transparencia(request: Request):
     return render(
         request,
         "transparencia.html",
+        fase=fase,
+        fases=fases_ui,
+        perna=perna,
+        tabelas=tabelas,
+    )
+
+
+@app.get("/admin/palpites", response_class=HTMLResponse)
+def admin_palpites(request: Request):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
+
+    fase = request.query_params.get("fase") or fase_atual
+    if fase not in FASE_IDS:
+        fase = fase_atual
+    if FASE_IDS.index(fase) > fase_idx:
+        return RedirectResponse(
+            f"/admin/palpites?fase={fase_atual}&perna=ida",
+            status_code=303,
+        )
+
+    perna = request.query_params.get("perna") or "ida"
+    if perna not in ("ida", "volta"):
+        perna = "ida"
+
+    tabelas = [
+        t for t in montar_portal(fase, exigir_resultado=False) if t.get("perna") == perna
+    ]
+    return render(
+        request,
+        "admin_palpites.html",
         fase=fase,
         fases=fases_ui,
         perna=perna,

@@ -170,6 +170,7 @@ def calcular_classificacao() -> list[dict]:
         rod = pts.soma - soma_base
         linhas.append(
             {
+                "participante_id": p["id"],
                 "participante": p["nome"],
                 "avatar_path": p.get("avatar_path"),
                 "placar": pts.placar,
@@ -238,6 +239,7 @@ def snapshot_atual(linhas: list[dict] | None = None) -> dict:
 
 
 _HIST_KEYS = (
+    "participante_id",
     "participante",
     "avatar_path",
     "placar",

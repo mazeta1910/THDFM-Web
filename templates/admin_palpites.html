@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Palpites dos participantes — Admin THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<p class="badge">Somente admins · leitura</p>
+<h1>Palpites dos participantes</h1>
+<p>Visão de todos os liberados, jogo a jogo — inclusive antes do placar oficial. Quem ainda não enviou aparece como —.</p>
+
+<div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
+  {% for f in fases %}
+  <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}">
+    {% if f.unlocked %}
+    <a
+      href="/admin/palpites?fase={{ f.id }}&perna={{ perna if f.id == fase else 'ida' }}"
+      class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
+    >{{ f.label }}</a>
+    <div class="transparencia-nav-pernas">
+      <a
+        href="/admin/palpites?fase={{ f.id }}&perna=ida"
+        class="{% if f.id == fase and perna == 'ida' %}active{% endif %}"
+      >Jogo 1 (Ida)</a>
+      <a
+        href="/admin/palpites?fase={{ f.id }}&perna=volta"
+        class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
+      >Jogo 2 (Volta)</a>
+    </div>
+    {% else %}
+    <span class="transparencia-nav-fase is-disabled" title="Aguardando liberação desta fase">{{ f.label }}</span>
+    <div class="transparencia-nav-pernas">
+      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 1 (Ida)</span>
+      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 2 (Volta)</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if not tabelas %}
+<div class="card">
+  <p class="locked-msg" style="margin:0">Nenhum jogo nesta fase/perna.</p>
+</div>
+{% else %}
+{% for t in tabelas %}
+<div class="card planilha-card">
+  <div class="planilha-head">
+    <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+    <div>
+      <strong>{{ t.titulo }}</strong>
+      <span>{{ t.clube_casa }} × {{ t.clube_fora }}{% if not t.tem_resultado %} · aguardando placar oficial{% endif %}</span>
+    </div>
+    <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+  </div>
+  <div class="planilha-wrap">
+    <table class="planilha">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>{{ t.clube_casa }}</th>
+          <th></th>
+          <th>{{ t.clube_fora }}</th>
+          <th>Pênaltis</th>
+          {% if t.tem_resultado %}
+          <th>Acertou</th>
+          <th>Vencedor</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in t.linhas %}
+        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}{% if row.sem_palpite %} planilha-sem-palpite{% endif %}">
+          <td class="planilha-nome">{{ row.nome }}{% if row.sem_palpite %} <span class="muted-hint">sem palpite</span>{% endif %}</td>
+          <td class="planilha-num">{{ row.gols_m }}</td>
+          <td class="planilha-x">x</td>
+          <td class="planilha-num">{{ row.gols_v }}</td>
+          <td>{{ row.penaltis }}</td>
+          {% if t.tem_resultado %}
+          <td class="{{ row.acertou_class }}">{{ row.acertou }}</td>
+          <td class="{{ row.vencedor_class }}">{{ row.vencedor }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

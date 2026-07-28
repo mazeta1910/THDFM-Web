@@ -15,7 +15,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=53" />
+  <link rel="stylesheet" href="/static/style.css?v=59" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -27,16 +27,6 @@
 {% set on_competicao = on_classificacao or on_transparencia %}
 {% set on_meu_bolao = on_palpites %}
 <body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% endif %}">
-  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Alternar tema" title="Alternar tema">
-    <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-    </svg>
-    <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z" />
-    </svg>
-  </button>
-
   {% if admin_layout %}
   {% set _sec = request.query_params.get('sec') or 'resultados' %}
   {% set admin_sec = 'resultados' if _sec in ['config', 'rodada', 'operacao'] else _sec %}
@@ -50,21 +40,22 @@
           {% block admin_topbar %}{% endblock %}
         </div>
       </header>
+      {% include "partials/theme_toggle.html" %}
   {% else %}
   {% block site_nav %}
   <nav>
     <div class="nav-left">
       {% if participante_nav and participante_nav.status == 'liberado' %}
         <details class="nav-dropdown {% if on_competicao %}is-active{% endif %}">
-          <summary>Competição</summary>
-          <div class="nav-dropdown-menu">
+          <summary aria-haspopup="menu">Competição</summary>
+          <div class="nav-dropdown-menu" role="menu">
             <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">Classificação</a>
             <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
           </div>
         </details>
         <details class="nav-dropdown {% if on_meu_bolao %}is-active{% endif %}">
-          <summary>Meu Bolão</summary>
-          <div class="nav-dropdown-menu">
+          <summary aria-haspopup="menu">Meu Bolão</summary>
+          <div class="nav-dropdown-menu" role="menu">
             <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">Meus Palpites</a>
           </div>
         </details>
@@ -84,13 +75,19 @@
       <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in path %}active{% endif %}">
         {% if participante_nav.avatar_path %}
         <img class="nav-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
+        {% else %}
+        <span class="nav-avatar nav-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
         {% endif %}
-        Conta
+        <span class="nav-conta-text">
+          <span class="nav-conta-nome">{{ participante_nav.nome }}</span>
+          <span class="nav-conta-hint">Minha conta</span>
+        </span>
       </a>
       {% endif %}
     </div>
   </nav>
   {% endblock %}
+  {% include "partials/theme_toggle.html" %}
   <main class="wrap {% block wrap_class %}{% endblock %}">
   {% endif %}
 
@@ -123,6 +120,17 @@
       sync();
     });
     sync();
+
+    const nav = document.querySelector("body > nav");
+    const placeToggle = () => {
+      if (!nav || document.body.classList.contains("admin-body")) return;
+      root.style.setProperty("--site-header-offset", `${Math.ceil(nav.getBoundingClientRect().height)}px`);
+    };
+    placeToggle();
+    window.addEventListener("resize", placeToggle);
+    if (typeof ResizeObserver !== "undefined" && nav) {
+      new ResizeObserver(placeToggle).observe(nav);
+    }
   })();
   </script>
   {% if admin_layout %}
