@@ -39,6 +39,10 @@ def _parse_admins() -> list[AdminUser]:
     return out or [AdminUser(login="admin", senha=ADMIN_PASSWORD, nome="Admin")]
 
 
+def list_admins() -> list[AdminUser]:
+    return _parse_admins()
+
+
 def autenticar_admin(login: str, senha: str) -> AdminUser | None:
     login_n = (login or "").strip().lower()
     for admin in _parse_admins():

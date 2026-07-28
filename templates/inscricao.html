@@ -5,7 +5,7 @@
 {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
 <div class="card welcome-card">
-  <h1 class="welcome-title">BEM-VINDOS AO SEGUNDO BOLÃO DA THDFM</h1>
+  <h1 class="welcome-title">BEM-VINDOS AO SEGUNDO BOLÃO DA THDFM: COPA DO BRASIL EDITION</h1>
   <p>Você está estranhando por que esse link não é um formulário do Google Docs?</p>
   <p>
     Tá aí a versão V2 do BOLÃO DA THDFM de academia esse é pra ti que vai pra academia
@@ -32,17 +32,28 @@
       </svg>
     </button>
   </div>
+  <p class="como-depois">
+    Depois do Pix, envie o comprovante abaixo. Um admin confere o pagamento e manda
+    seu link único no privado (WhatsApp).
+  </p>
 </div>
 
-<form method="post" action="/inscricao" enctype="multipart/form-data" class="card form-inscricao">
-  <h2>Fez o pagamento? Parabéns!</h2>
+<form method="post" action="/inscricao" enctype="multipart/form-data" class="card form-inscricao" id="form-inscricao" novalidate>
+  <div class="form-inscricao-head">
+    <h2>Fez o pagamento? Parabéns!</h2>
+    <p class="form-legend"><span class="req" style="color:#ff2d2d" aria-hidden="true">*</span> campo obrigatório</p>
+  </div>
   <div class="inscricao-row">
     <div class="inscricao-field">
-      <label class="inscricao-label" for="nome">Quem é vc:</label>
+      <label class="inscricao-label" for="nome">Quem é vc <span class="req" style="color:#ff2d2d" aria-hidden="true">*</span></label>
       <input id="nome" class="input-compact" type="text" name="nome" required placeholder="Antonio (ratao)" />
     </div>
+    <div class="inscricao-field">
+      <label class="inscricao-label" for="celular">Passa o zap <span class="req" style="color:#ff2d2d" aria-hidden="true">*</span></label>
+      <input id="celular" class="input-compact" type="tel" name="celular" required placeholder="(11) 99999-9999" inputmode="tel" autocomplete="tel" />
+    </div>
     <div class="inscricao-field inscricao-file">
-      <label class="inscricao-label" for="comprovante">Comprovante do pagamento:</label>
+      <label class="inscricao-label" for="comprovante">Comprovante do pagamento&nbsp;<span class="req" style="color:#ff2d2d" aria-hidden="true">*</span></label>
       <label class="file-pick" for="comprovante">
         <input id="comprovante" type="file" name="comprovante" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required hidden />
         <span class="file-pick-btn" title="Escolher arquivo">
@@ -56,6 +67,30 @@
   </div>
   <button type="submit">Enviar inscrição</button>
 </form>
+
+<div class="modal-backdrop" id="modal-faltando" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-faltando-title">
+    <h3 id="modal-faltando-title">Falta preencher</h3>
+    <ul id="modal-faltando-lista"></ul>
+    <button type="button" class="modal-ok" id="modal-faltando-ok">Ok</button>
+  </div>
+</div>
+
+{% if sucesso %}
+<div class="modal-backdrop is-open" id="modal-sucesso">
+  <div class="inscricao-modal sucesso-modal" role="dialog" aria-modal="true" aria-labelledby="modal-sucesso-title">
+    <h3 id="modal-sucesso-title" class="sucesso-titulo">SUCESSO!</h3>
+    <p class="sucesso-lead">Inscrição e comprovante recebidos.</p>
+    <p class="sucesso-passos-titulo">Próximos passos:</p>
+    <ol class="sucesso-passos">
+      <li>Um admin vai conferir se o Pix de {{ taxa_valor_label }} caiu certo.</li>
+      <li>Se estiver ok, você recebe no privado (WhatsApp) o seu link único do bolão.</li>
+      <li>Com esse link você acessa os palpites depois da liberação.</li>
+    </ol>
+    <button type="button" class="modal-ok" id="modal-sucesso-ok">Ok</button>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>
@@ -74,5 +109,58 @@ document.getElementById("comprovante")?.addEventListener("change", (e) => {
   const label = document.getElementById("file-name");
   if (label) label.textContent = file ? file.name : "Nenhum arquivo escolhido";
 });
+
+const form = document.getElementById("form-inscricao");
+const modal = document.getElementById("modal-faltando");
+const modalLista = document.getElementById("modal-faltando-lista");
+if (modal) document.body.appendChild(modal);
+
+const abrirModal = () => {
+  if (!modal) return;
+  modal.removeAttribute("hidden");
+  modal.classList.add("is-open");
+};
+const fecharModal = () => {
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("hidden", "");
+};
+document.getElementById("modal-faltando-ok")?.addEventListener("click", fecharModal);
+modal?.addEventListener("click", (e) => {
+  if (e.target === modal) fecharModal();
+});
+
+form?.addEventListener("submit", (e) => {
+  const nome = document.getElementById("nome")?.value.trim() || "";
+  const celular = document.getElementById("celular")?.value.replace(/\D+/g, "") || "";
+  const file = document.getElementById("comprovante")?.files?.[0];
+  const faltando = [];
+  if (!nome) faltando.push("Quem é vc");
+  if (celular.length < 10) faltando.push("Passa o zap");
+  if (!file) faltando.push("Comprovante do pagamento");
+  if (faltando.length) {
+    e.preventDefault();
+    if (modalLista) {
+      modalLista.innerHTML = faltando.map((f) => `<li>${f}</li>`).join("");
+    }
+    abrirModal();
+  }
+});
+
+const modalSucesso = document.getElementById("modal-sucesso");
+if (modalSucesso) {
+  document.body.appendChild(modalSucesso);
+  const fecharSucesso = () => {
+    modalSucesso.classList.remove("is-open");
+    modalSucesso.setAttribute("hidden", "");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("sucesso");
+    window.history.replaceState({}, "", url.pathname + url.search);
+  };
+  document.getElementById("modal-sucesso-ok")?.addEventListener("click", fecharSucesso);
+  modalSucesso.addEventListener("click", (e) => {
+    if (e.target === modalSucesso) fecharSucesso();
+  });
+}
 </script>
 {% endblock %}

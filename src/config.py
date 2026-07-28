@@ -3,7 +3,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT_DIR / ".env")
+
 DATA_DIR = ROOT_DIR / "data"
 DB_PATH = DATA_DIR / "bolao.db"
 EMBLEMAS_DIR = DATA_DIR / "emblemas"
@@ -17,8 +21,20 @@ TAXA_PIX = os.environ.get("TAXA_PIX", "matheuscps110@gmail.com")
 TAXA_VALOR = os.environ.get("TAXA_VALOR", "5.00")
 TAXA_VALOR_LABEL = os.environ.get("TAXA_VALOR_LABEL", "R$ 5,00")
 
+# URL pública do túnel (ex.: https://xxxx.trycloudflare.com). Sem isso, o admin
+# mostra o host da requisição atual (pode ser IP da rede local).
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
+
+FASES = (
+    {"id": "oitavas", "label": "Oitavas", "slots": 8},
+    {"id": "quartas", "label": "Quartas", "slots": 4},
+    {"id": "semis", "label": "Semis", "slots": 2},
+    {"id": "final", "label": "Final", "slots": 1},
+)
+FASE_IDS = tuple(f["id"] for f in FASES)
 
 COMPROVANTE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
 COMPROVANTE_MAX_BYTES = 5 * 1024 * 1024

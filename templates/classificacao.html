@@ -1,56 +1,202 @@
 {% extends "base.html" %}
 {% block title %}Classificação — Bolão THDFM{% endblock %}
 {% block content %}
-<p class="badge">{{ fase }} · janela {{ janela }}</p>
+<p class="badge">
+  {% if modo_historico %}
+  Histórico · {{ rodada_sel.rotulo }} · {{ rodada_sel.fase }} · janela {{ rodada_sel.janela }} · fechada em {{ rodada_sel.criado_em }}
+  {% else %}
+  {{ fase }} · janela {{ janela }} · ao vivo
+  {% endif %}
+</p>
 <h1>Classificação</h1>
-<p>Atualizada conforme os placares oficiais. Toque em uma linha para ver o bônus de fidelidade.</p>
+<p>
+  {% if modo_historico %}
+  Tabela congelada no fechamento desta rodada. Volte para <a href="/classificacao">Ao vivo</a> para ver o ranking atual. Detalhes em <a href="/regras">Regras</a>.
+  {% else %}
+  Atualizada conforme os placares oficiais. Detalhes de pontuação em <a href="/regras">Regras</a>.
+  {% endif %}
+</p>
 
-<div class="card" style="overflow-x:auto">
-  <table>
+{% if historico %}
+<nav class="classificacao-rodadas" aria-label="Histórico de rodadas">
+  <a href="/classificacao" class="{% if not modo_historico %}active{% endif %}">Ao vivo</a>
+  {% for h in historico %}
+  <a href="/classificacao?rodada={{ h.id }}" class="{% if rodada_atual_id == h.id %}active{% endif %}">{{ h.rotulo }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
+
+<div class="card classificacao-card">
+  <table class="classificacao-table">
     <thead>
       <tr>
-        <th>#</th>
-        <th>Nome</th>
-        <th>P</th>
-        <th>V</th>
-        <th>G</th>
-        <th>Fid</th>
-        <th>Soma</th>
-        <th>Rod</th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Posição
+            <span class="col-tip-bubble" role="tooltip">Colocação no ranking. As setas ▲/▼ mostram quantas posições a pessoa subiu ou desceu desde a rodada anterior confirmada.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Participante
+            <span class="col-tip-bubble" role="tooltip">Nome e foto do participante liberado no bolão.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Placar
+            <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato dos jogos oficiais já lançados.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Vencedor
+            <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate) de cada jogo oficial.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Gols casa
+            <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante em cada jogo.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Gols fora
+            <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante em cada jogo.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip" tabindex="0">
+            Bônus
+            <span class="col-tip-bubble" role="tooltip">Pontuação bônus pela fidelidade dos palpites ao placar real (detalhes em Regras).</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip col-tip-end" tabindex="0">
+            Pontos
+            <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. É o critério principal do ranking.</span>
+          </span>
+        </th>
+        <th>
+          <span class="col-tip col-tip-end" tabindex="0">
+            Rodada
+            <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última vez que os admins confirmaram a rodada. Zera após a confirmação.{% endif %}</span>
+          </span>
+        </th>
       </tr>
     </thead>
     <tbody>
       {% for r in linhas %}
-      <tr>
-        <td>{{ r.posicao }}</td>
-        <td>
-          {{ r.participante }}
-          {% if r.fidelidade_detalhe %}
-          <details>
-            <summary>fidelidade</summary>
-            Casa {{ r.fidelidade_detalhe.previsto_casa }}/{{ r.fidelidade_detalhe.real_casa }}
-            ({{ '%.0f'|format(r.fidelidade_detalhe.f_gols_casa * 100) }}%) ·
-            Fora {{ r.fidelidade_detalhe.previsto_fora }}/{{ r.fidelidade_detalhe.real_fora }}
-            ({{ '%.0f'|format(r.fidelidade_detalhe.f_gols_fora * 100) }}%) ·
-            Venc {{ r.fidelidade_detalhe.acertos_vencedor }}/{{ r.fidelidade_detalhe.jogos }}
-            ({{ '%.0f'|format(r.fidelidade_detalhe.f_vencedor * 100) }}%) ·
-            índice {{ '%.2f'|format(r.fidelidade_detalhe.indice) }} × teto {{ r.fidelidade_detalhe.teto }}
-            = <strong>{{ r.fidelidade_detalhe.bonus }} pts</strong>
-          </details>
+      <tr class="zona-{{ r.zona }}">
+        <td class="classificacao-pos">
+          <span class="pos-num">{{ r.posicao }}</span>
+          {% if r.movimento is not none and r.movimento != 0 %}
+          <span class="pos-mov {% if r.movimento > 0 %}up{% else %}down{% endif %}" title="{% if r.movimento > 0 %}Subiu {{ r.movimento }}{% else %}Desceu {{ -r.movimento }}{% endif %}">
+            {% if r.movimento > 0 %}▲{{ r.movimento }}{% else %}▼{{ -r.movimento }}{% endif %}
+          </span>
           {% endif %}
+        </td>
+        <td>
+          <div class="classificacao-part">
+            {% if r.avatar_path %}
+            <img class="classificacao-avatar" src="/avatars/{{ r.avatar_path }}" alt="" />
+            {% else %}
+            <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
+            {% endif %}
+            <span class="classificacao-nome">{{ r.participante }}</span>
+          </div>
         </td>
         <td>{{ r.placar }}</td>
         <td>{{ r.vencedor }}</td>
-        <td>{{ r.gols }}</td>
+        <td>{{ r.gols_casa }}</td>
+        <td>{{ r.gols_fora }}</td>
         <td>{{ r.fidelidade }}</td>
         <td><strong>{{ r.soma }}</strong></td>
-        <td>{{ r.rod }}</td>
+        <td class="classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="8">Sem participantes ainda.</td></tr>
+      <tr><td colspan="9">Sem participantes ainda.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-<p style="font-size:0.8rem">P = placar · V = vencedor · G = gols · Fid = bônus fidelidade · Rod = desde a última rodada confirmada</p>
+
+{% if linhas %}
+<ul class="classificacao-legend">
+  <li><span class="leg-swatch zona-campeao"></span> Campeão (1º)</li>
+  {% if zona_faixa > 1 %}
+  <li><span class="leg-swatch zona-podio"></span> Zona alta ({{ zona_faixa - 1 }})</li>
+  {% endif %}
+  <li><span class="leg-swatch zona-meio"></span> Meio de tabela</li>
+  <li><span class="leg-swatch zona-risco"></span> Zona de risco ({{ zona_faixa }})</li>
+</ul>
+<p class="classificacao-zona-hint">
+  Regra de 3 com o Brasileirão (4 em 20 ≈ 20% no topo e 20% embaixo). Com {{ linhas|length }} participante(s): 1 campeão · {% if zona_faixa > 1 %}{{ zona_faixa - 1 }} zona alta · {% endif %}{{ zona_faixa }} zona de risco.
+  {% if not modo_historico %} O movimento (▲/▼) compara com a última rodada confirmada. Ao confirmar a rodada, a tabela é arquivada neste histórico.{% endif %}
+</p>
+{% endif %}
+<div class="col-tip-host" id="col-tip-host" hidden></div>
+<script>
+(() => {
+  const host = document.getElementById("col-tip-host");
+  if (!host) return;
+  document.body.appendChild(host);
+
+  let activeTip = null;
+  let hideTimer = 0;
+
+  const place = (tip) => {
+    const rect = tip.getBoundingClientRect();
+    host.hidden = false;
+    const pad = 8;
+    let left = rect.left;
+    let top = rect.bottom + pad;
+    const hw = host.offsetWidth;
+    const hh = host.offsetHeight;
+    if (left + hw > window.innerWidth - pad) left = window.innerWidth - hw - pad;
+    if (left < pad) left = pad;
+    if (top + hh > window.innerHeight - pad) top = Math.max(pad, rect.top - hh - pad);
+    host.style.left = `${left}px`;
+    host.style.top = `${top}px`;
+  };
+
+  const show = (tip) => {
+    clearTimeout(hideTimer);
+    const bubble = tip.querySelector(".col-tip-bubble");
+    if (!bubble) return;
+    if (activeTip && activeTip !== tip) activeTip.classList.remove("is-open");
+    activeTip = tip;
+    tip.classList.add("is-open");
+    host.innerHTML = bubble.innerHTML;
+    place(tip);
+  };
+
+  const scheduleHide = () => {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      host.hidden = true;
+      host.innerHTML = "";
+      activeTip?.classList.remove("is-open");
+      activeTip = null;
+    }, 120);
+  };
+
+  document.querySelectorAll(".col-tip").forEach((tip) => {
+    tip.addEventListener("mouseenter", () => show(tip));
+    tip.addEventListener("focus", () => show(tip));
+    tip.addEventListener("mouseleave", scheduleHide);
+    tip.addEventListener("blur", scheduleHide);
+  });
+
+  host.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+  host.addEventListener("mouseleave", scheduleHide);
+  window.addEventListener("scroll", () => {
+    if (activeTip && !host.hidden) place(activeTip);
+  }, true);
+  window.addEventListener("resize", () => {
+    if (activeTip && !host.hidden) place(activeTip);
+  });
+})();
+</script>
 {% endblock %}

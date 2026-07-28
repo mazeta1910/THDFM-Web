@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Portal da Transparência — Bolão THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<p class="badge">Somente leitura · placares oficiais</p>
+<h1>Portal da Transparência</h1>
+<p>Palpites de todos os liberados, jogo a jogo — no estilo da planilha clássica.</p>
+
+<div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
+  {% for f in fases %}
+  <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %}">
+    <a
+      href="/transparencia?fase={{ f.id }}&perna={{ perna if f.id == fase else 'ida' }}"
+      class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
+    >{{ f.label }}</a>
+    <div class="transparencia-nav-pernas">
+      <a
+        href="/transparencia?fase={{ f.id }}&perna=ida"
+        class="{% if f.id == fase and perna == 'ida' %}active{% endif %}"
+      >Jogo 1 (Ida)</a>
+      <a
+        href="/transparencia?fase={{ f.id }}&perna=volta"
+        class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
+      >Jogo 2 (Volta)</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not tabelas %}
+<div class="card">
+  <p class="locked-msg" style="margin:0">
+    {% if perna == 'volta' %}
+    Nenhum resultado de volta divulgado nesta fase.
+    {% else %}
+    Nenhum resultado de ida divulgado nesta fase.
+    {% endif %}
+  </p>
+</div>
+{% else %}
+{% for t in tabelas %}
+<div class="card planilha-card">
+  <div class="planilha-head">
+    <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+    <div>
+      <strong>{{ t.titulo }}</strong>
+      <span>{{ t.clube_casa }} × {{ t.clube_fora }}</span>
+    </div>
+    <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+  </div>
+  <div class="planilha-wrap">
+    <table class="planilha">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>{{ t.clube_casa }}</th>
+          <th></th>
+          <th>{{ t.clube_fora }}</th>
+          <th>Pênaltis</th>
+          <th>Acertou</th>
+          <th>Vencedor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in t.linhas %}
+        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}">
+          <td class="planilha-nome">{{ row.nome }}</td>
+          <td class="planilha-num">{{ row.gols_m }}</td>
+          <td class="planilha-x">x</td>
+          <td class="planilha-num">{{ row.gols_v }}</td>
+          <td>{{ row.penaltis }}</td>
+          <td class="{{ row.acertou_class }}">{{ row.acertou }}</td>
+          <td class="{{ row.vencedor_class }}">{{ row.vencedor }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

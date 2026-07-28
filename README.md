@@ -31,8 +31,23 @@ Banco: `data/bolao.db`. Comprovantes: `data/comprovantes/`. Avatares: `data/avat
 cloudflared tunnel --url http://127.0.0.1:8000
 ```
 
-3. Use a URL `https://....trycloudflare.com` no WhatsApp.
-4. PC ligado + uvicorn + túnel = site no ar.
+3. O cloudflared imprime uma URL tipo `https://xxxx.trycloudflare.com`.
+4. Cole no `.env`:
+
+```env
+PUBLIC_BASE_URL=https://xxxx.trycloudflare.com
+```
+
+5. Reinicie o uvicorn. No admin, os links passam a usar essa URL (e não o IP da rede).
+
+**O que mandar para quem:**
+
+| Para quem | Link |
+|-----------|------|
+| Todo o grupo (inscrição) | `PUBLIC_BASE_URL/inscricao` |
+| Cada pessoa (depois de liberar) | `PUBLIC_BASE_URL/p/{token}` no privado |
+
+PC ligado + uvicorn + túnel = site no ar. A cada reinício do túnel *rápido* (`trycloudflare`), a URL muda — atualize o `.env`.
 
 ## Header (rotas)
 

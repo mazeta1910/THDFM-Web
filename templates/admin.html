@@ -1,167 +1,453 @@
 {% extends "base.html" %}
-{% block title %}Admin — Bolão THDFM{% endblock %}
-{% block wrap_class %}wide{% endblock %}
+{% block title %}Painel de Admin — Bolão THDFM{% endblock %}
+{% block admin_topbar %}
+<div>
+  <h1 id="admin-section-title">Resultados</h1>
+  <p class="admin-top-meta">Janela: <strong>{{ janela|capitalize }}</strong> · Fase: <strong>{{ fase_atual }}</strong></p>
+</div>
+{% endblock %}
 {% block content %}
-<p class="badge">Janela atual: {{ janela }} · logado como {{ admin_nome }}</p>
-<h1>Painel admin</h1>
-{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
-{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+{% set liberados = participantes | selectattr('status', 'equalto', 'liberado') | list %}
+{% set pendentes = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
 
-<div class="card" style="padding-top:0;overflow:hidden">
-  <div class="fase-bar">Oitavas de final — resultados</div>
-  <div class="perna-tabs">
-    <button type="button" class="active" data-tab="ida">Jogo 1 (ida)</button>
-    <button type="button" data-tab="volta">Jogo 2 (volta)</button>
-  </div>
-
-  <div class="match-panel" id="panel-ida">
-    <div class="match-grid">
-      {% for c in confrontos %}
-      {% if c.ida %}
-      <div class="match-cell">
-        <form method="post" action="/admin/resultado">
-          <input type="hidden" name="jogo_id" value="{{ c.ida.id }}" />
-          <input type="hidden" name="penaltis_clube_id" value="" />
-          <div class="match-teams">
-            <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
-              <span>{{ c.clube_a }}</span>
-              <input type="number" min="0" name="gols_mandante" value="{{ c.ida.gols_mandante if c.ida.gols_mandante is not none else '' }}" required />
-            </div>
-            <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
-              <span>{{ c.clube_b }}</span>
-              <input type="number" min="0" name="gols_visitante" value="{{ c.ida.gols_visitante if c.ida.gols_visitante is not none else '' }}" required />
-            </div>
-          </div>
-          <div class="match-side">
-            <button type="submit">Salvar</button>
-          </div>
-        </form>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="match-panel hidden" id="panel-volta">
-    <div class="match-grid">
-      {% for c in confrontos %}
-      {% if c.volta %}
-      <div class="match-cell">
-        <form method="post" action="/admin/resultado">
-          <input type="hidden" name="jogo_id" value="{{ c.volta.id }}" />
-          <div class="match-teams">
-            <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
-              <span>{{ c.clube_b }}</span>
-              <input type="number" min="0" name="gols_mandante" value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" required />
-            </div>
-            <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
-              <span>{{ c.clube_a }}</span>
-              <input type="number" min="0" name="gols_visitante" value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" required />
-            </div>
-          </div>
-          <div class="match-side">
-            <select name="penaltis_clube_id" title="Pênaltis">
-              <option value="">Pênaltis —</option>
-              <option value="a" {% if c.volta.penaltis_clube_id == 'a' %}selected{% endif %}>{{ c.clube_a }}</option>
-              <option value="b" {% if c.volta.penaltis_clube_id == 'b' %}selected{% endif %}>{{ c.clube_b }}</option>
+    <section class="admin-panel active" data-panel="resultados">
+      <div class="admin-grid-2" style="margin-bottom:1rem">
+        <div class="card card-with-tip">
+          <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: janela de palpites">
+            ?
+            <span class="help-tip-bubble" role="tooltip">
+              Controla o que o participante pode editar em Meus Palpites: <strong>ida</strong> (só jogo 1), <strong>volta</strong> (ida congelada + jogo 2) ou <strong>fechado</strong> (sem edição).
+            </span>
+          </span>
+          <h2>Janela de palpites</h2>
+          <form method="post" action="/admin/janela">
+            <select name="janela">
+              {% for j in janelas %}
+              <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j|capitalize }}</option>
+              {% endfor %}
             </select>
-            <button type="submit">Salvar</button>
+            <button type="submit">Atualizar janela</button>
+          </form>
+        </div>
+        <div class="card card-with-tip">
+          <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: fase liberada">
+            ?
+            <span class="help-tip-bubble" role="tooltip">
+              Define até qual etapa da Copa o bolão está aberto (oitavas, quartas, semi, final). Fases acima ficam bloqueadas nos palpites e nos resultados até você liberar a próxima.
+            </span>
+          </span>
+          <h2>Fase liberada</h2>
+          <form method="post" action="/admin/fase">
+            <select name="fase">
+              {% for f in fases %}
+              <option value="{{ f.id }}" {% if f.id == fase_atual %}selected{% endif %}>{{ f.label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit">Atualizar fase</button>
+          </form>
+        </div>
+      </div>
+
+      <h2 style="margin:0 0 0.65rem;font-size:1.05rem">Placares oficiais</h2>
+      <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
+        {% for f in fases %}
+        <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
+          <button
+            type="button"
+            class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
+            data-fase="{{ f.id }}"
+            {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
+          >{{ f.label }}</button>
+          <div class="transparencia-nav-pernas">
+            <button
+              type="button"
+              data-fase="{{ f.id }}"
+              data-tab="ida"
+              class="{% if f.ativa %}active{% endif %}"
+              {% if not f.unlocked %}disabled{% endif %}
+            >Jogo 1 (Ida)</button>
+            <button
+              type="button"
+              data-fase="{{ f.id }}"
+              data-tab="volta"
+              {% if not f.unlocked %}disabled{% endif %}
+            >Jogo 2 (Volta)</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% for f in fases %}
+      {% set confrontos = confrontos_por_fase.get(f.id, []) %}
+      <div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">
+
+        {% if not f.unlocked %}
+        <div class="card admin-resultados-form locked-card">
+          <p class="locked-msg" style="margin:0">Libere esta fase acima para cadastrar os placares.</p>
+          <div class="match-grid locked-grid" style="margin-top:0.85rem">
+            {% for _ in range(f.slots) %}
+            <div class="match-cell locked">
+              <div class="match-teams">
+                <div class="match-team-row">
+                  <span>A definir</span>
+                  <input type="number" disabled placeholder="—" />
+                </div>
+                <div class="match-team-row">
+                  <span>A definir</span>
+                  <input type="number" disabled placeholder="—" />
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% else %}
+        <form method="post" action="/admin/resultados" class="card admin-resultados-form">
+          <input type="hidden" name="fase" value="{{ f.id }}" />
+
+          <div class="match-panel" data-panel="ida">
+            {% if not confrontos %}
+            <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+            {% else %}
+            <div class="match-grid">
+              {% for c in confrontos %}
+              {% if c.ida %}
+              <div class="match-cell">
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                    <span>{{ c.clube_a }}</span>
+                    <input type="number" min="0" name="jogo_{{ c.ida.id }}_m" value="{{ c.ida.gols_mandante if c.ida.gols_mandante is not none else '' }}" />
+                  </div>
+                  <div class="match-team-row">
+                    <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                    <span>{{ c.clube_b }}</span>
+                    <input type="number" min="0" name="jogo_{{ c.ida.id }}_v" value="{{ c.ida.gols_visitante if c.ida.gols_visitante is not none else '' }}" />
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="match-panel hidden" data-panel="volta">
+            {% if not confrontos %}
+            <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+            {% else %}
+            <div class="match-grid">
+              {% for c in confrontos %}
+              {% if c.volta %}
+              <div class="match-cell">
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                    <span>{{ c.clube_b }}</span>
+                    <input type="number" min="0" name="jogo_{{ c.volta.id }}_m" value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" />
+                  </div>
+                  <div class="match-team-row">
+                    <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                    <span>{{ c.clube_a }}</span>
+                    <input type="number" min="0" name="jogo_{{ c.volta.id }}_v" value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" />
+                  </div>
+                </div>
+                <div class="match-pen-row">
+                  <select name="jogo_{{ c.volta.id }}_pen" title="Pênaltis">
+                    <option value="">Pênaltis —</option>
+                    <option value="a" {% if c.volta.penaltis_clube_id == 'a' %}selected{% endif %}>{{ c.clube_a }}</option>
+                    <option value="b" {% if c.volta.penaltis_clube_id == 'b' %}selected{% endif %}>{{ c.clube_b }}</option>
+                  </select>
+                </div>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="sticky-save">
+            <button type="submit">Salvar todos os placares</button>
           </div>
         </form>
+        {% endif %}
+
       </div>
-      {% endif %}
       {% endfor %}
-    </div>
-  </div>
-</div>
 
-<div class="card">
-  <h2>Inscrições (taxa {{ taxa_valor_label }})</h2>
-  <p style="font-size:0.85rem">PIX: {{ taxa_pix }}</p>
-  {% for p in participantes %}
-  <div class="ref" style="margin-top:0.65rem">
-    <strong>{{ p.nome }}</strong>
-    <span class="status-pill {{ p.status }}">{{ p.status }}</span>
-    <div style="font-size:0.75rem;word-break:break-all;margin-top:0.25rem">
-      <code>{{ base_url }}/p/{{ p.token }}</code>
-    </div>
-    {% if p.comprovante_path %}
-    <p style="margin:0.4rem 0">
-      <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
-      {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
-    </p>
-    {% endif %}
-    {% if p.status != 'liberado' %}
-    <div class="admin-actions">
-      <form method="post" action="/admin/liberar">
-        <input type="hidden" name="participante_id" value="{{ p.id }}" />
-        <button type="submit">Liberar</button>
-      </form>
-      {% if p.comprovante_path %}
-      <form method="post" action="/admin/recusar">
-        <input type="hidden" name="participante_id" value="{{ p.id }}" />
-        <button type="submit" class="secondary">Recusar</button>
-      </form>
-      {% endif %}
-    </div>
-    {% endif %}
-  </div>
-  {% else %}
-  <p>Nenhuma inscrição ainda.</p>
-  {% endfor %}
-</div>
+      <div class="card" style="max-width:420px;margin-top:1rem">
+        <h2>Confirmar rodada</h2>
+        <form method="post" action="/admin/confirmar-rodada">
+          <p>Arquiva a tabela atual no histórico da Classificação, zera a coluna Rodada e atualiza o baseline de movimento para a próxima divulgação.</p>
+          <button type="submit">Confirmar rodada</button>
+        </form>
+      </div>
+    </section>
 
-<div class="card">
-  <h2>Janela de palpites</h2>
-  <form method="post" action="/admin/janela">
-    <select name="janela">
-      {% for j in janelas %}
-      <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit">Atualizar janela</button>
-  </form>
-</div>
+    <section class="admin-panel" data-panel="inscricoes">
+      <div class="card inscricoes-card" id="inscricoes-card">
+        <div class="inscricoes-head">
+          <div class="inscricoes-title-row">
+            <div>
+              <h2>Inscrições <span class="col-count">{{ taxa_valor_label }}</span></h2>
+              <p class="inscricoes-pix">PIX: {{ taxa_pix }} · {{ liberados|length }} liberado(s) · {{ pendentes|length }} pendente(s)</p>
+            </div>
+          </div>
+          <div class="inscricoes-link-box">
+            <strong>Link público</strong>
+            <code id="inscricao-url">{{ inscricao_url }}</code>
+            {% if not public_url_configurada %}
+            <span class="inscricoes-hint">Defina <code>PUBLIC_BASE_URL</code> no .env para trocar o IP pela URL do túnel.</span>
+            {% endif %}
+          </div>
+        </div>
 
-<div class="card">
-  <h2>Cadastrar participante (manual)</h2>
-  <form method="post" action="/admin/participante">
-    <label>Nome THDFM</label>
-    <input type="text" name="nome" required placeholder="Nome no grupo" />
-    <label style="display:flex;align-items:center;gap:0.4rem;color:var(--text)">
-      <input type="checkbox" name="ja_pago" value="1" style="width:auto;margin:0" />
-      Já pagou — liberar na hora
-    </label>
-    <button type="submit">Criar</button>
-  </form>
-</div>
+        <div class="inscricoes-cols">
+          <section class="inscricoes-col">
+            <h3>Liberado <span class="col-count">{{ liberados|length }}</span></h3>
+            {% for p in liberados %}
+            <div class="ref inscricao-item">
+              <div class="inscricao-item-head">
+                <strong class="inscricao-nome">{{ p.nome }}</strong>
+                <div class="inscricao-item-end">
+                  <span class="status-pill {{ p.status }}">{{ p.status }}</span>
+                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                </div>
+              </div>
+              {% if p.celular %}
+              {% set wa = p.celular if p.celular.startswith('55') else '55' ~ p.celular %}
+              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">{{ p.celular }}</a></div>
+              {% endif %}
+              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
+              {% if p.comprovante_path %}
+              <p class="inscricao-comp">
+                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+              </p>
+              {% endif %}
+            </div>
+            {% else %}
+            <p class="inscricao-vazio">Ninguém liberado ainda.</p>
+            {% endfor %}
+          </section>
 
-<div class="card">
-  <h2>Rodada</h2>
-  <form method="post" action="/admin/confirmar-rodada">
-    <p>Confirma a rodada e zera a coluna Rod na próxima divulgação.</p>
-    <button type="submit">Confirmar rodada</button>
-  </form>
-  <form method="get" action="/admin/logout" style="margin-top:0.75rem">
-    <button type="submit" class="secondary">Sair do admin</button>
-  </form>
-</div>
+          <section class="inscricoes-col">
+            <h3>Pendente <span class="col-count">{{ pendentes|length }}</span></h3>
+            {% for p in pendentes %}
+            <div class="ref inscricao-item">
+              <div class="inscricao-item-head">
+                <strong class="inscricao-nome">{{ p.nome }}</strong>
+                <div class="inscricao-item-end">
+                  <span class="status-pill {{ p.status }}">{{ p.status }}</span>
+                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                </div>
+              </div>
+              {% if p.celular %}
+              {% set wa = p.celular if p.celular.startswith('55') else '55' ~ p.celular %}
+              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">{{ p.celular }}</a></div>
+              {% endif %}
+              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
+              {% if p.comprovante_path %}
+              <p class="inscricao-comp">
+                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+              </p>
+              {% endif %}
+              <div class="admin-actions">
+                <form method="post" action="/admin/liberar">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit">Liberar</button>
+                </form>
+                {% if p.comprovante_path %}
+                <form method="post" action="/admin/recusar">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="secondary">Recusar</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <p class="inscricao-vazio">Nenhuma pendência.</p>
+            {% endfor %}
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-panel" data-panel="cadastro">
+      <div class="card" style="max-width:420px">
+        <h2>Cadastrar participante</h2>
+        <form method="post" action="/admin/participante">
+          <label>Nome THDFM</label>
+          <input type="text" name="nome" required placeholder="Nome no grupo" />
+          <label>Celular</label>
+          <input type="tel" name="celular" placeholder="(11) 99999-9999" />
+          <label style="display:flex;align-items:center;gap:0.4rem;color:var(--text)">
+            <input type="checkbox" name="ja_pago" value="1" style="width:auto;margin:0" />
+            Já pagou — liberar na hora
+          </label>
+          <button type="submit">Criar</button>
+        </form>
+      </div>
+    </section>
 {% endblock %}
 
 {% block scripts %}
+<form method="post" action="/admin/apagar" id="form-apagar" hidden>
+  <input type="hidden" name="participante_id" id="apagar-id" value="" />
+</form>
+<div class="modal-backdrop" id="modal-apagar" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-apagar-title">
+    <h3 id="modal-apagar-title">Excluir inscrição?</h3>
+    <p id="modal-apagar-texto" style="color:var(--muted);line-height:1.45;margin:0 0 1rem"></p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-apagar-cancelar">Cancelar</button>
+      <button type="button" class="danger" id="modal-apagar-confirmar">Excluir</button>
+    </div>
+  </div>
+</div>
+<div class="admin-toast-host" id="admin-toast-host" aria-live="polite"></div>
 <script>
-document.querySelectorAll(".perna-tabs button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".perna-tabs button").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    const tab = btn.dataset.tab;
-    document.getElementById("panel-ida").classList.toggle("hidden", tab !== "ida");
-    document.getElementById("panel-volta").classList.toggle("hidden", tab !== "volta");
+const TITLES = {
+  operacao: "Resultados",
+  resultados: "Resultados",
+  inscricoes: "Inscrições",
+  cadastro: "Cadastro manual",
+};
+const KEY_SEC = "admin-section";
+const showSection = (sec, pushUrl = false) => {
+  if (sec === "config" || sec === "rodada" || sec === "operacao") sec = "resultados";
+  if (!TITLES[sec]) sec = "resultados";
+  document.querySelectorAll(".admin-panel").forEach((p) => {
+    p.classList.toggle("active", p.dataset.panel === sec);
   });
+  document.querySelectorAll(".admin-side-link[data-sec]").forEach((b) => {
+    b.classList.toggle("active", b.dataset.sec === sec);
+  });
+  const title = document.getElementById("admin-section-title");
+  if (title) title.textContent = TITLES[sec];
+  localStorage.setItem(KEY_SEC, sec);
+  document.body.classList.remove("admin-sidebar-open");
+  if (pushUrl) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("sec", sec);
+    history.replaceState(null, "", url);
+  }
+};
+
+document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
+  link.addEventListener("click", (e) => {
+    if (!document.querySelector(`.admin-panel[data-panel="${link.dataset.sec}"]`)) return;
+    e.preventDefault();
+    showSection(link.dataset.sec, true);
+  });
+});
+const params = new URLSearchParams(window.location.search);
+showSection(params.get("sec") || localStorage.getItem(KEY_SEC) || "resultados");
+
+document.querySelectorAll(".fase-tab:not([disabled])").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".fase-tab").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const id = btn.dataset.fase;
+    document.querySelectorAll("[data-fase-panel]").forEach((panel) => {
+      panel.classList.toggle("hidden", panel.dataset.fasePanel !== id);
+    });
+  });
+});
+
+document.querySelectorAll("[data-perna-tabs]").forEach((tabs) => {
+  const card = tabs.closest(".admin-resultados-form") || tabs.closest(".palpites-card") || tabs.parentElement;
+  tabs.querySelectorAll("button:not([disabled])").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabs.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      card.querySelectorAll(".match-panel").forEach((panel) => {
+        panel.classList.toggle("hidden", panel.dataset.panel !== tab);
+      });
+    });
+  });
+});
+
+const placaresNav = document.getElementById("admin-placares-nav");
+if (placaresNav) {
+  const showFasePerna = (fase, perna) => {
+    placaresNav.querySelectorAll(".transparencia-nav-col").forEach((col) => {
+      const on = col.dataset.faseCol === fase;
+      col.classList.toggle("is-active", on);
+      col.querySelector(".transparencia-nav-fase")?.classList.toggle("active", on);
+      col.querySelectorAll("[data-tab]").forEach((b) => {
+        b.classList.toggle("active", on && b.dataset.tab === perna);
+      });
+    });
+    document.querySelectorAll("[data-fase-panel]").forEach((panel) => {
+      const on = panel.dataset.fasePanel === fase;
+      panel.classList.toggle("hidden", !on);
+      if (!on) return;
+      panel.querySelectorAll(".match-panel").forEach((mp) => {
+        mp.classList.toggle("hidden", mp.dataset.panel !== perna);
+      });
+    });
+  };
+
+  placaresNav.querySelectorAll("button[data-fase]:not([disabled])").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const fase = btn.dataset.fase;
+      let perna = btn.dataset.tab;
+      if (!perna) {
+        const cur = placaresNav.querySelector(".transparencia-nav-col.is-active [data-tab].active");
+        perna = cur?.dataset.tab || "ida";
+      }
+      showFasePerna(fase, perna);
+    });
+  });
+}
+const toastHost = document.getElementById("admin-toast-host");
+const showToast = (text, type = "ok") => {
+  if (!toastHost || !text) return;
+  const el = document.createElement("div");
+  el.className = `admin-toast admin-toast-${type}`;
+  el.textContent = text;
+  toastHost.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("is-show"));
+  setTimeout(() => {
+    el.classList.remove("is-show");
+    setTimeout(() => el.remove(), 280);
+  }, 3800);
+};
+
+{% if msg %}showToast({{ msg.replace('+', ' ') | tojson }}, "ok");{% endif %}
+{% if erro %}showToast({{ erro.replace('+', ' ') | tojson }}, "erro");{% endif %}
+
+const modalApagar = document.getElementById("modal-apagar");
+const formApagar = document.getElementById("form-apagar");
+const apagarId = document.getElementById("apagar-id");
+const apagarTexto = document.getElementById("modal-apagar-texto");
+if (modalApagar) document.body.appendChild(modalApagar);
+
+const abrirApagar = (id, nome) => {
+  if (apagarId) apagarId.value = id;
+  if (apagarTexto) {
+    apagarTexto.textContent =
+      `Tem certeza que deseja excluir a inscrição de ${nome}? Isso remove palpites, comprovante e avatar.`;
+  }
+  modalApagar?.removeAttribute("hidden");
+  modalApagar?.classList.add("is-open");
+};
+const fecharApagar = () => {
+  modalApagar?.classList.remove("is-open");
+  modalApagar?.setAttribute("hidden", "");
+};
+
+document.querySelectorAll(".btn-apagar-x").forEach((btn) => {
+  btn.addEventListener("click", () => abrirApagar(btn.dataset.id, btn.dataset.nome));
+});
+document.getElementById("modal-apagar-cancelar")?.addEventListener("click", fecharApagar);
+document.getElementById("modal-apagar-confirmar")?.addEventListener("click", () => formApagar?.submit());
+modalApagar?.addEventListener("click", (e) => {
+  if (e.target === modalApagar) fecharApagar();
 });
 </script>
 {% endblock %}

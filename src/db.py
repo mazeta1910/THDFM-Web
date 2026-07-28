@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
 import sqlite3
 from contextlib import contextmanager
@@ -48,7 +49,8 @@ CREATE TABLE IF NOT EXISTS participantes (
     comprovante_path TEXT,
     comprovante_em TEXT,
     liberado_em TEXT,
-    avatar_path TEXT
+    avatar_path TEXT,
+    celular TEXT
 );
 
 CREATE TABLE IF NOT EXISTS confrontos (
@@ -91,6 +93,16 @@ CREATE TABLE IF NOT EXISTS snapshot (
     payload TEXT NOT NULL,
     atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
+
+CREATE TABLE IF NOT EXISTS rodadas_historico (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero INTEGER NOT NULL UNIQUE,
+    rotulo TEXT NOT NULL,
+    fase TEXT NOT NULL,
+    janela TEXT NOT NULL,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    payload TEXT NOT NULL
+);
 """
 
 
@@ -108,6 +120,8 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN liberado_em TEXT")
     if "avatar_path" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN avatar_path TEXT")
+    if "celular" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN celular TEXT")
 
 
 def init_db() -> None:
@@ -164,10 +178,22 @@ def set_janela(janela: str) -> None:
     set_meta("janela", janela)
 
 
+def get_fase_atual() -> str:
+    return get_meta("fase_atual", "oitavas") or "oitavas"
+
+
+def set_fase_atual(fase: str) -> None:
+    from src.config import FASE_IDS
+
+    if fase not in FASE_IDS:
+        raise ValueError("fase inválida")
+    set_meta("fase_atual", fase)
+
+
 def list_participantes() -> list[dict[str, Any]]:
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path "
+            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
             "FROM participantes ORDER BY "
             "CASE status WHEN 'comprovante' THEN 0 WHEN 'pendente' THEN 1 ELSE 2 END, "
             "nome COLLATE NOCASE"
@@ -175,27 +201,29 @@ def list_participantes() -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def criar_participante(nome: str, *, status: str = "pendente") -> dict[str, Any]:
+def criar_participante(
+    nome: str, *, status: str = "pendente", celular: str | None = None
+) -> dict[str, Any]:
     nome = nome.strip()
     if not nome:
         raise ValueError("Nome vazio")
     if status not in ("pendente", "comprovante", "liberado"):
         raise ValueError("status inválido")
+    celular_limpo = normalizar_celular(celular) if celular else None
     token = secrets.token_urlsafe(16)
     with get_db() as conn:
-        liberado_em = "datetime('now', 'localtime')" if status == "liberado" else "NULL"
-        # use parameter for liberado only via Python
         liberado_sql = None
         if status == "liberado":
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status, liberado_em) "
-                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'))",
-                (nome, token),
+                "INSERT INTO participantes (nome, token, status, liberado_em, celular) "
+                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'), ?)",
+                (nome, token, celular_limpo),
             )
+            liberado_sql = True
         else:
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status) VALUES (?, ?, ?)",
-                (nome, token, status),
+                "INSERT INTO participantes (nome, token, status, celular) VALUES (?, ?, ?, ?)",
+                (nome, token, status, celular_limpo),
             )
         return {
             "id": cur.lastrowid,
@@ -205,13 +233,21 @@ def criar_participante(nome: str, *, status: str = "pendente") -> dict[str, Any]
             "comprovante_path": None,
             "comprovante_em": None,
             "liberado_em": liberado_sql,
+            "celular": celular_limpo,
         }
+
+
+def normalizar_celular(celular: str) -> str:
+    digits = re.sub(r"\D+", "", celular or "")
+    if len(digits) < 10 or len(digits) > 13:
+        raise ValueError("Celular inválido")
+    return digits
 
 
 def get_participante_por_token(token: str) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path "
+            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
             "FROM participantes WHERE token = ?",
             (token,),
         ).fetchone()
@@ -221,11 +257,36 @@ def get_participante_por_token(token: str) -> dict[str, Any] | None:
 def get_participante(participante_id: int) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path "
+            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
             "FROM participantes WHERE id = ?",
             (participante_id,),
         ).fetchone()
         return dict(row) if row else None
+
+
+def get_participante_por_nome(nome: str) -> dict[str, Any] | None:
+    nome = (nome or "").strip()
+    if not nome:
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
+            "FROM participantes WHERE nome = ? COLLATE NOCASE",
+            (nome,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def garantir_participante_liberado(nome: str) -> dict[str, Any]:
+    """Garante um participante liberado com esse nome (ex.: admin que também palpita)."""
+    part = get_participante_por_nome(nome)
+    if part:
+        if part.get("status") != "liberado":
+            liberar_participante(part["id"])
+            part = get_participante(part["id"]) or part
+            part["status"] = "liberado"
+        return part
+    return criar_participante(nome, status="liberado")
 
 
 def salvar_comprovante(participante_id: int, relative_path: str) -> None:
@@ -244,6 +305,27 @@ def liberar_participante(participante_id: int) -> None:
             "liberado_em = datetime('now', 'localtime') WHERE id = ?",
             (participante_id,),
         )
+
+
+def apagar_participante(participante_id: int) -> dict[str, Any] | None:
+    """Remove participante, palpites e devolve paths de arquivos para limpeza."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, nome, comprovante_path, avatar_path FROM participantes WHERE id = ?",
+            (participante_id,),
+        ).fetchone()
+        if not row:
+            return None
+        part = dict(row)
+        conn.execute(
+            "DELETE FROM palpites_jogo WHERE participante_id = ?", (participante_id,)
+        )
+        conn.execute(
+            "DELETE FROM palpites_penaltis WHERE participante_id = ?",
+            (participante_id,),
+        )
+        conn.execute("DELETE FROM participantes WHERE id = ?", (participante_id,))
+        return part
 
 
 def atualizar_nome_participante(participante_id: int, nome: str) -> None:
@@ -291,11 +373,16 @@ def regenerar_token(participante_id: int) -> str:
     return token
 
 
-def list_confrontos_completos() -> list[dict[str, Any]]:
+def list_confrontos_completos(fase: str | None = None) -> list[dict[str, Any]]:
     with get_db() as conn:
-        confrontos = conn.execute(
-            "SELECT * FROM confrontos ORDER BY id"
-        ).fetchall()
+        if fase:
+            confrontos = conn.execute(
+                "SELECT * FROM confrontos WHERE fase = ? ORDER BY id", (fase,)
+            ).fetchall()
+        else:
+            confrontos = conn.execute(
+                "SELECT * FROM confrontos ORDER BY id"
+            ).fetchall()
         out: list[dict[str, Any]] = []
         for c in confrontos:
             jogos = conn.execute(
@@ -419,6 +506,62 @@ def load_snapshot() -> dict[str, Any] | None:
         if not row:
             return None
         return json.loads(row["payload"])
+
+
+def append_rodada_historico(
+    *,
+    linhas: list[dict[str, Any]],
+    fase: str,
+    janela: str,
+) -> dict[str, Any]:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(MAX(numero), 0) AS n FROM rodadas_historico"
+        ).fetchone()
+        numero = int(row["n"]) + 1
+        rotulo = f"Rodada {numero}"
+        payload = json.dumps({"linhas": linhas}, ensure_ascii=False)
+        cur = conn.execute(
+            "INSERT INTO rodadas_historico (numero, rotulo, fase, janela, payload) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (numero, rotulo, fase, janela, payload),
+        )
+        rid = int(cur.lastrowid)
+        criado = conn.execute(
+            "SELECT criado_em FROM rodadas_historico WHERE id = ?", (rid,)
+        ).fetchone()["criado_em"]
+        return {
+            "id": rid,
+            "numero": numero,
+            "rotulo": rotulo,
+            "fase": fase,
+            "janela": janela,
+            "criado_em": criado,
+        }
+
+
+def list_rodadas_historico() -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, numero, rotulo, fase, janela, criado_em "
+            "FROM rodadas_historico ORDER BY numero ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_rodada_historico(rodada_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, numero, rotulo, fase, janela, criado_em, payload "
+            "FROM rodadas_historico WHERE id = ?",
+            (rodada_id,),
+        ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        payload = json.loads(data.pop("payload"))
+        data["linhas"] = payload.get("linhas") or []
+        return data
 
 
 def db_path() -> Path:

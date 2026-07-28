@@ -4,48 +4,158 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{% block title %}Bolão THDFM — CdB{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <script>
+  (function () {
+    try {
+      var t = localStorage.getItem("thdfm-theme");
+      if (t !== "light" && t !== "dark") t = "dark";
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css?v=43" />
 </head>
-<body>
+{% set admin_layout = is_admin and request.url.path != '/admin/login' %}
+{% set path = request.url.path %}
+{% set on_classificacao = path.startswith('/classificacao') %}
+{% set on_transparencia = path.startswith('/transparencia') %}
+{% set on_regras = path.startswith('/regras') %}
+{% set on_inscricao = path.startswith('/inscricao') %}
+{% set on_palpites = participante_nav and path == '/p/' + participante_nav.token and '/conta' not in path %}
+{% set on_competicao = on_classificacao or on_transparencia %}
+{% set on_meu_bolao = on_palpites %}
+<body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% endif %}">
+  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Alternar tema" title="Alternar tema">
+    <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+    <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z" />
+    </svg>
+  </button>
+
+  {% if admin_layout %}
+  {% set _sec = request.query_params.get('sec') or 'resultados' %}
+  {% set admin_sec = 'resultados' if _sec in ['config', 'rodada', 'operacao'] else _sec %}
+  <div class="admin-shell">
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop" hidden></div>
+    {% include "partials/admin_sidebar.html" %}
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button type="button" class="admin-mobile-menu" id="admin-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="admin-sidebar">☰</button>
+        <div class="admin-topbar-slot">
+          {% block admin_topbar %}{% endblock %}
+        </div>
+      </header>
+  {% else %}
+  {% block site_nav %}
   <nav>
     <div class="nav-left">
-      {% if participante_nav %}
-        {% if participante_nav.status == 'liberado' %}
-        <a href="/p/{{ participante_nav.token }}" class="{% if request.url.path == '/p/' + participante_nav.token %}active{% endif %}">Palpites</a>
-        <a href="/classificacao" class="{% if request.url.path.startswith('/classificacao') %}active{% endif %}">Classificação</a>
-        {% else %}
-        <a href="/p/{{ participante_nav.token }}" class="{% if request.url.path.startswith('/p/') %}active{% endif %}">Inscrição</a>
-        {% endif %}
-        <a href="/regras" class="{% if request.url.path.startswith('/regras') %}active{% endif %}">Regras</a>
+      {% if participante_nav and participante_nav.status == 'liberado' %}
+        <details class="nav-dropdown {% if on_competicao %}is-active{% endif %}">
+          <summary>Competição</summary>
+          <div class="nav-dropdown-menu">
+            <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">Classificação</a>
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+          </div>
+        </details>
+        <details class="nav-dropdown {% if on_meu_bolao %}is-active{% endif %}">
+          <summary>Meu Bolão</summary>
+          <div class="nav-dropdown-menu">
+            <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">Meus Palpites</a>
+          </div>
+        </details>
+        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+      {% elif participante_nav %}
+        <a href="/p/{{ participante_nav.token }}" class="{% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}">Inscrição</a>
+        <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
       {% else %}
-        <a href="/inscricao" class="{% if request.url.path.startswith('/inscricao') %}active{% endif %}">Inscrição</a>
-        <a href="/regras" class="{% if request.url.path.startswith('/regras') %}active{% endif %}">Regras</a>
-      {% endif %}
-
-      {% if is_admin %}
-        <a href="/admin" class="{% if request.url.path.startswith('/admin') and request.url.path != '/admin/login' %}active{% endif %}">Admin</a>
-      {% elif not participante_nav %}
-        <a href="/admin/login" class="{% if request.url.path.startswith('/admin') %}active{% endif %}">Admin</a>
+        <a href="/inscricao" class="{% if on_inscricao %}active{% endif %}">Inscrição</a>
+        <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
       {% endif %}
     </div>
     <div class="nav-right">
       {% if participante_nav %}
-      <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in request.url.path %}active{% endif %}">
+      <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in path %}active{% endif %}">
         {% if participante_nav.avatar_path %}
         <img class="nav-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
         {% endif %}
         Conta
       </a>
       {% endif %}
-      {% if is_admin %}
-      <span class="nav-admin-nome">{{ admin_nome }}</span>
-      <a href="/admin/logout" class="nav-sair">Sair</a>
-      {% endif %}
     </div>
   </nav>
+  {% endblock %}
   <main class="wrap {% block wrap_class %}{% endblock %}">
-    {% block content %}{% endblock %}
+  {% endif %}
+
+        {% block content %}{% endblock %}
+
+  {% if admin_layout %}
+    </div>
+  </div>
+  {% else %}
   </main>
+  {% endif %}
+
   {% block scripts %}{% endblock %}
+  <script>
+  (function () {
+    const KEY = "thdfm-theme";
+    const root = document.documentElement;
+    const btn = document.getElementById("theme-toggle");
+    const sync = () => {
+      const theme = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+      if (!btn) return;
+      btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      btn.title = theme === "light" ? "Ativar dark mode" : "Ativar light mode";
+      btn.setAttribute("aria-label", btn.title);
+    };
+    btn?.addEventListener("click", () => {
+      const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+      sync();
+    });
+    sync();
+  })();
+  </script>
+  {% if admin_layout %}
+  <script>
+  (() => {
+    const body = document.body;
+    const btn = document.getElementById("admin-mobile-menu");
+    const closeBtn = document.getElementById("admin-sidebar-close");
+    const backdrop = document.getElementById("admin-sidebar-backdrop");
+    const setOpen = (open) => {
+      body.classList.toggle("admin-sidebar-open", open);
+      if (backdrop) backdrop.hidden = !open;
+      if (btn) {
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+      }
+    };
+    const toggle = () => setOpen(!body.classList.contains("admin-sidebar-open"));
+    const close = () => setOpen(false);
+
+    btn?.addEventListener("click", toggle);
+    closeBtn?.addEventListener("click", close);
+    backdrop?.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+    document.querySelectorAll(".admin-sidebar a.admin-side-link").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.matchMedia("(max-width: 900px)").matches) close();
+      });
+    });
+  })();
+  </script>
+  {% endif %}
 </body>
 </html>

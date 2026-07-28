@@ -10,9 +10,14 @@
 
 <div class="card">
   <h2>Pontos por jogo</h2>
-  <p>Cada perna (ida e volta) pontua placar, vencedor e gols parciais.</p>
+  <p>Cada perna (ida e volta) pontua separadamente. Em um mesmo jogo as categorias não se somam todas de uma vez:</p>
+  <ul>
+    <li><strong>Placar</strong> — acertou o placar exato (mandante e visitante). Vale os pontos de placar; se o vencedor também bate, soma o de vencedor. Não soma gols parciais.</li>
+    <li><strong>Gols</strong> — se não foi placar exato, mas acertou só os gols do mandante <em>ou</em> só os do visitante, leva os pontos de gols daquela fase (um lado por jogo).</li>
+    <li><strong>Vencedor</strong> — acertou quem ganhou o jogo (ou o empate). Pode pontuar junto com gols parciais, ou sozinho se errou os dois placares.</li>
+  </ul>
   <table>
-    <thead><tr><th>Fase</th><th>Placar</th><th>Vencedor</th><th>Gols</th><th>Exato</th></tr></thead>
+    <thead><tr><th>Fase</th><th>Placar</th><th>Vencedor</th><th>Gols</th><th>Placar + vencedor</th></tr></thead>
     <tbody>
       <tr><td>Oitavas</td><td>10</td><td>7</td><td>5</td><td>17</td></tr>
       <tr><td>Quartas</td><td>14</td><td>10</td><td>7</td><td>24</td></tr>
@@ -24,19 +29,54 @@
 
 <div class="card">
   <h2>Pênaltis (igual Copa do Mundo)</h2>
-  <p>Se o agregado empatar e for a pênaltis, vale quem você apontou para passar — mesmo que tenha palpitado vitória no tempo (ex.: 2×0) ou empate + pênaltis.</p>
+  <p>Se o agregado da chave empatar e for a pênaltis, vale quem você apontou para passar — mesmo que tenha palpitado vitória no tempo (ex.: 2×0) ou empate + pênaltis.</p>
 </div>
 
 <div class="card">
-  <h2>Bônus de fidelidade</h2>
-  <p>Média de três eixos (gols mandante, gols visitante, acertos de vencedor) × teto da fase (oitavas 5, quartas 7, semis 9, final 12). A conta aparece na classificação.</p>
+  <h2>Pontuação bônus</h2>
+  <p>
+    Além dos pontos de cada jogo, entra um <strong>bônus</strong> que mede o quanto seus palpites,
+    no conjunto, ficaram próximos do que aconteceu de verdade. São três eixos:
+  </p>
+  <ol>
+    <li><strong>Gols mandante</strong> — soma dos gols de casa que você palpitou vs. a soma real.</li>
+    <li><strong>Gols visitante</strong> — mesma ideia para os gols de fora.</li>
+    <li><strong>Vencedor</strong> — quantos jogos você acertou o lado (ou empate), em relação ao total de jogos com placar oficial.</li>
+  </ol>
+  <p>
+    Cada eixo vira um índice de 0 a 1 (quanto mais perto do real, melhor). A média dos três
+    multiplica o teto da fase e o resultado é arredondado:
+  </p>
+  <p class="regras-formula">Pontuação bônus = arredondar( média dos 3 eixos × teto da fase )</p>
+  <table>
+    <thead><tr><th>Fase</th><th>Teto do bônus</th></tr></thead>
+    <tbody>
+      <tr><td>Oitavas</td><td>5</td></tr>
+      <tr><td>Quartas</td><td>7</td></tr>
+      <tr><td>Semis</td><td>9</td></tr>
+      <tr><td>Final</td><td>12</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Classificação</h2>
+  <ul>
+    <li><strong>Placar / Vencedor / Gols casa / Gols fora</strong> — totais acumulados dos jogos oficiais já lançados.</li>
+    <li><strong>Bônus</strong> — a pontuação bônus descrita acima.</li>
+    <li><strong>Pontos</strong> — Placar + Vencedor + Gols + Bônus (critério principal do ranking).</li>
+    <li><strong>Rodada</strong> — pontos ganhos desde a última rodada confirmada pelos admins.</li>
+    <li><strong>Movimento (▲/▼)</strong> — quantas posições subiu ou desceu desde a última rodada confirmada.</li>
+    <li><strong>Histórico</strong> — ao confirmar a rodada, a tabela daquele momento fica arquivada na Classificação (Ao vivo / Rodada 1 / Rodada 2…).</li>
+  </ul>
+  <p>As cores na tabela (campeão, zona alta, meio, risco) são só indicação visual, no estilo do Brasileirão (cerca de 20% no topo e 20% embaixo). Não há prêmio automático por zona.</p>
 </div>
 
 <div class="card">
   <h2>Ondas de palpite</h2>
   <ol>
     <li>Janela <strong>ida</strong>: só placares de ida.</li>
-    <li>Janela <strong>volta</strong>: ida congelada (seu palpite + oficial) + volta; pênaltis só se o agregado do seu palpite empatar.</li>
+    <li>Janela <strong>volta</strong>: ida congelada (seu palpite + oficial) + volta. Pênaltis só se <em>seu Ida + sua Volta</em> empatar; se não empatar, o time na frente no seu agregado é o seu “time dos pênaltis” implícito (vale no desfecho se a série real for a pênaltis).</li>
     <li>Janela <strong>fechado</strong>: sem edição.</li>
   </ol>
 </div>

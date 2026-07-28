@@ -140,6 +140,8 @@ def calcular_classificacao() -> list[dict]:
                         "penaltis_clube_id"
                     )
                     if pj_ida and pj_volta:
+                        # Seu agregado: se empatou usa pênaltis; senão o líder do agregado
+                        # é o "time dos pênaltis" implícito (como na Copa de um jogo).
                         palpite_cls = quem_classifica_agregado(
                             pj_ida["gols_mandante"],
                             pj_ida["gols_visitante"],
@@ -149,8 +151,6 @@ def calcular_classificacao() -> list[dict]:
                         )
                         if palpite_cls == real_cls:
                             pesos = pesos_para_fase(fase)
-                            # evita pontuar vencedor duas vezes se já veio do placar de perna
-                            # aqui é o desfecho do confronto via pênaltis
                             pts.vencedor += pesos.vencedor
 
         if jogos_realizados:
@@ -171,6 +171,7 @@ def calcular_classificacao() -> list[dict]:
         linhas.append(
             {
                 "participante": p["nome"],
+                "avatar_path": p.get("avatar_path"),
                 "placar": pts.placar,
                 "vencedor": pts.vencedor,
                 "gols_casa": pts.gols_casa,
@@ -187,13 +188,84 @@ def calcular_classificacao() -> list[dict]:
     linhas.sort(
         key=lambda r: (-r["soma"], -r["indice_fidelidade"], r["participante"].lower())
     )
+    total = len(linhas)
+    posicoes_ant = snapshot.get("posicoes") or {}
     for i, row in enumerate(linhas, start=1):
         row["posicao"] = i
+        row["zona"] = _zona_classificacao(i, total)
+        prev = posicoes_ant.get(row["participante"])
+        if prev is None:
+            row["movimento"] = None
+        else:
+            row["movimento"] = prev - i
     return linhas
 
 
-def snapshot_atual() -> dict:
-    linhas = calcular_classificacao()
+def faixa_zonas(total: int) -> int:
+    """Tamanho da faixa top/risco: regra de 3 com Brasileirão (4 em 20)."""
+    if total <= 0:
+        return 0
+    faixa = max(1, round(total * 4 / 20))
+    if faixa * 2 >= total and total >= 3:
+        faixa = max(1, total // 5) or 1
+    return faixa
+
+
+def _zona_classificacao(posicao: int, total: int) -> str:
+    """Zonas hipotéticas por regra de 3 com o Brasileirão (20 clubes).
+
+    No exemplo: top 4/20 (20%) e rebaixamento 4/20 (20%).
+    O 1º é sempre o campeão (amarelo); o restante da faixa do topo fica verde.
+    """
+    if total <= 0:
+        return ""
+    faixa = faixa_zonas(total)
+    if posicao == 1:
+        return "campeao"
+    if posicao <= faixa:
+        return "podio"
+    if posicao > total - faixa:
+        return "risco"
+    return "meio"
+
+
+def snapshot_atual(linhas: list[dict] | None = None) -> dict:
+    rows = linhas if linhas is not None else calcular_classificacao()
     return {
-        "somas": {r["participante"]: r["soma"] for r in linhas},
+        "somas": {r["participante"]: r["soma"] for r in rows},
+        "posicoes": {r["participante"]: r["posicao"] for r in rows},
     }
+
+
+_HIST_KEYS = (
+    "participante",
+    "avatar_path",
+    "placar",
+    "vencedor",
+    "gols_casa",
+    "gols_fora",
+    "fidelidade",
+    "soma",
+    "rod",
+    "posicao",
+    "zona",
+    "movimento",
+)
+
+
+def serializar_linhas_historico(linhas: list[dict]) -> list[dict]:
+    return [{k: r.get(k) for k in _HIST_KEYS} for r in linhas]
+
+
+def confirmar_rodada() -> dict:
+    """Arquiva a tabela atual e atualiza o baseline da próxima rodada."""
+    from src.db import append_rodada_historico, get_janela, get_meta, save_snapshot
+
+    linhas = calcular_classificacao()
+    hist = append_rodada_historico(
+        linhas=serializar_linhas_historico(linhas),
+        fase=get_meta("fase_atual", "oitavas") or "oitavas",
+        janela=get_janela(),
+    )
+    save_snapshot(snapshot_atual(linhas))
+    return hist

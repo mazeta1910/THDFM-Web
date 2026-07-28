@@ -1,0 +1,67 @@
+{% set path = request.url.path %}
+{% set on_admin = path.startswith('/admin') and path != '/admin/login' %}
+{% set on_palpites = participante_nav and path == '/p/' ~ participante_nav.token %}
+{% set on_conta = participante_nav and path == '/p/' ~ participante_nav.token ~ '/conta' %}
+{% set on_classificacao = path.startswith('/classificacao') %}
+{% set on_transparencia = path.startswith('/transparencia') %}
+{% set on_regras = path.startswith('/regras') %}
+{% set pend_n = admin_pendentes_count|default(0) %}
+
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="admin-brand">
+    <div class="admin-brand-top">
+      <strong>Painel de Admin — Bolão THDFM</strong>
+      <button type="button" class="admin-sidebar-close" id="admin-sidebar-close" aria-label="Fechar menu">×</button>
+    </div>
+    {% if participante_nav %}
+    <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}">
+      {% if participante_nav.avatar_path %}
+      <img class="admin-brand-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
+      {% else %}
+      <span class="admin-brand-avatar admin-brand-avatar-fallback">{{ admin_nome[:2]|upper }}</span>
+      {% endif %}
+      <span class="admin-brand-user-text">
+        <span class="admin-brand-name">{{ admin_nome }}</span>
+        <span class="admin-brand-hint">Minha conta / foto</span>
+      </span>
+    </a>
+    {% else %}
+    <span class="admin-brand-name-solo">{{ admin_nome }}</span>
+    {% endif %}
+  </div>
+  <nav class="admin-side-nav">
+    <details class="admin-menu-group" open data-group="competicao">
+      <summary class="admin-menu-summary">Competição</summary>
+      <div class="admin-menu-items">
+        <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">Classificação</a>
+        <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">Portal da Transparência</a>
+        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin and admin_sec == 'resultados' %}active{% endif %}" data-sec="resultados">Resultados</a>
+      </div>
+    </details>
+
+    <details class="admin-menu-group" open data-group="meu-bolao">
+      <summary class="admin-menu-summary">Meu Bolão</summary>
+      <div class="admin-menu-items">
+        {% if participante_nav and participante_nav.status == 'liberado' %}
+        <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+        {% else %}
+        <span class="admin-side-link admin-side-disabled" title="Liberação necessária">Meus Palpites</span>
+        {% endif %}
+      </div>
+    </details>
+
+    <details class="admin-menu-group" open data-group="participantes">
+      <summary class="admin-menu-summary">Participantes</summary>
+      <div class="admin-menu-items">
+        <a href="/admin?sec=cadastro" class="admin-side-link {% if on_admin and admin_sec == 'cadastro' %}active{% endif %}" data-sec="cadastro">Cadastro manual</a>
+        <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin and admin_sec == 'inscricoes' %}active{% endif %}" data-sec="inscricoes">
+          Inscrições
+          {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
+        </a>
+      </div>
+    </details>
+
+    <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">Regras</a>
+    <a class="admin-side-link admin-side-sair" href="/admin/logout">Sair</a>
+  </nav>
+</aside>

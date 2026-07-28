@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from src import db
-from src.admins import autenticar_admin
+from src.admins import autenticar_admin, list_admins
 from src.config import (
     AVATAR_EXTS,
     AVATAR_MAX_BYTES,
@@ -24,15 +24,19 @@ from src.config import (
     COMPROVANTE_MAX_BYTES,
     COMPROVANTES_DIR,
     EMBLEMAS_DIR,
+    FASES,
+    FASE_IDS,
     JANELAS,
+    PUBLIC_BASE_URL,
     ROOT_DIR,
     SECRET_KEY,
     TAXA_PIX,
     TAXA_VALOR_LABEL,
 )
-from src.ranking import calcular_classificacao, snapshot_atual
+from src.ranking import calcular_classificacao, confirmar_rodada, faixa_zonas
 from src.scoring import agregado_empatado
 from src.seed_data import emblema_url
+from src.transparencia import montar_portal
 
 load_dotenv(ROOT_DIR / ".env")
 
@@ -56,6 +60,9 @@ app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
+    from src.seed_demo import limpar_demo
+
+    limpar_demo()
 
 
 def admin_ok(request: Request) -> bool:
@@ -69,9 +76,27 @@ def admin_nome(request: Request) -> str:
 def render(request: Request, name: str, **ctx):
     token = request.session.get("participante_token")
     part_nav = db.get_participante_por_token(token) if token else None
-    ctx.setdefault("is_admin", admin_ok(request))
+    is_adm = admin_ok(request)
+    ctx.setdefault("is_admin", is_adm)
     ctx.setdefault("admin_nome", admin_nome(request))
+    # Admin logado: garante participante + sessão para conta/foto/palpites
+    if is_adm and not part_nav:
+        nome = admin_nome(request)
+        if nome:
+            db.garantir_participante_liberado(nome)
+            part_nav = db.get_participante_por_nome(nome)
+            if part_nav:
+                _remember_participante(request, part_nav["token"])
     ctx.setdefault("participante_nav", part_nav)
+    if is_adm and "admin_pendentes_count" not in ctx:
+        if "participantes" in ctx:
+            ctx["admin_pendentes_count"] = sum(
+                1 for p in ctx["participantes"] if p.get("status") != "liberado"
+            )
+        else:
+            ctx["admin_pendentes_count"] = sum(
+                1 for p in db.list_participantes() if p.get("status") != "liberado"
+            )
     return TEMPLATES.TemplateResponse(request, name, ctx)
 
 
@@ -93,9 +118,26 @@ def _taxa_ctx() -> dict:
     }
 
 
-@app.get("/", response_class=HTMLResponse)
+def _destino_entrada(request: Request) -> str:
+    """Para onde mandar quem abre / ou /home, conforme sessão."""
+    if admin_ok(request):
+        return "/admin"
+    token = request.session.get("participante_token")
+    if token:
+        part = db.get_participante_por_token(token)
+        if part:
+            return f"/p/{part['token']}"
+    return "/inscricao"
+
+
+@app.get("/")
+def raiz(request: Request):
+    return RedirectResponse(_destino_entrada(request), status_code=303)
+
+
+@app.get("/home")
 def home(request: Request):
-    return render(request, "home.html", janela=db.get_janela(), **_taxa_ctx())
+    return RedirectResponse(_destino_entrada(request), status_code=303)
 
 
 @app.get("/regras", response_class=HTMLResponse)
@@ -103,16 +145,64 @@ def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
 
 
+@app.get("/transparencia", response_class=HTMLResponse)
+def transparencia(request: Request):
+    fase = request.query_params.get("fase") or db.get_fase_atual()
+    if fase not in FASE_IDS:
+        fase = FASE_IDS[0]
+    perna = request.query_params.get("perna") or "ida"
+    if perna not in ("ida", "volta"):
+        perna = "ida"
+    tabelas = [t for t in montar_portal(fase) if t.get("perna") == perna]
+    return render(
+        request,
+        "transparencia.html",
+        fase=fase,
+        fases=FASES,
+        perna=perna,
+        tabelas=tabelas,
+    )
+
+
 @app.get("/classificacao", response_class=HTMLResponse)
 def classificacao(request: Request):
     if not admin_ok(request) and not request.session.get("participante_token"):
         return RedirectResponse("/inscricao", status_code=303)
+
+    historico = db.list_rodadas_historico()
+    rodada_param = (request.query_params.get("rodada") or "atual").strip()
+    rodada_sel = None
+    modo_historico = False
+
+    if rodada_param not in ("", "atual"):
+        try:
+            rid = int(rodada_param)
+        except ValueError:
+            rid = None
+        if rid is not None:
+            rodada_sel = db.get_rodada_historico(rid)
+        if not rodada_sel:
+            return RedirectResponse("/classificacao", status_code=303)
+        linhas = rodada_sel["linhas"]
+        modo_historico = True
+        fase = rodada_sel["fase"]
+        janela = rodada_sel["janela"]
+    else:
+        linhas = calcular_classificacao()
+        fase = db.get_meta("fase_atual", "oitavas")
+        janela = db.get_janela()
+
     return render(
         request,
         "classificacao.html",
-        linhas=calcular_classificacao(),
-        janela=db.get_janela(),
-        fase=db.get_meta("fase_atual", "oitavas"),
+        linhas=linhas,
+        zona_faixa=faixa_zonas(len(linhas)),
+        janela=janela,
+        fase=fase,
+        historico=historico,
+        modo_historico=modo_historico,
+        rodada_atual_id=rodada_sel["id"] if rodada_sel else None,
+        rodada_sel=rodada_sel,
     )
 
 
@@ -123,6 +213,7 @@ def inscricao_get(request: Request):
         "inscricao.html",
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
+        sucesso=request.query_params.get("sucesso") == "1",
         **_taxa_ctx(),
     )
 
@@ -131,11 +222,22 @@ def inscricao_get(request: Request):
 async def inscricao_post(
     request: Request,
     nome: str = Form(...),
+    celular: str = Form(...),
     comprovante: UploadFile = File(...),
 ):
     nome = nome.strip()
     if not nome:
         return RedirectResponse("/inscricao?erro=Informe+seu+nome", status_code=303)
+    if nome.casefold() == "daniel":
+        return TEMPLATES.TemplateResponse(request, "acesso_proibido.html", {})
+
+    try:
+        celular_ok = db.normalizar_celular(celular)
+    except ValueError:
+        return RedirectResponse(
+            "/inscricao?erro=Informe+um+celular+valido+com+DDD",
+            status_code=303,
+        )
 
     filename = comprovante.filename or ""
     ext = Path(filename).suffix.lower()
@@ -152,10 +254,10 @@ async def inscricao_post(
         return RedirectResponse("/inscricao?erro=Arquivo+maior+que+5MB", status_code=303)
 
     try:
-        part = db.criar_participante(nome, status="pendente")
+        part = db.criar_participante(nome, status="pendente", celular=celular_ok)
     except Exception:
         return RedirectResponse(
-            "/inscricao?erro=Nome+ja+cadastrado.+Use+seu+link+ou+fale+com+o+admin",
+            "/inscricao?erro=Nome+ja+cadastrado.+Fale+com+o+admin",
             status_code=303,
         )
 
@@ -165,10 +267,7 @@ async def inscricao_post(
     dest.write_bytes(data)
     db.salvar_comprovante(part["id"], rel)
 
-    return RedirectResponse(
-        f"/p/{part['token']}?msg=Comprovante+enviado.+Aguarde+liberacao",
-        status_code=303,
-    )
+    return RedirectResponse("/inscricao?sucesso=1", status_code=303)
 
 
 @app.get("/p/{token}", response_class=HTMLResponse)
@@ -189,12 +288,24 @@ def pagina_palpites(request: Request, token: str):
         )
 
     palpites = db.palpites_do_participante(part["id"])
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
     return render(
         request,
         "palpites.html",
         participante=part,
         janela=db.get_janela(),
-        confrontos=_enrich_confrontos(db.list_confrontos_completos()),
+        fase_atual=fase_atual,
+        fases=fases_ui,
+        confrontos=_enrich_confrontos(db.list_confrontos_completos(fase_atual)),
         palpites_jogo=palpites["jogos"],
         palpites_pen=palpites["penaltis"],
         msg=request.query_params.get("msg"),
@@ -261,7 +372,7 @@ async def conta_salvar(
 @app.post("/conta/sair")
 def conta_sair(request: Request):
     request.session.pop("participante_token", None)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/inscricao", status_code=303)
 
 
 @app.post("/p/{token}/comprovante")
@@ -381,6 +492,9 @@ def admin_login(
     request.session["admin_login"] = admin.login
     request.session["admin_nome"] = admin.nome
     request.session.pop("admin", None)  # legado
+    # Admin também palpita: garante participante liberado e liga a sessão
+    part = db.garantir_participante_liberado(admin.nome)
+    _remember_participante(request, part["token"])
     return RedirectResponse("/admin", status_code=303)
 
 
@@ -390,23 +504,50 @@ def admin_logout(request: Request):
     request.session.pop("admin_login", None)
     request.session.pop("admin_nome", None)
     request.session.pop("admin", None)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/inscricao", status_code=303)
 
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_home(request: Request):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
+    # Garante palpites para todos os admins (Mazeta, Ramos, João JEC, …)
+    for admin in list_admins():
+        db.garantir_participante_liberado(admin.nome)
+    nome = admin_nome(request)
+    if nome:
+        part = db.get_participante_por_nome(nome)
+        if part:
+            _remember_participante(request, part["token"])
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
+    confrontos_por_fase = {
+        f["id"]: _enrich_confrontos(db.list_confrontos_completos(f["id"]))
+        for f in FASES
+    }
     return render(
         request,
         "admin.html",
         janela=db.get_janela(),
         janelas=JANELAS,
-        confrontos=_enrich_confrontos(db.list_confrontos_completos()),
+        fase_atual=fase_atual,
+        fases=fases_ui,
+        confrontos_por_fase=confrontos_por_fase,
         participantes=db.list_participantes(),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
-        base_url=str(request.base_url).rstrip("/"),
+        base_url=base,
+        inscricao_url=f"{base}/inscricao",
+        public_url_configurada=bool(PUBLIC_BASE_URL),
         **_taxa_ctx(),
     )
 
@@ -432,6 +573,25 @@ def admin_liberar(request: Request, participante_id: int = Form(...)):
     return RedirectResponse("/admin?msg=Inscricao+liberada", status_code=303)
 
 
+@app.post("/admin/apagar")
+def admin_apagar(request: Request, participante_id: int = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.apagar_participante(participante_id)
+    if not part:
+        return RedirectResponse("/admin?erro=Participante+nao+encontrado", status_code=303)
+    for key, folder in (
+        ("comprovante_path", COMPROVANTES_DIR),
+        ("avatar_path", AVATARES_DIR),
+    ):
+        rel = part.get(key)
+        if rel:
+            path = folder / rel
+            if path.is_file():
+                path.unlink(missing_ok=True)
+    return RedirectResponse("/admin?msg=Inscricao+apagada", status_code=303)
+
+
 @app.post("/admin/recusar")
 def admin_recusar(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
@@ -455,17 +615,38 @@ def admin_janela(request: Request, janela: str = Form(...)):
     return RedirectResponse(f"/admin?msg=Janela+{janela}", status_code=303)
 
 
+@app.post("/admin/fase")
+def admin_fase(request: Request, fase: str = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    try:
+        db.set_fase_atual(fase)
+    except ValueError:
+        return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
+    return RedirectResponse(f"/admin?msg=Fase+{fase}", status_code=303)
+
+
 @app.post("/admin/participante")
 def admin_participante(
     request: Request,
     nome: str = Form(...),
+    celular: str = Form(""),
     ja_pago: str = Form(""),
 ):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
     status = "liberado" if ja_pago == "1" else "pendente"
+    celular_ok = None
+    if celular.strip():
+        try:
+            celular_ok = db.normalizar_celular(celular)
+        except ValueError:
+            return RedirectResponse(
+                "/admin?erro=Celular+invalido",
+                status_code=303,
+            )
     try:
-        db.criar_participante(nome, status=status)
+        db.criar_participante(nome, status=status, celular=celular_ok)
     except Exception as exc:
         return RedirectResponse(f"/admin?erro={exc}", status_code=303)
     return RedirectResponse("/admin?msg=Participante+criado", status_code=303)
@@ -486,9 +667,41 @@ def admin_resultado(
     return RedirectResponse("/admin?msg=Resultado+salvo", status_code=303)
 
 
+@app.post("/admin/resultados")
+async def admin_resultados(request: Request):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    form = await request.form()
+    fase = str(form.get("fase") or db.get_fase_atual())
+    if fase not in FASE_IDS:
+        return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
+    confrontos = db.list_confrontos_completos(fase)
+    salvos = 0
+    try:
+        for c in confrontos:
+            for jogo in c.get("jogos") or []:
+                jid = jogo["id"]
+                gm = form.get(f"jogo_{jid}_m")
+                gv = form.get(f"jogo_{jid}_v")
+                if gm is None or gv is None or str(gm) == "" or str(gv) == "":
+                    continue
+                pen_raw = form.get(f"jogo_{jid}_pen") or ""
+                pen = pen_raw if pen_raw in ("a", "b") else None
+                db.set_resultado_jogo(jid, int(gm), int(gv), pen)
+                salvos += 1
+    except ValueError:
+        return RedirectResponse("/admin?erro=Placar+invalido", status_code=303)
+    if salvos == 0:
+        return RedirectResponse("/admin?erro=Nenhum+resultado+para+salvar", status_code=303)
+    return RedirectResponse(f"/admin?msg={salvos}+resultado(s)+salvo(s)", status_code=303)
+
+
 @app.post("/admin/confirmar-rodada")
 def admin_confirmar_rodada(request: Request):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
-    db.save_snapshot(snapshot_atual())
-    return RedirectResponse("/admin?msg=Rodada+confirmada", status_code=303)
+    hist = confirmar_rodada()
+    return RedirectResponse(
+        f"/admin?msg=Rodada+{hist['numero']}+confirmada+e+arquivada",
+        status_code=303,
+    )

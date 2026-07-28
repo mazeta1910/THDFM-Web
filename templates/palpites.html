@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Palpites — {{ participante.nome }}{% endblock %}
+{% block wrap_class %}wide{% endblock %}
 {% block content %}
-<p class="badge">Janela: {{ janela }}</p>
-<h1>{{ participante.nome }}</h1>
+<p class="badge">Janela: {{ janela|capitalize }} · Fase: {{ fase_atual }}</p>
+<h1>Olá, {{ participante.nome }}!</h1>
+<p>Faça aqui os seus palpites.</p>
 {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
 {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
@@ -10,104 +12,225 @@
 <p class="erro">Palpites fechados no momento.</p>
 {% endif %}
 
-<form method="post" action="/p/{{ participante.token }}/salvar" id="form-palpites">
-  {% for c in confrontos %}
-    {% set ida = c.ida %}
-    {% set volta = c.volta %}
-    {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
-    {% set p_volta = palpites_jogo.get(volta.id) if volta else none %}
-    {% set p_pen = palpites_pen.get(c.id) %}
-    <section class="card" data-confronto="{{ c.id }}">
-      <h2>
-        <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</span>
-        x
-        <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</span>
-      </h2>
-
-      {% if janela == 'ida' and ida %}
-        <p>Ida — mandante: <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</span></p>
-        <div class="score-row">
-          <div>
-            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</label>
-            <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" required />
-          </div>
-          <div class="x">x</div>
-          <div>
-            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</label>
-            <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" required />
-          </div>
-        </div>
-      {% endif %}
-
-      {% if janela == 'volta' and ida and volta %}
-        <div class="ref-grid">
-          <div class="ref">
-            <strong>Seu palpite (ida)</strong>
-            {% if p_ida %}
-              {{ c.clube_a }} {{ p_ida.gols_mandante }} x {{ p_ida.gols_visitante }} {{ c.clube_b }}
-            {% else %}
-              (não enviado)
-            {% endif %}
-          </div>
-          <div class="ref">
-            <strong>Placar oficial (ida)</strong>
-            {% if ida.gols_mandante is not none %}
-              {{ c.clube_a }} {{ ida.gols_mandante }} x {{ ida.gols_visitante }} {{ c.clube_b }}
-            {% else %}
-              (ainda não lançado)
-            {% endif %}
-          </div>
-        </div>
-        <p>Volta — mandante: <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</span></p>
-        <div class="score-row">
-          <div>
-            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</label>
-            <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
-              data-ida-a="{{ p_ida.gols_mandante if p_ida else '' }}"
-              data-ida-b="{{ p_ida.gols_visitante if p_ida else '' }}"
-              value="{{ p_volta.gols_mandante if p_volta else '' }}" required />
-          </div>
-          <div class="x">x</div>
-          <div>
-            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</label>
-            <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
-              value="{{ p_volta.gols_visitante if p_volta else '' }}" required />
-          </div>
-        </div>
-        <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
-          <p style="grid-column:1/-1;margin:0.2rem 0">Agregado empatado — quem passa nos pênaltis?</p>
-          <label>
-            <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} />
-            <img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" /> {{ c.clube_a }}
-          </label>
-          <label>
-            <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} />
-            <img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" /> {{ c.clube_b }}
-          </label>
-        </div>
-      {% endif %}
-
-      {% if janela == 'fechado' %}
-        <p>
-          Ida:
-          {% if p_ida %}{{ p_ida.gols_mandante }} x {{ p_ida.gols_visitante }}{% else %}—{% endif %}
-          · Volta:
-          {% if p_volta %}{{ p_volta.gols_mandante }} x {{ p_volta.gols_visitante }}{% else %}—{% endif %}
-          {% if p_pen %} · Pênaltis: {{ c.clube_a if p_pen.penaltis_clube_id == 'a' else c.clube_b }}{% endif %}
-        </p>
-      {% endif %}
-    </section>
+<div class="transparencia-nav" id="palpites-nav" role="navigation" aria-label="Fase e perna">
+  {% for f in fases %}
+  <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
+    <button
+      type="button"
+      class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
+      data-fase="{{ f.id }}"
+    >{{ f.label }}</button>
+    <div class="transparencia-nav-pernas">
+      <button
+        type="button"
+        data-fase="{{ f.id }}"
+        data-tab="ida"
+        class="{% if f.ativa and janela != 'volta' %}active{% endif %}"
+      >Jogo 1 (Ida)</button>
+      <button
+        type="button"
+        data-fase="{{ f.id }}"
+        data-tab="volta"
+        class="{% if f.ativa and janela == 'volta' %}active{% endif %}"
+      >Jogo 2 (Volta)</button>
+    </div>
+  </div>
   {% endfor %}
+</div>
 
-  {% if janela != 'fechado' %}
-  <div class="sticky-save">
-    <button type="submit">Salvar palpites</button>
+{% for f in fases %}
+<div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">
+
+  {% if not f.unlocked %}
+  <div class="card palpites-card locked-card">
+    <p class="locked-msg" style="margin:0">Os admins ainda não liberaram esta fase.</p>
+    <div class="match-grid locked-grid" style="margin-top:0.85rem">
+      {% for _ in range(f.slots) %}
+      <div class="match-cell locked">
+        <div class="match-teams">
+          <div class="match-team-row">
+            <span>A definir</span>
+            <input type="number" disabled placeholder="—" />
+          </div>
+          <div class="match-team-row">
+            <span>A definir</span>
+            <input type="number" disabled placeholder="—" />
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% elif f.ativa %}
+  <form method="post" action="/p/{{ participante.token }}/salvar" id="form-palpites" class="card palpites-card">
+    <div class="match-panel {% if janela == 'volta' %}hidden{% endif %}" data-panel="ida">
+      {% if not confrontos %}
+      <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+      {% else %}
+      <div class="match-grid">
+        {% for c in confrontos %}
+        {% set ida = c.ida %}
+        {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
+        {% if ida %}
+        <div class="match-cell" data-confronto="{{ c.id }}">
+          <div class="match-teams">
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              <span>{{ c.clube_a }}</span>
+              <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
+            </div>
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              <span>{{ c.clube_b }}</span>
+              <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="match-panel {% if janela != 'volta' %}hidden{% endif %}" data-panel="volta">
+      {% if not confrontos %}
+      <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+      {% else %}
+      <div class="match-grid">
+        {% for c in confrontos %}
+        {% set ida = c.ida %}
+        {% set volta = c.volta %}
+        {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
+        {% set p_volta = palpites_jogo.get(volta.id) if volta else none %}
+        {% set p_pen = palpites_pen.get(c.id) %}
+        {% if volta %}
+        <div class="match-cell" data-confronto="{{ c.id }}">
+          <div class="match-ref">
+            <span class="match-ref-line">
+              Seu palpite (Ida):
+              {% if p_ida %}
+              <span class="match-ref-score">
+                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                <strong>{{ p_ida.gols_mandante }}</strong>
+                <span class="match-ref-x">x</span>
+                <strong>{{ p_ida.gols_visitante }}</strong>
+                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              </span>
+              {% else %}
+              —
+              {% endif %}
+            </span>
+            <span class="match-ref-line match-ref-oficial">
+              Resultado Oficial (Ida):
+              {% if ida and ida.gols_mandante is not none %}
+              <span class="match-ref-score">
+                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                <strong>{{ ida.gols_mandante }}</strong>
+                <span class="match-ref-x">x</span>
+                <strong>{{ ida.gols_visitante }}</strong>
+                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              </span>
+              {% else %}
+              —
+              {% endif %}
+            </span>
+          </div>
+          <div class="match-teams">
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              <span>{{ c.clube_b }}</span>
+              <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
+                data-ida-a="{{ p_ida.gols_mandante if p_ida else '' }}"
+                data-ida-b="{{ p_ida.gols_visitante if p_ida else '' }}"
+                value="{{ p_volta.gols_mandante if p_volta else '' }}"
+                {% if janela != 'volta' %}readonly{% endif %} />
+            </div>
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              <span>{{ c.clube_a }}</span>
+              <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
+                value="{{ p_volta.gols_visitante if p_volta else '' }}"
+                {% if janela != 'volta' %}readonly{% endif %} />
+            </div>
+          </div>
+          <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
+            <p class="pen-group-title">Empate no agregado. Quem passa nos pênaltis?</p>
+            <div class="pen-group-choices">
+              <label class="pen-choice">
+                <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
+                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                <span>{{ c.clube_a }}</span>
+              </label>
+              <label class="pen-choice">
+                <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
+                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                <span>{{ c.clube_b }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if janela != 'fechado' %}
+    <div class="sticky-save">
+      <button type="submit">Salvar todos os palpites</button>
+    </div>
+    {% endif %}
+  </form>
+
+  {% else %}
+  <div class="card palpites-card">
+    <p class="locked-msg" style="margin:0">Fase liberada anteriormente. Os palpites ativos estão em <strong>{{ fase_atual }}</strong>.</p>
   </div>
   {% endif %}
-</form>
+
+</div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}
+<script>
+(() => {
+  const nav = document.getElementById("palpites-nav");
+  if (!nav) return;
+
+  const showFasePerna = (fase, perna) => {
+    nav.querySelectorAll(".transparencia-nav-col").forEach((col) => {
+      const on = col.dataset.faseCol === fase;
+      col.classList.toggle("is-active", on);
+      col.querySelector(".transparencia-nav-fase")?.classList.toggle("active", on);
+      col.querySelectorAll("[data-tab]").forEach((b) => {
+        b.classList.toggle("active", on && b.dataset.tab === perna);
+      });
+    });
+    document.querySelectorAll("[data-fase-panel]").forEach((panel) => {
+      const on = panel.dataset.fasePanel === fase;
+      panel.classList.toggle("hidden", !on);
+      if (!on) return;
+      panel.querySelectorAll(".match-panel").forEach((mp) => {
+        mp.classList.toggle("hidden", mp.dataset.panel !== perna);
+      });
+    });
+  };
+
+  nav.querySelectorAll("button[data-fase]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const fase = btn.dataset.fase;
+      let perna = btn.dataset.tab;
+      if (!perna) {
+        const cur = nav.querySelector(".transparencia-nav-col.is-active [data-tab].active");
+        perna = cur?.dataset.tab || "ida";
+      }
+      showFasePerna(fase, perna);
+    });
+  });
+})();
+</script>
 {% if janela == 'volta' %}
 <script src="/static/palpites.js"></script>
 {% endif %}
