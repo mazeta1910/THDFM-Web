@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{% block title %}Bolão THDFM — CdB{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-left">
+      {% if participante_nav %}
+        {% if participante_nav.status == 'liberado' %}
+        <a href="/p/{{ participante_nav.token }}" class="{% if request.url.path == '/p/' + participante_nav.token %}active{% endif %}">Palpites</a>
+        <a href="/classificacao" class="{% if request.url.path.startswith('/classificacao') %}active{% endif %}">Classificação</a>
+        {% else %}
+        <a href="/p/{{ participante_nav.token }}" class="{% if request.url.path.startswith('/p/') %}active{% endif %}">Inscrição</a>
+        {% endif %}
+        <a href="/regras" class="{% if request.url.path.startswith('/regras') %}active{% endif %}">Regras</a>
+      {% else %}
+        <a href="/inscricao" class="{% if request.url.path.startswith('/inscricao') %}active{% endif %}">Inscrição</a>
+        <a href="/regras" class="{% if request.url.path.startswith('/regras') %}active{% endif %}">Regras</a>
+      {% endif %}
+
+      {% if is_admin %}
+        <a href="/admin" class="{% if request.url.path.startswith('/admin') and request.url.path != '/admin/login' %}active{% endif %}">Admin</a>
+      {% elif not participante_nav %}
+        <a href="/admin/login" class="{% if request.url.path.startswith('/admin') %}active{% endif %}">Admin</a>
+      {% endif %}
+    </div>
+    <div class="nav-right">
+      {% if participante_nav %}
+      <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in request.url.path %}active{% endif %}">
+        {% if participante_nav.avatar_path %}
+        <img class="nav-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
+        {% endif %}
+        Conta
+      </a>
+      {% endif %}
+      {% if is_admin %}
+      <span class="nav-admin-nome">{{ admin_nome }}</span>
+      <a href="/admin/logout" class="nav-sair">Sair</a>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="wrap {% block wrap_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

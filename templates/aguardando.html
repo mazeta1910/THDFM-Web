@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Aguardando — {{ participante.nome }}{% endblock %}
+{% block content %}
+<p class="badge">status: {{ participante.status }}</p>
+<h1>{{ participante.nome }}</h1>
+{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+<div class="card">
+  {% if participante.status == 'comprovante' %}
+  <h2>Comprovante recebido</h2>
+  <p>Os admins vão conferir o pagamento da taxa ({{ taxa_valor_label }}) e liberar seus palpites.</p>
+  {% else %}
+  <h2>Inscrição pendente</h2>
+  <p>Pague <strong>{{ taxa_valor_label }}</strong> no PIX e envie o comprovante.</p>
+  {% endif %}
+  <p><strong>PIX:</strong> <code>{{ taxa_pix }}</code></p>
+</div>
+
+<div class="card">
+  <h2>Enviar / atualizar comprovante</h2>
+  <form method="post" action="/p/{{ participante.token }}/comprovante" enctype="multipart/form-data">
+    <input type="file" name="comprovante" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required />
+    <button type="submit">Enviar comprovante</button>
+  </form>
+</div>
+
+<p style="font-size:0.85rem">Guarde este link: ele será o seu acesso aos palpites após a liberação.</p>
+{% endblock %}

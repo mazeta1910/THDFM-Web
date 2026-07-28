@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Palpites — {{ participante.nome }}{% endblock %}
+{% block content %}
+<p class="badge">Janela: {{ janela }}</p>
+<h1>{{ participante.nome }}</h1>
+{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+{% if janela == 'fechado' %}
+<p class="erro">Palpites fechados no momento.</p>
+{% endif %}
+
+<form method="post" action="/p/{{ participante.token }}/salvar" id="form-palpites">
+  {% for c in confrontos %}
+    {% set ida = c.ida %}
+    {% set volta = c.volta %}
+    {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
+    {% set p_volta = palpites_jogo.get(volta.id) if volta else none %}
+    {% set p_pen = palpites_pen.get(c.id) %}
+    <section class="card" data-confronto="{{ c.id }}">
+      <h2>
+        <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</span>
+        x
+        <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</span>
+      </h2>
+
+      {% if janela == 'ida' and ida %}
+        <p>Ida — mandante: <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</span></p>
+        <div class="score-row">
+          <div>
+            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</label>
+            <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" required />
+          </div>
+          <div class="x">x</div>
+          <div>
+            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</label>
+            <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" required />
+          </div>
+        </div>
+      {% endif %}
+
+      {% if janela == 'volta' and ida and volta %}
+        <div class="ref-grid">
+          <div class="ref">
+            <strong>Seu palpite (ida)</strong>
+            {% if p_ida %}
+              {{ c.clube_a }} {{ p_ida.gols_mandante }} x {{ p_ida.gols_visitante }} {{ c.clube_b }}
+            {% else %}
+              (não enviado)
+            {% endif %}
+          </div>
+          <div class="ref">
+            <strong>Placar oficial (ida)</strong>
+            {% if ida.gols_mandante is not none %}
+              {{ c.clube_a }} {{ ida.gols_mandante }} x {{ ida.gols_visitante }} {{ c.clube_b }}
+            {% else %}
+              (ainda não lançado)
+            {% endif %}
+          </div>
+        </div>
+        <p>Volta — mandante: <span class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</span></p>
+        <div class="score-row">
+          <div>
+            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" />{{ c.clube_b }}</label>
+            <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
+              data-ida-a="{{ p_ida.gols_mandante if p_ida else '' }}"
+              data-ida-b="{{ p_ida.gols_visitante if p_ida else '' }}"
+              value="{{ p_volta.gols_mandante if p_volta else '' }}" required />
+          </div>
+          <div class="x">x</div>
+          <div>
+            <label class="team"><img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" />{{ c.clube_a }}</label>
+            <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
+              value="{{ p_volta.gols_visitante if p_volta else '' }}" required />
+          </div>
+        </div>
+        <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
+          <p style="grid-column:1/-1;margin:0.2rem 0">Agregado empatado — quem passa nos pênaltis?</p>
+          <label>
+            <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} />
+            <img class="emblema" src="{{ emblema_url(c.clube_a) }}" alt="" /> {{ c.clube_a }}
+          </label>
+          <label>
+            <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} />
+            <img class="emblema" src="{{ emblema_url(c.clube_b) }}" alt="" /> {{ c.clube_b }}
+          </label>
+        </div>
+      {% endif %}
+
+      {% if janela == 'fechado' %}
+        <p>
+          Ida:
+          {% if p_ida %}{{ p_ida.gols_mandante }} x {{ p_ida.gols_visitante }}{% else %}—{% endif %}
+          · Volta:
+          {% if p_volta %}{{ p_volta.gols_mandante }} x {{ p_volta.gols_visitante }}{% else %}—{% endif %}
+          {% if p_pen %} · Pênaltis: {{ c.clube_a if p_pen.penaltis_clube_id == 'a' else c.clube_b }}{% endif %}
+        </p>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  {% if janela != 'fechado' %}
+  <div class="sticky-save">
+    <button type="submit">Salvar palpites</button>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if janela == 'volta' %}
+<script src="/static/palpites.js"></script>
+{% endif %}
+{% endblock %}

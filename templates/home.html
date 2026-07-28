@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Início — Bolão THDFM CdB{% endblock %}
+{% block content %}
+<p class="badge">Janela: {{ janela }}</p>
+<h1>Bolão THDFM<br/>Copa do Brasil</h1>
+<p>Taxa de inscrição: <strong>{{ taxa_valor_label }}</strong> (PIX). Depois da liberação, palpites pelo link pessoal.</p>
+<div class="card">
+  <h2>Portal</h2>
+  <p><a class="btn" href="/inscricao">Quero me inscrever</a></p>
+  <p style="margin-top:0.6rem"><a class="btn secondary" href="/classificacao">Ver classificação</a></p>
+  <p style="margin-top:0.6rem"><a class="btn secondary" href="/regras">Regras e pontuação</a></p>
+</div>
+<p style="font-size:0.85rem">Já tem link? Abra o que recebeu no WhatsApp.</p>
+{% endblock %}

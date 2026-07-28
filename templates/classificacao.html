@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Classificação — Bolão THDFM{% endblock %}
+{% block content %}
+<p class="badge">{{ fase }} · janela {{ janela }}</p>
+<h1>Classificação</h1>
+<p>Atualizada conforme os placares oficiais. Toque em uma linha para ver o bônus de fidelidade.</p>
+
+<div class="card" style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nome</th>
+        <th>P</th>
+        <th>V</th>
+        <th>G</th>
+        <th>Fid</th>
+        <th>Soma</th>
+        <th>Rod</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in linhas %}
+      <tr>
+        <td>{{ r.posicao }}</td>
+        <td>
+          {{ r.participante }}
+          {% if r.fidelidade_detalhe %}
+          <details>
+            <summary>fidelidade</summary>
+            Casa {{ r.fidelidade_detalhe.previsto_casa }}/{{ r.fidelidade_detalhe.real_casa }}
+            ({{ '%.0f'|format(r.fidelidade_detalhe.f_gols_casa * 100) }}%) ·
+            Fora {{ r.fidelidade_detalhe.previsto_fora }}/{{ r.fidelidade_detalhe.real_fora }}
+            ({{ '%.0f'|format(r.fidelidade_detalhe.f_gols_fora * 100) }}%) ·
+            Venc {{ r.fidelidade_detalhe.acertos_vencedor }}/{{ r.fidelidade_detalhe.jogos }}
+            ({{ '%.0f'|format(r.fidelidade_detalhe.f_vencedor * 100) }}%) ·
+            índice {{ '%.2f'|format(r.fidelidade_detalhe.indice) }} × teto {{ r.fidelidade_detalhe.teto }}
+            = <strong>{{ r.fidelidade_detalhe.bonus }} pts</strong>
+          </details>
+          {% endif %}
+        </td>
+        <td>{{ r.placar }}</td>
+        <td>{{ r.vencedor }}</td>
+        <td>{{ r.gols }}</td>
+        <td>{{ r.fidelidade }}</td>
+        <td><strong>{{ r.soma }}</strong></td>
+        <td>{{ r.rod }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8">Sem participantes ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p style="font-size:0.8rem">P = placar · V = vencedor · G = gols · Fid = bônus fidelidade · Rod = desde a última rodada confirmada</p>
+{% endblock %}

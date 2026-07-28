@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Admin — Bolão THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<p class="badge">Janela atual: {{ janela }} · logado como {{ admin_nome }}</p>
+<h1>Painel admin</h1>
+{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+<div class="card" style="padding-top:0;overflow:hidden">
+  <div class="fase-bar">Oitavas de final — resultados</div>
+  <div class="perna-tabs">
+    <button type="button" class="active" data-tab="ida">Jogo 1 (ida)</button>
+    <button type="button" data-tab="volta">Jogo 2 (volta)</button>
+  </div>
+
+  <div class="match-panel" id="panel-ida">
+    <div class="match-grid">
+      {% for c in confrontos %}
+      {% if c.ida %}
+      <div class="match-cell">
+        <form method="post" action="/admin/resultado">
+          <input type="hidden" name="jogo_id" value="{{ c.ida.id }}" />
+          <input type="hidden" name="penaltis_clube_id" value="" />
+          <div class="match-teams">
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              <span>{{ c.clube_a }}</span>
+              <input type="number" min="0" name="gols_mandante" value="{{ c.ida.gols_mandante if c.ida.gols_mandante is not none else '' }}" required />
+            </div>
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              <span>{{ c.clube_b }}</span>
+              <input type="number" min="0" name="gols_visitante" value="{{ c.ida.gols_visitante if c.ida.gols_visitante is not none else '' }}" required />
+            </div>
+          </div>
+          <div class="match-side">
+            <button type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="match-panel hidden" id="panel-volta">
+    <div class="match-grid">
+      {% for c in confrontos %}
+      {% if c.volta %}
+      <div class="match-cell">
+        <form method="post" action="/admin/resultado">
+          <input type="hidden" name="jogo_id" value="{{ c.volta.id }}" />
+          <div class="match-teams">
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              <span>{{ c.clube_b }}</span>
+              <input type="number" min="0" name="gols_mandante" value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" required />
+            </div>
+            <div class="match-team-row">
+              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              <span>{{ c.clube_a }}</span>
+              <input type="number" min="0" name="gols_visitante" value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" required />
+            </div>
+          </div>
+          <div class="match-side">
+            <select name="penaltis_clube_id" title="Pênaltis">
+              <option value="">Pênaltis —</option>
+              <option value="a" {% if c.volta.penaltis_clube_id == 'a' %}selected{% endif %}>{{ c.clube_a }}</option>
+              <option value="b" {% if c.volta.penaltis_clube_id == 'b' %}selected{% endif %}>{{ c.clube_b }}</option>
+            </select>
+            <button type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Inscrições (taxa {{ taxa_valor_label }})</h2>
+  <p style="font-size:0.85rem">PIX: {{ taxa_pix }}</p>
+  {% for p in participantes %}
+  <div class="ref" style="margin-top:0.65rem">
+    <strong>{{ p.nome }}</strong>
+    <span class="status-pill {{ p.status }}">{{ p.status }}</span>
+    <div style="font-size:0.75rem;word-break:break-all;margin-top:0.25rem">
+      <code>{{ base_url }}/p/{{ p.token }}</code>
+    </div>
+    {% if p.comprovante_path %}
+    <p style="margin:0.4rem 0">
+      <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+      {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+    </p>
+    {% endif %}
+    {% if p.status != 'liberado' %}
+    <div class="admin-actions">
+      <form method="post" action="/admin/liberar">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <button type="submit">Liberar</button>
+      </form>
+      {% if p.comprovante_path %}
+      <form method="post" action="/admin/recusar">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <button type="submit" class="secondary">Recusar</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>Nenhuma inscrição ainda.</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>Janela de palpites</h2>
+  <form method="post" action="/admin/janela">
+    <select name="janela">
+      {% for j in janelas %}
+      <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Atualizar janela</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Cadastrar participante (manual)</h2>
+  <form method="post" action="/admin/participante">
+    <label>Nome THDFM</label>
+    <input type="text" name="nome" required placeholder="Nome no grupo" />
+    <label style="display:flex;align-items:center;gap:0.4rem;color:var(--text)">
+      <input type="checkbox" name="ja_pago" value="1" style="width:auto;margin:0" />
+      Já pagou — liberar na hora
+    </label>
+    <button type="submit">Criar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Rodada</h2>
+  <form method="post" action="/admin/confirmar-rodada">
+    <p>Confirma a rodada e zera a coluna Rod na próxima divulgação.</p>
+    <button type="submit">Confirmar rodada</button>
+  </form>
+  <form method="get" action="/admin/logout" style="margin-top:0.75rem">
+    <button type="submit" class="secondary">Sair do admin</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll(".perna-tabs button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".perna-tabs button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.getElementById("panel-ida").classList.toggle("hidden", tab !== "ida");
+    document.getElementById("panel-volta").classList.toggle("hidden", tab !== "volta");
+  });
+});
+</script>
+{% endblock %}

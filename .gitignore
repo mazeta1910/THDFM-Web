@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+venv/
+.env
+data/*.db
+data/ultimo/
+data/comprovantes/
+data/avatars/
+*.pyc
+.pytest_cache/
+.DS_Store
+smoke_test_out.txt

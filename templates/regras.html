@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Regras — Bolão THDFM{% endblock %}
+{% block content %}
+<h1>Regras e pontuação</h1>
+
+<div class="card">
+  <h2>Inscrição</h2>
+  <p>Taxa <strong>{{ taxa_valor_label }}</strong> via PIX (<code>{{ taxa_pix }}</code>). Envie o comprovante em <a href="/inscricao">/inscricao</a>; os admins liberam o acesso aos palpites.</p>
+</div>
+
+<div class="card">
+  <h2>Pontos por jogo</h2>
+  <p>Cada perna (ida e volta) pontua placar, vencedor e gols parciais.</p>
+  <table>
+    <thead><tr><th>Fase</th><th>Placar</th><th>Vencedor</th><th>Gols</th><th>Exato</th></tr></thead>
+    <tbody>
+      <tr><td>Oitavas</td><td>10</td><td>7</td><td>5</td><td>17</td></tr>
+      <tr><td>Quartas</td><td>14</td><td>10</td><td>7</td><td>24</td></tr>
+      <tr><td>Semis</td><td>18</td><td>13</td><td>9</td><td>31</td></tr>
+      <tr><td>Final</td><td>24</td><td>17</td><td>12</td><td>41</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Pênaltis (igual Copa do Mundo)</h2>
+  <p>Se o agregado empatar e for a pênaltis, vale quem você apontou para passar — mesmo que tenha palpitado vitória no tempo (ex.: 2×0) ou empate + pênaltis.</p>
+</div>
+
+<div class="card">
+  <h2>Bônus de fidelidade</h2>
+  <p>Média de três eixos (gols mandante, gols visitante, acertos de vencedor) × teto da fase (oitavas 5, quartas 7, semis 9, final 12). A conta aparece na classificação.</p>
+</div>
+
+<div class="card">
+  <h2>Ondas de palpite</h2>
+  <ol>
+    <li>Janela <strong>ida</strong>: só placares de ida.</li>
+    <li>Janela <strong>volta</strong>: ida congelada (seu palpite + oficial) + volta; pênaltis só se o agregado do seu palpite empatar.</li>
+    <li>Janela <strong>fechado</strong>: sem edição.</li>
+  </ol>
+</div>
+{% endblock %}
