@@ -48,7 +48,29 @@
         </div>
       </div>
 
-      <h2 style="margin:0 0 0.65rem;font-size:1.05rem">Placares oficiais</h2>
+      <div class="placares-head">
+        <h2>Placares oficiais</h2>
+        <div class="placares-actions">
+          <button type="button" class="secondary placares-action-btn" id="btn-confirmar-rodada" title="Arquiva a classificação e zera a coluna Rodada">Confirmar rodada</button>
+          <form
+            method="post"
+            action="/admin/zerar-resultados"
+            class="placares-zerar-form"
+            id="form-zerar-resultados"
+          >
+            <input type="hidden" name="fase" id="zerar-fase" value="{{ fase_atual }}" />
+            <input type="hidden" name="perna" id="zerar-perna" value="ida" />
+            <button type="button" class="secondary placares-action-btn" id="btn-zerar-resultados">Zerar resultados desta perna</button>
+          </form>
+          <button type="button" class="placares-save-fab" id="btn-salvar-placares" title="Salvar placares" aria-label="Salvar todos os placares">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+          </button>
+        </div>
+      </div>
       <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
         {% for f in fases %}
         <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
@@ -140,25 +162,53 @@
             <div class="match-grid">
               {% for c in confrontos %}
               {% if c.volta %}
-              <div class="match-cell">
+              <div class="match-cell" data-confronto-admin="{{ c.id }}" data-ida-jogo="{{ c.ida.id if c.ida else '' }}">
+                <div class="match-ref">
+                  <span class="match-ref-line match-ref-oficial">
+                    Resultado Oficial (Ida):
+                    {% if c.ida and c.ida.gols_mandante is not none %}
+                    <span class="match-ref-score">
+                      <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                      <strong>{{ c.ida.gols_mandante }}</strong>
+                      <span class="match-ref-x">x</span>
+                      <strong>{{ c.ida.gols_visitante }}</strong>
+                      <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                    </span>
+                    {% else %}
+                    —
+                    {% endif %}
+                  </span>
+                </div>
                 <div class="match-teams">
                   <div class="match-team-row">
                     <img src="{{ emblema_url(c.clube_b) }}" alt="" />
                     <span>{{ c.clube_b }}</span>
-                    <input type="number" min="0" name="jogo_{{ c.volta.id }}_m" value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" />
+                    <input class="volta-m" type="number" min="0" name="jogo_{{ c.volta.id }}_m"
+                      data-ida-a="{{ c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' }}"
+                      data-ida-b="{{ c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' }}"
+                      value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" />
                   </div>
                   <div class="match-team-row">
                     <img src="{{ emblema_url(c.clube_a) }}" alt="" />
                     <span>{{ c.clube_a }}</span>
-                    <input type="number" min="0" name="jogo_{{ c.volta.id }}_v" value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" />
+                    <input class="volta-v" type="number" min="0" name="jogo_{{ c.volta.id }}_v"
+                      value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" />
                   </div>
                 </div>
-                <div class="match-pen-row">
-                  <select name="jogo_{{ c.volta.id }}_pen" title="Pênaltis">
-                    <option value="">Pênaltis —</option>
-                    <option value="a" {% if c.volta.penaltis_clube_id == 'a' %}selected{% endif %}>{{ c.clube_a }}</option>
-                    <option value="b" {% if c.volta.penaltis_clube_id == 'b' %}selected{% endif %}>{{ c.clube_b }}</option>
-                  </select>
+                <div class="pen-group hidden" data-pen="{{ c.id }}">
+                  <p class="pen-group-title">Empate no agregado. Quem passa nos pênaltis?</p>
+                  <div class="pen-group-choices">
+                    <label class="pen-choice">
+                      <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="a" {% if c.volta.penaltis_clube_id == 'a' %}checked{% endif %} />
+                      <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                      <span>{{ c.clube_a }}</span>
+                    </label>
+                    <label class="pen-choice">
+                      <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="b" {% if c.volta.penaltis_clube_id == 'b' %}checked{% endif %} />
+                      <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                      <span>{{ c.clube_b }}</span>
+                    </label>
+                  </div>
                 </div>
               </div>
               {% endif %}
@@ -167,22 +217,11 @@
             {% endif %}
           </div>
 
-          <div class="sticky-save">
-            <button type="submit">Salvar todos os placares</button>
-          </div>
         </form>
         {% endif %}
 
       </div>
       {% endfor %}
-
-      <div class="card" style="max-width:420px;margin-top:1rem">
-        <h2>Confirmar rodada</h2>
-        <form method="post" action="/admin/confirmar-rodada">
-          <p>Arquiva a tabela atual no histórico da Classificação, zera a coluna Rodada e atualiza o baseline de movimento para a próxima divulgação.</p>
-          <button type="submit">Confirmar rodada</button>
-        </form>
-      </div>
     </section>
 
     <section class="admin-panel" data-panel="inscricoes">
@@ -297,6 +336,7 @@
 <form method="post" action="/admin/apagar" id="form-apagar" hidden>
   <input type="hidden" name="participante_id" id="apagar-id" value="" />
 </form>
+<form method="post" action="/admin/confirmar-rodada" id="form-confirmar-rodada" hidden></form>
 <div class="modal-backdrop" id="modal-apagar" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-apagar-title">
     <h3 id="modal-apagar-title">Excluir inscrição?</h3>
@@ -304,6 +344,28 @@
     <div class="modal-actions">
       <button type="button" class="secondary" id="modal-apagar-cancelar">Cancelar</button>
       <button type="button" class="danger" id="modal-apagar-confirmar">Excluir</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-zerar" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-zerar-title">
+    <h3 id="modal-zerar-title">Zerar resultados?</h3>
+    <p id="modal-zerar-texto" style="color:var(--muted);line-height:1.45;margin:0 0 1rem"></p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-zerar-cancelar">Cancelar</button>
+      <button type="button" class="danger" id="modal-zerar-confirmar">Zerar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-rodada" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-rodada-title">
+    <h3 id="modal-rodada-title">Confirmar rodada?</h3>
+    <p id="modal-rodada-texto" style="color:var(--muted);line-height:1.45;margin:0 0 1rem">
+      Arquiva a tabela atual no histórico da Classificação, zera a coluna Rodada e atualiza o baseline de movimento para a próxima divulgação.
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-rodada-cancelar">Cancelar</button>
+      <button type="button" id="modal-rodada-confirmar">Confirmar</button>
     </div>
   </div>
 </div>
@@ -372,7 +434,44 @@ document.querySelectorAll("[data-perna-tabs]").forEach((tabs) => {
 });
 
 const placaresNav = document.getElementById("admin-placares-nav");
+const formZerar = document.getElementById("form-zerar-resultados");
+const modalZerar = document.getElementById("modal-zerar");
+const zerarTexto = document.getElementById("modal-zerar-texto");
+if (modalZerar) document.body.appendChild(modalZerar);
+
+const abrirZerar = () => {
+  modalZerar?.removeAttribute("hidden");
+  modalZerar?.classList.add("is-open");
+};
+const fecharZerar = () => {
+  modalZerar?.classList.remove("is-open");
+  modalZerar?.setAttribute("hidden", "");
+};
+
 if (placaresNav) {
+  const zerarFase = document.getElementById("zerar-fase");
+  const zerarPerna = document.getElementById("zerar-perna");
+  const btnZerar = document.getElementById("btn-zerar-resultados");
+  const btnSalvar = document.getElementById("btn-salvar-placares");
+
+  const syncZerarForm = (fase, perna) => {
+    if (zerarFase) zerarFase.value = fase;
+    if (zerarPerna) zerarPerna.value = perna;
+    const label = perna === "volta" ? "Volta" : "Ida";
+    const jogo = perna === "volta" ? "2" : "1";
+    if (zerarTexto) {
+      zerarTexto.textContent =
+        `Isso apaga os placares oficiais de ${fase} — Jogo ${jogo} (${label}). Palpites dos participantes e o histórico de rodadas não são removidos.`;
+    }
+    if (btnZerar) {
+      btnZerar.textContent = `Zerar ${label} (${fase})`;
+    }
+    const form = document.querySelector(
+      `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
+    );
+    if (btnSalvar) btnSalvar.disabled = !form;
+  };
+
   const showFasePerna = (fase, perna) => {
     placaresNav.querySelectorAll(".transparencia-nav-col").forEach((col) => {
       const on = col.dataset.faseCol === fase;
@@ -390,6 +489,7 @@ if (placaresNav) {
         mp.classList.toggle("hidden", mp.dataset.panel !== perna);
       });
     });
+    syncZerarForm(fase, perna);
   };
 
   placaresNav.querySelectorAll("button[data-fase]:not([disabled])").forEach((btn) => {
@@ -403,7 +503,47 @@ if (placaresNav) {
       showFasePerna(fase, perna);
     });
   });
+
+  const initialCol = placaresNav.querySelector(".transparencia-nav-col.is-active");
+  const initialFase = initialCol?.dataset.faseCol || "{{ fase_atual }}";
+  const initialPerna =
+    initialCol?.querySelector("[data-tab].active")?.dataset.tab || "ida";
+  syncZerarForm(initialFase, initialPerna);
+
+  btnZerar?.addEventListener("click", abrirZerar);
+  document.getElementById("modal-zerar-cancelar")?.addEventListener("click", fecharZerar);
+  document.getElementById("modal-zerar-confirmar")?.addEventListener("click", () => formZerar?.submit());
+  modalZerar?.addEventListener("click", (e) => {
+    if (e.target === modalZerar) fecharZerar();
+  });
+
+  btnSalvar?.addEventListener("click", () => {
+    const fase = zerarFase?.value;
+    const form = document.querySelector(
+      `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
+    );
+    if (form?.requestSubmit) form.requestSubmit();
+    else form?.submit();
+  });
 }
+
+const formRodada = document.getElementById("form-confirmar-rodada");
+const modalRodada = document.getElementById("modal-rodada");
+if (modalRodada) document.body.appendChild(modalRodada);
+const abrirRodada = () => {
+  modalRodada?.removeAttribute("hidden");
+  modalRodada?.classList.add("is-open");
+};
+const fecharRodada = () => {
+  modalRodada?.classList.remove("is-open");
+  modalRodada?.setAttribute("hidden", "");
+};
+document.getElementById("btn-confirmar-rodada")?.addEventListener("click", abrirRodada);
+document.getElementById("modal-rodada-cancelar")?.addEventListener("click", fecharRodada);
+document.getElementById("modal-rodada-confirmar")?.addEventListener("click", () => formRodada?.submit());
+modalRodada?.addEventListener("click", (e) => {
+  if (e.target === modalRodada) fecharRodada();
+});
 const toastHost = document.getElementById("admin-toast-host");
 const showToast = (text, type = "ok") => {
   if (!toastHost || !text) return;
@@ -448,6 +588,50 @@ document.getElementById("modal-apagar-cancelar")?.addEventListener("click", fech
 document.getElementById("modal-apagar-confirmar")?.addEventListener("click", () => formApagar?.submit());
 modalApagar?.addEventListener("click", (e) => {
   if (e.target === modalApagar) fecharApagar();
+});
+
+function updateAdminPens(card) {
+  const m = card.querySelector(".volta-m");
+  const v = card.querySelector(".volta-v");
+  const pen = card.querySelector("[data-pen]");
+  if (!m || !v || !pen) return;
+  let idaA = m.dataset.idaA;
+  let idaB = m.dataset.idaB;
+  const idaJogo = card.dataset.idaJogo;
+  if (idaJogo) {
+    const form = card.closest("form");
+    const idaM = form?.querySelector(`input[name="jogo_${idaJogo}_m"]`);
+    const idaV = form?.querySelector(`input[name="jogo_${idaJogo}_v"]`);
+    if (idaM && idaM.value !== "") idaA = idaM.value;
+    if (idaV && idaV.value !== "") idaB = idaV.value;
+  }
+  if (idaA === "" || idaB === "" || m.value === "" || v.value === "") {
+    pen.classList.add("hidden");
+    pen.querySelectorAll("input").forEach((i) => (i.checked = false));
+    return;
+  }
+  const totalA = Number(idaA) + Number(v.value);
+  const totalB = Number(idaB) + Number(m.value);
+  if (totalA === totalB) {
+    pen.classList.remove("hidden");
+  } else {
+    pen.classList.add("hidden");
+    pen.querySelectorAll("input").forEach((i) => (i.checked = false));
+  }
+}
+
+document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
+  card.querySelectorAll(".volta-m, .volta-v").forEach((input) => {
+    input.addEventListener("input", () => updateAdminPens(card));
+  });
+  const idaJogo = card.dataset.idaJogo;
+  if (idaJogo) {
+    const form = card.closest("form");
+    form?.querySelectorAll(`input[name="jogo_${idaJogo}_m"], input[name="jogo_${idaJogo}_v"]`).forEach((input) => {
+      input.addEventListener("input", () => updateAdminPens(card));
+    });
+  }
+  updateAdminPens(card);
 });
 </script>
 {% endblock %}

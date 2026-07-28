@@ -416,6 +416,33 @@ def set_resultado_jogo(
         )
 
 
+def limpar_resultados_oficiais(*, fase: str, perna: str) -> int:
+    """Zera placares oficiais da fase+perna. Retorna quantos jogos foram afetados."""
+    if perna not in ("ida", "volta", "unico"):
+        raise ValueError("perna inválida")
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT j.id FROM jogos j "
+            "JOIN confrontos c ON c.id = j.confronto_id "
+            "WHERE c.fase = ? AND j.perna = ? "
+            "AND (j.gols_mandante IS NOT NULL OR j.gols_visitante IS NOT NULL "
+            "OR j.penaltis_clube_id IS NOT NULL)",
+            (fase, perna),
+        ).fetchall()
+        n = len(rows)
+        conn.execute(
+            "UPDATE jogos SET gols_mandante = NULL, gols_visitante = NULL, "
+            "penaltis_clube_id = NULL "
+            "WHERE id IN ("
+            "  SELECT j.id FROM jogos j "
+            "  JOIN confrontos c ON c.id = j.confronto_id "
+            "  WHERE c.fase = ? AND j.perna = ?"
+            ")",
+            (fase, perna),
+        )
+        return n
+
+
 def set_penaltis_oficiais_confronto(confronto_id: int, penaltis_clube_id: str | None) -> None:
     with get_db() as conn:
         row = conn.execute(

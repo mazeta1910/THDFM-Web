@@ -8,7 +8,8 @@
 
 <div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
-  <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %}">
+  <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}">
+    {% if f.unlocked %}
     <a
       href="/transparencia?fase={{ f.id }}&perna={{ perna if f.id == fase else 'ida' }}"
       class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
@@ -23,6 +24,13 @@
         class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
       >Jogo 2 (Volta)</a>
     </div>
+    {% else %}
+    <span class="transparencia-nav-fase is-disabled" title="Aguardando liberação desta fase">{{ f.label }}</span>
+    <div class="transparencia-nav-pernas">
+      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 1 (Ida)</span>
+      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 2 (Volta)</span>
+    </div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

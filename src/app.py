@@ -147,9 +147,27 @@ def regras(request: Request):
 
 @app.get("/transparencia", response_class=HTMLResponse)
 def transparencia(request: Request):
-    fase = request.query_params.get("fase") or db.get_fase_atual()
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
+
+    fase = request.query_params.get("fase") or fase_atual
     if fase not in FASE_IDS:
-        fase = FASE_IDS[0]
+        fase = fase_atual
+    # Fases futuras bloqueadas — igual Resultados / Meus Palpites
+    if FASE_IDS.index(fase) > fase_idx:
+        return RedirectResponse(
+            f"/transparencia?fase={fase_atual}&perna=ida",
+            status_code=303,
+        )
+
     perna = request.query_params.get("perna") or "ida"
     if perna not in ("ida", "volta"):
         perna = "ida"
@@ -158,7 +176,7 @@ def transparencia(request: Request):
         request,
         "transparencia.html",
         fase=fase,
-        fases=FASES,
+        fases=fases_ui,
         perna=perna,
         tabelas=tabelas,
     )
@@ -703,5 +721,28 @@ def admin_confirmar_rodada(request: Request):
     hist = confirmar_rodada()
     return RedirectResponse(
         f"/admin?msg=Rodada+{hist['numero']}+confirmada+e+arquivada",
+        status_code=303,
+    )
+
+
+@app.post("/admin/zerar-resultados")
+def admin_zerar_resultados(
+    request: Request,
+    fase: str = Form(...),
+    perna: str = Form(...),
+):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    if fase not in FASE_IDS:
+        return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
+    if perna not in ("ida", "volta"):
+        return RedirectResponse("/admin?erro=Perna+invalida", status_code=303)
+    try:
+        n = db.limpar_resultados_oficiais(fase=fase, perna=perna)
+    except ValueError:
+        return RedirectResponse("/admin?erro=Nao+foi+possivel+zerar", status_code=303)
+    label = "Ida" if perna == "ida" else "Volta"
+    return RedirectResponse(
+        f"/admin?msg={n}+placar(es)+zerado(s)+em+{fase}+({label})",
         status_code=303,
     )
