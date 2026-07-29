@@ -9,13 +9,25 @@
     try {
       var t = localStorage.getItem("thdfm-theme");
       if (t !== "light" && t !== "dark") t = "dark";
-      document.documentElement.setAttribute("data-theme", t);
+      var root = document.documentElement;
+      root.setAttribute("data-theme", t);
+      root.classList.add(t === "light" ? "theme-light" : "theme-dark");
+      root.style.backgroundColor = t === "light" ? "#ffffff" : "#0a0a0a";
+      root.style.color = t === "light" ? "#1a1a1a" : "#f2f2f2";
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute("content", t === "light" ? "#ffffff" : "#0a0a0a");
     } catch (e) {
       document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.classList.add("theme-dark");
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=59" />
+  <link rel="stylesheet" href="/static/style.css?v=77" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -24,9 +36,9 @@
 {% set on_regras = path.startswith('/regras') %}
 {% set on_inscricao = path.startswith('/inscricao') %}
 {% set on_palpites = participante_nav and path == '/p/' + participante_nav.token and '/conta' not in path %}
-{% set on_competicao = on_classificacao or on_transparencia %}
+{% set on_competicao = on_classificacao or on_transparencia or on_regras %}
 {% set on_meu_bolao = on_palpites %}
-<body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% endif %}">
+<body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% else %} site-body{% endif %}">
   {% if admin_layout %}
   {% set _sec = request.query_params.get('sec') or 'resultados' %}
   {% set admin_sec = 'resultados' if _sec in ['config', 'rodada', 'operacao'] else _sec %}
@@ -43,7 +55,7 @@
       {% include "partials/theme_toggle.html" %}
   {% else %}
   {% block site_nav %}
-  <nav>
+  <nav class="site-nav-desktop" id="site-header">
     <div class="nav-left">
       {% if participante_nav and participante_nav.status == 'liberado' %}
         <details class="nav-dropdown {% if on_competicao %}is-active{% endif %}">
@@ -51,6 +63,7 @@
           <div class="nav-dropdown-menu" role="menu">
             <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">Classificação</a>
             <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
           </div>
         </details>
         <details class="nav-dropdown {% if on_meu_bolao %}is-active{% endif %}">
@@ -59,15 +72,24 @@
             <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">Meus Palpites</a>
           </div>
         </details>
-        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
       {% elif participante_nav %}
         <a href="/p/{{ participante_nav.token }}" class="{% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}">Inscrição</a>
-        <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
-        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+        <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
+          <summary aria-haspopup="menu">Competição</summary>
+          <div class="nav-dropdown-menu" role="menu">
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+          </div>
+        </details>
       {% else %}
         <a href="/inscricao" class="{% if on_inscricao %}active{% endif %}">Inscrição</a>
-        <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
-        <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+        <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
+          <summary aria-haspopup="menu">Competição</summary>
+          <div class="nav-dropdown-menu" role="menu">
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+          </div>
+        </details>
       {% endif %}
     </div>
     <div class="nav-right">
@@ -105,32 +127,96 @@
   (function () {
     const KEY = "thdfm-theme";
     const root = document.documentElement;
+    const body = document.body;
     const btn = document.getElementById("theme-toggle");
-    const sync = () => {
-      const theme = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+
+    const applyThemeColor = (theme) => {
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute("content", theme === "light" ? "#ffffff" : "#0a0a0a");
+    };
+
+    const setTheme = (theme) => {
+      const next = theme === "light" ? "light" : "dark";
+      const bg = next === "light" ? "#ffffff" : "#0a0a0a";
+      const fg = next === "light" ? "#1a1a1a" : "#f2f2f2";
+      const card = next === "light" ? "#ffffff" : "#1a1a1a";
+      const border = next === "light" ? "#d0d0d0" : "#333333";
+      const muted = next === "light" ? "#5a5a5a" : "#9a9a9a";
+      const nav = next === "light" ? "#ffffff" : "#0a0a0a";
+      const accent = next === "light" ? "#c44d04" : "#e85d04";
+
+      root.setAttribute("data-theme", next);
+      root.classList.remove("theme-light", "theme-dark");
+      root.classList.add(next === "light" ? "theme-light" : "theme-dark");
+      body.classList.remove("theme-light", "theme-dark");
+      body.classList.add(next === "light" ? "theme-light" : "theme-dark");
+
+      // Força cores no mobile (alguns WebViews ignoram só data-theme)
+      root.style.backgroundColor = bg;
+      root.style.color = fg;
+      body.style.backgroundColor = bg;
+      body.style.color = fg;
+      root.style.setProperty("--bg", bg);
+      root.style.setProperty("--bg2", card);
+      root.style.setProperty("--card", card);
+      root.style.setProperty("--text", fg);
+      root.style.setProperty("--muted", muted);
+      root.style.setProperty("--border", border);
+      root.style.setProperty("--border-soft", next === "light" ? "#e8e8e8" : "#2a2a2a");
+      root.style.setProperty("--nav-bg", nav);
+      root.style.setProperty("--page-bg-color", bg);
+      root.style.setProperty("--hover-bg", next === "light" ? "#f5f5f5" : "#1a1a1a");
+      root.style.setProperty("--accent", accent);
+      root.style.setProperty("--modal-bg", card);
+      root.style.setProperty("--msg-bg", next === "light" ? "#fff4e5" : "#1f1408");
+      root.style.setProperty("--msg-border", next === "light" ? "#f0c080" : "#5a2e08");
+      root.style.setProperty("--erro-bg", next === "light" ? "#ffe8e8" : "#2a1010");
+      root.style.setProperty("--erro-border", next === "light" ? "#f0b0b0" : "#5a2020");
+
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+      applyThemeColor(next);
       if (!btn) return;
-      btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
-      btn.title = theme === "light" ? "Ativar dark mode" : "Ativar light mode";
+      btn.setAttribute("aria-pressed", next === "light" ? "true" : "false");
+      btn.title = next === "light" ? "Ativar dark mode" : "Ativar light mode";
       btn.setAttribute("aria-label", btn.title);
     };
-    btn?.addEventListener("click", () => {
-      const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-      root.setAttribute("data-theme", next);
-      try { localStorage.setItem(KEY, next); } catch (e) {}
-      sync();
-    });
-    sync();
 
-    const nav = document.querySelector("body > nav");
+    btn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setTheme(root.getAttribute("data-theme") === "light" ? "dark" : "light");
+    });
+    setTheme(root.getAttribute("data-theme") === "light" ? "light" : "dark");
+
+    const header = document.getElementById("site-header");
     const placeToggle = () => {
-      if (!nav || document.body.classList.contains("admin-body")) return;
-      root.style.setProperty("--site-header-offset", `${Math.ceil(nav.getBoundingClientRect().height)}px`);
+      if (body.classList.contains("admin-body") || !header) return;
+      root.style.setProperty("--site-header-offset", `${Math.ceil(header.getBoundingClientRect().height)}px`);
     };
     placeToggle();
     window.addEventListener("resize", placeToggle);
-    if (typeof ResizeObserver !== "undefined" && nav) {
-      new ResizeObserver(placeToggle).observe(nav);
+    if (typeof ResizeObserver !== "undefined" && header) {
+      new ResizeObserver(placeToggle).observe(header);
     }
+
+    const dropdowns = Array.from(document.querySelectorAll("nav.site-nav-desktop details.nav-dropdown"));
+    dropdowns.forEach((d) => {
+      d.addEventListener("toggle", () => {
+        if (!d.open) return;
+        dropdowns.forEach((other) => {
+          if (other !== d) other.open = false;
+        });
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("nav.site-nav-desktop details.nav-dropdown")) return;
+      dropdowns.forEach((d) => { d.open = false; });
+    });
   })();
   </script>
   {% if admin_layout %}
@@ -148,18 +234,15 @@
         btn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
       }
     };
-    const toggle = () => setOpen(!body.classList.contains("admin-sidebar-open"));
-    const close = () => setOpen(false);
-
-    btn?.addEventListener("click", toggle);
-    closeBtn?.addEventListener("click", close);
-    backdrop?.addEventListener("click", close);
+    btn?.addEventListener("click", () => setOpen(!body.classList.contains("admin-sidebar-open")));
+    closeBtn?.addEventListener("click", () => setOpen(false));
+    backdrop?.addEventListener("click", () => setOpen(false));
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") setOpen(false);
     });
     document.querySelectorAll(".admin-sidebar a.admin-side-link").forEach((link) => {
       link.addEventListener("click", () => {
-        if (window.matchMedia("(max-width: 900px)").matches) close();
+        if (window.matchMedia("(max-width: 900px)").matches) setOpen(false);
       });
     });
   })();

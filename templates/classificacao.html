@@ -28,104 +28,100 @@
 {% endif %}
 
 <div class="card classificacao-card">
-  <table class="classificacao-table">
-    <thead>
-      <tr>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Posição
-            <span class="col-tip-bubble" role="tooltip">Colocação no ranking. As setas ▲/▼ mostram quantas posições a pessoa subiu ou desceu desde a rodada anterior confirmada.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Participante
-            <span class="col-tip-bubble" role="tooltip">Nome e foto do participante liberado no bolão.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Placar
-            <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato dos jogos oficiais já lançados.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Vencedor
-            <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate) de cada jogo oficial.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Gols casa
-            <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante em cada jogo.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Gols fora
-            <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante em cada jogo.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip" tabindex="0">
-            Bônus
-            <span class="col-tip-bubble" role="tooltip">Pontuação bônus pela fidelidade dos palpites ao placar real (detalhes em Regras).</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip col-tip-end" tabindex="0">
-            Pontos
-            <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. É o critério principal do ranking.</span>
-          </span>
-        </th>
-        <th>
-          <span class="col-tip col-tip-end" tabindex="0">
-            Rodada
-            <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última vez que os admins confirmaram a rodada. Zera após a confirmação.{% endif %}</span>
-          </span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in linhas %}
-      {% set sou_eu = participante_nav and (
-        (r.participante_id is defined and r.participante_id == participante_nav.id)
-        or r.participante == participante_nav.nome
-      ) %}
-      <tr class="zona-{{ r.zona }}{% if sou_eu %} is-eu{% endif %}">
-        <td class="classificacao-pos">
-          <span class="pos-num">{{ r.posicao }}</span>
-          {% if r.movimento is not none and r.movimento != 0 %}
-          <span class="pos-mov {% if r.movimento > 0 %}up{% else %}down{% endif %}" title="{% if r.movimento > 0 %}Subiu {{ r.movimento }}{% else %}Desceu {{ -r.movimento }}{% endif %}">
-            {% if r.movimento > 0 %}▲{{ r.movimento }}{% else %}▼{{ -r.movimento }}{% endif %}
-          </span>
-          {% endif %}
-        </td>
-        <td>
-          <div class="classificacao-part">
-            {% if r.avatar_path %}
-            <img class="classificacao-avatar" src="/avatars/{{ r.avatar_path }}" alt="" />
-            {% else %}
-            <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
-            {% endif %}
-            <span class="classificacao-nome">{{ r.participante }}</span>
-            {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
-          </div>
-        </td>
-        <td>{{ r.placar }}</td>
-        <td>{{ r.vencedor }}</td>
-        <td>{{ r.gols_casa }}</td>
-        <td>{{ r.gols_fora }}</td>
-        <td>{{ r.fidelidade }}</td>
-        <td><strong>{{ r.soma }}</strong></td>
-        <td class="classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="9">Sem participantes ainda.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="classificacao-scroll">
+    <table class="classificacao-table">
+      <thead>
+        <tr>
+          <th class="col-player">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Participante</span><span class="th-short">Jogador</span>
+              <span class="col-tip-bubble" role="tooltip">Colocação, foto e nome. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada.</span>
+            </span>
+          </th>
+          <th class="col-num col-pts">
+            <span class="col-tip col-tip-end" tabindex="0">
+              <span class="th-full">Pontos</span><span class="th-short">Pts</span>
+              <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus.</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip col-tip-end" tabindex="0">
+              <span class="th-full">Rodada</span><span class="th-short">Rod</span>
+              <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %}</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Placar</span><span class="th-short">Plc</span>
+              <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato.</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Vencedor</span><span class="th-short">Ven</span>
+              <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate).</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Gols casa</span><span class="th-short">GC</span>
+              <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante.</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Gols fora</span><span class="th-short">GF</span>
+              <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante.</span>
+            </span>
+          </th>
+          <th class="col-num">
+            <span class="col-tip" tabindex="0">
+              <span class="th-full">Bônus</span><span class="th-short">Bôn</span>
+              <span class="col-tip-bubble" role="tooltip">Bônus de fidelidade dos palpites (detalhes em Regras).</span>
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in linhas %}
+        {% set sou_eu = participante_nav and (
+          (r.participante_id is defined and r.participante_id == participante_nav.id)
+          or r.participante == participante_nav.nome
+        ) %}
+        <tr class="zona-{{ r.zona }}{% if sou_eu %} is-eu{% endif %}">
+          <td class="col-player">
+            <div class="classificacao-player">
+              <div class="classificacao-pos">
+                <span class="pos-num">{{ r.posicao }}</span>
+                {% if r.movimento is not none and r.movimento != 0 %}
+                <span class="pos-mov {% if r.movimento > 0 %}up{% else %}down{% endif %}" title="{% if r.movimento > 0 %}Subiu {{ r.movimento }}{% else %}Desceu {{ -r.movimento }}{% endif %}">
+                  {% if r.movimento > 0 %}▲{{ r.movimento }}{% else %}▼{{ -r.movimento }}{% endif %}
+                </span>
+                {% endif %}
+              </div>
+              {% if r.avatar_path %}
+              <img class="classificacao-avatar" src="/avatars/{{ r.avatar_path }}" alt="" />
+              {% else %}
+              <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
+              {% endif %}
+              <span class="classificacao-nome">{{ r.participante }}</span>
+              {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
+            </div>
+          </td>
+          <td class="col-num col-pts"><strong>{{ r.soma }}</strong></td>
+          <td class="col-num classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
+          <td class="col-num">{{ r.placar }}</td>
+          <td class="col-num">{{ r.vencedor }}</td>
+          <td class="col-num">{{ r.gols_casa }}</td>
+          <td class="col-num">{{ r.gols_fora }}</td>
+          <td class="col-num">{{ r.fidelidade }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">Sem participantes ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% if linhas %}
@@ -141,6 +137,7 @@
 <p class="classificacao-zona-hint">
   Regra de 3 com o Brasileirão (4 em 20 ≈ 20% no topo e 20% embaixo). Com {{ linhas|length }} participante(s): 1 campeão · {% if zona_faixa > 1 %}{{ zona_faixa - 1 }} zona alta · {% endif %}{{ zona_faixa }} zona de risco.
   {% if not modo_historico %} O movimento (▲/▼) compara com a última rodada confirmada. Ao confirmar a rodada, a tabela é arquivada neste histórico.{% endif %}
+  No celular, deslize a tabela para o lado — posição, foto e nome ficam fixos.
 </p>
 {% endif %}
 <div class="col-tip-host" id="col-tip-host" hidden></div>

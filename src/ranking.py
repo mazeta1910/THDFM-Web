@@ -271,3 +271,33 @@ def confirmar_rodada() -> dict:
     )
     save_snapshot(snapshot_atual(linhas))
     return hist
+
+
+def desfazer_ultima_rodada() -> dict:
+    """Remove a última rodada confirmada e restaura o baseline anterior."""
+    from src.db import (
+        clear_snapshot,
+        delete_rodada_historico,
+        get_ultima_rodada_historico,
+        list_rodadas_historico,
+        save_snapshot,
+    )
+
+    ultima = get_ultima_rodada_historico()
+    if not ultima:
+        raise ValueError("Nenhuma rodada confirmada para desfazer")
+
+    if not delete_rodada_historico(int(ultima["id"])):
+        raise ValueError("Não foi possível remover a rodada")
+
+    restantes = list_rodadas_historico()
+    if restantes:
+        anterior = get_ultima_rodada_historico()
+        if anterior and anterior.get("linhas"):
+            save_snapshot(snapshot_atual(anterior["linhas"]))
+        else:
+            clear_snapshot()
+    else:
+        clear_snapshot()
+
+    return ultima

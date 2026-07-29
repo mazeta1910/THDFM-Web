@@ -1,36 +1,88 @@
 {% extends "base.html" %}
 {% block title %}Conta — {{ participante.nome }}{% endblock %}
 {% block content %}
-<p class="badge">{{ participante.status }}</p>
-<h1>Sua conta</h1>
-{% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
-{% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+<div class="conta-page">
+  <p class="badge">{{ participante.status }}</p>
+  <h1>Sua conta</h1>
+  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
-<div class="card conta-card">
-  <div class="avatar-preview">
-    {% if participante.avatar_path %}
-    <img src="/avatars/{{ participante.avatar_path }}" alt="Sua foto" />
-    {% else %}
-    <div class="avatar-placeholder">{{ participante.nome[:2]|upper }}</div>
-    {% endif %}
+  <div class="card conta-card">
+    <form method="post" action="/p/{{ participante.token }}/conta" enctype="multipart/form-data" class="conta-form" id="form-conta">
+      <div class="conta-top">
+        <div class="avatar-preview">
+          {% if participante.avatar_path %}
+          <img id="avatar-live" src="/avatars/{{ participante.avatar_path }}" alt="Sua foto" />
+          {% else %}
+          <div class="avatar-placeholder" id="avatar-live">{{ participante.nome[:2]|upper }}</div>
+          {% endif %}
+        </div>
+        <div class="conta-fields">
+          <label class="conta-label" for="conta-nome">Nome na THDFM</label>
+          <input id="conta-nome" class="conta-input" type="text" name="nome" value="{{ participante.nome }}" required autocomplete="nickname" />
+
+          <label class="conta-label" for="conta-avatar">Foto de perfil</label>
+          <p class="conta-hint">JPG, PNG ou WebP — máx. 3 MB</p>
+          <label class="file-pick conta-file-pick" for="conta-avatar">
+            <input id="conta-avatar" type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden />
+            <span class="file-pick-btn" title="Escolher foto" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </span>
+            <span class="file-pick-name" id="conta-file-name">Nenhuma foto escolhida</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-save-icon" title="Salvar" aria-label="Salvar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
+        </svg>
+      </button>
+    </form>
   </div>
-  <form method="post" action="/p/{{ participante.token }}/conta" enctype="multipart/form-data">
-    <label>Nome na THDFM</label>
-    <input type="text" name="nome" value="{{ participante.nome }}" required />
-    <label>Foto (jpg/png/webp — máx. 3 MB)</label>
-    <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" />
-    <button type="submit">Salvar</button>
-  </form>
+
+  <div class="conta-actions">
+    {% if participante.status == 'liberado' %}
+    <a class="btn secondary" href="/p/{{ participante.token }}">Ir para palpites</a>
+    {% else %}
+    <a class="btn secondary" href="/p/{{ participante.token }}">Ver status da inscrição</a>
+    {% endif %}
+
+    <form method="post" action="/conta/sair" class="conta-sair-form">
+      <button type="submit" class="secondary">Sair desta conta neste aparelho</button>
+    </form>
+    <p class="conta-sair-hint">Isso só esquece o link neste navegador. Guarde seu link pessoal para voltar.</p>
+  </div>
 </div>
+{% endblock %}
 
-{% if participante.status == 'liberado' %}
-<p><a class="btn secondary" href="/p/{{ participante.token }}">Ir para palpites</a></p>
-{% else %}
-<p><a class="btn secondary" href="/p/{{ participante.token }}">Ver status da inscrição</a></p>
-{% endif %}
+{% block scripts %}
+<script>
+(() => {
+  const input = document.getElementById("conta-avatar");
+  const nameEl = document.getElementById("conta-file-name");
+  const preview = document.querySelector(".avatar-preview");
+  if (!input || !nameEl || !preview) return;
 
-<form method="post" action="/conta/sair" style="margin-top:0.75rem">
-  <button type="submit" class="secondary">Sair desta conta neste aparelho</button>
-</form>
-<p style="font-size:0.8rem">Isso só esquece o link neste navegador. Guarde seu link pessoal para voltar.</p>
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    nameEl.textContent = file ? file.name : "Nenhuma foto escolhida";
+    if (!file || !file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    let img = preview.querySelector("img");
+    if (!img) {
+      preview.innerHTML = "";
+      img = document.createElement("img");
+      img.alt = "Prévia da foto";
+      preview.appendChild(img);
+    }
+    img.id = "avatar-live";
+    img.src = url;
+  });
+})();
+</script>
 {% endblock %}

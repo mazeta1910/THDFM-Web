@@ -33,7 +33,7 @@ from src.config import (
     TAXA_PIX,
     TAXA_VALOR_LABEL,
 )
-from src.ranking import calcular_classificacao, confirmar_rodada, faixa_zonas
+from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado
 from src.seed_data import emblema_url
 from src.transparencia import montar_portal
@@ -606,6 +606,7 @@ def admin_home(request: Request):
         fases=fases_ui,
         confrontos_por_fase=confrontos_por_fase,
         participantes=db.list_participantes(),
+        ultima_rodada=db.get_ultima_rodada_historico(),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         base_url=base,
@@ -766,6 +767,23 @@ def admin_confirmar_rodada(request: Request):
     hist = confirmar_rodada()
     return RedirectResponse(
         f"/admin?msg=Rodada+{hist['numero']}+confirmada+e+arquivada",
+        status_code=303,
+    )
+
+
+@app.post("/admin/desfazer-rodada")
+def admin_desfazer_rodada(request: Request):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    try:
+        hist = desfazer_ultima_rodada()
+    except ValueError as e:
+        return RedirectResponse(
+            f"/admin?erro={str(e).replace(' ', '+')}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin?msg={hist['rotulo'].replace(' ', '+')}+desfeita.+Classificacao+ao+vivo+restaurada",
         status_code=303,
     )
 

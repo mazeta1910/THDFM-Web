@@ -655,5 +655,30 @@ def get_rodada_historico(rodada_id: int) -> dict[str, Any] | None:
         return data
 
 
+def get_ultima_rodada_historico() -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, numero, rotulo, fase, janela, criado_em, payload "
+            "FROM rodadas_historico ORDER BY numero DESC LIMIT 1"
+        ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        payload = json.loads(data.pop("payload"))
+        data["linhas"] = payload.get("linhas") or []
+        return data
+
+
+def delete_rodada_historico(rodada_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM rodadas_historico WHERE id = ?", (rodada_id,))
+        return cur.rowcount > 0
+
+
+def clear_snapshot() -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM snapshot WHERE id = 1")
+
+
 def db_path() -> Path:
     return DB_PATH

@@ -11,8 +11,8 @@
 {% set pendentes = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
 
     <section class="admin-panel active" data-panel="resultados">
-      <div class="admin-grid-2" style="margin-bottom:1rem">
-        <div class="card card-with-tip">
+      <div class="admin-grid-2 admin-ops-grid" style="margin-bottom:1rem">
+        <div class="card card-with-tip admin-op-card">
           <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: janela de palpites">
             ?
             <span class="help-tip-bubble" role="tooltip">
@@ -20,16 +20,18 @@
             </span>
           </span>
           <h2>Janela de palpites</h2>
-          <form method="post" action="/admin/janela">
-            <select name="janela">
-              {% for j in janelas %}
-              <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j|capitalize }}</option>
-              {% endfor %}
-            </select>
-            <button type="submit">Atualizar janela</button>
+          <form method="post" action="/admin/janela" id="form-janela" class="admin-op-form">
+            <div class="select-wrap">
+              <select name="janela" id="select-janela">
+                {% for j in janelas %}
+                <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j|capitalize }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="button" id="btn-atualizar-janela">Atualizar janela</button>
           </form>
         </div>
-        <div class="card card-with-tip">
+        <div class="card card-with-tip admin-op-card">
           <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: fase liberada">
             ?
             <span class="help-tip-bubble" role="tooltip">
@@ -37,13 +39,15 @@
             </span>
           </span>
           <h2>Fase liberada</h2>
-          <form method="post" action="/admin/fase">
-            <select name="fase">
-              {% for f in fases %}
-              <option value="{{ f.id }}" {% if f.id == fase_atual %}selected{% endif %}>{{ f.label }}</option>
-              {% endfor %}
-            </select>
-            <button type="submit">Atualizar fase</button>
+          <form method="post" action="/admin/fase" id="form-fase" class="admin-op-form">
+            <div class="select-wrap">
+              <select name="fase" id="select-fase">
+                {% for f in fases %}
+                <option value="{{ f.id }}" {% if f.id == fase_atual %}selected{% endif %}>{{ f.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="button" id="btn-atualizar-fase">Atualizar fase</button>
           </form>
         </div>
       </div>
@@ -51,7 +55,6 @@
       <div class="placares-head">
         <h2>Placares oficiais</h2>
         <div class="placares-actions">
-          <button type="button" class="secondary placares-action-btn" id="btn-confirmar-rodada" title="Arquiva a classificação e zera a coluna Rodada">Confirmar rodada</button>
           <form
             method="post"
             action="/admin/zerar-resultados"
@@ -60,14 +63,39 @@
           >
             <input type="hidden" name="fase" id="zerar-fase" value="{{ fase_atual }}" />
             <input type="hidden" name="perna" id="zerar-perna" value="ida" />
-            <button type="button" class="secondary placares-action-btn" id="btn-zerar-resultados">Zerar resultados desta perna</button>
+            <button type="button" class="secondary placares-action-btn placares-btn-icon" id="btn-zerar-resultados">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+              <span id="btn-zerar-label">Zerar placares Ida (Oitavas)</span>
+            </button>
           </form>
-          <button type="button" class="placares-save-fab" id="btn-salvar-placares" title="Salvar placares" aria-label="Salvar todos os placares">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" id="btn-salvar-placares" title="Salvar placares" aria-label="Salvar todos os placares">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
+            <span>Salvar placares</span>
+          </button>
+          {% if ultima_rodada %}
+          <button type="button" class="secondary placares-action-btn placares-btn-icon" id="btn-desfazer-rodada" title="Remove a última rodada fechada do histórico">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            <span>Desfazer {{ ultima_rodada.rotulo }}</span>
+          </button>
+          {% endif %}
+          <button type="button" class="placares-action-btn placares-btn-icon placares-btn-fechar" id="btn-confirmar-rodada" title="Arquiva a classificação e zera a coluna Rodada">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+            <span>Fechar rodada</span>
           </button>
         </div>
       </div>
@@ -339,6 +367,7 @@
   <input type="hidden" name="participante_id" id="apagar-id" value="" />
 </form>
 <form method="post" action="/admin/confirmar-rodada" id="form-confirmar-rodada" hidden></form>
+<form method="post" action="/admin/desfazer-rodada" id="form-desfazer-rodada" hidden></form>
 <div class="modal-backdrop" id="modal-apagar" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-apagar-title">
     <h3 id="modal-apagar-title">Excluir inscrição?</h3>
@@ -361,16 +390,76 @@
 </div>
 <div class="modal-backdrop" id="modal-rodada" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-rodada-title">
-    <h3 id="modal-rodada-title">Confirmar rodada?</h3>
-    <p id="modal-rodada-texto" style="color:var(--muted);line-height:1.45;margin:0 0 1rem">
-      Arquiva a tabela atual no histórico da Classificação, zera a coluna Rodada e atualiza o baseline de movimento para a próxima divulgação.
-    </p>
+    <h3 id="modal-rodada-title">Fechar rodada agora?</h3>
+    <div class="confirm-alert">
+      <p><strong>Isso NÃO é só um salvamento.</strong> Ao confirmar:</p>
+      <ul>
+        <li>A tabela <strong>Ao vivo</strong> vira histórico (ex.: Rodada 1)</li>
+        <li>A coluna <strong>Rodada</strong> zera para todo mundo</li>
+        <li>O movimento ▲/▼ passa a contar a partir deste fechamento</li>
+      </ul>
+      <p class="confirm-alert-warn">Só faça isso quando for divulgar o ranking da rodada. Se for engano, dá para desfazer depois.</p>
+    </div>
     <div class="modal-actions">
       <button type="button" class="secondary" id="modal-rodada-cancelar">Cancelar</button>
-      <button type="button" id="modal-rodada-confirmar">Confirmar</button>
+      <button type="button" id="modal-rodada-confirmar">Sim, fechar rodada</button>
     </div>
   </div>
 </div>
+<div class="modal-backdrop" id="modal-janela" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-janela-title">
+    <h3 id="modal-janela-title">Mudar janela de palpites?</h3>
+    <div class="confirm-alert">
+      <p>Você vai mudar a janela para <strong id="modal-janela-valor">—</strong>.</p>
+      <ul>
+        <li><strong>Ida</strong> — só o jogo 1 pode ser editado</li>
+        <li><strong>Volta</strong> — ida congela; libera o jogo 2</li>
+        <li><strong>Fechado</strong> — ninguém edita mais palpites</li>
+      </ul>
+      <p class="confirm-alert-warn">Isso vale na hora para todos os participantes.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-janela-cancelar">Cancelar</button>
+      <button type="button" id="modal-janela-confirmar">Sim, atualizar janela</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-fase" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-fase-title">
+    <h3 id="modal-fase-title">Mudar fase liberada?</h3>
+    <div class="confirm-alert">
+      <p>Você vai liberar até <strong id="modal-fase-valor">—</strong>.</p>
+      <ul>
+        <li>Fases <strong>acima</strong> desta ficam bloqueadas (palpites e resultados)</li>
+        <li>Fases <strong>até</strong> esta ficam disponíveis</li>
+      </ul>
+      <p class="confirm-alert-warn">Só avance a fase quando a Copa realmente chegar lá — liberar cedo demais abre placares/palpites antes da hora.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-fase-cancelar">Cancelar</button>
+      <button type="button" id="modal-fase-confirmar">Sim, atualizar fase</button>
+    </div>
+  </div>
+</div>
+{% if ultima_rodada %}
+<div class="modal-backdrop" id="modal-desfazer-rodada" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-desfazer-rodada-title">
+    <h3 id="modal-desfazer-rodada-title">Desfazer {{ ultima_rodada.rotulo }}?</h3>
+    <div class="confirm-alert">
+      <p>Remove <strong>{{ ultima_rodada.rotulo }}</strong> do histórico da Classificação.</p>
+      <ul>
+        <li>A aba some da Classificação</li>
+        <li>A coluna Rodada/movimento volta ao estado anterior</li>
+      </ul>
+      <p class="confirm-alert-warn">Só é possível desfazer a <strong>última</strong> rodada fechada.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-desfazer-rodada-cancelar">Cancelar</button>
+      <button type="button" class="danger" id="modal-desfazer-rodada-confirmar">Desfazer</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 <div class="admin-toast-host" id="admin-toast-host" aria-live="polite"></div>
 <script>
 const TITLES = {
@@ -461,12 +550,19 @@ if (placaresNav) {
     if (zerarPerna) zerarPerna.value = perna;
     const label = perna === "volta" ? "Volta" : "Ida";
     const jogo = perna === "volta" ? "2" : "1";
+    const faseLabel = {
+      oitavas: "Oitavas",
+      quartas: "Quartas",
+      semi: "Semi",
+      final: "Final",
+    }[fase] || fase;
     if (zerarTexto) {
       zerarTexto.textContent =
-        `Isso apaga os placares oficiais de ${fase} — Jogo ${jogo} (${label}). Palpites dos participantes e o histórico de rodadas não são removidos.`;
+        `Isso apaga os placares oficiais de ${faseLabel} — Jogo ${jogo} (${label}). Palpites dos participantes e o histórico de rodadas não são removidos.`;
     }
-    if (btnZerar) {
-      btnZerar.textContent = `Zerar ${label} (${fase})`;
+    const zerarLabel = document.getElementById("btn-zerar-label");
+    if (zerarLabel) {
+      zerarLabel.textContent = `Zerar placares ${label} (${faseLabel})`;
     }
     const form = document.querySelector(
       `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
@@ -532,19 +628,61 @@ if (placaresNav) {
 const formRodada = document.getElementById("form-confirmar-rodada");
 const modalRodada = document.getElementById("modal-rodada");
 if (modalRodada) document.body.appendChild(modalRodada);
-const abrirRodada = () => {
-  modalRodada?.removeAttribute("hidden");
-  modalRodada?.classList.add("is-open");
+const abrirModal = (modal) => {
+  modal?.removeAttribute("hidden");
+  modal?.classList.add("is-open");
 };
-const fecharRodada = () => {
-  modalRodada?.classList.remove("is-open");
-  modalRodada?.setAttribute("hidden", "");
+const fecharModal = (modal) => {
+  modal?.classList.remove("is-open");
+  modal?.setAttribute("hidden", "");
 };
-document.getElementById("btn-confirmar-rodada")?.addEventListener("click", abrirRodada);
-document.getElementById("modal-rodada-cancelar")?.addEventListener("click", fecharRodada);
+document.getElementById("btn-confirmar-rodada")?.addEventListener("click", () => abrirModal(modalRodada));
+document.getElementById("modal-rodada-cancelar")?.addEventListener("click", () => fecharModal(modalRodada));
 document.getElementById("modal-rodada-confirmar")?.addEventListener("click", () => formRodada?.submit());
 modalRodada?.addEventListener("click", (e) => {
-  if (e.target === modalRodada) fecharRodada();
+  if (e.target === modalRodada) fecharModal(modalRodada);
+});
+
+const formJanela = document.getElementById("form-janela");
+const modalJanela = document.getElementById("modal-janela");
+const selectJanela = document.getElementById("select-janela");
+if (modalJanela) document.body.appendChild(modalJanela);
+document.getElementById("btn-atualizar-janela")?.addEventListener("click", () => {
+  const opt = selectJanela?.selectedOptions?.[0];
+  const el = document.getElementById("modal-janela-valor");
+  if (el) el.textContent = opt?.textContent?.trim() || selectJanela?.value || "—";
+  abrirModal(modalJanela);
+});
+document.getElementById("modal-janela-cancelar")?.addEventListener("click", () => fecharModal(modalJanela));
+document.getElementById("modal-janela-confirmar")?.addEventListener("click", () => formJanela?.submit());
+modalJanela?.addEventListener("click", (e) => {
+  if (e.target === modalJanela) fecharModal(modalJanela);
+});
+
+const formFase = document.getElementById("form-fase");
+const modalFase = document.getElementById("modal-fase");
+const selectFase = document.getElementById("select-fase");
+if (modalFase) document.body.appendChild(modalFase);
+document.getElementById("btn-atualizar-fase")?.addEventListener("click", () => {
+  const opt = selectFase?.selectedOptions?.[0];
+  const el = document.getElementById("modal-fase-valor");
+  if (el) el.textContent = opt?.textContent?.trim() || selectFase?.value || "—";
+  abrirModal(modalFase);
+});
+document.getElementById("modal-fase-cancelar")?.addEventListener("click", () => fecharModal(modalFase));
+document.getElementById("modal-fase-confirmar")?.addEventListener("click", () => formFase?.submit());
+modalFase?.addEventListener("click", (e) => {
+  if (e.target === modalFase) fecharModal(modalFase);
+});
+
+const formDesfazerRodada = document.getElementById("form-desfazer-rodada");
+const modalDesfazerRodada = document.getElementById("modal-desfazer-rodada");
+if (modalDesfazerRodada) document.body.appendChild(modalDesfazerRodada);
+document.getElementById("btn-desfazer-rodada")?.addEventListener("click", () => abrirModal(modalDesfazerRodada));
+document.getElementById("modal-desfazer-rodada-cancelar")?.addEventListener("click", () => fecharModal(modalDesfazerRodada));
+document.getElementById("modal-desfazer-rodada-confirmar")?.addEventListener("click", () => formDesfazerRodada?.submit());
+modalDesfazerRodada?.addEventListener("click", (e) => {
+  if (e.target === modalDesfazerRodada) fecharModal(modalDesfazerRodada);
 });
 const toastHost = document.getElementById("admin-toast-host");
 const showToast = (text, type = "ok") => {

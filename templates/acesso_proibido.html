@@ -3,33 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ACESSO PROIBIDO</title>
+  <title>ACESSO NEGADO</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       height: 100%;
-      background: #c40000;
-      overflow: hidden;
+      background: #111;
+      overflow: auto;
     }
     body {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1.25rem;
       font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+      padding: 1.5rem;
+      min-height: 100%;
+    }
+    img {
+      display: block;
+      width: min(420px, 92vw);
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
     }
     h1 {
-      color: #fff;
-      font-size: clamp(2.5rem, 14vw, 9rem);
-      letter-spacing: 0.06em;
+      color: #ff2d2d;
+      font-size: clamp(2rem, 10vw, 4.5rem);
+      letter-spacing: 0.08em;
       text-align: center;
       line-height: 1;
-      text-shadow: 0 4px 0 #7a0000;
-      padding: 1rem;
+      text-shadow: 0 3px 0 #5a0000;
       user-select: none;
     }
   </style>
 </head>
 <body>
-  <h1>ACESSO PROIBIDO</h1>
+  <img src="/static/daniel-acesso-negado.png" alt="NÃO DÊ NEM ÁGUA" />
+  <h1>ACESSO NEGADO</h1>
 </body>
 </html>
