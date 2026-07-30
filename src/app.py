@@ -671,16 +671,19 @@ def admin_home(request: Request):
     # Garante palpites para todos os admins — vínculo por login, não por nick
     token_atual = request.session.get("participante_token")
     login_atual = (request.session.get("admin_login") or "").strip().lower()
-    for admin in list_admins():
-        preferido = token_atual if admin.login == login_atual else None
-        db.garantir_participante_admin(
-            admin.login, admin.nome, token_preferido=preferido
-        )
-    if login_atual:
-        part = db.get_participante_por_admin_login(login_atual)
-        if part:
-            _remember_participante(request, part["token"])
-            request.session["admin_nome"] = part.get("nome") or admin_nome(request)
+    try:
+        for admin in list_admins():
+            preferido = token_atual if admin.login == login_atual else None
+            db.garantir_participante_admin(
+                admin.login, admin.nome, token_preferido=preferido
+            )
+        if login_atual:
+            part = db.get_participante_por_admin_login(login_atual)
+            if part:
+                _remember_participante(request, part["token"])
+                request.session["admin_nome"] = part.get("nome") or admin_nome(request)
+    except Exception:
+        pass
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
