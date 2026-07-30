@@ -115,32 +115,38 @@ def render(request: Request, name: str, **ctx):
         login = (request.session.get("admin_login") or "").strip().lower()
         nome_cfg = admin_nome(request)
         if login:
-            part_nav = db.garantir_participante_admin(
-                login,
-                nome_cfg,
-                token_preferido=(part_nav or {}).get("token") or token,
-            )
-            _remember_participante(request, part_nav["token"])
-            # Nick exibido = nome do participante (pode ter sido editado na Gestão)
-            ctx["admin_nome"] = part_nav.get("nome") or nome_cfg
+            try:
+                part_nav = db.garantir_participante_admin(
+                    login,
+                    nome_cfg,
+                    token_preferido=(part_nav or {}).get("token") or token,
+                )
+                _remember_participante(request, part_nav["token"])
+                ctx["admin_nome"] = part_nav.get("nome") or nome_cfg
+            except Exception:
+                # Não derruba o painel inteiro se a migração/vínculo falhar
+                ctx.setdefault("admin_nome", nome_cfg)
         else:
             ctx.setdefault("admin_nome", nome_cfg)
     else:
         ctx.setdefault("admin_nome", admin_nome(request))
     ctx.setdefault("participante_nav", part_nav)
     if is_adm and "admin_pendentes_count" not in ctx:
-        if "participantes" in ctx:
-            ctx["admin_pendentes_count"] = sum(
-                1
-                for p in ctx["participantes"]
-                if p.get("status") != "liberado" and not p.get("recusado_em")
-            )
-        else:
-            ctx["admin_pendentes_count"] = sum(
-                1
-                for p in db.list_participantes()
-                if p.get("status") != "liberado" and not p.get("recusado_em")
-            )
+        try:
+            if "participantes" in ctx:
+                ctx["admin_pendentes_count"] = sum(
+                    1
+                    for p in ctx["participantes"]
+                    if p.get("status") != "liberado" and not p.get("recusado_em")
+                )
+            else:
+                ctx["admin_pendentes_count"] = sum(
+                    1
+                    for p in db.list_participantes()
+                    if p.get("status") != "liberado" and not p.get("recusado_em")
+                )
+        except Exception:
+            ctx["admin_pendentes_count"] = 0
     return TEMPLATES.TemplateResponse(request, name, ctx)
 
 
