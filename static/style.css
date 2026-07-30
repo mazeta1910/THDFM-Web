@@ -2172,7 +2172,7 @@ body.admin-body .wrap.admin-wrap {
 .admin-menu-group + .admin-menu-group {
   margin-top: 0.45rem;
   padding-top: 0.35rem;
-  border-top: 1px solid #1c1c1c;
+  border-top: 1px solid var(--border-soft);
 }
 .admin-menu-summary {
   list-style: none;
@@ -2183,7 +2183,7 @@ body.admin-body .wrap.admin-wrap {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #666;
+  color: var(--muted);
   user-select: none;
   display: flex;
   align-items: center;
@@ -2203,8 +2203,16 @@ body.admin-body .wrap.admin-wrap {
 .admin-menu-summary::after {
   content: "▾";
   font-size: 0.75rem;
-  color: #555;
+  color: var(--muted);
+  opacity: 0.7;
   transition: transform 0.15s ease;
+}
+.admin-menu-group[data-group="admin"] > .admin-menu-summary {
+  color: var(--accent);
+}
+.admin-menu-group[data-group="admin"] > .admin-menu-summary .nav-ico {
+  opacity: 1;
+  color: var(--accent);
 }
 .admin-menu-group:not([open]) .admin-menu-summary::after {
   transform: rotate(-90deg);
