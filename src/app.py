@@ -110,15 +110,23 @@ def render(request: Request, name: str, **ctx):
     part_nav = db.get_participante_por_token(token) if token else None
     is_adm = admin_ok(request)
     ctx.setdefault("is_admin", is_adm)
-    ctx.setdefault("admin_nome", admin_nome(request))
-    # Admin logado: garante participante + sessão para conta/foto/palpites
-    if is_adm and not part_nav:
-        nome = admin_nome(request)
-        if nome:
-            db.garantir_participante_liberado(nome)
-            part_nav = db.get_participante_por_nome(nome)
-            if part_nav:
-                _remember_participante(request, part_nav["token"])
+    # Admin logado: garante participante pelo login (não pelo nick)
+    if is_adm:
+        login = (request.session.get("admin_login") or "").strip().lower()
+        nome_cfg = admin_nome(request)
+        if login:
+            part_nav = db.garantir_participante_admin(
+                login,
+                nome_cfg,
+                token_preferido=(part_nav or {}).get("token") or token,
+            )
+            _remember_participante(request, part_nav["token"])
+            # Nick exibido = nome do participante (pode ter sido editado na Gestão)
+            ctx["admin_nome"] = part_nav.get("nome") or nome_cfg
+        else:
+            ctx.setdefault("admin_nome", nome_cfg)
+    else:
+        ctx.setdefault("admin_nome", admin_nome(request))
     ctx.setdefault("participante_nav", part_nav)
     if is_adm and "admin_pendentes_count" not in ctx:
         if "participantes" in ctx:
@@ -476,6 +484,14 @@ async def conta_salvar(
     except Exception as exc:
         return RedirectResponse(f"/p/{token}/conta?erro={exc}", status_code=303)
 
+    # Se for o participante do admin logado, atualiza o nick da sessão
+    if (
+        admin_ok(request)
+        and (part.get("admin_login") or "").strip().lower()
+        == (request.session.get("admin_login") or "").strip().lower()
+    ):
+        request.session["admin_nome"] = nome.strip()
+
     if avatar is not None and getattr(avatar, "filename", None):
         ext = Path(avatar.filename or "").suffix.lower()
         if ext not in AVATAR_EXTS:
@@ -623,8 +639,12 @@ def admin_login(
     request.session["admin_login"] = admin.login
     request.session["admin_nome"] = admin.nome
     request.session.pop("admin", None)  # legado
-    # Admin também palpita: garante participante liberado e liga a sessão
-    part = db.garantir_participante_liberado(admin.nome)
+    # Admin também palpita: vínculo estável por login (não pelo nick)
+    token_atual = request.session.get("participante_token")
+    part = db.garantir_participante_admin(
+        admin.login, admin.nome, token_preferido=token_atual
+    )
+    request.session["admin_nome"] = part.get("nome") or admin.nome
     _remember_participante(request, part["token"])
     return RedirectResponse("/admin", status_code=303)
 
@@ -642,14 +662,19 @@ def admin_logout(request: Request):
 def admin_home(request: Request):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
-    # Garante palpites para todos os admins (Mazeta, Ramos, João JEC, …)
+    # Garante palpites para todos os admins — vínculo por login, não por nick
+    token_atual = request.session.get("participante_token")
+    login_atual = (request.session.get("admin_login") or "").strip().lower()
     for admin in list_admins():
-        db.garantir_participante_liberado(admin.nome)
-    nome = admin_nome(request)
-    if nome:
-        part = db.get_participante_por_nome(nome)
+        preferido = token_atual if admin.login == login_atual else None
+        db.garantir_participante_admin(
+            admin.login, admin.nome, token_preferido=preferido
+        )
+    if login_atual:
+        part = db.get_participante_por_admin_login(login_atual)
         if part:
             _remember_participante(request, part["token"])
+            request.session["admin_nome"] = part.get("nome") or admin_nome(request)
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
@@ -945,6 +970,12 @@ async def admin_atualizar_participante(
         return RedirectResponse(
             f"/admin?sec=participantes&erro={quote(str(exc))}", status_code=303
         )
+
+    if (
+        (part.get("admin_login") or "").strip().lower()
+        == (request.session.get("admin_login") or "").strip().lower()
+    ):
+        request.session["admin_nome"] = nome.strip()
 
     if remover_avatar == "1" and part.get("avatar_path"):
         old = AVATARES_DIR / part["avatar_path"]

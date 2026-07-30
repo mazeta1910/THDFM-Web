@@ -159,6 +159,12 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
             )
     if "recusado_em" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN recusado_em TEXT")
+    if "admin_login" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN admin_login TEXT")
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_admin_login "
+        "ON participantes(admin_login) WHERE admin_login IS NOT NULL AND admin_login != ''"
+    )
 
 
 def _migrate_jogos(conn: sqlite3.Connection) -> None:
@@ -248,7 +254,7 @@ def set_fase_atual(fase: str) -> None:
 
 _PARTICIPANTE_COLS = (
     "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
-    "avatar_path, celular, criado_em, link_enviado_em, recusado_em"
+    "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login"
 )
 
 
@@ -267,7 +273,11 @@ def list_participantes() -> list[dict[str, Any]]:
 
 
 def criar_participante(
-    nome: str, *, status: str = "pendente", celular: str | None = None
+    nome: str,
+    *,
+    status: str = "pendente",
+    celular: str | None = None,
+    admin_login: str | None = None,
 ) -> dict[str, Any]:
     nome = nome.strip()
     if not nome:
@@ -275,21 +285,23 @@ def criar_participante(
     if status not in ("pendente", "comprovante", "liberado"):
         raise ValueError("status inválido")
     celular_limpo = normalizar_celular(celular) if celular else None
+    login = (admin_login or "").strip().lower() or None
     token = secrets.token_urlsafe(16)
     with get_db() as conn:
-        liberado_sql = None
         if status == "liberado":
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status, liberado_em, celular, criado_em) "
-                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'), ?, datetime('now', 'localtime'))",
-                (nome, token, celular_limpo),
+                "INSERT INTO participantes "
+                "(nome, token, status, liberado_em, celular, criado_em, admin_login) "
+                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'), ?, "
+                "datetime('now', 'localtime'), ?)",
+                (nome, token, celular_limpo, login),
             )
-            liberado_sql = True
         else:
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status, celular, criado_em) "
-                "VALUES (?, ?, ?, ?, datetime('now', 'localtime'))",
-                (nome, token, status, celular_limpo),
+                "INSERT INTO participantes "
+                "(nome, token, status, celular, criado_em, admin_login) "
+                "VALUES (?, ?, ?, ?, datetime('now', 'localtime'), ?)",
+                (nome, token, status, celular_limpo, login),
             )
         return {
             "id": cur.lastrowid,
@@ -298,9 +310,10 @@ def criar_participante(
             "status": status,
             "comprovante_path": None,
             "comprovante_em": None,
-            "liberado_em": liberado_sql,
+            "liberado_em": status == "liberado",
             "celular": celular_limpo,
             "criado_em": None,
+            "admin_login": login,
         }
 
 
@@ -404,16 +417,91 @@ def get_participante_por_nome(nome: str) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
+def get_participante_por_admin_login(login: str) -> dict[str, Any] | None:
+    login = (login or "").strip().lower()
+    if not login:
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE admin_login = ?",
+            (login,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def vincular_admin_login(participante_id: int, login: str) -> None:
+    login = (login or "").strip().lower()
+    if not login:
+        raise ValueError("login vazio")
+    with get_db() as conn:
+        outro = conn.execute(
+            "SELECT id FROM participantes WHERE admin_login = ? AND id != ?",
+            (login, participante_id),
+        ).fetchone()
+        if outro:
+            conn.execute(
+                "UPDATE participantes SET admin_login = NULL WHERE id = ?",
+                (outro["id"],),
+            )
+        conn.execute(
+            "UPDATE participantes SET admin_login = ? WHERE id = ?",
+            (login, participante_id),
+        )
+
+
+def _garantir_liberado(part: dict[str, Any]) -> dict[str, Any]:
+    if part.get("status") != "liberado":
+        liberar_participante(part["id"])
+        part = get_participante(part["id"]) or part
+        part["status"] = "liberado"
+    return part
+
+
 def garantir_participante_liberado(nome: str) -> dict[str, Any]:
-    """Garante um participante liberado com esse nome (ex.: admin que também palpita)."""
+    """Compat: garante participante liberado só pelo nome (sem vínculo de admin)."""
     part = get_participante_por_nome(nome)
     if part:
-        if part.get("status") != "liberado":
-            liberar_participante(part["id"])
-            part = get_participante(part["id"]) or part
-            part["status"] = "liberado"
-        return part
+        return _garantir_liberado(part)
     return criar_participante(nome, status="liberado")
+
+
+def garantir_participante_admin(
+    login: str,
+    nome: str,
+    *,
+    token_preferido: str | None = None,
+) -> dict[str, Any]:
+    """Garante o participante do admin pelo login (estável), não pelo nick.
+
+    Assim renomear Mazeta → Mazetinha não cria outro usuário.
+    """
+    login = (login or "").strip().lower()
+    nome = (nome or "").strip() or login
+    if not login:
+        raise ValueError("login de admin vazio")
+
+    part = get_participante_por_admin_login(login)
+    if part:
+        return _garantir_liberado(part)
+
+    if token_preferido:
+        part = get_participante_por_token(token_preferido)
+        if part:
+            atual = (part.get("admin_login") or "").strip().lower()
+            if not atual or atual == login:
+                vincular_admin_login(part["id"], login)
+                part = get_participante(part["id"]) or part
+                return _garantir_liberado(part)
+
+    part = get_participante_por_nome(nome)
+    if part:
+        atual = (part.get("admin_login") or "").strip().lower()
+        if not atual or atual == login:
+            vincular_admin_login(part["id"], login)
+            part = get_participante(part["id"]) or part
+            return _garantir_liberado(part)
+
+    return criar_participante(nome, status="liberado", admin_login=login)
 
 
 def salvar_comprovante(participante_id: int, relative_path: str) -> None:
