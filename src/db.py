@@ -263,6 +263,9 @@ def list_participantes() -> list[dict[str, Any]]:
         rows = conn.execute(
             f"SELECT {_PARTICIPANTE_COLS} FROM participantes ORDER BY "
             "CASE "
+            "WHEN admin_login IS NOT NULL AND admin_login != '' THEN 0 "
+            "ELSE 1 END, "
+            "CASE "
             "WHEN status = 'liberado' THEN 3 "
             "WHEN recusado_em IS NOT NULL AND recusado_em != '' THEN 2 "
             "WHEN status = 'comprovante' THEN 0 "

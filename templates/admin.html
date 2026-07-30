@@ -10,6 +10,8 @@
 {% set nao_liberados = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
 {% set liberacao_pendente = nao_liberados | rejectattr('recusado_em') | list %}
 {% set liberacao_recusada = nao_liberados | selectattr('recusado_em') | list %}
+{# Admins primeiro (já vem ordenado do backend; reforça no template) #}
+{% set liberados = (liberados | selectattr('admin_login') | list) + (liberados | rejectattr('admin_login') | list) %}
 {% set liberados_sem_link = liberados | rejectattr('link_enviado_em') | list %}
 {% set liberados_com_link = liberados | selectattr('link_enviado_em') | list %}
 
