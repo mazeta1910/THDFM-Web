@@ -17,6 +17,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from src import db
 from src.admins import autenticar_admin, list_admins
 from src.config import (
+    ADMIN_WHATSAPP,
+    ADMIN_WHATSAPP_MSG,
     AVATAR_EXTS,
     AVATAR_MAX_BYTES,
     AVATARES_DIR,
@@ -94,11 +96,15 @@ def render(request: Request, name: str, **ctx):
     if is_adm and "admin_pendentes_count" not in ctx:
         if "participantes" in ctx:
             ctx["admin_pendentes_count"] = sum(
-                1 for p in ctx["participantes"] if p.get("status") != "liberado"
+                1
+                for p in ctx["participantes"]
+                if p.get("status") != "liberado" and not p.get("recusado_em")
             )
         else:
             ctx["admin_pendentes_count"] = sum(
-                1 for p in db.list_participantes() if p.get("status") != "liberado"
+                1
+                for p in db.list_participantes()
+                if p.get("status") != "liberado" and not p.get("recusado_em")
             )
     return TEMPLATES.TemplateResponse(request, name, ctx)
 
@@ -115,9 +121,17 @@ def _enrich_confrontos(confrontos: list) -> list:
 
 
 def _taxa_ctx() -> dict:
+    wa_digits = re.sub(r"\D+", "", ADMIN_WHATSAPP or os.environ.get("ADMIN_WHATSAPP", ""))
+    wa_msg = os.environ.get("ADMIN_WHATSAPP_MSG", ADMIN_WHATSAPP_MSG)
+    wa_url = ""
+    if wa_digits:
+        from urllib.parse import quote
+
+        wa_url = f"https://wa.me/{wa_digits}?text={quote(wa_msg)}"
     return {
         "taxa_pix": os.environ.get("TAXA_PIX", TAXA_PIX),
         "taxa_valor_label": os.environ.get("TAXA_VALOR_LABEL", TAXA_VALOR_LABEL),
+        "admin_whatsapp_url": wa_url,
     }
 
 
@@ -271,14 +285,27 @@ def classificacao(request: Request):
 
 @app.get("/inscricao", response_class=HTMLResponse)
 def inscricao_get(request: Request):
+    draft = request.session.pop("inscricao_draft", None) or {}
     return render(
         request,
         "inscricao.html",
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         sucesso=request.query_params.get("sucesso") == "1",
+        form_nome=draft.get("nome") or "",
+        form_celular=draft.get("celular") or "",
         **_taxa_ctx(),
     )
+
+
+def _inscricao_erro(request: Request, erro: str, *, nome: str = "", celular: str = ""):
+    from urllib.parse import quote
+
+    request.session["inscricao_draft"] = {
+        "nome": (nome or "").strip(),
+        "celular": (celular or "").strip(),
+    }
+    return RedirectResponse(f"/inscricao?erro={quote(erro)}", status_code=303)
 
 
 @app.post("/inscricao")
@@ -289,39 +316,52 @@ async def inscricao_post(
     comprovante: UploadFile = File(...),
 ):
     nome = nome.strip()
+    celular_raw = (celular or "").strip()
     if not nome:
-        return RedirectResponse("/inscricao?erro=Informe+seu+nome", status_code=303)
+        return _inscricao_erro(
+            request, "Informe seu nome", nome=nome, celular=celular_raw
+        )
     if nome.casefold() == "daniel":
         return TEMPLATES.TemplateResponse(request, "acesso_proibido.html", {})
 
     try:
-        celular_ok = db.normalizar_celular(celular)
+        celular_ok = db.normalizar_celular(celular_raw)
     except ValueError:
-        return RedirectResponse(
-            "/inscricao?erro=Informe+um+celular+valido+com+DDD",
-            status_code=303,
+        return _inscricao_erro(
+            request,
+            "Informe um celular valido com DDD",
+            nome=nome,
+            celular=celular_raw,
         )
 
     filename = comprovante.filename or ""
     ext = Path(filename).suffix.lower()
     if ext not in COMPROVANTE_EXTS:
-        return RedirectResponse(
-            "/inscricao?erro=Envie+jpg,+png,+webp+ou+pdf",
-            status_code=303,
+        return _inscricao_erro(
+            request,
+            "Envie jpg, png, webp ou pdf",
+            nome=nome,
+            celular=celular_raw,
         )
 
     data = await comprovante.read()
     if not data:
-        return RedirectResponse("/inscricao?erro=Arquivo+vazio", status_code=303)
+        return _inscricao_erro(
+            request, "Arquivo vazio", nome=nome, celular=celular_raw
+        )
     if len(data) > COMPROVANTE_MAX_BYTES:
-        return RedirectResponse("/inscricao?erro=Arquivo+maior+que+5MB", status_code=303)
+        return _inscricao_erro(
+            request, "Arquivo maior que 5MB", nome=nome, celular=celular_raw
+        )
 
     try:
         part = db.criar_participante(nome, status="pendente", celular=celular_ok)
     except Exception:
-        return RedirectResponse(
-            "/inscricao?erro=Nome+ja+cadastrado.+Fale+com+o+admin",
-            status_code=303,
+        return _inscricao_erro(
+            request,
+            "Nome ja cadastrado. Fale com o admin",
+            nome=nome,
+            celular=celular_raw,
         )
 
     safe = re.sub(r"[^a-zA-Z0-9_-]+", "", nome)[:40] or "user"
@@ -330,6 +370,7 @@ async def inscricao_post(
     dest.write_bytes(data)
     db.salvar_comprovante(part["id"], rel)
 
+    request.session.pop("inscricao_draft", None)
     return RedirectResponse("/inscricao?sucesso=1", status_code=303)
 
 
@@ -629,21 +670,7 @@ def admin_comprovante(request: Request, participante_id: int):
     return FileResponse(path)
 
 
-@app.post("/admin/liberar")
-def admin_liberar(request: Request, participante_id: int = Form(...)):
-    if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
-    db.liberar_participante(participante_id)
-    return RedirectResponse("/admin?msg=Inscricao+liberada", status_code=303)
-
-
-@app.post("/admin/apagar")
-def admin_apagar(request: Request, participante_id: int = Form(...)):
-    if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
-    part = db.apagar_participante(participante_id)
-    if not part:
-        return RedirectResponse("/admin?erro=Participante+nao+encontrado", status_code=303)
+def _limpar_arquivos_participante(part: dict) -> None:
     for key, folder in (
         ("comprovante_path", COMPROVANTES_DIR),
         ("avatar_path", AVATARES_DIR),
@@ -653,19 +680,131 @@ def admin_apagar(request: Request, participante_id: int = Form(...)):
             path = folder / rel
             if path.is_file():
                 path.unlink(missing_ok=True)
-    return RedirectResponse("/admin?msg=Inscricao+apagada", status_code=303)
+
+
+@app.post("/admin/liberar")
+def admin_liberar(request: Request, participante_id: int = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    db.liberar_participante(participante_id)
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Inscricao+liberada", status_code=303
+    )
+
+
+@app.get("/admin/avisar-link/{participante_id}")
+def admin_avisar_link(request: Request, participante_id: int):
+    """Marca link como enviado e abre o WhatsApp com a mensagem pronta."""
+    from urllib.parse import quote
+
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
+        )
+    wa = db.celular_whatsapp(part.get("celular"))
+    if not wa:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+sem+celular", status_code=303
+        )
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    msg = db.mensagem_whatsapp_link(part["nome"], base, part["token"])
+    db.marcar_link_enviado(participante_id, enviado=True)
+    return RedirectResponse(
+        f"https://wa.me/{wa}?text={quote(msg)}", status_code=303
+    )
+
+
+@app.get("/admin/marcar-link/{participante_id}")
+def admin_marcar_link(
+    request: Request,
+    participante_id: int,
+    enviado: int = 1,
+):
+    """Marca/desmarca link enviado e volta ao painel (GET — evita 404 de POST antigo)."""
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
+        )
+    db.marcar_link_enviado(participante_id, enviado=bool(enviado))
+    msg = "Link+marcado+como+enviado" if enviado else "Link+marcado+como+pendente"
+    return RedirectResponse(f"/admin?sec=inscricoes&msg={msg}", status_code=303)
+
+
+@app.post("/admin/link-enviado")
+def admin_link_enviado(
+    request: Request,
+    participante_id: int = Form(...),
+    enviado: str = Form("1"),
+):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
+        )
+    db.marcar_link_enviado(participante_id, enviado=enviado == "1")
+    msg = "Link+marcado+como+enviado" if enviado == "1" else "Link+marcado+como+pendente"
+    return RedirectResponse(f"/admin?sec=inscricoes&msg={msg}", status_code=303)
+
+
+@app.post("/admin/apagar")
+def admin_apagar(request: Request, participante_id: int = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.apagar_participante(participante_id)
+    if not part:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+encontrado", status_code=303
+        )
+    _limpar_arquivos_participante(part)
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Inscricao+apagada", status_code=303
+    )
 
 
 @app.post("/admin/recusar")
 def admin_recusar(request: Request, participante_id: int = Form(...)):
+    """Recusar = marca como recusada (não apaga; use o × para excluir)."""
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
-    old = db.recusar_comprovante(participante_id)
-    if old:
-        path = COMPROVANTES_DIR / old
-        if path.is_file():
-            path.unlink(missing_ok=True)
-    return RedirectResponse("/admin?msg=Comprovante+recusado", status_code=303)
+    if not db.recusar_participante(participante_id):
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Nao+foi+possivel+recusar", status_code=303
+        )
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Inscricao+recusada", status_code=303
+    )
+
+
+@app.post("/admin/reabrir")
+def admin_reabrir(request: Request, participante_id: int = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    if not db.reabrir_participante(participante_id):
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Nao+foi+possivel+reabrir", status_code=303
+        )
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Inscricao+reaberta", status_code=303
+    )
+
+
+@app.post("/admin/recusar-todos")
+def admin_recusar_todos(request: Request):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    n = db.recusar_todos_pendentes()
+    return RedirectResponse(
+        f"/admin?sec=inscricoes&msg={n}+inscricao(oes)+recusada(s)",
+        status_code=303,
+    )
 
 
 @app.post("/admin/janela")

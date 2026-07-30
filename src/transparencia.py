@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from src.db import list_confrontos_completos, list_participantes, palpites_do_participante
 from src.scoring import classificar_palpite, lado_por_clube
+from src.seed_data import formatar_inicio_jogo
 
 
 def _clube_nome(confronto: dict, clube_id: str) -> str:
@@ -49,7 +50,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
     cache_palpites = {p["id"]: palpites_do_participante(p["id"]) for p in liberados}
     tabelas: list[dict] = []
 
-    for c in confrontos:
+    for idx, c in enumerate(confrontos, start=1):
         for jogo in c.get("jogos") or []:
             tem_resultado = (
                 jogo.get("gols_mandante") is not None
@@ -67,6 +68,8 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
             real_pen = jogo.get("penaltis_clube_id") if tem_resultado else None
             perna = jogo.get("perna") or ""
             perna_label = {"ida": "Ida", "volta": "Volta", "unico": "Jogo"}.get(perna, perna)
+            inicio_em = jogo.get("inicio_em")
+            inicio_label = formatar_inicio_jogo(inicio_em)
 
             linhas: list[dict] = []
             if tem_resultado:
@@ -170,12 +173,15 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                 {
                     "jogo_id": jogo["id"],
                     "confronto_id": c["id"],
+                    "jogo_num": idx,
                     "fase": c["fase"],
                     "perna": perna,
                     "perna_label": perna_label,
+                    "inicio_em": inicio_em,
+                    "inicio_label": inicio_label,
                     "clube_casa": clube_casa,
                     "clube_fora": clube_fora,
-                    "titulo": f"{clube_casa} x {clube_fora} · {perna_label}",
+                    "titulo": f"Jogo {idx} · {clube_casa} x {clube_fora} · {perna_label}",
                     "tem_resultado": tem_resultado,
                     "linhas": linhas,
                 }

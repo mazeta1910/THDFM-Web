@@ -8,7 +8,11 @@
 {% endblock %}
 {% block content %}
 {% set liberados = participantes | selectattr('status', 'equalto', 'liberado') | list %}
-{% set pendentes = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
+{% set nao_liberados = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
+{% set liberacao_pendente = nao_liberados | rejectattr('recusado_em') | list %}
+{% set liberacao_recusada = nao_liberados | selectattr('recusado_em') | list %}
+{% set liberados_sem_link = liberados | rejectattr('link_enviado_em') | list %}
+{% set liberados_com_link = liberados | selectattr('link_enviado_em') | list %}
 
     <section class="admin-panel active" data-panel="resultados">
       <div class="admin-grid-2 admin-ops-grid" style="margin-bottom:1rem">
@@ -99,6 +103,9 @@
           </button>
         </div>
       </div>
+      <section class="fases-panel is-collapsed" data-fases-collapse>
+      {% include "partials/fases_panel_head.html" %}
+      <div class="fases-panel-body">
       <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
         {% for f in fases %}
         <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
@@ -126,6 +133,8 @@
         </div>
         {% endfor %}
       </div>
+      </div>
+      </section>
 
       {% for f in fases %}
       {% set confrontos = confrontos_por_fase.get(f.id, []) %}
@@ -256,9 +265,33 @@
       <div class="card inscricoes-card" id="inscricoes-card">
         <div class="inscricoes-head">
           <div class="inscricoes-title-row">
-            <div>
-              <h2>Inscrições <span class="col-count">{{ taxa_valor_label }}</span></h2>
-              <p class="inscricoes-pix">PIX: {{ taxa_pix }} · {{ liberados|length }} liberado(s) · {{ pendentes|length }} pendente(s)</p>
+            <div class="inscricoes-title-main">
+              <div class="inscricoes-title-line">
+                <h2>Inscrições <span class="col-count">{{ taxa_valor_label }}</span></h2>
+                <div class="inscricoes-stats">
+                  <span class="inscricoes-stat-pill liberados">{{ liberados|length }} liberados</span>
+                  <span class="inscricoes-stat-pill pendentes">{{ liberacao_pendente|length }} pendentes</span>
+                  {% if liberacao_recusada %}
+                  <span class="inscricoes-stat-pill recusados">{{ liberacao_recusada|length }} recusados</span>
+                  {% endif %}
+                </div>
+              </div>
+              <p class="inscricoes-pix">PIX: {{ taxa_pix }}</p>
+            </div>
+            <div class="inscricoes-toolbar">
+              <label class="inscricoes-sort-label" for="inscricoes-sort">Ordenar</label>
+              <div class="select-wrap inscricoes-sort-wrap">
+                <select id="inscricoes-sort" aria-label="Ordenar inscrições">
+                  <option value="data-desc">Data (mais recentes)</option>
+                  <option value="data-asc">Data (mais antigas)</option>
+                  <option value="nome-asc">Nome (A–Z)</option>
+                  <option value="nome-desc">Nome (Z–A)</option>
+                </select>
+              </div>
+              <button type="button" class="btn-toggle-liberados secondary" id="btn-toggle-liberados" aria-expanded="true" aria-controls="liberados-list">
+                <span class="toggle-chevron" aria-hidden="true">▾</span>
+                <span class="btn-toggle-liberados-label">Minimizar liberados</span>
+              </button>
             </div>
           </div>
           <div class="inscricoes-link-box">
@@ -270,52 +303,42 @@
           </div>
         </div>
 
-        <div class="inscricoes-cols">
-          <section class="inscricoes-col">
-            <h3>Liberado <span class="col-count">{{ liberados|length }}</span></h3>
-            {% for p in liberados %}
-            <div class="ref inscricao-item">
-              <div class="inscricao-item-head">
-                <strong class="inscricao-nome">{{ p.nome }}</strong>
-                <div class="inscricao-item-end">
-                  <span class="status-pill {{ p.status }}">{{ p.status }}</span>
-                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
-                </div>
-              </div>
-              {% if p.celular %}
-              {% set wa = p.celular|celular_wa %}
-              {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
-              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></div>
-              {% endif %}
-              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
-              {% if p.comprovante_path %}
-              <p class="inscricao-comp">
-                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
-                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
-              </p>
-              {% endif %}
+        <div class="inscricoes-cols" id="inscricoes-cols">
+          <section class="inscricoes-col" id="liberados-col" data-inscricoes-col="liberados">
+            <h3 class="inscricoes-col-title">
+              Liberado
+              <span class="inscricoes-stat-pill liberados">{{ liberados|length }}</span>
+            </h3>
+            {% if liberados %}
+            <div class="liberados-subnav" role="tablist" aria-label="Status do link">
+              <button type="button" class="liberados-subtab active" role="tab" aria-selected="true" data-lib-tab="sem-link">
+                Sem link <span class="col-count">{{ liberados_sem_link|length }}</span>
+              </button>
+              <button type="button" class="liberados-subtab" role="tab" aria-selected="false" data-lib-tab="com-link">
+                Link enviado <span class="col-count">{{ liberados_com_link|length }}</span>
+              </button>
             </div>
-            {% else %}
-            <p class="inscricao-vazio">Ninguém liberado ainda.</p>
-            {% endfor %}
-          </section>
-
-          <section class="inscricoes-col">
-            <h3>Pendente <span class="col-count">{{ pendentes|length }}</span></h3>
-            {% for p in pendentes %}
-            <div class="ref inscricao-item">
+            {% endif %}
+            <div class="inscricoes-list" id="liberados-list">
+            <div class="liberados-pane is-active" data-lib-pane="sem-link" id="liberados-sem-link">
+            {% for p in liberados_sem_link %}
+            <div class="ref inscricao-item inscricao-item-fab" data-nome="{{ p.nome|e }}" data-data="{{ p.criado_em or p.comprovante_em or '' }}" data-id="{{ p.id }}">
               <div class="inscricao-item-head">
                 <strong class="inscricao-nome">{{ p.nome }}</strong>
                 <div class="inscricao-item-end">
-                  <span class="status-pill {{ p.status }}">{{ p.status }}</span>
+                  <span class="status-pill liberado">liberado</span>
                   <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
                 </div>
               </div>
-              {% if p.celular %}
-              {% set wa = p.celular|celular_wa %}
-              {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
-              <div class="inscricao-meta">Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></div>
-              {% endif %}
+              <div class="inscricao-meta-row">
+                {% if p.celular %}
+                <span>Celular: {{ p.celular|celular_fmt }}</span>
+                {% else %}
+                <span style="color:var(--accent2)">Sem celular</span>
+                {% endif %}
+                <span class="inscricao-sep">|</span>
+                <span>Inscrito em: {{ p.criado_em or "—" }}</span>
+              </div>
               <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
               {% if p.comprovante_path %}
               <p class="inscricao-comp">
@@ -323,22 +346,180 @@
                 {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
               </p>
               {% endif %}
-              <div class="admin-actions">
-                <form method="post" action="/admin/liberar">
-                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
-                  <button type="submit">Liberar</button>
-                </form>
-                {% if p.comprovante_path %}
-                <form method="post" action="/admin/recusar">
-                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
-                  <button type="submit" class="secondary">Recusar</button>
-                </form>
+              <div class="inscricao-fabs">
+                <a class="inscricao-fab-check" href="/admin/marcar-link/{{ p.id }}?enviado=1" title="Já enviei o link" aria-label="Já enviei o link de {{ p.nome }}">✓</a>
+                {% if p.celular %}
+                <a class="inscricao-fab-wa" href="/admin/avisar-link/{{ p.id }}" target="_blank" rel="noopener" title="Enviar link no WhatsApp" aria-label="Enviar link no WhatsApp para {{ p.nome }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                </a>
                 {% endif %}
               </div>
             </div>
             {% else %}
-            <p class="inscricao-vazio">Nenhuma pendência.</p>
+            <p class="inscricao-vazio">{% if liberados %}Todos já receberam o link.{% else %}Ninguém liberado ainda.{% endif %}</p>
             {% endfor %}
+            </div>
+            <div class="liberados-pane" data-lib-pane="com-link" id="liberados-com-link" hidden>
+            {% for p in liberados_com_link %}
+            <div class="ref inscricao-item inscricao-item-fab" data-nome="{{ p.nome|e }}" data-data="{{ p.criado_em or p.comprovante_em or '' }}" data-id="{{ p.id }}">
+              <div class="inscricao-item-head">
+                <strong class="inscricao-nome">{{ p.nome }}</strong>
+                <div class="inscricao-item-end">
+                  <span class="status-pill link-enviado">link ok</span>
+                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                </div>
+              </div>
+              <div class="inscricao-meta-row">
+                {% if p.celular %}
+                <span>Celular: {{ p.celular|celular_fmt }}</span>
+                {% else %}
+                <span>Celular: —</span>
+                {% endif %}
+                <span class="inscricao-sep">|</span>
+                <span>Link enviado em: {{ p.link_enviado_em or "—" }}</span>
+              </div>
+              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
+              {% if p.comprovante_path %}
+              <p class="inscricao-comp">
+                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+              </p>
+              {% endif %}
+              <div class="inscricao-fabs">
+                <a class="inscricao-fab-undo" href="/admin/marcar-link/{{ p.id }}?enviado=0" title="Voltar para sem link" aria-label="Marcar {{ p.nome }} como sem link">↩</a>
+                {% if p.celular %}
+                <a class="inscricao-fab-wa" href="/admin/avisar-link/{{ p.id }}" target="_blank" rel="noopener" title="Reenviar no WhatsApp" aria-label="Reenviar link no WhatsApp para {{ p.nome }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <p class="inscricao-vazio">Nenhum link marcado como enviado.</p>
+            {% endfor %}
+            </div>
+            </div>
+          </section>
+
+          <section class="inscricoes-col" id="pendentes-col" data-inscricoes-col="pendentes">
+            <h3 class="inscricoes-col-title">
+              Pendente
+              <span class="inscricoes-stat-pill pendentes">{{ liberacao_pendente|length }}</span>
+              {% if liberacao_recusada %}
+              <span class="inscricoes-stat-pill recusados">{{ liberacao_recusada|length }}</span>
+              {% endif %}
+            </h3>
+            {% if nao_liberados %}
+            <div class="liberados-subnav pendentes-subnav" role="tablist" aria-label="Status da liberação">
+              <button type="button" class="liberados-subtab active" role="tab" aria-selected="true" data-pen-tab="aguardando">
+                Liberação pendente <span class="col-count">{{ liberacao_pendente|length }}</span>
+              </button>
+              <button type="button" class="liberados-subtab" role="tab" aria-selected="false" data-pen-tab="recusada">
+                Liberação recusada <span class="col-count">{{ liberacao_recusada|length }}</span>
+              </button>
+            </div>
+            {% endif %}
+            <div class="inscricoes-list" id="pendentes-list">
+            <div class="pendentes-pane is-active" data-pen-pane="aguardando" id="pendentes-aguardando">
+            {% for p in liberacao_pendente %}
+            <div class="ref inscricao-item inscricao-item-fab" data-nome="{{ p.nome|e }}" data-data="{{ p.criado_em or p.comprovante_em or '' }}" data-id="{{ p.id }}">
+              <div class="inscricao-item-head">
+                <strong class="inscricao-nome">{{ p.nome }}</strong>
+                <div class="inscricao-item-end">
+                  <span class="status-pill {{ p.status }}">{{ p.status }}</span>
+                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                </div>
+              </div>
+              <div class="inscricao-meta-row">
+                {% if p.celular %}
+                {% set wa = p.celular|celular_wa %}
+                {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
+                <span>Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% else %}
+                <span>Celular: —</span>
+                {% endif %}
+                <span class="inscricao-sep">|</span>
+                <span>Inscrito em: {{ p.criado_em or "—" }}</span>
+              </div>
+              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
+              {% if p.comprovante_path %}
+              <p class="inscricao-comp">
+                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+              </p>
+              {% endif %}
+              <div class="inscricao-fabs">
+                <form method="post" action="/admin/liberar" class="inscricao-fab-form">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-ok" title="Liberar" aria-label="Liberar {{ p.nome }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </form>
+                <form method="post" action="/admin/recusar" class="inscricao-fab-form form-recusar">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-no" title="Recusar" aria-label="Recusar {{ p.nome }}" data-nome="{{ p.nome }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% else %}
+            <p class="inscricao-vazio">{% if nao_liberados %}Nada aguardando liberação.{% else %}Nenhuma pendência.{% endif %}</p>
+            {% endfor %}
+            </div>
+            <div class="pendentes-pane" data-pen-pane="recusada" id="pendentes-recusada" hidden>
+            {% for p in liberacao_recusada %}
+            <div class="ref inscricao-item inscricao-item-fab" data-nome="{{ p.nome|e }}" data-data="{{ p.criado_em or p.comprovante_em or '' }}" data-id="{{ p.id }}">
+              <div class="inscricao-item-head">
+                <strong class="inscricao-nome">{{ p.nome }}</strong>
+                <div class="inscricao-item-end">
+                  <span class="status-pill recusado">recusado</span>
+                  <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                </div>
+              </div>
+              <div class="inscricao-meta-row">
+                {% if p.celular %}
+                {% set wa = p.celular|celular_wa %}
+                {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
+                <span>Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% else %}
+                <span>Celular: —</span>
+                {% endif %}
+                <span class="inscricao-sep">|</span>
+                <span>Recusado em: {{ p.recusado_em or "—" }}</span>
+              </div>
+              <div class="inscricao-link">Link privado: <code>{{ base_url }}/p/{{ p.token }}</code></div>
+              {% if p.comprovante_path %}
+              <p class="inscricao-comp">
+                <a href="/admin/comprovantes/{{ p.id }}" target="_blank">Ver comprovante</a>
+                {% if p.comprovante_em %} · {{ p.comprovante_em }}{% endif %}
+              </p>
+              {% endif %}
+              <div class="inscricao-fabs">
+                <form method="post" action="/admin/reabrir" class="inscricao-fab-form">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-reopen" title="Reabrir" aria-label="Reabrir {{ p.nome }}">↩</button>
+                </form>
+                <form method="post" action="/admin/liberar" class="inscricao-fab-form">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-ok" title="Liberar mesmo assim" aria-label="Liberar {{ p.nome }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% else %}
+            <p class="inscricao-vazio">Nenhuma inscrição recusada.</p>
+            {% endfor %}
+            </div>
+            </div>
+            {% if liberacao_pendente %}
+            <div class="pendentes-footer">
+              <button type="button" class="btn-recusar-todos danger" id="btn-recusar-todos">
+                Recusar todos
+              </button>
+            </div>
+            {% endif %}
           </section>
         </div>
       </div>
@@ -366,6 +547,7 @@
 <form method="post" action="/admin/apagar" id="form-apagar" hidden>
   <input type="hidden" name="participante_id" id="apagar-id" value="" />
 </form>
+<form method="post" action="/admin/recusar-todos" id="form-recusar-todos" hidden></form>
 <form method="post" action="/admin/confirmar-rodada" id="form-confirmar-rodada" hidden></form>
 <form method="post" action="/admin/desfazer-rodada" id="form-desfazer-rodada" hidden></form>
 <div class="modal-backdrop" id="modal-apagar" hidden>
@@ -375,6 +557,19 @@
     <div class="modal-actions">
       <button type="button" class="secondary" id="modal-apagar-cancelar">Cancelar</button>
       <button type="button" class="danger" id="modal-apagar-confirmar">Excluir</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-recusar-todos" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-recusar-todos-title">
+    <h3 id="modal-recusar-todos-title">Recusar todos os pendentes?</h3>
+    <p style="color:var(--muted);line-height:1.45;margin:0 0 1rem">
+      Isso move {{ liberacao_pendente|length }} inscrição(ões) para <strong>Liberação recusada</strong>
+      (não apaga). Liberados ficam intactos. Use o × vermelho só se quiser excluir de vez.
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-recusar-todos-cancelar">Cancelar</button>
+      <button type="button" class="danger" id="modal-recusar-todos-confirmar">Recusar todos</button>
     </div>
   </div>
 </div>
@@ -498,6 +693,122 @@ document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
 });
 const params = new URLSearchParams(window.location.search);
 showSection(params.get("sec") || localStorage.getItem(KEY_SEC) || "resultados");
+
+(() => {
+  const KEY_SORT = "admin-inscricoes-sort";
+  const KEY_LIB = "admin-liberados-collapsed";
+  const sortSelect = document.getElementById("inscricoes-sort");
+  const btnLib = document.getElementById("btn-toggle-liberados");
+  const liberadosCol = document.getElementById("liberados-col");
+  const labelEl = btnLib?.querySelector(".btn-toggle-liberados-label");
+
+  const sortList = (listEl, mode) => {
+    if (!listEl) return;
+    const items = Array.from(listEl.querySelectorAll(".inscricao-item"));
+    if (!items.length) return;
+    items.sort((a, b) => {
+      const nomeA = (a.dataset.nome || "").localeCompare(b.dataset.nome || "", "pt-BR", { sensitivity: "base" });
+      const dataA = a.dataset.data || "";
+      const dataB = b.dataset.data || "";
+      const idA = Number(a.dataset.id || 0);
+      const idB = Number(b.dataset.id || 0);
+      if (mode === "nome-asc") return nomeA || idA - idB;
+      if (mode === "nome-desc") return -nomeA || idB - idA;
+      if (mode === "data-asc") {
+        if (dataA && dataB && dataA !== dataB) return dataA.localeCompare(dataB);
+        return idA - idB;
+      }
+      // data-desc (default)
+      if (dataA && dataB && dataA !== dataB) return dataB.localeCompare(dataA);
+      return idB - idA;
+    });
+    items.forEach((el) => listEl.appendChild(el));
+  };
+
+  const applySort = (mode) => {
+    sortList(document.getElementById("liberados-sem-link"), mode);
+    sortList(document.getElementById("liberados-com-link"), mode);
+    sortList(document.getElementById("pendentes-aguardando"), mode);
+    sortList(document.getElementById("pendentes-recusada"), mode);
+  };
+
+  if (sortSelect) {
+    const saved = localStorage.getItem(KEY_SORT) || "data-desc";
+    if ([...sortSelect.options].some((o) => o.value === saved)) sortSelect.value = saved;
+    applySort(sortSelect.value);
+    sortSelect.addEventListener("change", () => {
+      localStorage.setItem(KEY_SORT, sortSelect.value);
+      applySort(sortSelect.value);
+    });
+  }
+
+  const setLiberadosCollapsed = (collapsed) => {
+    if (!liberadosCol || !btnLib) return;
+    liberadosCol.classList.toggle("is-collapsed", collapsed);
+    btnLib.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    if (labelEl) labelEl.textContent = collapsed ? "Expandir liberados" : "Minimizar liberados";
+    localStorage.setItem(KEY_LIB, collapsed ? "1" : "0");
+  };
+
+  if (btnLib && liberadosCol) {
+    setLiberadosCollapsed(localStorage.getItem(KEY_LIB) === "1");
+    btnLib.addEventListener("click", () => {
+      setLiberadosCollapsed(!liberadosCol.classList.contains("is-collapsed"));
+    });
+  }
+
+  const KEY_LIB_TAB = "admin-liberados-tab";
+  const setLibTab = (tab) => {
+    if (tab !== "sem-link" && tab !== "com-link") return;
+    document.querySelectorAll("[data-lib-tab]").forEach((b) => {
+      const on = b.dataset.libTab === tab;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".liberados-pane").forEach((p) => {
+      const on = p.dataset.libPane === tab;
+      p.classList.toggle("is-active", on);
+      if (on) p.removeAttribute("hidden");
+      else p.setAttribute("hidden", "");
+    });
+    localStorage.setItem(KEY_LIB_TAB, tab);
+  };
+  document.querySelectorAll("[data-lib-tab]").forEach((b) => {
+    b.addEventListener("click", () => setLibTab(b.dataset.libTab));
+  });
+  const savedLibTab = localStorage.getItem(KEY_LIB_TAB);
+  if (savedLibTab === "sem-link" || savedLibTab === "com-link") setLibTab(savedLibTab);
+
+  const KEY_PEN_TAB = "admin-pendentes-tab";
+  const setPenTab = (tab) => {
+    if (tab !== "aguardando" && tab !== "recusada") return;
+    document.querySelectorAll("[data-pen-tab]").forEach((b) => {
+      const on = b.dataset.penTab === tab;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".pendentes-pane").forEach((p) => {
+      const on = p.dataset.penPane === tab;
+      p.classList.toggle("is-active", on);
+      if (on) p.removeAttribute("hidden");
+      else p.setAttribute("hidden", "");
+    });
+    localStorage.setItem(KEY_PEN_TAB, tab);
+  };
+  document.querySelectorAll("[data-pen-tab]").forEach((b) => {
+    b.addEventListener("click", () => setPenTab(b.dataset.penTab));
+  });
+  const savedPenTab = localStorage.getItem(KEY_PEN_TAB);
+  if (savedPenTab === "aguardando" || savedPenTab === "recusada") setPenTab(savedPenTab);
+
+  document.querySelectorAll('a[href^="/admin/avisar-link/"]').forEach((a) => {
+    a.addEventListener("click", () => {
+      setTimeout(() => {
+        if (document.visibilityState === "visible") location.reload();
+      }, 1200);
+    });
+  });
+})();
 
 document.querySelectorAll(".fase-tab:not([disabled])").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -728,6 +1039,31 @@ document.getElementById("modal-apagar-cancelar")?.addEventListener("click", fech
 document.getElementById("modal-apagar-confirmar")?.addEventListener("click", () => formApagar?.submit());
 modalApagar?.addEventListener("click", (e) => {
   if (e.target === modalApagar) fecharApagar();
+});
+
+document.querySelectorAll(".form-recusar").forEach((form) => {
+  form.addEventListener("submit", (e) => {
+    const nome = form.querySelector("button[type=submit]")?.dataset?.nome || "este participante";
+    if (!confirm(`Recusar a inscrição de ${nome}? Ela vai para Liberação recusada (não apaga).`)) e.preventDefault();
+  });
+});
+
+const modalRecusarTodos = document.getElementById("modal-recusar-todos");
+const formRecusarTodos = document.getElementById("form-recusar-todos");
+if (modalRecusarTodos) document.body.appendChild(modalRecusarTodos);
+const abrirRecusarTodos = () => {
+  modalRecusarTodos?.removeAttribute("hidden");
+  modalRecusarTodos?.classList.add("is-open");
+};
+const fecharRecusarTodos = () => {
+  modalRecusarTodos?.classList.remove("is-open");
+  modalRecusarTodos?.setAttribute("hidden", "");
+};
+document.getElementById("btn-recusar-todos")?.addEventListener("click", abrirRecusarTodos);
+document.getElementById("modal-recusar-todos-cancelar")?.addEventListener("click", fecharRecusarTodos);
+document.getElementById("modal-recusar-todos-confirmar")?.addEventListener("click", () => formRecusarTodos?.submit());
+modalRecusarTodos?.addEventListener("click", (e) => {
+  if (e.target === modalRecusarTodos) fecharRecusarTodos();
 });
 
 function updateAdminPens(card) {

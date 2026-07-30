@@ -25,6 +25,13 @@ TAXA_VALOR_LABEL = os.environ.get("TAXA_VALOR_LABEL", "R$ 5,00")
 # mostra o host da requisição atual (pode ser IP da rede local).
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
+# WhatsApp do admin (só dígitos com DDI, ex.: 5511999999999) — botão no modal de inscrição
+ADMIN_WHATSAPP = os.environ.get("ADMIN_WHATSAPP", "").strip()
+ADMIN_WHATSAPP_MSG = os.environ.get(
+    "ADMIN_WHATSAPP_MSG",
+    "Olá! Fiz a inscrição no bolão THDFM. Aguardo a confirmação e o meu link.",
+)
+
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
 

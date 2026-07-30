@@ -7,6 +7,7 @@
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set pend_n = admin_pendentes_count|default(0) %}
+{% from "partials/nav_icons.html" import ico %}
 
 <aside class="admin-sidebar" id="admin-sidebar">
   <div class="admin-brand">
@@ -32,38 +33,38 @@
   </div>
   <nav class="admin-side-nav">
     <details class="admin-menu-group" open data-group="competicao">
-      <summary class="admin-menu-summary">Competição</summary>
+      <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
       <div class="admin-menu-items">
-        <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">Classificação</a>
-        <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">Portal da Transparência</a>
-        <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">Palpites</a>
-        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin and admin_sec == 'resultados' and not on_admin_palpites %}active{% endif %}" data-sec="resultados">Resultados</a>
+        <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
+        <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
+        <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin and admin_sec == 'resultados' and not on_admin_palpites %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
       </div>
     </details>
 
     <details class="admin-menu-group" open data-group="meu-bolao">
-      <summary class="admin-menu-summary">Meu Bolão</summary>
+      <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
       <div class="admin-menu-items">
         {% if participante_nav and participante_nav.status == 'liberado' %}
-        <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+        <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
         {% else %}
-        <span class="admin-side-link admin-side-disabled" title="Liberação necessária">Meus Palpites</span>
+        <span class="admin-side-link admin-side-disabled" title="Liberação necessária">{{ ico('palpites') }}<span>Meus Palpites</span></span>
         {% endif %}
       </div>
     </details>
 
     <details class="admin-menu-group" open data-group="participantes">
-      <summary class="admin-menu-summary">Participantes</summary>
+      <summary class="admin-menu-summary">{{ ico('participantes', 13) }}<span>Participantes</span></summary>
       <div class="admin-menu-items">
-        <a href="/admin?sec=cadastro" class="admin-side-link {% if on_admin and admin_sec == 'cadastro' %}active{% endif %}" data-sec="cadastro">Cadastro manual</a>
+        <a href="/admin?sec=cadastro" class="admin-side-link {% if on_admin and admin_sec == 'cadastro' %}active{% endif %}" data-sec="cadastro">{{ ico('cadastro') }}<span>Cadastro manual</span></a>
         <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin and admin_sec == 'inscricoes' %}active{% endif %}" data-sec="inscricoes">
-          Inscrições
+          {{ ico('inscricoes') }}<span>Inscrições</span>
           {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
         </a>
       </div>
     </details>
 
-    <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">Regras</a>
-    <a class="admin-side-link admin-side-sair" href="/admin/logout">Sair</a>
+    <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
+    <a class="admin-side-link admin-side-sair" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
   </nav>
 </aside>

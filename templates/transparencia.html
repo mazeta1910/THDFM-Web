@@ -6,6 +6,9 @@
 <h1>Portal da Transparência</h1>
 <p>Palpites de todos os liberados, jogo a jogo — no estilo da planilha clássica.</p>
 
+<section class="fases-panel is-collapsed" data-fases-collapse>
+{% include "partials/fases_panel_head.html" %}
+<div class="fases-panel-body">
 <div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
   <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}">
@@ -34,6 +37,8 @@
   </div>
   {% endfor %}
 </div>
+</div>
+</section>
 
 {% if not tabelas %}
 <div class="card">
@@ -47,15 +52,24 @@
 </div>
 {% else %}
 {% for t in tabelas %}
-<div class="card planilha-card">
+<div class="card planilha-card is-collapsed" data-planilha-collapse>
   <div class="planilha-head">
-    <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
-    <div>
-      <strong>{{ t.titulo }}</strong>
-      <span>{{ t.clube_casa }} × {{ t.clube_fora }}</span>
+    <div class="planilha-head-top">
+      <div class="planilha-head-identity">
+        <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+        <div>
+          <strong>{{ t.titulo }}</strong>
+          <span>{{ t.clube_casa }} × {{ t.clube_fora }}</span>
+        </div>
+        <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+      </div>
+      <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="false" title="Expandir palpites">
+        <span class="toggle-chevron" aria-hidden="true">▾</span>
+        <span class="btn-toggle-planilha-label">Expandir</span>
+      </button>
     </div>
-    <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
   </div>
+  <div class="planilha-body">
   <div class="planilha-wrap">
     <table class="planilha">
       <thead>
@@ -83,6 +97,7 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
   </div>
 </div>
 {% endfor %}

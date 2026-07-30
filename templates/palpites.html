@@ -29,6 +29,9 @@
   </div>
 </div>
 {% endif %}
+<section class="fases-panel is-collapsed" data-fases-collapse>
+{% include "partials/fases_panel_head.html" %}
+<div class="fases-panel-body">
 <div class="transparencia-nav" id="palpites-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
   <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
@@ -57,6 +60,8 @@
   </div>
   {% endfor %}
 </div>
+</div>
+</section>
 
 {% for f in fases %}
 <div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">

@@ -50,7 +50,10 @@ CREATE TABLE IF NOT EXISTS participantes (
     comprovante_em TEXT,
     liberado_em TEXT,
     avatar_path TEXT,
-    celular TEXT
+    celular TEXT,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    link_enviado_em TEXT,
+    recusado_em TEXT
 );
 
 CREATE TABLE IF NOT EXISTS confrontos (
@@ -68,6 +71,7 @@ CREATE TABLE IF NOT EXISTS jogos (
     gols_mandante INTEGER,
     gols_visitante INTEGER,
     penaltis_clube_id TEXT CHECK (penaltis_clube_id IN ('a', 'b') OR penaltis_clube_id IS NULL),
+    inicio_em TEXT,
     UNIQUE (confronto_id, perna)
 );
 
@@ -122,12 +126,62 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN avatar_path TEXT")
     if "celular" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN celular TEXT")
+    if "criado_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN criado_em TEXT")
+        conn.execute(
+            "UPDATE participantes SET criado_em = COALESCE(comprovante_em, liberado_em, "
+            "datetime('now', 'localtime')) WHERE criado_em IS NULL"
+        )
+    if "link_enviado_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN link_enviado_em TEXT")
+        # Liberados existentes já tinham recebido o link na prática.
+        conn.execute(
+            "UPDATE participantes SET link_enviado_em = COALESCE("
+            "liberado_em, datetime('now', 'localtime')) "
+            "WHERE status = 'liberado'"
+        )
+    else:
+        # Uma vez: se todos os liberados ainda estão sem marca, preenche (setup atual).
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM participantes WHERE status = 'liberado'"
+        ).fetchone()
+        sem = conn.execute(
+            "SELECT COUNT(*) AS n FROM participantes WHERE status = 'liberado' "
+            "AND (link_enviado_em IS NULL OR link_enviado_em = '')"
+        ).fetchone()
+        total = int(row["n"] or 0) if row else 0
+        sem_n = int(sem["n"] or 0) if sem else 0
+        if total > 0 and sem_n == total:
+            conn.execute(
+                "UPDATE participantes SET link_enviado_em = COALESCE("
+                "liberado_em, datetime('now', 'localtime')) "
+                "WHERE status = 'liberado'"
+            )
+    if "recusado_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN recusado_em TEXT")
+
+
+def _migrate_jogos(conn: sqlite3.Connection) -> None:
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(jogos)").fetchall()}
+    if "inicio_em" not in cols:
+        conn.execute("ALTER TABLE jogos ADD COLUMN inicio_em TEXT")
+    for item in OITAVAS:
+        inicio = item.get("ida_em")
+        if not inicio:
+            continue
+        conn.execute(
+            "UPDATE jogos SET inicio_em = ? "
+            "WHERE confronto_id = ? AND perna = 'ida' "
+            "AND (inicio_em IS NULL OR inicio_em = '')",
+            (inicio, item["id"]),
+        )
 
 
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
         _migrate_participantes(conn)
+        _migrate_jogos(conn)
         _migrar_celulares_br(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
@@ -145,8 +199,9 @@ def _seed_oitavas(conn: sqlite3.Connection) -> None:
             (item["id"], item["clube_a"], item["clube_b"]),
         )
         conn.execute(
-            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id) VALUES (?, 'ida', 'a')",
-            (item["id"],),
+            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+            "VALUES (?, 'ida', 'a', ?)",
+            (item["id"], item.get("ida_em")),
         )
         conn.execute(
             "INSERT INTO jogos (confronto_id, perna, mandante_clube_id) VALUES (?, 'volta', 'b')",
@@ -191,12 +246,21 @@ def set_fase_atual(fase: str) -> None:
     set_meta("fase_atual", fase)
 
 
+_PARTICIPANTE_COLS = (
+    "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
+    "avatar_path, celular, criado_em, link_enviado_em, recusado_em"
+)
+
+
 def list_participantes() -> list[dict[str, Any]]:
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
-            "FROM participantes ORDER BY "
-            "CASE status WHEN 'comprovante' THEN 0 WHEN 'pendente' THEN 1 ELSE 2 END, "
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes ORDER BY "
+            "CASE "
+            "WHEN status = 'liberado' THEN 3 "
+            "WHEN recusado_em IS NOT NULL AND recusado_em != '' THEN 2 "
+            "WHEN status = 'comprovante' THEN 0 "
+            "ELSE 1 END, "
             "nome COLLATE NOCASE"
         ).fetchall()
         return [dict(r) for r in rows]
@@ -216,14 +280,15 @@ def criar_participante(
         liberado_sql = None
         if status == "liberado":
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status, liberado_em, celular) "
-                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'), ?)",
+                "INSERT INTO participantes (nome, token, status, liberado_em, celular, criado_em) "
+                "VALUES (?, ?, 'liberado', datetime('now', 'localtime'), ?, datetime('now', 'localtime'))",
                 (nome, token, celular_limpo),
             )
             liberado_sql = True
         else:
             cur = conn.execute(
-                "INSERT INTO participantes (nome, token, status, celular) VALUES (?, ?, ?, ?)",
+                "INSERT INTO participantes (nome, token, status, celular, criado_em) "
+                "VALUES (?, ?, ?, ?, datetime('now', 'localtime'))",
                 (nome, token, status, celular_limpo),
             )
         return {
@@ -235,6 +300,7 @@ def criar_participante(
             "comprovante_em": None,
             "liberado_em": liberado_sql,
             "celular": celular_limpo,
+            "criado_em": None,
         }
 
 
@@ -311,8 +377,7 @@ def _migrar_celulares_br(conn: sqlite3.Connection) -> None:
 def get_participante_por_token(token: str) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
-            "FROM participantes WHERE token = ?",
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE token = ?",
             (token,),
         ).fetchone()
         return dict(row) if row else None
@@ -321,8 +386,7 @@ def get_participante_por_token(token: str) -> dict[str, Any] | None:
 def get_participante(participante_id: int) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
-            "FROM participantes WHERE id = ?",
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE id = ?",
             (participante_id,),
         ).fetchone()
         return dict(row) if row else None
@@ -334,8 +398,7 @@ def get_participante_por_nome(nome: str) -> dict[str, Any] | None:
         return None
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, nome, token, status, comprovante_path, comprovante_em, liberado_em, avatar_path, celular "
-            "FROM participantes WHERE nome = ? COLLATE NOCASE",
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE nome = ? COLLATE NOCASE",
             (nome,),
         ).fetchone()
         return dict(row) if row else None
@@ -366,9 +429,67 @@ def liberar_participante(participante_id: int) -> None:
     with get_db() as conn:
         conn.execute(
             "UPDATE participantes SET status = 'liberado', "
-            "liberado_em = datetime('now', 'localtime') WHERE id = ?",
+            "liberado_em = datetime('now', 'localtime'), recusado_em = NULL "
+            "WHERE id = ?",
             (participante_id,),
         )
+
+
+def marcar_link_enviado(participante_id: int, *, enviado: bool = True) -> None:
+    with get_db() as conn:
+        if enviado:
+            conn.execute(
+                "UPDATE participantes SET link_enviado_em = datetime('now', 'localtime') "
+                "WHERE id = ? AND status = 'liberado'",
+                (participante_id,),
+            )
+        else:
+            conn.execute(
+                "UPDATE participantes SET link_enviado_em = NULL WHERE id = ?",
+                (participante_id,),
+            )
+
+
+def recusar_participante(participante_id: int) -> bool:
+    """Marca inscrição como recusada (não apaga). Retorna False se liberado/inexistente."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT status FROM participantes WHERE id = ?", (participante_id,)
+        ).fetchone()
+        if not row or row["status"] == "liberado":
+            return False
+        conn.execute(
+            "UPDATE participantes SET recusado_em = datetime('now', 'localtime') "
+            "WHERE id = ?",
+            (participante_id,),
+        )
+        return True
+
+
+def reabrir_participante(participante_id: int) -> bool:
+    """Tira da lista de recusados (volta para liberação pendente)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT status FROM participantes WHERE id = ?", (participante_id,)
+        ).fetchone()
+        if not row or row["status"] == "liberado":
+            return False
+        conn.execute(
+            "UPDATE participantes SET recusado_em = NULL WHERE id = ?",
+            (participante_id,),
+        )
+        return True
+
+
+def recusar_todos_pendentes() -> int:
+    """Marca todos os não liberados ainda não recusados. Retorna quantos."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE participantes SET recusado_em = datetime('now', 'localtime') "
+            "WHERE status != 'liberado' "
+            "AND (recusado_em IS NULL OR recusado_em = '')"
+        )
+        return cur.rowcount
 
 
 def apagar_participante(participante_id: int) -> dict[str, Any] | None:
@@ -411,8 +532,26 @@ def salvar_avatar(participante_id: int, relative_path: str | None) -> None:
         )
 
 
+def apagar_pendentes() -> list[dict[str, Any]]:
+    """Remove todos os não liberados. Devolve paths para limpeza de arquivos."""
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, nome, comprovante_path, avatar_path FROM participantes "
+            "WHERE status != 'liberado'"
+        ).fetchall()
+        out = [dict(r) for r in rows]
+        for part in out:
+            pid = part["id"]
+            conn.execute("DELETE FROM palpites_jogo WHERE participante_id = ?", (pid,))
+            conn.execute(
+                "DELETE FROM palpites_penaltis WHERE participante_id = ?", (pid,)
+            )
+            conn.execute("DELETE FROM participantes WHERE id = ?", (pid,))
+        return out
+
+
 def recusar_comprovante(participante_id: int) -> str | None:
-    """Volta a pendente e devolve path antigo para apagar arquivo."""
+    """Compat: remove comprovante e volta a pendente (preferir apagar inscrição)."""
     with get_db() as conn:
         row = conn.execute(
             "SELECT comprovante_path FROM participantes WHERE id = ?",

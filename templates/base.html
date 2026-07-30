@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=77" />
+  <link rel="stylesheet" href="/static/style.css?v=97" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -55,39 +55,40 @@
       {% include "partials/theme_toggle.html" %}
   {% else %}
   {% block site_nav %}
+  {% from "partials/nav_icons.html" import ico %}
   <nav class="site-nav-desktop" id="site-header">
     <div class="nav-left">
       {% if participante_nav and participante_nav.status == 'liberado' %}
         <details class="nav-dropdown {% if on_competicao %}is-active{% endif %}">
-          <summary aria-haspopup="menu">Competição</summary>
+          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
           <div class="nav-dropdown-menu" role="menu">
-            <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">Classificação</a>
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+            <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">{{ ico('classificacao') }}Classificação</a>
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
           </div>
         </details>
         <details class="nav-dropdown {% if on_meu_bolao %}is-active{% endif %}">
-          <summary aria-haspopup="menu">Meu Bolão</summary>
+          <summary aria-haspopup="menu">{{ ico('meu-bolao') }}Meu Bolão</summary>
           <div class="nav-dropdown-menu" role="menu">
-            <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">Meus Palpites</a>
+            <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">{{ ico('palpites') }}Meus Palpites</a>
           </div>
         </details>
       {% elif participante_nav %}
-        <a href="/p/{{ participante_nav.token }}" class="{% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}">Inscrição</a>
+        <a href="/p/{{ participante_nav.token }}" class="{% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}">{{ ico('inscricao') }}Inscrição</a>
         <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
-          <summary aria-haspopup="menu">Competição</summary>
+          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
           <div class="nav-dropdown-menu" role="menu">
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
           </div>
         </details>
       {% else %}
-        <a href="/inscricao" class="{% if on_inscricao %}active{% endif %}">Inscrição</a>
+        <a href="/inscricao" class="{% if on_inscricao %}active{% endif %}">{{ ico('inscricao') }}Inscrição</a>
         <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
-          <summary aria-haspopup="menu">Competição</summary>
+          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
           <div class="nav-dropdown-menu" role="menu">
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">Regras</a>
+            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
+            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
           </div>
         </details>
       {% endif %}
@@ -216,6 +217,72 @@
     document.addEventListener("click", (e) => {
       if (e.target.closest("nav.site-nav-desktop details.nav-dropdown")) return;
       dropdowns.forEach((d) => { d.open = false; });
+    });
+  })();
+  </script>
+  <script>
+  (() => {
+    const KEY = "thdfm-fases-collapsed";
+    const readCollapsed = () => {
+      try {
+        const v = localStorage.getItem(KEY);
+        if (v === null) return true;
+        return v === "1";
+      } catch (e) {
+        return true;
+      }
+    };
+    const writeCollapsed = (collapsed) => {
+      try { localStorage.setItem(KEY, collapsed ? "1" : "0"); } catch (e) {}
+    };
+    const syncSummary = (panel) => {
+      const summary = panel.querySelector("[data-fases-summary]");
+      if (!summary) return;
+      const col = panel.querySelector(".transparencia-nav-col.is-active");
+      const faseEl = col?.querySelector(".transparencia-nav-fase");
+      const pernaEl = col?.querySelector(".transparencia-nav-pernas .active, .transparencia-nav-pernas [aria-current]");
+      const fase = (faseEl?.textContent || "").trim();
+      const perna = (pernaEl?.textContent || "").trim();
+      summary.textContent = [fase, perna].filter(Boolean).join(" · ");
+    };
+    document.querySelectorAll("[data-fases-collapse]").forEach((panel) => {
+      const btn = panel.querySelector("[data-fases-toggle]");
+      const label = btn?.querySelector(".btn-toggle-fases-label");
+      const setCollapsed = (collapsed) => {
+        panel.classList.toggle("is-collapsed", collapsed);
+        btn?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        if (label) label.textContent = collapsed ? "Expandir" : "Minimizar";
+        syncSummary(panel);
+        writeCollapsed(collapsed);
+      };
+      setCollapsed(readCollapsed());
+      btn?.addEventListener("click", () => {
+        setCollapsed(!panel.classList.contains("is-collapsed"));
+      });
+      panel.addEventListener("click", (e) => {
+        if (e.target.closest("[data-fase], .transparencia-nav-fase, .transparencia-nav-pernas a, .transparencia-nav-pernas button")) {
+          // Deixa o handler da página atualizar .is-active/.active e depois atualiza o resumo.
+          requestAnimationFrame(() => syncSummary(panel));
+        }
+      });
+    });
+  })();
+  </script>
+  <script>
+  (() => {
+    document.querySelectorAll("[data-planilha-collapse]").forEach((card) => {
+      const btn = card.querySelector("[data-planilha-toggle]");
+      const label = btn?.querySelector(".btn-toggle-planilha-label");
+      const setCollapsed = (collapsed) => {
+        card.classList.toggle("is-collapsed", collapsed);
+        btn?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        if (label) label.textContent = collapsed ? "Expandir" : "Minimizar";
+        if (btn) btn.title = collapsed ? "Expandir palpites" : "Minimizar palpites";
+      };
+      setCollapsed(card.classList.contains("is-collapsed"));
+      btn?.addEventListener("click", () => {
+        setCollapsed(!card.classList.contains("is-collapsed"));
+      });
     });
   })();
   </script>
