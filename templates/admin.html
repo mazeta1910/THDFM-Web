@@ -3,7 +3,6 @@
 {% block admin_topbar %}
 <div>
   <h1 id="admin-section-title">Resultados</h1>
-  <p class="admin-top-meta">Janela: <strong>{{ janela|capitalize }}</strong> · Fase: <strong>{{ fase_atual }}</strong></p>
 </div>
 {% endblock %}
 {% block content %}
@@ -13,6 +12,77 @@
 {% set liberacao_recusada = nao_liberados | selectattr('recusado_em') | list %}
 {% set liberados_sem_link = liberados | rejectattr('link_enviado_em') | list %}
 {% set liberados_com_link = liberados | selectattr('link_enviado_em') | list %}
+
+{% macro participante_edit_card(p) -%}
+<form
+  method="post"
+  action="/admin/participante/{{ p.id }}/atualizar"
+  enctype="multipart/form-data"
+  class="card participante-edit-card"
+  data-nome="{{ p.nome|e }}"
+  data-celular="{{ (p.celular or '')|e }}"
+>
+  <div class="participante-edit-top">
+    <div class="participante-edit-avatar">
+      {% if p.avatar_path %}
+      <img src="/avatars/{{ p.avatar_path }}" alt="" data-avatar-preview />
+      {% else %}
+      <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
+      {% endif %}
+    </div>
+    <div class="participante-edit-meta">
+      <span class="participante-status-tag status-{{ p.status }}{% if p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+        {% if p.status == 'liberado' %}Liberado
+        {% elif p.recusado_em %}Recusado
+        {% elif p.status == 'comprovante' %}Com comprovante
+        {% else %}Pendente{% endif %}
+      </span>
+      {% if p.link_enviado_em %}
+      <span class="participante-meta-line">Link enviado · {{ p.link_enviado_em }}</span>
+      {% endif %}
+      {% if p.criado_em %}
+      <span class="participante-meta-line">Desde {{ p.criado_em }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <label>Nome exibido</label>
+  <input type="text" name="nome" value="{{ p.nome }}" required autocomplete="off" />
+
+  <label>Celular</label>
+  <input type="tel" name="celular" value="{{ p.celular|celular_fmt if p.celular else '' }}" placeholder="(11) 99999-9999" autocomplete="off" />
+
+  <label>Foto de perfil</label>
+  <div class="participante-avatar-row">
+    <label class="file-pick conta-file-pick participante-file-pick">
+      <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden data-avatar-input />
+      <span class="file-pick-btn" title="Escolher foto" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+        </svg>
+      </span>
+      <span class="file-pick-name" data-avatar-name>Trocar foto</span>
+    </label>
+    {% if p.avatar_path %}
+    <label class="participantes-check participante-remove-avatar">
+      <input type="checkbox" name="remover_avatar" value="1" />
+      Remover foto
+    </label>
+    {% endif %}
+  </div>
+
+  <div class="participante-edit-actions">
+    <a class="btn secondary participante-link-btn" href="/p/{{ p.token }}" title="Abrir link privado" target="_blank" rel="noopener">Link</a>
+    <button type="submit" class="btn-save-icon" title="Salvar" aria-label="Salvar {{ p.nome }}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+        <polyline points="17 21 17 13 7 13 7 21" />
+        <polyline points="7 3 7 8 15 8" />
+      </svg>
+    </button>
+  </div>
+</form>
+{%- endmacro %}
 
     <section class="admin-panel active" data-panel="resultados">
       <div class="admin-grid-2 admin-ops-grid" style="margin-bottom:1rem">
@@ -527,115 +597,82 @@
 
     <section class="admin-panel" data-panel="participantes">
       <div class="participantes-dash">
-        <div class="card participantes-create">
-          <h2>Novo participante</h2>
-          <p class="participantes-create-hint">Cadastro rápido (manual). Quem já pagou pode ser liberado na hora.</p>
-          <form method="post" action="/admin/participante" class="participantes-create-form">
-            <div class="participantes-create-fields">
-              <div>
-                <label for="novo-nome">Nome na tabela</label>
-                <input id="novo-nome" type="text" name="nome" required placeholder="Nome no grupo / classificação" autocomplete="off" />
-              </div>
-              <div>
-                <label for="novo-celular">Celular</label>
-                <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" autocomplete="off" />
-              </div>
-            </div>
-            <div class="participantes-create-actions">
-              <label class="participantes-check">
-                <input type="checkbox" name="ja_pago" value="1" />
-                Já pagou — liberar agora
-              </label>
-              <button type="submit">Criar</button>
-            </div>
-          </form>
-        </div>
-
         <div class="participantes-toolbar">
-          <h2>Participantes <span class="participantes-count">{{ participantes|length }}</span></h2>
+          <p class="participantes-lead">Edite nome na tabela, celular e foto dos liberados. Pendentes ficam separados até a liberação.</p>
           <label class="participantes-filter-wrap" for="participantes-filter">
             <span class="sr-only">Filtrar</span>
             <input id="participantes-filter" type="search" placeholder="Buscar por nome ou celular…" autocomplete="off" />
           </label>
         </div>
 
-        {% if not participantes %}
-        <div class="card">
-          <p class="locked-msg" style="margin:0">Nenhum participante ainda.</p>
-        </div>
-        {% else %}
-        <div class="participantes-grid" id="participantes-grid">
-          {% for p in participantes %}
-          <form
-            method="post"
-            action="/admin/participante/{{ p.id }}/atualizar"
-            enctype="multipart/form-data"
-            class="card participante-edit-card"
-            data-nome="{{ p.nome|e }}"
-            data-celular="{{ (p.celular or '')|e }}"
-          >
-            <div class="participante-edit-top">
-              <div class="participante-edit-avatar">
-                {% if p.avatar_path %}
-                <img src="/avatars/{{ p.avatar_path }}" alt="" data-avatar-preview />
-                {% else %}
-                <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
-                {% endif %}
+        <section class="participantes-section" data-participantes-section="liberados">
+          <h2 class="participantes-section-title">
+            Liberados
+            <span class="participantes-count">{{ liberados|length }}</span>
+          </h2>
+          <div class="participantes-grid" data-participantes-grid>
+            <form method="post" action="/admin/participante" class="card participante-edit-card participante-create-card" data-nome="novo" data-celular="">
+              <div class="participante-edit-top">
+                <div class="participante-edit-avatar participante-edit-avatar-novo" aria-hidden="true">
+                  <span class="participante-edit-avatar-fallback">+</span>
+                </div>
+                <div class="participante-edit-meta">
+                  <span class="participante-status-tag status-novo">Novo</span>
+                  <span class="participante-meta-line">Cadastro manual</span>
+                </div>
               </div>
-              <div class="participante-edit-meta">
-                <span class="participante-status-tag status-{{ p.status }}{% if p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-                  {% if p.status == 'liberado' %}Liberado
-                  {% elif p.recusado_em %}Recusado
-                  {% elif p.status == 'comprovante' %}Com comprovante
-                  {% else %}Pendente{% endif %}
-                </span>
-                {% if p.link_enviado_em %}
-                <span class="participante-meta-line">Link enviado · {{ p.link_enviado_em }}</span>
-                {% endif %}
-                {% if p.criado_em %}
-                <span class="participante-meta-line">Desde {{ p.criado_em }}</span>
-                {% endif %}
+
+              <label for="novo-nome">Nome exibido</label>
+              <input id="novo-nome" type="text" name="nome" required placeholder="Nome no grupo / classificação" autocomplete="off" />
+
+              <label for="novo-celular">Celular</label>
+              <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" autocomplete="off" />
+
+              <label class="participantes-check participante-create-check">
+                <input type="checkbox" name="ja_pago" value="1" />
+                Já pagou — liberar agora
+              </label>
+
+              <div class="participante-edit-actions">
+                <span class="participante-create-spacer"></span>
+                <button type="submit">Criar</button>
               </div>
-            </div>
+            </form>
 
-            <label>Nome exibido</label>
-            <input type="text" name="nome" value="{{ p.nome }}" required autocomplete="off" />
+            {% for p in liberados %}
+            {{ participante_edit_card(p) }}
+            {% endfor %}
+          </div>
+        </section>
 
-            <label>Celular</label>
-            <input type="tel" name="celular" value="{{ p.celular|celular_fmt if p.celular else '' }}" placeholder="(11) 99999-9999" autocomplete="off" />
+        <section class="participantes-section" data-participantes-section="pendentes">
+          <h2 class="participantes-section-title">
+            Aguardando liberação
+            <span class="participantes-count">{{ liberacao_pendente|length }}</span>
+          </h2>
+          {% if liberacao_pendente %}
+          <div class="participantes-grid" data-participantes-grid>
+            {% for p in liberacao_pendente %}
+            {{ participante_edit_card(p) }}
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="participantes-empty">Ninguém aguardando liberação.</p>
+          {% endif %}
+        </section>
 
-            <label>Foto de perfil</label>
-            <div class="participante-avatar-row">
-              <label class="file-pick conta-file-pick participante-file-pick">
-                <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden data-avatar-input />
-                <span class="file-pick-btn" title="Escolher foto" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                  </svg>
-                </span>
-                <span class="file-pick-name" data-avatar-name>Trocar foto</span>
-              </label>
-              {% if p.avatar_path %}
-              <label class="participantes-check participante-remove-avatar">
-                <input type="checkbox" name="remover_avatar" value="1" />
-                Remover foto
-              </label>
-              {% endif %}
-            </div>
-
-            <div class="participante-edit-actions">
-              <a class="btn secondary participante-link-btn" href="/p/{{ p.token }}" title="Abrir link privado" target="_blank" rel="noopener">Link</a>
-              <button type="submit" class="btn-save-icon" title="Salvar" aria-label="Salvar {{ p.nome }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-              </button>
-            </div>
-          </form>
-          {% endfor %}
-        </div>
+        {% if liberacao_recusada %}
+        <section class="participantes-section" data-participantes-section="recusados">
+          <h2 class="participantes-section-title">
+            Recusados
+            <span class="participantes-count">{{ liberacao_recusada|length }}</span>
+          </h2>
+          <div class="participantes-grid" data-participantes-grid>
+            {% for p in liberacao_recusada %}
+            {{ participante_edit_card(p) }}
+            {% endfor %}
+          </div>
+        </section>
         {% endif %}
       </div>
     </section>
@@ -759,8 +796,8 @@ const TITLES = {
   operacao: "Resultados",
   resultados: "Resultados",
   inscricoes: "Inscrições",
-  participantes: "Participantes",
-  cadastro: "Participantes",
+  participantes: "Gestão de Participantes",
+  cadastro: "Gestão de Participantes",
 };
 const KEY_SEC = "admin-section";
 const showSection = (sec, pushUrl = false) => {
@@ -1212,12 +1249,16 @@ document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
 
 (() => {
   const filter = document.getElementById("participantes-filter");
-  const grid = document.getElementById("participantes-grid");
-  if (!grid) return;
+  const cards = () => Array.from(document.querySelectorAll(".participantes-dash .participante-edit-card"));
+  if (!cards().length && !filter) return;
 
   const applyFilter = () => {
     const q = (filter?.value || "").trim().toLocaleLowerCase("pt-BR");
-    grid.querySelectorAll(".participante-edit-card").forEach((card) => {
+    cards().forEach((card) => {
+      if (card.classList.contains("participante-create-card")) {
+        card.hidden = false;
+        return;
+      }
       const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
       const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
       const hit = !q || nome.includes(q) || celular.includes(q);
@@ -1226,7 +1267,7 @@ document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
   };
   filter?.addEventListener("input", applyFilter);
 
-  grid.querySelectorAll("[data-avatar-input]").forEach((input) => {
+  document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
     input.addEventListener("change", () => {
       const card = input.closest(".participante-edit-card");
       const nameEl = card?.querySelector("[data-avatar-name]");
