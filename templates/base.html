@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=101" />
+  <link rel="stylesheet" href="/static/style.css?v=102" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -102,8 +102,9 @@
     <div class="nav-right">
       {% if participante_nav %}
       <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in path %}active{% endif %}">
-        {% if participante_nav.avatar_path %}
-        <img class="nav-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
+        {% set nav_av = avatar_url(participante_nav.avatar_path) %}
+        {% if nav_av %}
+        <img class="nav-avatar" src="{{ nav_av }}" alt="" />
         {% else %}
         <span class="nav-avatar nav-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
         {% endif %}

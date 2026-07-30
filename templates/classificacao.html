@@ -99,8 +99,9 @@
                 </span>
                 {% endif %}
               </div>
-              {% if r.avatar_path %}
-              <img class="classificacao-avatar" src="/avatars/{{ r.avatar_path }}" alt="" />
+              {% set row_av = avatar_url(r.avatar_path) %}
+              {% if row_av %}
+              <img class="classificacao-avatar" src="{{ row_av }}" alt="" />
               {% else %}
               <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
               {% endif %}

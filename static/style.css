@@ -3750,3 +3750,56 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
     max-width: none;
   }
 }
+
+.avatar-padrao-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+}
+.avatar-padrao-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-padrao-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-padrao-copy {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.avatar-padrao-copy strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+.avatar-padrao-copy p {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.avatar-padrao-save {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.avatar-preview img.avatar-placeholder {
+  display: block;
+  background: none;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}

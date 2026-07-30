@@ -23,8 +23,9 @@
     </div>
     {% if participante_nav %}
     <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}">
-      {% if participante_nav.avatar_path %}
-      <img class="admin-brand-avatar" src="/avatars/{{ participante_nav.avatar_path }}" alt="" />
+      {% set brand_av = avatar_url(participante_nav.avatar_path) %}
+      {% if brand_av %}
+      <img class="admin-brand-avatar" src="{{ brand_av }}" alt="" />
       {% else %}
       <span class="admin-brand-avatar admin-brand-avatar-fallback">{{ admin_nome[:2]|upper }}</span>
       {% endif %}

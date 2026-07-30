@@ -21,6 +21,7 @@ from src.config import (
     ADMIN_WHATSAPP_MSG,
     AVATAR_EXTS,
     AVATAR_MAX_BYTES,
+    AVATAR_PADRAO_STEM,
     AVATARES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
@@ -46,10 +47,6 @@ app = FastAPI(title="Bolão THDFM — Copa do Brasil")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SECRET_KEY", SECRET_KEY))
 
 TEMPLATES = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
-TEMPLATES.env.globals["emblema_url"] = emblema_url
-TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
-TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
-TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 
 STATIC = ROOT_DIR / "static"
 STATIC.mkdir(exist_ok=True)
@@ -60,6 +57,36 @@ AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
+
+
+def avatar_padrao_path() -> Path | None:
+    for ext in (".jpg", ".jpeg", ".png", ".webp"):
+        candidate = STATIC / f"{AVATAR_PADRAO_STEM}{ext}"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def avatar_padrao_url() -> str | None:
+    path = avatar_padrao_path()
+    if not path:
+        return None
+    return f"/static/{path.name}?v={int(path.stat().st_mtime)}"
+
+
+def avatar_url(avatar_path: str | None) -> str | None:
+    """URL da foto do participante ou da foto padrão do bolão."""
+    if avatar_path:
+        return f"/avatars/{avatar_path}"
+    return avatar_padrao_url()
+
+
+TEMPLATES.env.globals["emblema_url"] = emblema_url
+TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
+TEMPLATES.env.globals["avatar_url"] = avatar_url
+TEMPLATES.env.globals["avatar_padrao_url"] = avatar_padrao_url
+TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
+TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 
 
 @app.on_event("startup")
@@ -856,6 +883,35 @@ def admin_participante(
         )
     return RedirectResponse(
         "/admin?sec=participantes&msg=Participante+criado", status_code=303
+    )
+
+
+@app.post("/admin/avatar-padrao")
+async def admin_avatar_padrao(
+    request: Request,
+    avatar: UploadFile = File(...),
+):
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    ext = Path(avatar.filename or "").suffix.lower()
+    if ext not in AVATAR_EXTS:
+        return RedirectResponse(
+            "/admin?sec=participantes&erro=Foto+padrao+deve+ser+jpg/png/webp",
+            status_code=303,
+        )
+    data = await avatar.read()
+    if not data or len(data) > AVATAR_MAX_BYTES:
+        return RedirectResponse(
+            "/admin?sec=participantes&erro=Foto+padrao+invalida+ou+maior+que+3MB",
+            status_code=303,
+        )
+    for old in STATIC.glob(f"{AVATAR_PADRAO_STEM}.*"):
+        if old.is_file():
+            old.unlink(missing_ok=True)
+    dest = STATIC / f"{AVATAR_PADRAO_STEM}{ext}"
+    dest.write_bytes(data)
+    return RedirectResponse(
+        "/admin?sec=participantes&msg=Foto+padrao+atualizada", status_code=303
     )
 
 

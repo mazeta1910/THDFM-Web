@@ -11,8 +11,9 @@
     <form method="post" action="/p/{{ participante.token }}/conta" enctype="multipart/form-data" class="conta-form" id="form-conta">
       <div class="conta-top">
         <div class="avatar-preview">
-          {% if participante.avatar_path %}
-          <img id="avatar-live" src="/avatars/{{ participante.avatar_path }}" alt="Sua foto" />
+          {% set conta_av = avatar_url(participante.avatar_path) %}
+          {% if conta_av %}
+          <img id="avatar-live" class="avatar-placeholder" src="{{ conta_av }}" alt="Sua foto" />
           {% else %}
           <div class="avatar-placeholder" id="avatar-live">{{ participante.nome[:2]|upper }}</div>
           {% endif %}
