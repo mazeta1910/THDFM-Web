@@ -668,22 +668,23 @@ def admin_logout(request: Request):
 def admin_home(request: Request):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
-    # Garante palpites para todos os admins — vínculo por login, não por nick
+    # Só garante o admin da sessão atual. Os outros nascem no próprio login —
+    # senão apagar "João JEC" / "Mazeta" recria na hora.
     token_atual = request.session.get("participante_token")
     login_atual = (request.session.get("admin_login") or "").strip().lower()
-    try:
-        for admin in list_admins():
-            preferido = token_atual if admin.login == login_atual else None
-            db.garantir_participante_admin(
-                admin.login, admin.nome, token_preferido=preferido
+    if login_atual:
+        try:
+            admin_atual = next(
+                (a for a in list_admins() if a.login == login_atual), None
             )
-        if login_atual:
-            part = db.get_participante_por_admin_login(login_atual)
-            if part:
-                _remember_participante(request, part["token"])
-                request.session["admin_nome"] = part.get("nome") or admin_nome(request)
-    except Exception:
-        pass
+            nome_cfg = admin_atual.nome if admin_atual else admin_nome(request)
+            part = db.garantir_participante_admin(
+                login_atual, nome_cfg, token_preferido=token_atual
+            )
+            _remember_participante(request, part["token"])
+            request.session["admin_nome"] = part.get("nome") or nome_cfg
+        except Exception:
+            pass
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0

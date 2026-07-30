@@ -39,6 +39,9 @@
         {% elif p.status == 'comprovante' %}Com comprovante
         {% else %}Pendente{% endif %}
       </span>
+      {% if p.admin_login %}
+      <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
+      {% endif %}
       {% if p.link_enviado_em %}
       <span class="participante-meta-line">Link enviado · {{ p.link_enviado_em }}</span>
       {% endif %}

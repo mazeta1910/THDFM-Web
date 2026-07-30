@@ -3671,6 +3671,11 @@ tr.planilha-sem-palpite .planilha-num {
 html[data-theme="dark"] .participante-status-tag.status-liberado {
   color: #7ddea0;
 }
+.participante-status-tag.status-admin {
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.12);
+}
 .participante-status-tag.status-novo {
   color: var(--accent);
   border-color: rgba(232, 93, 4, 0.35);
