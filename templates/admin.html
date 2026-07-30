@@ -33,15 +33,17 @@
       {% endif %}
     </div>
     <div class="participante-edit-meta">
-      <span class="participante-status-tag status-{{ p.status }}{% if p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-        {% if p.status == 'liberado' %}Liberado
-        {% elif p.recusado_em %}Recusado
-        {% elif p.status == 'comprovante' %}Com comprovante
-        {% else %}Pendente{% endif %}
-      </span>
-      {% if p.admin_login %}
-      <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
-      {% endif %}
+      <div class="participante-status-row">
+        {% if p.admin_login %}
+        <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
+        {% endif %}
+        <span class="participante-status-tag status-{{ p.status }}{% if p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+          {% if p.status == 'liberado' %}Liberado
+          {% elif p.recusado_em %}Recusado
+          {% elif p.status == 'comprovante' %}Com comprovante
+          {% else %}Pendente{% endif %}
+        </span>
+      </div>
       {% if p.link_enviado_em %}
       <span class="participante-meta-line">Link enviado · {{ p.link_enviado_em }}</span>
       {% endif %}
