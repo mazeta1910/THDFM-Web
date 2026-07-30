@@ -820,15 +820,29 @@ def admin_link_enviado(
 def admin_apagar(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
         return RedirectResponse("/admin/login", status_code=303)
-    part = db.apagar_participante(participante_id)
+    part = db.get_participante(participante_id)
     if not part:
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Participante+nao+encontrado", status_code=303
         )
-    _limpar_arquivos_participante(part)
-    return RedirectResponse(
-        "/admin?sec=inscricoes&msg=Inscricao+apagada", status_code=303
-    )
+    # Não deixa o admin apagar a própria conta da sessão (quebraria o painel)
+    login_atual = (request.session.get("admin_login") or "").strip().lower()
+    part_login = (part.get("admin_login") or "").strip().lower()
+    if part_login and login_atual and part_login == login_atual:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Nao+da+para+apagar+o+admin+logado",
+            status_code=303,
+        )
+    apagado = db.apagar_participante(participante_id)
+    if not apagado:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+encontrado", status_code=303
+        )
+    _limpar_arquivos_participante(apagado)
+    msg = "Inscricao+apagada"
+    if part_login:
+        msg = "Admin+removido+do+bolao.+So+volta+se+ele+entrar+de+novo+no+admin"
+    return RedirectResponse(f"/admin?sec=inscricoes&msg={msg}", status_code=303)
 
 
 @app.post("/admin/recusar")
