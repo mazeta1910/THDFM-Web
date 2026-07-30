@@ -16,12 +16,13 @@
 {% macro participante_edit_card(p) -%}
 <form
   method="post"
-  action="/admin/participante/{{ p.id }}/atualizar"
+  action="/admin/participante/atualizar"
   enctype="multipart/form-data"
   class="card participante-edit-card"
   data-nome="{{ p.nome|e }}"
   data-celular="{{ (p.celular or '')|e }}"
 >
+  <input type="hidden" name="participante_id" value="{{ p.id }}" />
   <div class="participante-edit-top">
     <div class="participante-edit-avatar">
       {% if p.avatar_path %}

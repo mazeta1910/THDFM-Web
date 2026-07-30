@@ -859,10 +859,10 @@ def admin_participante(
     )
 
 
-@app.post("/admin/participante/{participante_id}/atualizar")
+@app.post("/admin/participante/atualizar")
 async def admin_atualizar_participante(
     request: Request,
-    participante_id: int,
+    participante_id: int = Form(...),
     nome: str = Form(...),
     celular: str = Form(""),
     remover_avatar: str = Form(""),
