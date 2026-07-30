@@ -524,6 +524,19 @@ def atualizar_nome_participante(participante_id: int, nome: str) -> None:
         )
 
 
+def atualizar_celular_participante(
+    participante_id: int, celular: str | None
+) -> None:
+    celular_limpo = None
+    if celular and str(celular).strip():
+        celular_limpo = normalizar_celular(celular)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET celular = ? WHERE id = ?",
+            (celular_limpo, participante_id),
+        )
+
+
 def salvar_avatar(participante_id: int, relative_path: str | None) -> None:
     with get_db() as conn:
         conn.execute(

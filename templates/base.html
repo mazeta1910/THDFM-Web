@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=98" />
+  <link rel="stylesheet" href="/static/style.css?v=99" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -40,8 +40,14 @@
 {% set on_meu_bolao = on_palpites %}
 <body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% else %} site-body{% endif %}">
   {% if admin_layout %}
-  {% set _sec = request.query_params.get('sec') or 'resultados' %}
-  {% set admin_sec = 'resultados' if _sec in ['config', 'rodada', 'operacao'] else _sec %}
+  {% set _sec_raw = request.query_params.get('sec') or 'resultados' %}
+  {% if _sec_raw in ['config', 'rodada', 'operacao'] %}
+    {% set admin_sec = 'resultados' %}
+  {% elif _sec_raw == 'cadastro' %}
+    {% set admin_sec = 'participantes' %}
+  {% else %}
+    {% set admin_sec = _sec_raw %}
+  {% endif %}
   <div class="admin-shell">
     <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop" hidden></div>
     {% include "partials/admin_sidebar.html" %}

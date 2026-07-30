@@ -845,14 +845,82 @@ def admin_participante(
             celular_ok = db.normalizar_celular(celular)
         except ValueError:
             return RedirectResponse(
-                "/admin?erro=Celular+invalido",
+                "/admin?sec=participantes&erro=Celular+invalido",
                 status_code=303,
             )
     try:
         db.criar_participante(nome, status=status, celular=celular_ok)
     except Exception as exc:
-        return RedirectResponse(f"/admin?erro={exc}", status_code=303)
-    return RedirectResponse("/admin?msg=Participante+criado", status_code=303)
+        return RedirectResponse(
+            f"/admin?sec=participantes&erro={exc}", status_code=303
+        )
+    return RedirectResponse(
+        "/admin?sec=participantes&msg=Participante+criado", status_code=303
+    )
+
+
+@app.post("/admin/participante/{participante_id}/atualizar")
+async def admin_atualizar_participante(
+    request: Request,
+    participante_id: int,
+    nome: str = Form(...),
+    celular: str = Form(""),
+    remover_avatar: str = Form(""),
+    avatar: UploadFile = File(None),
+):
+    from urllib.parse import quote
+
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    part = db.get_participante(participante_id)
+    if not part:
+        return RedirectResponse(
+            "/admin?sec=participantes&erro=Participante+nao+encontrado",
+            status_code=303,
+        )
+    try:
+        db.atualizar_nome_participante(participante_id, nome)
+        db.atualizar_celular_participante(participante_id, celular)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin?sec=participantes&erro={quote(str(exc))}", status_code=303
+        )
+    except Exception as exc:
+        return RedirectResponse(
+            f"/admin?sec=participantes&erro={quote(str(exc))}", status_code=303
+        )
+
+    if remover_avatar == "1" and part.get("avatar_path"):
+        old = AVATARES_DIR / part["avatar_path"]
+        if old.is_file():
+            old.unlink(missing_ok=True)
+        db.salvar_avatar(participante_id, None)
+        part["avatar_path"] = None
+
+    if avatar is not None and getattr(avatar, "filename", None):
+        ext = Path(avatar.filename or "").suffix.lower()
+        if ext not in AVATAR_EXTS:
+            return RedirectResponse(
+                "/admin?sec=participantes&erro=Foto+deve+ser+jpg/png/webp",
+                status_code=303,
+            )
+        data = await avatar.read()
+        if not data or len(data) > AVATAR_MAX_BYTES:
+            return RedirectResponse(
+                "/admin?sec=participantes&erro=Foto+invalida+ou+maior+que+3MB",
+                status_code=303,
+            )
+        if part.get("avatar_path"):
+            old = AVATARES_DIR / part["avatar_path"]
+            if old.is_file():
+                old.unlink(missing_ok=True)
+        rel = f"{participante_id}_{int(time.time())}{ext}"
+        (AVATARES_DIR / rel).write_bytes(data)
+        db.salvar_avatar(participante_id, rel)
+
+    return RedirectResponse(
+        "/admin?sec=participantes&msg=Participante+atualizado", status_code=303
+    )
 
 
 @app.post("/admin/resultado")

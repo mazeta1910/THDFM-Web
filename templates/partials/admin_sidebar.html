@@ -8,12 +8,11 @@
 {% set on_regras = path.startswith('/regras') %}
 {% set on_admin_resultados = on_admin and admin_sec == 'resultados' and not on_admin_palpites %}
 {% set on_admin_inscricoes = on_admin and admin_sec == 'inscricoes' %}
-{% set on_admin_cadastro = on_admin and admin_sec == 'cadastro' %}
+{% set on_admin_participantes = on_admin and admin_sec == 'participantes' %}
 {% set pend_n = admin_pendentes_count|default(0) %}
-{% set open_admin = on_admin_inscricoes or on_admin_cadastro or on_admin_resultados or on_admin_palpites %}
-{% set open_competicao = on_classificacao or on_transparencia %}
+{% set open_admin = on_admin_inscricoes or on_admin_participantes or on_admin_resultados or on_admin_palpites %}
+{% set open_competicao = on_classificacao or on_transparencia or on_regras %}
 {% set open_meu_bolao = on_palpites %}
-{% set open_sistema = on_regras %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="admin-sidebar" id="admin-sidebar">
@@ -39,45 +38,41 @@
     {% endif %}
   </div>
   <nav class="admin-side-nav" aria-label="Menu do painel">
-    {# Agrupamento por tarefa (job-to-be-done): Admin = operação do bolão; Competição = acompanhamento; Meu Bolão = papel pessoal; Sistema = utilitários. #}
-    <details class="admin-menu-group" data-group="admin" {% if open_admin or not (open_competicao or open_meu_bolao or open_sistema) %}open{% endif %}>
-      <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
-      <div class="admin-menu-items">
-        <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
-          {{ ico('inscricoes') }}<span>Inscrições</span>
-          {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
-        </a>
-        <a href="/admin?sec=cadastro" class="admin-side-link {% if on_admin_cadastro %}active{% endif %}" data-sec="cadastro">{{ ico('cadastro') }}<span>Cadastro manual</span></a>
-        <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
-        <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
-      </div>
-    </details>
+    <div class="admin-side-nav-scroll">
+      <details class="admin-menu-group" data-group="admin" {% if open_admin or not (open_competicao or open_meu_bolao) %}open{% endif %}>
+        <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
+        <div class="admin-menu-items">
+          <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
+            {{ ico('inscricoes') }}<span>Inscrições</span>
+            {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
+          </a>
+          <a href="/admin?sec=participantes" class="admin-side-link {% if on_admin_participantes %}active{% endif %}" data-sec="participantes">{{ ico('participantes') }}<span>Participantes</span></a>
+          <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
+          <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+        </div>
+      </details>
 
-    <details class="admin-menu-group" data-group="competicao" {% if open_competicao %}open{% endif %}>
-      <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
-      <div class="admin-menu-items">
-        <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
-        <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
-      </div>
-    </details>
+      <details class="admin-menu-group" data-group="competicao" {% if open_competicao %}open{% endif %}>
+        <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
+        <div class="admin-menu-items">
+          <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
+          <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
+          <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
+        </div>
+      </details>
 
-    <details class="admin-menu-group" data-group="meu-bolao" {% if open_meu_bolao %}open{% endif %}>
-      <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
-      <div class="admin-menu-items">
-        {% if participante_nav and participante_nav.status == 'liberado' %}
-        <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
-        {% else %}
-        <span class="admin-side-link admin-side-disabled" title="Liberação necessária">{{ ico('palpites') }}<span>Meus Palpites</span></span>
-        {% endif %}
-      </div>
-    </details>
+      <details class="admin-menu-group" data-group="meu-bolao" {% if open_meu_bolao %}open{% endif %}>
+        <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
+        <div class="admin-menu-items">
+          {% if participante_nav and participante_nav.status == 'liberado' %}
+          <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+          {% else %}
+          <span class="admin-side-link admin-side-disabled" title="Liberação necessária">{{ ico('palpites') }}<span>Meus Palpites</span></span>
+          {% endif %}
+        </div>
+      </details>
+    </div>
 
-    <details class="admin-menu-group" data-group="sistema" {% if open_sistema %}open{% endif %}>
-      <summary class="admin-menu-summary">{{ ico('sistema', 13) }}<span>Sistema</span></summary>
-      <div class="admin-menu-items">
-        <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
-        <a class="admin-side-link admin-side-sair" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
-      </div>
-    </details>
+    <a class="admin-side-link admin-side-sair admin-side-sair-fixed" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
   </nav>
 </aside>
