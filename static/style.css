@@ -3646,6 +3646,12 @@ tr.planilha-sem-palpite .planilha-num {
   font-weight: 800;
   color: var(--accent);
 }
+.participante-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
 .participante-edit-meta {
   display: flex;
   flex-direction: column;
