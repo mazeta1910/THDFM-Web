@@ -705,9 +705,9 @@ def garantir_participante_admin(
         part = get_participante_por_token(token_preferido)
         if part:
             atual = (part.get("admin_login") or "").strip().lower()
-            if not atual or atual == login:
-                vincular_admin_login(part["id"], login)
-                part = get_participante(part["id"]) or part
+            # Só reutiliza a sessão atual se ela JÁ for deste admin.
+            # Não "assalta" o participante de outro usuário logado no mesmo browser.
+            if atual == login:
                 return _garantir_liberado(part)
 
     part = get_participante_por_nome(nome)

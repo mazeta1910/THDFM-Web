@@ -86,7 +86,7 @@ def _parse_admins() -> list[AdminUser]:
         if len(parts) < 2:
             continue
         login = parts[0].strip().lower()
-        senha = parts[1]
+        senha = parts[1].strip()
         nome_raw = parts[2].strip() if len(parts) > 2 and parts[2].strip() else login
         nome, papel = _split_nome_papel(nome_raw, login=login)
         if login and senha:

@@ -53,7 +53,12 @@ from src.transparencia import montar_portal
 load_dotenv(ROOT_DIR / ".env")
 
 app = FastAPI(title="Bolão THDFM — Copa do Brasil")
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SECRET_KEY", SECRET_KEY))
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SECRET_KEY", SECRET_KEY),
+    same_site="lax",
+    max_age=60 * 60 * 24 * 14,  # 14 dias — evita perder o painel ao fechar a aba
+)
 
 TEMPLATES = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
 
@@ -1175,13 +1180,27 @@ def admin_login(
     request.session["admin_role"] = admin.papel
     request.session.pop("admin", None)  # legado
     # Admin também palpita: vínculo estável por login (não pelo nick)
-    token_atual = request.session.get("participante_token")
-    part = db.garantir_participante_admin(
-        admin.login, admin.nome, token_preferido=token_atual
+    try:
+        token_atual = request.session.get("participante_token")
+        part = db.garantir_participante_admin(
+            admin.login, admin.nome, token_preferido=token_atual
+        )
+        request.session["admin_nome"] = part.get("nome") or admin.nome
+        _remember_participante(request, part["token"])
+    except Exception:
+        # Credenciais ok: não bloqueia o painel se o vínculo falhar
+        pass
+    resp = RedirectResponse("/admin", status_code=303)
+    # Garante chrome admin após o login (limpa modo "user" antigo)
+    resp.set_cookie(
+        "thdfm_ui_mode",
+        "admin",
+        max_age=60 * 60 * 24 * 180,
+        httponly=False,
+        samesite="lax",
+        path="/",
     )
-    request.session["admin_nome"] = part.get("nome") or admin.nome
-    _remember_participante(request, part["token"])
-    return RedirectResponse("/admin", status_code=303)
+    return resp
 
 
 @app.get("/admin/logout")

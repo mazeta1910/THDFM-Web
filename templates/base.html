@@ -159,7 +159,11 @@
         location.reload();
         return;
       }
-      // Volta ao chrome admin na mesma URL (ex.: /transparencia mantém o menu admin)
+      // Volta ao painel admin (mais previsível que só recarregar a home)
+      if (!location.pathname.startsWith("/admin") || location.pathname === "/admin/login") {
+        location.href = "/admin";
+        return;
+      }
       location.reload();
     };
     const btn = document.getElementById("ui-mode-toggle");
