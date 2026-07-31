@@ -40,7 +40,7 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
     assert "Entrar no grupo" in text
     assert 'id="drawer-senha"' in text
-    assert 'id="drawer-senha"' in text and "password-field" in text
+    assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
 
 
