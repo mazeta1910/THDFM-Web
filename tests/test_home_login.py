@@ -98,6 +98,8 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     assert "home-hero-slider" in r.text
     assert "admin-shell" not in r.text
     assert "site-shell" in r.text
+    assert 'id="ui-mode-toggle"' in r.text
+    assert "ui-mode-toggle-label" in r.text
 
 def test_token_sem_senha_abre_setup(client: TestClient):
     part = db.criar_participante("SemCred", status="liberado", celular="11999776655")
