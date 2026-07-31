@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=111" />
+  <link rel="stylesheet" href="/static/style.css?v=112" />
 </head>
 {% set admin_layout = is_admin and request.url.path != '/admin/login' %}
 {% set path = request.url.path %}
@@ -293,6 +293,32 @@
       btn?.addEventListener("click", () => {
         setCollapsed(!card.classList.contains("is-collapsed"));
       });
+    });
+  })();
+  </script>
+  <script>
+  (() => {
+    const fitClubeNomes = (root = document) => {
+      root.querySelectorAll(".clube-nome[data-nome][data-curto]").forEach((el) => {
+        const full = (el.dataset.nome || "").trim();
+        const short = (el.dataset.curto || "").trim();
+        if (!full) return;
+        el.textContent = full;
+        if (short && short !== full && el.scrollWidth > el.clientWidth + 1) {
+          el.textContent = short;
+        }
+      });
+    };
+    const scheduleFit = () => {
+      requestAnimationFrame(() => fitClubeNomes());
+    };
+    scheduleFit();
+    window.addEventListener("resize", scheduleFit);
+    // Ao trocar fase/perna os painéis mudam de display — reavaliar overflow.
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-fase], .transparencia-nav-fase, .transparencia-nav-pernas a, .transparencia-nav-pernas button, [data-tab]")) {
+        requestAnimationFrame(() => requestAnimationFrame(scheduleFit));
+      }
     });
   })();
   </script>

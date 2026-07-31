@@ -1695,8 +1695,14 @@ input[type="file"] {
 .palpites-card .match-jogo-tag {
   display: block;
   width: fit-content;
-  max-width: calc(100% - 1.2rem);
+  max-width: calc(100% - 0.7rem);
   margin: 0.2rem auto 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  min-height: 1.35em;
+  box-sizing: border-box;
 }
 .palpites-card .match-teams {
   border-right: none;
@@ -1734,9 +1740,10 @@ input[type="file"] {
     font-size: 0.88rem;
   }
   .palpites-card .match-jogo-tag {
-    font-size: 0.52rem;
-    padding: 0.1rem 0.28rem;
+    font-size: 0.48rem;
+    padding: 0.12rem 0.28rem;
     margin: 0.15rem auto 0.15rem;
+    letter-spacing: 0.01em;
   }
   .palpites-card .match-teams {
     padding: 0.3rem 0.35rem 0.4rem;
@@ -1847,13 +1854,11 @@ input[type="file"] {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
-  white-space: normal;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.15;
-  word-break: break-word;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 .match-team-row input[type="number"] {
   width: 48px;
@@ -3050,11 +3055,13 @@ html[data-theme="light"] .admin-main {
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  line-height: 1.3;
+  line-height: 1.2;
   text-transform: uppercase;
-  white-space: normal;
+  white-space: nowrap;
   text-align: center;
   max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .planilha-grid .planilha-head-main {
   display: flex;
