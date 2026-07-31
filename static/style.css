@@ -1847,9 +1847,13 @@ input[type="file"] {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.15;
+  word-break: break-word;
 }
 .match-team-row input[type="number"] {
   width: 48px;

@@ -38,7 +38,7 @@ from src.config import (
 )
 from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado
-from src.seed_data import emblema_url, formatar_inicio_jogo
+from src.seed_data import emblema_url, formatar_inicio_jogo, nome_clube_curto
 from src.transparencia import montar_portal
 
 load_dotenv(ROOT_DIR / ".env")
@@ -83,6 +83,7 @@ def avatar_url(avatar_path: str | None) -> str | None:
 
 TEMPLATES.env.globals["emblema_url"] = emblema_url
 TEMPLATES.env.globals["formatar_inicio_jogo"] = formatar_inicio_jogo
+TEMPLATES.env.globals["nome_clube_curto"] = nome_clube_curto
 TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
 TEMPLATES.env.globals["avatar_url"] = avatar_url
 TEMPLATES.env.globals["avatar_padrao_url"] = avatar_padrao_url

@@ -19,6 +19,26 @@ OITAVAS = [
 
 _WEEKDAYS_PT = ("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
 
+# Nomes curtos para grids compactos (mobile 2 colunas). Emblemas usam o nome completo.
+CLUBE_NOME_CURTO = {
+    "Internacional": "Inter",
+    "Corinthians": "Corinthians",
+    "Chapecoense": "Chape",
+    "Fluminense": "Flu",
+    "Athletico-PR": "Athletico",
+    "Atlético-MG": "Atlético-MG",
+    "Fortaleza": "Fortaleza",
+    "Juventude": "Juventude",
+}
+
+
+def nome_clube_curto(clube: str | None) -> str:
+    """Rótulo curto para UI apertada; mantém o nome original se não houver mapa."""
+    if not clube:
+        return ""
+    nome = str(clube).strip()
+    return CLUBE_NOME_CURTO.get(nome, nome)
+
 
 def emblema_url(clube: str) -> str:
     """Arquivos em data/emblemas usam o nome do clube (ex.: Vasco.png)."""
