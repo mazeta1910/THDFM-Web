@@ -206,14 +206,11 @@ def _taxa_ctx() -> dict:
 
 
 def _destino_sessao(request: Request) -> str | None:
-    """Destino se já houver sessão; None = visitante frio (mostra a home)."""
+    """Só redireciona admin logado. Participante com token NÃO é mandado embora da home —
+    o portal THDFM deve abrir em / mesmo depois de ter aberto /p/{token}.
+    """
     if admin_ok(request):
         return "/admin"
-    token = request.session.get("participante_token")
-    if token:
-        part = db.get_participante_por_token(token)
-        if part:
-            return f"/p/{part['token']}"
     return None
 
 
@@ -226,17 +223,21 @@ def _client_ip(request: Request) -> str:
     return ""
 
 
-@app.get("/")
-def raiz(request: Request):
-    dest = _destino_sessao(request)
-    if dest:
-        return RedirectResponse(dest, status_code=303)
+def _render_home(request: Request):
     return render(
         request,
         "home.html",
         janela=db.get_janela(),
         **_taxa_ctx(),
     )
+
+
+@app.get("/")
+def raiz(request: Request):
+    dest = _destino_sessao(request)
+    if dest:
+        return RedirectResponse(dest, status_code=303)
+    return _render_home(request)
 
 
 @app.get("/home")
@@ -244,19 +245,16 @@ def home(request: Request):
     dest = _destino_sessao(request)
     if dest:
         return RedirectResponse(dest, status_code=303)
-    return render(
-        request,
-        "home.html",
-        janela=db.get_janela(),
-        **_taxa_ctx(),
-    )
+    return _render_home(request)
 
 
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
-    dest = _destino_sessao(request)
-    if dest and dest.startswith("/p/"):
-        return RedirectResponse(dest, status_code=303)
+    token = request.session.get("participante_token")
+    if token:
+        part = db.get_participante_por_token(token)
+        if part and part.get("status") == "liberado":
+            return RedirectResponse(f"/p/{part['token']}", status_code=303)
     return render(
         request,
         "login.html",

@@ -45,13 +45,14 @@ def test_home_alias_tambem_renderiza(client: TestClient):
     assert "Bolão da Copa do Brasil" in r.text
     assert "PIX da inscrição" in r.text
 
-def test_raiz_redireciona_participante_com_sessao(client: TestClient):
+def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
     assert r.status_code == 200
     r2 = client.get("/", follow_redirects=False)
-    assert r2.status_code == 303
-    assert r2.headers["location"] == f"/p/{part['token']}"
+    assert r2.status_code == 200
+    assert "Técnicos Horríveis do Futebol Mundial" in r2.text
+    assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
 
 
 def test_login_cria_pedido_para_liberado(client: TestClient):

@@ -42,8 +42,12 @@
       <div class="site-menu-items site-menu-items-flat">
         <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('competicao') }}<span>Início</span></a>
         <a class="site-side-link" href="/#bolao">{{ ico('meu-bolao') }}<span>Bolão CdB</span></a>
+        {% if participante_nav and participante_nav.status == 'liberado' %}
+        <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+        {% else %}
         <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
         <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('palpites') }}<span>Já fiz a inscrição</span></a>
+        {% endif %}
         <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras do bolão</span></a>
       </div>
     </div>
