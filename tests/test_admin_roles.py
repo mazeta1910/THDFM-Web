@@ -116,6 +116,23 @@ def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: Tes
     assert mazeta["id"] != part["id"]
     assert (mazeta.get("admin_login") or "") == "mazeta"
 
+def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
+    """mazeta + senha do .env no Entrar deve ir ao /admin (não só ao bolão)."""
+    r = client.post(
+        "/entrar",
+        data={"usuario": "mazeta", "senha": "senha-dono"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin"
+    assert "thdfm_ui_mode=admin" in (r.headers.get("set-cookie") or "")
+
+    r2 = client.get("/admin")
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert 'id="ui-mode-toggle"' in r2.text
+
+
 def test_admin_mantem_menu_na_transparencia(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/transparencia")

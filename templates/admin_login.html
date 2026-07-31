@@ -4,9 +4,9 @@
 <div class="card login-card">
   <h1>Painel admin</h1>
   <p class="login-lead">
-    Login do <strong>painel</strong> — não é o Entrar do bolão.
-    Use o usuário do <code>.env</code> (<strong>mazeta</strong> / <strong>ramos</strong> / <strong>joaojec</strong>).
-    Depois disso o botão Admin/Site aparece.
+    Login do <strong>painel</strong> — use <strong>mazeta</strong> / <strong>ramos</strong> / <strong>joaojec</strong>
+    e a senha do arquivo <code>.env</code> (<code>ADMIN_USERS</code>).
+    Também funciona pelo <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a> com o mesmo usuário/senha.
   </p>
   {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
   <form method="post" action="/admin/login" class="form-login" novalidate>

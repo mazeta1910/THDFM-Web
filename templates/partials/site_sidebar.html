@@ -62,6 +62,9 @@
         <div class="site-menu-items">
           <a class="site-side-link site-side-link--destaque {% if on_entrar %}active{% endif %}" href="/?acesso=entrar" data-acesso-open="entrar">{{ ico('acesso') }}<span>Entrar</span></a>
           <a class="site-side-link {% if on_login %}active{% endif %}" href="/?acesso=recuperar" data-acesso-open="recuperar">{{ ico('inscricao') }}<span>Recuperar link</span></a>
+          {% if not is_admin %}
+          <a class="site-side-link" href="/admin/login">{{ ico('admin') }}<span>Painel admin</span></a>
+          {% endif %}
         </div>
       </details>
       {% endif %}
