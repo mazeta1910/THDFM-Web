@@ -93,6 +93,32 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert "Minha conta" in r2.text
 
 
+def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
+    """Usuário logado vê a mesma estrutura de menu na home e em Meus Palpites."""
+    part = db.criar_participante("MenuFixo", status="liberado", celular="11991112233")
+    db.definir_credenciais(part["id"], "menu.fixo", "senha1234")
+    client.get(f"/p/{part['token']}")
+
+    home = client.get("/").text
+    palpites = client.get(f"/p/{part['token']}").text
+
+    for html in (home, palpites):
+        assert 'aria-label="Menu THDFM"' in html
+        assert 'data-group="portal"' in html
+        assert 'data-group="bolao"' in html
+        assert "Bolão CdB" in html
+        assert "Sobre o bolão" in html
+        assert "Meus Palpites" in html
+        assert "Classificação" in html
+        assert "Regras" in html
+        assert "Transparência" in html
+        assert "Em desenvolvimento" in html
+        assert "Portal THDFM" not in html
+        assert 'data-group="competicao"' not in html
+        assert 'data-group="meu-bolao"' not in html
+        assert 'aria-label="Menu do bolão"' not in html
+
+
 def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
     part = db.criar_participante("ContaBox", status="liberado", celular="11990005566")
     db.definir_credenciais(part["id"], "conta.box", "senha1234")
