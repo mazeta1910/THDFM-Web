@@ -157,7 +157,7 @@ def test_admin_logout_vai_para_home(
     monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
     r = client.get("/admin/logout", follow_redirects=False)
     assert r.status_code == 303
-    assert r.headers["location"] == "/"
+    assert "acesso=entrar" in r.headers["location"]
 
 def test_raiz_mostra_home_mesmo_com_admin_logado(
     client: TestClient, monkeypatch: pytest.MonkeyPatch

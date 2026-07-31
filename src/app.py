@@ -133,14 +133,11 @@ def _startup() -> None:
 def _promover_admin_da_conta(request: Request) -> bool:
     """Se a conta do bolão está vinculada a um admin do .env, abre o painel.
 
-    Um login basta: quem já entrou como Mazeta/Ramos/João JEC no bolão
-    não precisa digitar de novo em /admin/login.
+    Um login basta: quem entrou pelo Entrar com a conta vinculada
+    (mazeta/ramos/joaojec) já libera o painel — sem /admin/login.
     """
     if request.session.get("admin_login"):
         return True
-    # "Sair do admin" mantém o bolão, mas evita reabrir o painel sozinho
-    if request.session.get("admin_opt_out"):
-        return False
     token = request.session.get("participante_token")
     if not token:
         return False
@@ -182,7 +179,7 @@ def is_dono(request: Request) -> bool:
 
 def require_dono(request: Request) -> RedirectResponse | None:
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     if not is_dono(request):
         return RedirectResponse(
             "/admin?erro=" + quote("Só o Dono pode fazer isso."),
@@ -552,7 +549,7 @@ async def entrar_post(
         return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
     # Vinculado ao .env: libera o painel na mesma sessão (sem 2º login)
     if _promover_admin_da_conta(request):
-        return _set_cookie_ui_admin(RedirectResponse(f"/p/{part['token']}", status_code=303))
+        return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
     return RedirectResponse(f"/p/{part['token']}", status_code=303)
 
 
@@ -744,7 +741,7 @@ def transparencia(request: Request):
 @app.get("/admin/palpites", response_class=HTMLResponse)
 def admin_palpites(request: Request):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
 
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
@@ -1287,9 +1284,10 @@ async def salvar_palpites(request: Request, token: str):
 
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_page(request: Request):
+    """Login do painel é o mesmo Entrar da home — sem formulário separado."""
     if admin_ok(request):
         return RedirectResponse("/admin", status_code=303)
-    return render(request, "admin_login.html", erro=request.query_params.get("erro"))
+    return _redirect_acesso("entrar", erro=request.query_params.get("erro"))
 
 
 @app.post("/admin/login")
@@ -1298,9 +1296,14 @@ def admin_login(
     login: str = Form(...),
     password: str = Form(...),
 ):
+    """Compat: POST antigo do painel. Preferir /entrar."""
     admin = autenticar_admin(login, password)
     if not admin:
-        return RedirectResponse("/admin/login?erro=Usuario+ou+senha+incorretos", status_code=303)
+        return _redirect_acesso(
+            "entrar",
+            erro="Usuario ou senha incorretos",
+            usuario=login,
+        )
     _estabelecer_sessao_admin(request, admin)
     return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
 
@@ -1308,19 +1311,21 @@ def admin_login(
 @app.get("/admin/logout")
 @app.post("/admin/logout")
 def admin_logout(request: Request):
+    """Sai de tudo (painel + bolão) — um Sair, um próximo Entrar."""
     request.session.pop("admin_login", None)
     request.session.pop("admin_nome", None)
     request.session.pop("admin_role", None)
     request.session.pop("admin", None)
-    # Mantém a conta do bolão, mas exige login explícito para voltar ao painel
-    request.session["admin_opt_out"] = True
-    return RedirectResponse("/", status_code=303)
+    request.session.pop("admin_opt_out", None)
+    request.session.pop("participante_token", None)
+    request.session.pop("loguin_marlon", None)
+    return _redirect_acesso("entrar")
 
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_home(request: Request):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     # Só garante o admin da sessão atual. Os outros nascem no próprio login —
     # senão apagar "João JEC" / "Mazeta" recria na hora.
     token_atual = request.session.get("participante_token")
@@ -1427,7 +1432,7 @@ def admin_credenciais_redefinir(
 @app.get("/admin/comprovantes/{participante_id}")
 def admin_comprovante(request: Request, participante_id: int):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
     if not part or not part.get("comprovante_path"):
         raise HTTPException(404, "Comprovante não encontrado")
@@ -1452,7 +1457,7 @@ def _limpar_arquivos_participante(part: dict) -> None:
 @app.post("/admin/liberar")
 def admin_liberar(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     db.liberar_participante(participante_id)
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Inscricao+liberada", status_code=303
@@ -1465,7 +1470,7 @@ def admin_avisar_link(request: Request, participante_id: int):
     from urllib.parse import quote
 
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse(
@@ -1491,7 +1496,7 @@ def admin_recuperacao_atender(request: Request, pedido_id: int):
     from urllib.parse import quote
 
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     pedido = db.get_pedido_recuperacao(pedido_id)
     if not pedido:
         return RedirectResponse(
@@ -1524,7 +1529,7 @@ def admin_marcar_link(
 ):
     """Marca/desmarca link enviado e volta ao painel (GET — evita 404 de POST antigo)."""
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse(
@@ -1542,7 +1547,7 @@ def admin_link_enviado(
     enviado: str = Form("1"),
 ):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse(
@@ -1587,7 +1592,7 @@ def admin_apagar(request: Request, participante_id: int = Form(...)):
 def admin_recusar(request: Request, participante_id: int = Form(...)):
     """Recusar = marca como recusada (não apaga; use o × para excluir)."""
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     if not db.recusar_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+recusar", status_code=303
@@ -1600,7 +1605,7 @@ def admin_recusar(request: Request, participante_id: int = Form(...)):
 @app.post("/admin/reabrir")
 def admin_reabrir(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     if not db.reabrir_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+reabrir", status_code=303
@@ -1625,7 +1630,7 @@ def admin_recusar_todos(request: Request):
 @app.post("/admin/janela")
 def admin_janela(request: Request, janela: str = Form(...)):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     try:
         db.set_janela(janela)
     except ValueError:
@@ -1636,7 +1641,7 @@ def admin_janela(request: Request, janela: str = Form(...)):
 @app.post("/admin/fase")
 def admin_fase(request: Request, fase: str = Form(...)):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     try:
         db.set_fase_atual(fase)
     except ValueError:
@@ -1652,7 +1657,7 @@ def admin_participante(
     ja_pago: str = Form(""),
 ):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     status = "liberado" if ja_pago == "1" else "pendente"
     celular_ok = None
     if celular.strip():
@@ -1680,7 +1685,7 @@ async def admin_avatar_padrao(
     avatar: UploadFile = File(...),
 ):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     ext = Path(avatar.filename or "").suffix.lower()
     if ext not in AVATAR_EXTS:
         return RedirectResponse(
@@ -1715,7 +1720,7 @@ async def admin_atualizar_participante(
     from urllib.parse import quote
 
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
     if not part:
         return RedirectResponse(
@@ -1782,7 +1787,7 @@ def admin_resultado(
     penaltis_clube_id: str = Form(""),
 ):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     pen = penaltis_clube_id if penaltis_clube_id in ("a", "b") else None
     db.set_resultado_jogo(jogo_id, gols_mandante, gols_visitante, pen)
     return RedirectResponse("/admin?msg=Resultado+salvo", status_code=303)
@@ -1791,7 +1796,7 @@ def admin_resultado(
 @app.post("/admin/resultados")
 async def admin_resultados(request: Request):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     form = await request.form()
     fase = str(form.get("fase") or db.get_fase_atual())
     if fase not in FASE_IDS:
@@ -1820,7 +1825,7 @@ async def admin_resultados(request: Request):
 @app.post("/admin/confirmar-rodada")
 def admin_confirmar_rodada(request: Request):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     hist = confirmar_rodada()
     return RedirectResponse(
         f"/admin?msg=Rodada+{hist['numero']}+confirmada+e+arquivada",
@@ -1831,7 +1836,7 @@ def admin_confirmar_rodada(request: Request):
 @app.post("/admin/desfazer-rodada")
 def admin_desfazer_rodada(request: Request):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     try:
         hist = desfazer_ultima_rodada()
     except ValueError as e:
@@ -1852,7 +1857,7 @@ def admin_zerar_resultados(
     perna: str = Form(...),
 ):
     if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+        return _redirect_acesso("entrar")
     if fase not in FASE_IDS:
         return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
     if perna not in ("ida", "volta"):

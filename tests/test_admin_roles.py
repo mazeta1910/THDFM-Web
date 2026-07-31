@@ -146,14 +146,14 @@ def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
 
 
 def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: TestClient):
-    """Entrar no bolão antes não pode impedir /admin/login."""
+    """Entrar no bolão antes não pode impedir o login admin via Entrar."""
     part = db.criar_participante("FulanoSessao", status="liberado", celular="11990009988")
     db.definir_credenciais(part["id"], "fulano.sessao", "senha1234")
     client.get(f"/p/{part['token']}")
 
     r = client.post(
-        "/admin/login",
-        data={"login": "mazeta", "password": "senha-dono"},
+        "/entrar",
+        data={"usuario": "mazeta", "senha": "senha-dono"},
         follow_redirects=False,
     )
     assert r.status_code == 303
@@ -169,6 +169,17 @@ def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: Tes
     assert mazeta is not None
     assert mazeta["id"] != part["id"]
     assert (mazeta.get("admin_login") or "") == "mazeta"
+
+
+def test_admin_login_page_redireciona_para_entrar(client: TestClient):
+    r = client.get("/admin/login", follow_redirects=False)
+    assert r.status_code == 303
+    assert "acesso=entrar" in r.headers["location"]
+
+    r2 = client.get("/admin", follow_redirects=False)
+    assert r2.status_code == 303
+    assert "acesso=entrar" in r2.headers["location"]
+
 
 def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
     """mazeta + senha do .env no Entrar deve ir ao /admin (não só ao bolão)."""
@@ -202,9 +213,9 @@ def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
         follow_redirects=False,
     )
     assert r.status_code == 303
-    assert r.headers["location"] == f"/p/{mazeta['token']}"
+    assert r.headers["location"] == "/admin"
 
-    # Sem passar por /admin/login de novo
+    # Sem segundo login
     r2 = client.get("/admin", follow_redirects=False)
     assert r2.status_code == 200
     assert "Painel de Admin" in r2.text
@@ -216,21 +227,24 @@ def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
     assert "Painel de Admin" in home.text
 
 
-def test_sair_do_admin_exige_login_explicito_de_novo(client: TestClient):
+def test_sair_do_admin_limpa_tudo_e_pede_entrar(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/admin/logout", follow_redirects=False)
     assert r.status_code == 303
+    assert "acesso=entrar" in r.headers["location"]
 
-    # Conta do bolão continua, mas o painel pede login de novo
+    # Saiu de tudo — painel e bolão
     r2 = client.get("/admin", follow_redirects=False)
     assert r2.status_code == 303
-    assert "/admin/login" in r2.headers["location"]
+    assert "acesso=entrar" in r2.headers["location"]
 
     home = client.get("/")
     assert "site-side-admin-login" not in home.text
     assert 'href="/admin/login"' not in home.text
     assert 'id="chrome-mode-toggle"' not in home.text
     assert 'id="ui-mode-toggle"' not in home.text
+    assert 'action="/conta/sair"' not in home.text
+
 
 def test_admin_mantem_menu_na_transparencia(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
