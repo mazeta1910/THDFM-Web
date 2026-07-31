@@ -1,0 +1,53 @@
+{% set on_conta = participante_nav and '/conta' in path %}
+{% from "partials/nav_icons.html" import ico %}
+
+<aside class="site-sidebar" id="site-sidebar">
+  <div class="site-brand">
+    <div class="site-brand-top">
+      <strong>Bolão THDFM — CdB</strong>
+      <button type="button" class="site-sidebar-close" id="site-sidebar-close" aria-label="Fechar menu">×</button>
+    </div>
+    {% if participante_nav %}
+    <a href="/p/{{ participante_nav.token }}/conta" class="site-brand-user {% if on_conta %}active{% endif %}">
+      {% set brand_av = avatar_url(participante_nav.avatar_path) %}
+      {% if brand_av %}
+      <img class="site-brand-avatar" src="{{ brand_av }}" alt="" />
+      {% else %}
+      <span class="site-brand-avatar site-brand-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+      {% endif %}
+      <span class="site-brand-user-text">
+        <span class="site-brand-name">{{ participante_nav.nome }}</span>
+        <span class="site-brand-hint">Minha conta</span>
+      </span>
+    </a>
+    {% endif %}
+  </div>
+
+  <nav class="site-side-nav" aria-label="Menu do bolão">
+    <div class="site-side-nav-scroll">
+      <details class="site-menu-group" data-group="competicao" {% if on_competicao or not on_meu_bolao %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
+        <div class="site-menu-items">
+          {% if participante_nav and participante_nav.status == 'liberado' %}
+          <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
+          {% endif %}
+          <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
+          <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
+        </div>
+      </details>
+
+      <details class="site-menu-group" data-group="meu-bolao" {% if on_meu_bolao or on_inscricao or (participante_nav and path.startswith('/p/')) %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
+        <div class="site-menu-items">
+          {% if participante_nav and participante_nav.status == 'liberado' %}
+          <a class="site-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+          {% elif participante_nav %}
+          <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Inscrição</span></a>
+          {% else %}
+          <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Inscrição</span></a>
+          {% endif %}
+        </div>
+      </details>
+    </div>
+  </nav>
+</aside>

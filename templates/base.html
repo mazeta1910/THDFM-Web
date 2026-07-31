@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=117" />
+  <link rel="stylesheet" href="/static/style.css?v=118" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -62,65 +62,16 @@
       </header>
       {% include "partials/theme_toggle.html" %}
   {% else %}
-  {% block site_nav %}
-  {% from "partials/nav_icons.html" import ico %}
-  <nav class="site-nav-desktop" id="site-header">
-    <div class="nav-left">
-      {% if participante_nav and participante_nav.status == 'liberado' %}
-        <details class="nav-dropdown {% if on_competicao %}is-active{% endif %}">
-          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
-          <div class="nav-dropdown-menu" role="menu">
-            <a href="/classificacao" class="{% if on_classificacao %}active{% endif %}">{{ ico('classificacao') }}Classificação</a>
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
-          </div>
-        </details>
-        <details class="nav-dropdown {% if on_meu_bolao %}is-active{% endif %}">
-          <summary aria-haspopup="menu">{{ ico('meu-bolao') }}Meu Bolão</summary>
-          <div class="nav-dropdown-menu" role="menu">
-            <a href="/p/{{ participante_nav.token }}" class="{% if on_palpites %}active{% endif %}">{{ ico('palpites') }}Meus Palpites</a>
-          </div>
-        </details>
-      {% elif participante_nav %}
-        <a href="/p/{{ participante_nav.token }}" class="{% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}">{{ ico('inscricao') }}Inscrição</a>
-        <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
-          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
-          <div class="nav-dropdown-menu" role="menu">
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
-          </div>
-        </details>
-      {% else %}
-        <a href="/inscricao" class="{% if on_inscricao %}active{% endif %}">{{ ico('inscricao') }}Inscrição</a>
-        <details class="nav-dropdown {% if on_transparencia or on_regras %}is-active{% endif %}">
-          <summary aria-haspopup="menu">{{ ico('competicao') }}Competição</summary>
-          <div class="nav-dropdown-menu" role="menu">
-            <a href="/transparencia" class="{% if on_transparencia %}active{% endif %}">{{ ico('transparencia') }}Portal da Transparência</a>
-            <a href="/regras" class="{% if on_regras %}active{% endif %}">{{ ico('regras') }}Regras</a>
-          </div>
-        </details>
-      {% endif %}
-    </div>
-    <div class="nav-right">
-      {% if participante_nav %}
-      <a href="/p/{{ participante_nav.token }}/conta" class="nav-conta {% if '/conta' in path %}active{% endif %}">
-        {% set nav_av = avatar_url(participante_nav.avatar_path) %}
-        {% if nav_av %}
-        <img class="nav-avatar" src="{{ nav_av }}" alt="" />
-        {% else %}
-        <span class="nav-avatar nav-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
-        {% endif %}
-        <span class="nav-conta-text">
-          <span class="nav-conta-nome">{{ participante_nav.nome }}</span>
-          <span class="nav-conta-hint">Minha conta</span>
-        </span>
-      </a>
-      {% endif %}
-    </div>
-  </nav>
-  {% endblock %}
-  {% include "partials/theme_toggle.html" %}
-  <main class="wrap {% block wrap_class %}{% endblock %}">
+  <div class="site-shell">
+    <div class="site-sidebar-backdrop" id="site-sidebar-backdrop" hidden></div>
+    {% include "partials/site_sidebar.html" %}
+    <div class="site-main">
+      <header class="site-topbar" id="site-header">
+        <button type="button" class="site-mobile-menu" id="site-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-sidebar">☰</button>
+        <strong class="site-topbar-title">Bolão THDFM</strong>
+      </header>
+      {% include "partials/theme_toggle.html" %}
+      <main class="wrap {% block wrap_class %}{% endblock %}">
   {% endif %}
 
         {% block content %}{% endblock %}
@@ -129,7 +80,9 @@
     </div>
   </div>
   {% else %}
-  </main>
+      </main>
+    </div>
+  </div>
   {% endif %}
 
   {% if is_admin and path != '/admin/login' %}
@@ -236,7 +189,7 @@
 
     const header = document.getElementById("site-header");
     const placeToggle = () => {
-      if (body.classList.contains("admin-body") || !header) return;
+      if (body.classList.contains("admin-body") || body.classList.contains("site-body") || !header) return;
       root.style.setProperty("--site-header-offset", `${Math.ceil(header.getBoundingClientRect().height)}px`);
     };
     placeToggle();
@@ -244,20 +197,6 @@
     if (typeof ResizeObserver !== "undefined" && header) {
       new ResizeObserver(placeToggle).observe(header);
     }
-
-    const dropdowns = Array.from(document.querySelectorAll("nav.site-nav-desktop details.nav-dropdown"));
-    dropdowns.forEach((d) => {
-      d.addEventListener("toggle", () => {
-        if (!d.open) return;
-        dropdowns.forEach((other) => {
-          if (other !== d) other.open = false;
-        });
-      });
-    });
-    document.addEventListener("click", (e) => {
-      if (e.target.closest("nav.site-nav-desktop details.nav-dropdown")) return;
-      dropdowns.forEach((d) => { d.open = false; });
-    });
   })();
   </script>
   <script>
@@ -355,6 +294,62 @@
     });
   })();
   </script>
+  {% if not admin_layout %}
+  <script>
+  (() => {
+    const body = document.body;
+    const btn = document.getElementById("site-mobile-menu");
+    const closeBtn = document.getElementById("site-sidebar-close");
+    const backdrop = document.getElementById("site-sidebar-backdrop");
+    const setOpen = (open) => {
+      body.classList.toggle("site-sidebar-open", open);
+      if (backdrop) backdrop.hidden = !open;
+      if (btn) {
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+      }
+    };
+    btn?.addEventListener("click", () => setOpen(!body.classList.contains("site-sidebar-open")));
+    closeBtn?.addEventListener("click", () => setOpen(false));
+    backdrop?.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpen(false);
+    });
+    document.querySelectorAll(".site-sidebar a.site-side-link, .site-sidebar a.site-brand-user").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.matchMedia("(max-width: 900px)").matches) setOpen(false);
+      });
+    });
+
+    const GROUP_KEY = "thdfm-site-menu-groups";
+    const readGroups = () => {
+      try {
+        return JSON.parse(localStorage.getItem(GROUP_KEY) || "{}") || {};
+      } catch (e) {
+        return {};
+      }
+    };
+    const writeGroups = (map) => {
+      try { localStorage.setItem(GROUP_KEY, JSON.stringify(map)); } catch (e) {}
+    };
+    const saved = readGroups();
+    document.querySelectorAll(".site-menu-group[data-group]").forEach((group) => {
+      const id = group.getAttribute("data-group");
+      const hasActive = !!group.querySelector(".site-side-link.active");
+      if (hasActive) {
+        group.open = true;
+      } else if (Object.prototype.hasOwnProperty.call(saved, id)) {
+        group.open = !!saved[id];
+      }
+      group.addEventListener("toggle", () => {
+        const next = readGroups();
+        next[id] = group.open;
+        writeGroups(next);
+      });
+    });
+  })();
+  </script>
+  {% endif %}
   {% if admin_layout %}
   <script>
   (() => {
