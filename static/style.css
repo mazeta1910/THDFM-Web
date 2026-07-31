@@ -2836,10 +2836,6 @@ html[data-theme="light"] .admin-main {
 .transparencia-nav-col.is-locked {
   opacity: 0.72;
 }
-.transparencia-nav-col.is-locked .transparencia-nav-fase,
-.transparencia-nav-col.is-locked .transparencia-nav-pernas {
-  opacity: 0.72;
-}
 .transparencia-nav-pernas {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2899,6 +2895,10 @@ html[data-theme="light"] .admin-main {
   }
   .transparencia-nav-col {
     display: contents;
+  }
+  .transparencia-nav-col.is-locked .transparencia-nav-fase,
+  .transparencia-nav-col.is-locked .transparencia-nav-pernas {
+    opacity: 0.72;
   }
   .transparencia-nav-col:not(.is-active) .transparencia-nav-pernas {
     display: none;
