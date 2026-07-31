@@ -692,6 +692,57 @@ def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
 
 
+def _pagina_em_breve(request: Request, *, titulo: str, secao: str, lead: str | None = None):
+    return render(
+        request,
+        "em_breve.html",
+        titulo=titulo,
+        secao=secao,
+        lead=lead,
+        **_taxa_ctx(),
+    )
+
+
+@app.get("/grupo/bans", response_class=HTMLResponse)
+def grupo_bans(request: Request):
+    return _pagina_em_breve(
+        request,
+        titulo="Contador de Bans",
+        secao="Grupo do WhatsApp",
+        lead="O placar oficial de banimentos do grupo. Em breve.",
+    )
+
+
+@app.get("/grupo/listra", response_class=HTMLResponse)
+def grupo_listra(request: Request):
+    return _pagina_em_breve(
+        request,
+        titulo="Listra",
+        secao="Grupo do WhatsApp",
+        lead="A listra do grupo ainda está no forno.",
+    )
+
+
+@app.get("/grupo/copypastas", response_class=HTMLResponse)
+def grupo_copypastas(request: Request):
+    return _pagina_em_breve(
+        request,
+        titulo="Copypastas",
+        secao="Grupo do WhatsApp",
+        lead="O acervo de copypastas chega em breve.",
+    )
+
+
+@app.get("/grupo/cardapio", response_class=HTMLResponse)
+def grupo_cardapio(request: Request):
+    return _pagina_em_breve(
+        request,
+        titulo="Cardápio",
+        secao="Acervo Xonha",
+        lead="O cardápio do Xonha ainda não abriu. Em breve.",
+    )
+
+
 @app.get("/xonhometro", response_class=HTMLResponse)
 def xonhometro(request: Request):
     return render(
