@@ -4,14 +4,15 @@
 <div class="card login-card">
   <h1>Painel admin</h1>
   <p class="login-lead">
-    Login do <strong>painel</strong> (não é o Entrar do bolão).
-    Sem isso, o botão Admin/Site não aparece — pelo amord, entra aqui primeiro.
+    Login do <strong>painel</strong> — não é o Entrar do bolão.
+    Use o usuário do <code>.env</code> (<strong>mazeta</strong> / <strong>ramos</strong> / <strong>joaojec</strong>).
+    Depois disso o botão Admin/Site aparece.
   </p>
   {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
   <form method="post" action="/admin/login" class="form-login" novalidate>
-    <label for="admin-login">Usuário</label>
-    <input id="admin-login" class="input-compact" type="text" name="login" required autofocus autocomplete="username" />
-    <label for="admin-password">Senha</label>
+    <label for="admin-login">Usuário do painel</label>
+    <input id="admin-login" class="input-compact" type="text" name="login" required autofocus autocomplete="username" placeholder="mazeta" />
+    <label for="admin-password">Senha do painel</label>
     <div class="password-field">
       <input id="admin-password" class="input-compact" type="password" name="password" required autocomplete="current-password" />
       <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
