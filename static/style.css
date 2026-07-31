@@ -3083,19 +3083,6 @@ a.admin-side-link {
 .admin-side-sair {
   color: var(--accent2) !important;
 }
-.admin-side-site-switch {
-  flex: 0 0 auto;
-  margin-top: 0.35rem;
-  width: auto;
-  align-self: flex-end;
-  margin-left: auto;
-  justify-content: flex-end;
-  color: var(--accent) !important;
-  font-weight: 800;
-}
-.admin-side-site-switch:hover {
-  color: var(--text) !important;
-}
 .admin-side-sair-fixed {
   flex: 0 0 auto;
   margin-top: 0.35rem;
