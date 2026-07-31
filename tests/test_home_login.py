@@ -132,7 +132,15 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert r.status_code == 200
     assert "LOGUIN" in r.text
     assert "Marlon Wietzikowski" in r.text
+    assert 'data-group="marlon"' in r.text
+    assert "Sub-menu exclusivo" in r.text
 
+    r_home = client.get("/")
+    assert 'data-group="marlon"' in r_home.text
+    assert 'href="/loguin"' in r_home.text
+    # LOGUIN saiu do grupo Portal
+    portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
+    assert 'href="/loguin"' not in portal_block
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},

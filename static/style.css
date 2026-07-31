@@ -643,6 +643,28 @@ html[data-theme="light"] .theme-icon-moon {
 .site-menu-group:not([open]) > .site-menu-summary::after {
   transform: rotate(-90deg);
 }
+.site-menu-group--marlon {
+  margin-top: 0.15rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+}
+.site-menu-group--marlon > .site-menu-summary {
+  color: color-mix(in srgb, var(--accent) 70%, #b45309);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 0.78rem;
+}
+.site-menu-marlon-hint {
+  margin: 0 0.65rem 0.25rem;
+  padding: 0;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--muted);
+}
+.site-side-link--loguin span {
+  letter-spacing: 0.06em;
+  font-weight: 800;
+}
 .site-menu-items {
   display: flex;
   flex-direction: column;
