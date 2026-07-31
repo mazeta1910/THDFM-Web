@@ -692,6 +692,93 @@ def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
 
 
+@app.get("/xonhometro", response_class=HTMLResponse)
+def xonhometro(request: Request):
+    return render(
+        request,
+        "xonhometro.html",
+        eventos=db.list_xonha_eventos(),
+        stats=db.xonha_stats(),
+        **_taxa_ctx(),
+    )
+
+
+@app.get("/admin/xonhometro", response_class=HTMLResponse)
+def admin_xonhometro(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    return render(
+        request,
+        "admin_xonhometro.html",
+        eventos=db.list_xonha_eventos(),
+        stats=db.xonha_stats(),
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/admin/xonhometro")
+def admin_xonhometro_criar(
+    request: Request,
+    tipo: str = Form(...),
+    data: str = Form(...),
+    motivo: str = Form(""),
+):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        db.criar_xonha_evento(tipo, data, motivo)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/xonhometro?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    label = "Saída" if (tipo or "").strip().lower() == "saida" else "Volta"
+    return RedirectResponse(
+        f"/admin/xonhometro?msg={quote(label + ' registrada')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/xonhometro/atualizar")
+def admin_xonhometro_atualizar(
+    request: Request,
+    evento_id: int = Form(...),
+    tipo: str = Form(...),
+    data: str = Form(...),
+    motivo: str = Form(""),
+):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        db.atualizar_xonha_evento(evento_id, tipo=tipo, data=data, motivo=motivo)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/xonhometro?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/xonhometro?msg={quote('Evento atualizado')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/xonhometro/apagar")
+def admin_xonhometro_apagar(request: Request, evento_id: int = Form(...)):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not db.apagar_xonha_evento(evento_id):
+        return RedirectResponse(
+            f"/admin/xonhometro?erro={quote('Evento não encontrado')}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/xonhometro?msg={quote('Evento apagado')}",
+        status_code=303,
+    )
+
+
 @app.get("/transparencia", response_class=HTMLResponse)
 def transparencia(request: Request):
     fase_atual = db.get_fase_atual()

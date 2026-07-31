@@ -5,6 +5,7 @@ import re
 import secrets
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -232,6 +233,28 @@ def _migrate_recuperacao(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS xonha_eventos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT NOT NULL CHECK (tipo IN ('saida', 'volta')),
+            data TEXT NOT NULL,
+            motivo TEXT,
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_xonha_eventos_data "
+        "ON xonha_eventos(data DESC, id DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_xonha_eventos_tipo_data "
+        "ON xonha_eventos(tipo, data)"
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -239,6 +262,7 @@ def init_db() -> None:
         _migrate_jogos(conn)
         _migrar_celulares_br(conn)
         _migrate_recuperacao(conn)
+        _migrate_xonhometro(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -1272,3 +1296,147 @@ def clear_snapshot() -> None:
 
 def db_path() -> Path:
     return DB_PATH
+
+
+# ——— Xonhômetro (saídas/voltas do Xonha no WhatsApp) ———
+
+_XONHA_TIPOS = frozenset({"saida", "volta"})
+
+
+def _validar_data_xonha(data: str) -> str:
+    raw = (data or "").strip()
+    if not raw:
+        raise ValueError("Informe a data.")
+    # Aceita YYYY-MM-DD (input type=date)
+    try:
+        datetime.strptime(raw[:10], "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError("Data inválida. Use AAAA-MM-DD.") from exc
+    return raw[:10]
+
+
+def list_xonha_eventos() -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, tipo, data, motivo, criado_em "
+            "FROM xonha_eventos ORDER BY data DESC, id DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_xonha_evento(evento_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, tipo, data, motivo, criado_em "
+            "FROM xonha_eventos WHERE id = ?",
+            (evento_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def criar_xonha_evento(tipo: str, data: str, motivo: str | None = None) -> dict[str, Any]:
+    tipo_n = (tipo or "").strip().lower()
+    if tipo_n not in _XONHA_TIPOS:
+        raise ValueError("Tipo inválido. Use saída ou volta.")
+    data_n = _validar_data_xonha(data)
+    motivo_n = (motivo or "").strip() or None
+    if motivo_n and len(motivo_n) > 500:
+        raise ValueError("Motivo muito longo (máx. 500).")
+    with get_db() as conn:
+        cur = conn.execute(
+            "INSERT INTO xonha_eventos (tipo, data, motivo) VALUES (?, ?, ?)",
+            (tipo_n, data_n, motivo_n),
+        )
+        eid = int(cur.lastrowid)
+    out = get_xonha_evento(eid)
+    assert out is not None
+    return out
+
+
+def atualizar_xonha_evento(
+    evento_id: int,
+    *,
+    tipo: str,
+    data: str,
+    motivo: str | None = None,
+) -> dict[str, Any]:
+    if not get_xonha_evento(evento_id):
+        raise ValueError("Evento não encontrado.")
+    tipo_n = (tipo or "").strip().lower()
+    if tipo_n not in _XONHA_TIPOS:
+        raise ValueError("Tipo inválido. Use saída ou volta.")
+    data_n = _validar_data_xonha(data)
+    motivo_n = (motivo or "").strip() or None
+    if motivo_n and len(motivo_n) > 500:
+        raise ValueError("Motivo muito longo (máx. 500).")
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE xonha_eventos SET tipo = ?, data = ?, motivo = ? WHERE id = ?",
+            (tipo_n, data_n, motivo_n, evento_id),
+        )
+    out = get_xonha_evento(evento_id)
+    assert out is not None
+    return out
+
+
+def apagar_xonha_evento(evento_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM xonha_eventos WHERE id = ?", (evento_id,))
+        return cur.rowcount > 0
+
+
+def xonha_stats() -> dict[str, Any]:
+    """Totais, médias e recorde do dia com mais saídas."""
+    eventos = list_xonha_eventos()
+    saidas = [e for e in eventos if e.get("tipo") == "saida"]
+    voltas = [e for e in eventos if e.get("tipo") == "volta"]
+    total_saidas = len(saidas)
+    total_voltas = len(voltas)
+
+    # Ordena saídas do mais antigo ao mais novo para médias
+    saidas_asc = sorted(saidas, key=lambda e: (e.get("data") or "", e.get("id") or 0))
+    media_dias_entre_saidas: float | None = None
+    if len(saidas_asc) >= 2:
+        gaps: list[int] = []
+        for prev, cur in zip(saidas_asc, saidas_asc[1:]):
+            d0 = datetime.strptime(prev["data"][:10], "%Y-%m-%d").date()
+            d1 = datetime.strptime(cur["data"][:10], "%Y-%m-%d").date()
+            gaps.append(abs((d1 - d0).days))
+        media_dias_entre_saidas = round(sum(gaps) / len(gaps), 1)
+
+    media_saidas_por_mes: float | None = None
+    if saidas_asc:
+        d_first = datetime.strptime(saidas_asc[0]["data"][:10], "%Y-%m-%d").date()
+        d_last = datetime.strptime(saidas_asc[-1]["data"][:10], "%Y-%m-%d").date()
+        months = (d_last.year - d_first.year) * 12 + (d_last.month - d_first.month) + 1
+        months = max(months, 1)
+        media_saidas_por_mes = round(total_saidas / months, 2)
+
+    # Recorde: dia com mais saídas
+    by_day: dict[str, int] = {}
+    for e in saidas:
+        day = (e.get("data") or "")[:10]
+        if day:
+            by_day[day] = by_day.get(day, 0) + 1
+    recorde_dia: dict[str, Any] | None = None
+    if by_day:
+        best_day = max(by_day.items(), key=lambda kv: (kv[1], kv[0]))
+        recorde_dia = {"data": best_day[0], "quantidade": best_day[1]}
+
+    # Status atual = último evento cronológico
+    ultimo = None
+    if eventos:
+        ultimo = max(eventos, key=lambda e: (e.get("data") or "", e.get("id") or 0))
+    status = "desconhecido"
+    if ultimo:
+        status = "fora" if ultimo.get("tipo") == "saida" else "dentro"
+
+    return {
+        "total_saidas": total_saidas,
+        "total_voltas": total_voltas,
+        "media_saidas_por_mes": media_saidas_por_mes,
+        "media_dias_entre_saidas": media_dias_entre_saidas,
+        "recorde_dia": recorde_dia,
+        "status": status,
+        "ultimo_evento": ultimo,
+    }

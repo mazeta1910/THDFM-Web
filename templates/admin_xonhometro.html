@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Xonhômetro — Admin THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<div class="xonha-admin">
+  <p class="credenciais-kicker">Admin</p>
+  <h1>Xonhômetro</h1>
+  <p class="login-lead">
+    Registre saídas e voltas do Xonha no grupo do WhatsApp.
+    A página pública em <a href="/xonhometro">/xonhometro</a> é só leitura para o resto do pessoal.
+  </p>
+
+  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+  <div class="xonha-admin-resumo">
+    <span><strong>{{ stats.total_saidas }}</strong> saídas</span>
+    <span><strong>{{ stats.total_voltas }}</strong> voltas</span>
+    {% if stats.recorde_dia %}
+    <span>recorde: <strong>{{ stats.recorde_dia.quantidade }}×</strong> em {{ stats.recorde_dia.data[8:10] }}/{{ stats.recorde_dia.data[5:7] }}/{{ stats.recorde_dia.data[0:4] }}</span>
+    {% endif %}
+  </div>
+
+  <section class="card xonha-admin-form-card">
+    <h2>Novo registro</h2>
+    <form method="post" action="/admin/xonhometro" class="xonha-admin-form" autocomplete="off">
+      <label for="xonha-tipo">Tipo</label>
+      <select id="xonha-tipo" name="tipo" required>
+        <option value="saida">Saída</option>
+        <option value="volta">Volta</option>
+      </select>
+
+      <label for="xonha-data">Data</label>
+      <input id="xonha-data" type="date" name="data" required />
+
+      <label for="xonha-motivo">Motivo (opcional)</label>
+      <textarea id="xonha-motivo" name="motivo" rows="2" maxlength="500" placeholder="Ex.: brigou por causa do placar"></textarea>
+
+      <button type="submit">Registrar</button>
+    </form>
+  </section>
+
+  <section class="xonha-admin-list">
+    <h2>Registros</h2>
+    {% for e in eventos %}
+    <article class="card xonha-admin-card">
+      <form method="post" action="/admin/xonhometro/atualizar" class="xonha-admin-form" autocomplete="off">
+        <input type="hidden" name="evento_id" value="{{ e.id }}" />
+        <label for="tipo-{{ e.id }}">Tipo</label>
+        <select id="tipo-{{ e.id }}" name="tipo" required>
+          <option value="saida" {% if e.tipo == 'saida' %}selected{% endif %}>Saída</option>
+          <option value="volta" {% if e.tipo == 'volta' %}selected{% endif %}>Volta</option>
+        </select>
+
+        <label for="data-{{ e.id }}">Data</label>
+        <input id="data-{{ e.id }}" type="date" name="data" value="{{ e.data }}" required />
+
+        <label for="motivo-{{ e.id }}">Motivo</label>
+        <textarea id="motivo-{{ e.id }}" name="motivo" rows="2" maxlength="500">{{ e.motivo or '' }}</textarea>
+
+        <div class="xonha-admin-actions">
+          <button type="submit">Salvar</button>
+        </div>
+      </form>
+      <form method="post" action="/admin/xonhometro/apagar" class="xonha-admin-apagar" onsubmit="return confirm('Apagar este registro?');">
+        <input type="hidden" name="evento_id" value="{{ e.id }}" />
+        <button type="submit" class="danger">Apagar</button>
+      </form>
+    </article>
+    {% else %}
+    <p class="login-lead">Nenhum registro ainda.</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
