@@ -28,6 +28,17 @@
   </div>
 </div>
 {% endif %}
+
+<div class="modal-backdrop" id="modal-palpites-sair" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-sair-title">
+    <h3 id="modal-palpites-sair-title">Palpites não salvos</h3>
+    <p style="margin:0 0 1rem">Você tem alterações que ainda não foram salvas. Deseja sair sem salvar?</p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-palpites-sair-cancelar">Continuar editando</button>
+      <button type="button" class="danger" id="modal-palpites-sair-confirmar">Sair sem salvar</button>
+    </div>
+  </div>
+</div>
 <section class="fases-panel is-collapsed" data-fases-collapse>
 {% include "partials/fases_panel_head.html" %}
 <div class="fases-panel-body">
@@ -299,21 +310,33 @@
 <script>
 (() => {
   const form = document.getElementById("form-palpites");
-  if (!form) return;
+  const modal = document.getElementById("modal-palpites-sair");
+  if (!form || !modal) return;
+
   let dirty = false;
   let submitting = false;
+  let pendingHref = "";
+
   const markDirty = () => { dirty = true; };
+  const abrirModal = (href) => {
+    pendingHref = href;
+    modal.hidden = false;
+    modal.classList.add("is-open");
+    document.body.appendChild(modal);
+  };
+  const fecharModal = () => {
+    pendingHref = "";
+    modal.classList.remove("is-open");
+    modal.setAttribute("hidden", "");
+  };
+
   form.addEventListener("input", markDirty);
   form.addEventListener("change", markDirty);
   form.addEventListener("submit", () => {
     submitting = true;
     dirty = false;
   });
-  window.addEventListener("beforeunload", (e) => {
-    if (!dirty || submitting) return;
-    e.preventDefault();
-    e.returnValue = "";
-  });
+
   document.addEventListener("click", (e) => {
     if (!dirty || submitting) return;
     const link = e.target.closest("a[href]");
@@ -321,14 +344,24 @@
     const href = link.getAttribute("href") || "";
     if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
     if (link.target === "_blank" || link.hasAttribute("download")) return;
-    const ok = window.confirm(
-      "Você tem palpites não salvos. Deseja sair sem salvar?"
-    );
-    if (!ok) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    abrirModal(link.href);
   }, true);
+
+  document.getElementById("modal-palpites-sair-cancelar")?.addEventListener("click", fecharModal);
+  document.getElementById("modal-palpites-sair-confirmar")?.addEventListener("click", () => {
+    const href = pendingHref;
+    dirty = false;
+    fecharModal();
+    if (href) window.location.href = href;
+  });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) fecharModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) fecharModal();
+  });
 })();
 </script>
 {% if janela == 'volta' %}
