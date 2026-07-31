@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Painel de Admin — Bolão THDFM{% endblock %}
 {% block admin_topbar %}
+{% set _titulo_sec = 'Inscrições' if admin_sec == 'inscricoes' else 'Resultados' %}
 <div>
-  <h1 id="admin-section-title">Resultados</h1>
+  <h1 id="admin-section-title">{{ _titulo_sec }}</h1>
 </div>
 {% endblock %}
 {% block content %}
@@ -95,7 +96,7 @@
 </form>
 {%- endmacro %}
 
-    <section class="admin-panel active" data-panel="resultados">
+    <section class="admin-panel{% if admin_sec != 'inscricoes' %} active{% endif %}" data-panel="resultados">
       <div class="admin-grid-2 admin-ops-grid" style="margin-bottom:1rem">
         <div class="card card-with-tip admin-op-card">
           <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: janela de palpites">
@@ -342,7 +343,7 @@
       {% endfor %}
     </section>
 
-    <section class="admin-panel" data-panel="inscricoes">
+    <section class="admin-panel{% if admin_sec == 'inscricoes' %} active{% endif %}" data-panel="inscricoes">
       <div class="card inscricoes-card" id="inscricoes-card">
         <div class="inscricoes-head">
           <div class="inscricoes-title-row">
@@ -881,7 +882,11 @@ const showSection = (sec, pushUrl = false) => {
   const title = document.getElementById("admin-section-title");
   if (title) title.textContent = TITLES[sec];
   localStorage.setItem(KEY_SEC, sec);
-  document.body.classList.remove("admin-sidebar-open");
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    document.body.classList.remove("admin-sidebar-open");
+    const backdrop = document.getElementById("admin-sidebar-backdrop");
+    if (backdrop) backdrop.hidden = true;
+  }
   if (pushUrl) {
     const url = new URL(window.location.href);
     url.searchParams.set("sec", sec);
@@ -896,8 +901,42 @@ document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
     showSection(link.dataset.sec, true);
   });
 });
-const params = new URLSearchParams(window.location.search);
-showSection(params.get("sec") || localStorage.getItem(KEY_SEC) || "resultados");
+document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
+  link.addEventListener("click", (e) => {
+    if (!document.querySelector(`.admin-panel[data-panel="${link.dataset.sec}"]`)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    showSection(link.dataset.sec, true);
+  });
+});
+
+// Só troca seção se a URL/localStorage pedir algo diferente do que já veio no HTML
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  let sec = params.get("sec");
+  if (!sec) {
+    sec = localStorage.getItem(KEY_SEC) || "resultados";
+    if (sec === "cadastro" || sec === "participantes") sec = "inscricoes";
+    if (sec === "config" || sec === "rodada" || sec === "operacao") sec = "resultados";
+    if (sec !== "resultados" && sec !== "inscricoes") sec = "resultados";
+    const url = new URL(window.location.href);
+    url.searchParams.set("sec", sec);
+    history.replaceState(null, "", url);
+  }
+  const current = document.querySelector(".admin-panel.active")?.dataset.panel;
+  if (current !== sec) showSection(sec, false);
+  else {
+    // Mantém título/localStorage alinhados sem mexer no DOM dos painéis
+    if (sec === "cadastro" || sec === "participantes") sec = "inscricoes";
+    if (sec === "config" || sec === "rodada" || sec === "operacao") sec = "resultados";
+    localStorage.setItem(KEY_SEC, sec);
+    const title = document.getElementById("admin-section-title");
+    if (title && TITLES[sec]) title.textContent = TITLES[sec];
+    document.querySelectorAll(".admin-side-link[data-sec]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.sec === sec);
+    });
+  }
+})();
 
 (() => {
   const KEY_SORT = "admin-inscricoes-sort";

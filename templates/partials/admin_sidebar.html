@@ -40,7 +40,7 @@
   </div>
   <nav class="admin-side-nav" aria-label="Menu do painel">
     <div class="admin-side-nav-scroll">
-      <details class="admin-menu-group" data-group="admin" {% if open_admin or not (open_competicao or open_meu_bolao) or path.startswith('/admin/credenciais') %}open{% endif %}>
+      <details class="admin-menu-group" data-group="admin" open>
         <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
         <div class="admin-menu-items">
           <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
