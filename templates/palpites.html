@@ -1,10 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Palpites — {{ participante.nome }}{% endblock %}
-{% block wrap_class %}wide{% endblock %}
+{% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
-<p class="badge">Janela: {{ janela|capitalize }} · Fase: {{ fase_atual }}</p>
-<h1>Olá, {{ participante.nome }}!</h1>
-<p>Faça aqui os seus palpites.</p>
+<h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
 
 {% if janela == 'fechado' %}
 <p class="erro">Palpites fechados no momento.</p>
@@ -206,8 +204,8 @@
     </div>
 
     {% if janela != 'fechado' %}
-    <div class="sticky-save">
-      <button type="submit">Salvar todos os palpites</button>
+    <div class="sticky-save sticky-save-fab">
+      <button type="submit" title="Salvar todos os palpites">Salvar</button>
     </div>
     {% endif %}
   </form>

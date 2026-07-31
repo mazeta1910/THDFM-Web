@@ -1761,6 +1761,47 @@ input[type="file"] {
 .palpites-card .sticky-save button {
   margin: 0;
 }
+/* Meus Palpites: chrome mais compacto */
+.wrap.palpites-page {
+  padding-top: 0.65rem;
+  padding-bottom: 4.25rem;
+}
+.wrap.palpites-page .palpites-hello {
+  font-size: 1.2rem;
+  margin: 0.1rem 0 0.55rem;
+}
+.wrap.palpites-page .fases-panel {
+  margin-bottom: 0.55rem;
+}
+.wrap.palpites-page .fases-panel-head {
+  margin-bottom: 0.4rem;
+}
+.wrap.palpites-page .card.palpites-card {
+  padding: 0.45rem;
+  margin: 0.45rem 0;
+}
+.palpites-card .sticky-save-fab {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.55rem 0.35rem 0.15rem;
+  padding: 0;
+  background: none;
+  pointer-events: none;
+}
+.palpites-card .sticky-save-fab button {
+  pointer-events: auto;
+  width: auto;
+  min-width: 5.25rem;
+  margin: 0;
+  padding: 0.5rem 1.05rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+}
 @media (max-width: 640px) {
   .fase-tabs { grid-template-columns: 1fr 1fr; }
 }
