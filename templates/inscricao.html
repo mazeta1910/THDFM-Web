@@ -70,7 +70,8 @@
   <div class="inscricao-row">
     <div class="inscricao-field">
       <label class="inscricao-label" for="nome">Quem é vc <span class="req" style="color:#ff2d2d" aria-hidden="true">*</span></label>
-      <input id="nome" class="input-compact" type="text" name="nome" required placeholder="Antonio (ratao)" value="{{ form_nome }}" />
+      <input id="nome" class="input-compact" type="text" name="nome" required maxlength="30" placeholder="Antonio (ratao)" value="{{ form_nome }}" autocomplete="nickname" />
+      <p class="conta-hint" style="margin:0.25rem 0 0">Máximo 30 caracteres.</p>
     </div>
     <div class="inscricao-field">
       <label class="inscricao-label" for="celular">Passa o zap (Cllr) <span class="req" style="color:#ff2d2d" aria-hidden="true">*</span></label>

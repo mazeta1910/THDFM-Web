@@ -66,3 +66,5 @@ COMPROVANTE_MAX_BYTES = 5 * 1024 * 1024
 AVATAR_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 AVATAR_MAX_BYTES = 3 * 1024 * 1024
 AVATAR_PADRAO_STEM = "avatar-padrao"
+NOME_MAX_LEN = 30
+

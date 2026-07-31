@@ -10,11 +10,21 @@ from typing import Any, Iterator
 
 import bcrypt
 
-from src.config import COMPROVANTES_DIR, DATA_DIR, DB_PATH
+from src.config import COMPROVANTES_DIR, DATA_DIR, DB_PATH, NOME_MAX_LEN
 from src.seed_data import OITAVAS
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{3,24}$")
 SENHA_MIN_LEN = 8
+
+
+def normalizar_nome_exibido(nome: str) -> str:
+    """Valida e normaliza o nome exibido (máx. NOME_MAX_LEN caracteres)."""
+    nome = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome:
+        raise ValueError("Nome vazio")
+    if len(nome) > NOME_MAX_LEN:
+        raise ValueError(f"Nome com no máximo {NOME_MAX_LEN} caracteres")
+    return nome
 
 
 def _connect() -> sqlite3.Connection:
@@ -323,9 +333,7 @@ def criar_participante(
     celular: str | None = None,
     admin_login: str | None = None,
 ) -> dict[str, Any]:
-    nome = nome.strip()
-    if not nome:
-        raise ValueError("Nome vazio")
+    nome = normalizar_nome_exibido(nome)
     if status not in ("pendente", "comprovante", "liberado"):
         raise ValueError("status inválido")
     celular_limpo = normalizar_celular(celular) if celular else None
@@ -819,9 +827,7 @@ def apagar_participante(participante_id: int) -> dict[str, Any] | None:
 
 
 def atualizar_nome_participante(participante_id: int, nome: str) -> None:
-    nome = nome.strip()
-    if not nome:
-        raise ValueError("Nome vazio")
+    nome = normalizar_nome_exibido(nome)
     with get_db() as conn:
         conn.execute(
             "UPDATE participantes SET nome = ? WHERE id = ?",
