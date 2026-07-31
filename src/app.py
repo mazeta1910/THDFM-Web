@@ -191,17 +191,24 @@ def _taxa_ctx() -> dict:
         wa_url = f"https://wa.me/{wa_digits}?text={quote(wa_msg)}"
     social_wa = re.sub(r"\D+", "", SOCIAL_WHATSAPP or "")
     social_wa_url = f"https://wa.me/{social_wa}" if social_wa else ""
+    group_url = (
+        WHATSAPP_GROUP_URL
+        or os.environ.get("WHATSAPP_GROUP_URL", "")
+        or ""
+    ).strip()
     return {
         "taxa_pix": os.environ.get("TAXA_PIX", TAXA_PIX),
         "taxa_valor_label": os.environ.get("TAXA_VALOR_LABEL", TAXA_VALOR_LABEL),
         "admin_whatsapp_url": wa_url,
+        "whatsapp_group_url": group_url,
         "social_links": {
             "facebook": SOCIAL_FACEBOOK or os.environ.get("SOCIAL_FACEBOOK", ""),
             "x": SOCIAL_X or os.environ.get("SOCIAL_X", ""),
             "instagram": SOCIAL_INSTAGRAM or os.environ.get("SOCIAL_INSTAGRAM", ""),
             "youtube": SOCIAL_YOUTUBE or os.environ.get("SOCIAL_YOUTUBE", ""),
             "tiktok": SOCIAL_TIKTOK or os.environ.get("SOCIAL_TIKTOK", ""),
-            "whatsapp": social_wa_url,
+            # Preferimos o grupo da THDFM no rodapé; fallback wa.me do admin
+            "whatsapp": group_url or social_wa_url,
         },
     }
 
