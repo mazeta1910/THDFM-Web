@@ -1701,6 +1701,47 @@ input[type="file"] {
 .palpites-card .match-teams {
   border-right: none;
   width: 100%;
+  padding: 0.4rem 0.45rem 0.5rem;
+}
+/* Meus Palpites: 2 colunas também no mobile */
+.palpites-card .match-grid,
+.locked-grid.match-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.palpites-card .match-grid .match-cell:nth-child(odd),
+.locked-grid.match-grid .match-cell:nth-child(odd) {
+  border-right: 1px solid var(--border);
+}
+.palpites-card .match-grid .match-cell:nth-last-child(2):nth-child(odd),
+.locked-grid.match-grid .match-cell:nth-last-child(2):nth-child(odd) {
+  border-bottom: none;
+}
+@media (max-width: 520px) {
+  .palpites-card .match-team-row {
+    grid-template-columns: 22px minmax(0, 1fr) 40px;
+    gap: 0.25rem;
+  }
+  .palpites-card .match-team-row img {
+    width: 20px;
+    height: 20px;
+  }
+  .palpites-card .match-team-row span {
+    font-size: 0.72rem;
+  }
+  .palpites-card .match-team-row input[type="number"] {
+    width: 40px;
+    padding: 0.32rem 0.15rem;
+    font-size: 0.88rem;
+  }
+  .palpites-card .match-jogo-tag {
+    font-size: 0.52rem;
+    padding: 0.1rem 0.28rem;
+    margin: 0.15rem auto 0.15rem;
+  }
+  .palpites-card .match-teams {
+    padding: 0.3rem 0.35rem 0.4rem;
+    gap: 0.3rem;
+  }
 }
 .palpites-card .match-ref {
   padding: 0.35rem 0.65rem 0;
@@ -1756,7 +1797,7 @@ input[type="file"] {
   overflow: hidden;
   background: var(--card);
 }
-@media (min-width: 1000px) {
+@media (min-width: 700px) {
   .match-grid { grid-template-columns: 1fr 1fr; }
   .match-grid .match-cell:nth-child(odd) {
     border-right: 1px solid var(--border);
@@ -1772,7 +1813,7 @@ input[type="file"] {
 .match-grid .match-cell:last-child {
   border-bottom: none;
 }
-@media (min-width: 1000px) {
+@media (min-width: 700px) {
   .match-grid .match-cell:nth-last-child(2):nth-child(odd) {
     border-bottom: none;
   }
