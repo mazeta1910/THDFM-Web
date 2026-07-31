@@ -357,15 +357,13 @@
       });
     });
 
-    const GROUP_KEY = "thdfm-site-menu-groups-v2";
-    // Portal fechado; Acesso, Bolão, Marlon (e grupos do bolão) abertos.
+    const GROUP_KEY = "thdfm-site-menu-groups-v3";
+    // Portal fechado; Acesso, Bolão e Marlon abertos.
     const DEFAULT_OPEN = {
       portal: false,
       acesso: true,
       bolao: true,
       marlon: true,
-      competicao: true,
-      "meu-bolao": true,
     };
     const readGroups = () => {
       try {
@@ -377,8 +375,9 @@
     const writeGroups = (map) => {
       try { localStorage.setItem(GROUP_KEY, JSON.stringify(map)); } catch (e) {}
     };
-    // Limpa chave antiga que forçava Portal aberto / demais fechados.
+    // Limpa chaves antigas do menu que alternava home vs bolão.
     try { localStorage.removeItem("thdfm-site-menu-groups"); } catch (e) {}
+    try { localStorage.removeItem("thdfm-site-menu-groups-v2"); } catch (e) {}
 
     document.querySelectorAll(".site-menu-group[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
