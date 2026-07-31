@@ -57,11 +57,26 @@ def test_papeis_parseados(monkeypatch: pytest.MonkeyPatch):
     assert by_login["joaojec"].papel_label == "Moderador"
 
 
+def test_admin_users_aceita_espacos_no_env(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv(
+        "ADMIN_USERS",
+        " mazeta = senha-com-espaco = Mazeta:dono | ramos = outra = Ramos:moderador ",
+    )
+    from src import admins as adm
+
+    by_login = {a.login: a for a in adm.list_admins()}
+    assert by_login["mazeta"].senha == "senha-com-espaco"
+    assert by_login["ramos"].senha == "outra"
+    assert adm.autenticar_admin("mazeta", "senha-com-espaco")
+    assert adm.autenticar_admin("mazeta", " senha-com-espaco ") is None
+
+
 def test_toggle_aparece_apos_login_admin(client: TestClient):
     r0 = client.get("/")
     assert 'id="ui-mode-toggle"' not in r0.text
     assert 'id="ui-mode-chip-fixed"' not in r0.text
-    assert "ui-mode-chip" not in r0.text or 'id="ui-mode-chip' not in r0.text
+    assert 'href="/admin/login"' in r0.text
+    assert "Painel admin" in r0.text
 
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/")
@@ -74,6 +89,50 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
     assert "Ver site" in r.text
+    # Depois do login, o atalho vira o painel (não mais /admin/login)
+    assert 'href="/admin/login"' not in r.text or "Painel (Dono)" in r.text
+
+
+def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: TestClient):
+    """Entrar no bolão antes não pode impedir /admin/login."""
+    part = db.criar_participante("FulanoSessao", status="liberado", celular="11990009988")
+    db.definir_credenciais(part["id"], "fulano.sessao", "senha1234")
+    client.get(f"/p/{part['token']}")
+
+    r = client.post(
+        "/admin/login",
+        data={"login": "mazeta", "password": "senha-dono"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin"
+    assert "thdfm_ui_mode=admin" in (r.headers.get("set-cookie") or "")
+
+    r2 = client.get("/admin")
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert 'id="ui-mode-toggle"' in r2.text
+    # Conta admin própria — não assalta o Fulano
+    mazeta = db.get_participante_por_admin_login("mazeta")
+    assert mazeta is not None
+    assert mazeta["id"] != part["id"]
+    assert (mazeta.get("admin_login") or "") == "mazeta"
+
+def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
+    """mazeta + senha do .env no Entrar deve ir ao /admin (não só ao bolão)."""
+    r = client.post(
+        "/entrar",
+        data={"usuario": "mazeta", "senha": "senha-dono"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin"
+    assert "thdfm_ui_mode=admin" in (r.headers.get("set-cookie") or "")
+
+    r2 = client.get("/admin")
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert 'id="ui-mode-toggle"' in r2.text
 
 
 def test_admin_mantem_menu_na_transparencia(client: TestClient):

@@ -54,7 +54,12 @@ from src.transparencia import montar_portal
 load_dotenv(ROOT_DIR / ".env")
 
 app = FastAPI(title="Bolão THDFM — Copa do Brasil")
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SECRET_KEY", SECRET_KEY))
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SECRET_KEY", SECRET_KEY),
+    same_site="lax",
+    max_age=60 * 60 * 24 * 14,  # 14 dias — evita perder o painel ao fechar a aba
+)
 
 TEMPLATES = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
 
@@ -227,6 +232,62 @@ def render(request: Request, name: str, **ctx):
 
 def _remember_participante(request: Request, token: str) -> None:
     request.session["participante_token"] = token
+
+
+def _set_cookie_ui_admin(resp: RedirectResponse) -> RedirectResponse:
+    resp.set_cookie(
+        "thdfm_ui_mode",
+        "admin",
+        max_age=60 * 60 * 24 * 180,
+        httponly=False,
+        samesite="lax",
+        path="/",
+    )
+    return resp
+
+
+def _estabelecer_sessao_admin(
+    request: Request,
+    admin,
+    *,
+    token_preferido: str | None = None,
+) -> None:
+    """Grava sessão do painel (Dono/Moderador)."""
+    request.session["admin_login"] = admin.login
+    request.session["admin_nome"] = admin.nome
+    request.session["admin_role"] = admin.papel
+    request.session.pop("admin", None)
+    try:
+        part = db.garantir_participante_admin(
+            admin.login,
+            admin.nome,
+            token_preferido=token_preferido or request.session.get("participante_token"),
+        )
+        request.session["admin_nome"] = part.get("nome") or admin.nome
+        _remember_participante(request, part["token"])
+    except Exception:
+        pass
+
+
+def _tentar_admin_com_senha(
+    request: Request,
+    *,
+    usuario: str,
+    senha: str,
+    part: dict | None = None,
+) -> bool:
+    """Se usuário/senha baterem com ADMIN_USERS, abre sessão do painel."""
+    admin = autenticar_admin(usuario, senha)
+    if not admin and part and part.get("admin_login"):
+        admin = autenticar_admin(part.get("admin_login") or "", senha)
+    if not admin:
+        return False
+    _estabelecer_sessao_admin(
+        request,
+        admin,
+        token_preferido=(part or {}).get("token"),
+    )
+    return True
 
 
 def _redirect_credenciais(token: str) -> RedirectResponse:
@@ -405,6 +466,10 @@ async def entrar_post(
             usuario=usuario,
         )
 
+    # Credenciais do painel (.env) também funcionam no Entrar → vão direto ao admin
+    if _tentar_admin_com_senha(request, usuario=usuario, senha=senha):
+        return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
+
     # Marlon não entra pela porta civilizada — só pelo LOGUIN
     if _tentativa_e_do_marlon(usuario):
         return _redirect_loguin(
@@ -436,6 +501,9 @@ async def entrar_post(
         )
 
     _remember_participante(request, part["token"])
+    # Conta ligada a um admin: se a senha for a do .env, libera o painel
+    if _tentar_admin_com_senha(request, usuario=usuario, senha=senha, part=part):
+        return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
     return RedirectResponse(f"/p/{part['token']}", status_code=303)
 
 
@@ -1179,18 +1247,8 @@ def admin_login(
     admin = autenticar_admin(login, password)
     if not admin:
         return RedirectResponse("/admin/login?erro=Usuario+ou+senha+incorretos", status_code=303)
-    request.session["admin_login"] = admin.login
-    request.session["admin_nome"] = admin.nome
-    request.session["admin_role"] = admin.papel
-    request.session.pop("admin", None)  # legado
-    # Admin também palpita: vínculo estável por login (não pelo nick)
-    token_atual = request.session.get("participante_token")
-    part = db.garantir_participante_admin(
-        admin.login, admin.nome, token_preferido=token_atual
-    )
-    request.session["admin_nome"] = part.get("nome") or admin.nome
-    _remember_participante(request, part["token"])
-    return RedirectResponse("/admin", status_code=303)
+    _estabelecer_sessao_admin(request, admin)
+    return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
 
 
 @app.get("/admin/logout")

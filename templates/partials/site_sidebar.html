@@ -62,6 +62,9 @@
         <div class="site-menu-items">
           <a class="site-side-link site-side-link--destaque {% if on_entrar %}active{% endif %}" href="/?acesso=entrar" data-acesso-open="entrar">{{ ico('acesso') }}<span>Entrar</span></a>
           <a class="site-side-link {% if on_login %}active{% endif %}" href="/?acesso=recuperar" data-acesso-open="recuperar">{{ ico('inscricao') }}<span>Recuperar link</span></a>
+          {% if not is_admin %}
+          <a class="site-side-link" href="/admin/login">{{ ico('admin') }}<span>Painel admin</span></a>
+          {% endif %}
         </div>
       </details>
       {% endif %}
@@ -94,10 +97,11 @@
       </details>
       {% endif %}
     </div>
-    {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
       {% if is_admin %}
       <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>{% if is_dono %}Painel (Dono){% else %}Painel (Moderador){% endif %}</span></a>
+      {% else %}
+      <a class="site-side-link site-side-admin-login" href="/admin/login">{{ ico('admin') }}<span>Painel admin</span></a>
       {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
@@ -108,7 +112,6 @@
       <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
       {% endif %}
     </div>
-    {% endif %}
   </nav>
   {% else %}
   <nav class="site-side-nav" aria-label="Menu do bolão">
@@ -163,10 +166,11 @@
       </details>
       {% endif %}
     </div>
-    {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
       {% if is_admin %}
       <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>{% if is_dono %}Painel (Dono){% else %}Painel (Moderador){% endif %}</span></a>
+      {% else %}
+      <a class="site-side-link site-side-admin-login" href="/admin/login">{{ ico('admin') }}<span>Painel admin</span></a>
       {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
@@ -177,7 +181,6 @@
       <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
       {% endif %}
     </div>
-    {% endif %}
   </nav>
   {% endif %}
 </aside>
