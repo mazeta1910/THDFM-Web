@@ -1768,7 +1768,16 @@ input[type="file"] {
 }
 .wrap.palpites-page .palpites-hello {
   font-size: 1.2rem;
-  margin: 0.1rem 0 0.55rem;
+  margin: 0.1rem 0 0.2rem;
+}
+.wrap.palpites-page .palpites-lead {
+  margin: 0 0 0.55rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.wrap.palpites-page .palpites-lead strong {
+  color: var(--accent);
+  font-weight: 700;
 }
 .wrap.palpites-page .fases-panel {
   margin-bottom: 0.55rem;
@@ -1801,6 +1810,14 @@ input[type="file"] {
   font-weight: 700;
   border-radius: 999px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.palpites-card .sticky-save-fab .btn-salvar-ico {
+  flex: 0 0 auto;
+  display: block;
 }
 @media (max-width: 640px) {
   .fase-tabs { grid-template-columns: 1fr 1fr; }
