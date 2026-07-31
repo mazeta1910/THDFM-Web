@@ -249,7 +249,10 @@
       const faseEl = col?.querySelector(".transparencia-nav-fase");
       const pernaEl = col?.querySelector(".transparencia-nav-pernas .active, .transparencia-nav-pernas [aria-current]");
       const fase = (faseEl?.textContent || "").trim();
-      const perna = (pernaEl?.textContent || "").trim();
+      // Evita "Jogo 1 (Ida)Ida": o botão tem label longo e curto no DOM.
+      const pernaLong = pernaEl?.querySelector(".nav-perna-long")?.textContent?.trim();
+      const pernaShort = pernaEl?.querySelector(".nav-perna-short")?.textContent?.trim();
+      const perna = pernaLong || pernaShort || (pernaEl?.textContent || "").trim();
       summary.textContent = [fase, perna].filter(Boolean).join(" · ");
     };
     document.querySelectorAll("[data-fases-collapse]").forEach((panel) => {
