@@ -34,10 +34,12 @@ ADMIN_WHATSAPP_MSG = os.environ.get(
 
 # Redes sociais da página THDFM (deixe vazio para ocultar o ícone)
 SOCIAL_FACEBOOK = os.environ.get(
-    "SOCIAL_FACEBOOK", "https://www.facebook.com/thdfm/"
+    "SOCIAL_FACEBOOK", "https://www.facebook.com/thdfm"
 ).strip()
-SOCIAL_X = os.environ.get("SOCIAL_X", "https://x.com/TecHorrorFC").strip()
-SOCIAL_INSTAGRAM = os.environ.get("SOCIAL_INSTAGRAM", "").strip()
+SOCIAL_X = os.environ.get("SOCIAL_X", "https://x.com/tecnicoshdfm").strip()
+SOCIAL_INSTAGRAM = os.environ.get(
+    "SOCIAL_INSTAGRAM", "https://www.instagram.com/thdfm_/"
+).strip()
 SOCIAL_YOUTUBE = os.environ.get("SOCIAL_YOUTUBE", "").strip()
 SOCIAL_TIKTOK = os.environ.get("SOCIAL_TIKTOK", "").strip()
 SOCIAL_WHATSAPP = os.environ.get("SOCIAL_WHATSAPP", "").strip() or ADMIN_WHATSAPP
