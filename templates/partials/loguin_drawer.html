@@ -15,7 +15,7 @@
   >
     <header class="acesso-drawer-head">
       <div>
-        <p class="loguin-kicker loguin-kicker--drawer">Área restrita · É florida</p>
+        <p class="loguin-kicker loguin-kicker--drawer">Área restrita</p>
         <h2 class="acesso-drawer-title" id="loguin-drawer-title">LOGUIN</h2>
       </div>
       <button type="button" class="acesso-drawer-close" id="loguin-drawer-close" aria-label="Fechar">×</button>
@@ -23,9 +23,7 @@
 
     <div class="acesso-drawer-body">
       <p class="login-lead">
-        Boxzinha exclusiva do <strong>Marlon <span data-marlon-sobrenome>Wietzikowski</span></strong>,
-        o único que pediu <em>loguin</em> no grupo. O resto da humanidade usa Entrar —
-        você, pelo amord, não.
+        Exclusivo do <strong>Marlon <span data-marlon-sobrenome>Wietzikowski</span></strong>.
       </p>
 
       <figure class="loguin-foto loguin-foto--drawer">
@@ -36,7 +34,6 @@
           height="260"
           decoding="async"
         />
-        <figcaption>Aquela foto de lado do Zap — melhor no IP</figcaption>
       </figure>
 
       {% if loguin_erro %}
@@ -46,16 +43,12 @@
       {% if loguin_sucesso %}
       <div class="loguin-sucesso" role="status">
         <p class="loguin-sucesso-title">LOGUIN efetuado. É florida.</p>
-        <p>
-          Parabéns, <strong>Marlon</strong>. Você entrou pela porta certa
-          (a errada, digamos). Se o resto do site tá diva, não é problema seu.
-        </p>
-        <p class="loguin-sucesso-hint">Sessão de LOGUIN · validade: até o Honorato te passar de novo</p>
+        <p>Bem-vindo, <strong>Marlon</strong>.</p>
         <button type="button" class="btn" id="loguin-drawer-ok">Voltar ao início</button>
       </div>
       {% else %}
       <form method="post" action="/loguin" class="form-loguin" id="form-loguin-drawer" novalidate>
-        <label for="loguin-usuario">Usuário (só o Marlon)</label>
+        <label for="loguin-usuario">Usuário</label>
         <input
           id="loguin-usuario"
           name="usuario"
@@ -91,9 +84,8 @@
         <button type="submit" class="btn loguin-submit">Fazer LOGUIN</button>
       </form>
       <p class="loguin-footnote">
-        Não é o Marlon? Tá de saca tentar entrar aqui.
-        <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar de verdade</a>
-        · <a href="/">Sair daqui</a>
+        Não é o Marlon?
+        <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
       </p>
       {% endif %}
     </div>

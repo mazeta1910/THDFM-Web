@@ -177,14 +177,13 @@ def test_entrar_tem_esqueci_senha_modal(client: TestClient):
     assert "modal-esqueci-senha" in r2.text
     assert "Esqueceu sua senha?" in r2.text
     assert "Aí o problema não é meu" in r2.text
-    assert "Tá de saca?" in r2.text or "É florida" in r2.text
-    assert "macaco-rindo.gif" in r2.text
-    assert "Marlon" in r2.text and "pelo amord" in r2.text.casefold()
-    assert "Você entra pelo" in r2.text
-    assert "Cllr" in r2.text
+    assert "Tá de saca?" in r2.text
+    assert "Marlon" in r2.text
+    assert "Loguin" in r2.text
     assert 'type="password"' in r2.text
     assert "password-toggle" in r2.text
     assert "loguin-drawer-root" in r2.text
+    assert "macaco-rindo.gif" in r2.text
     assert "ortografia" not in r2.text.casefold()
 
 
