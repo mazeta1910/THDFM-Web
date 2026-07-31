@@ -31,10 +31,11 @@
 
 <div class="modal-backdrop" id="modal-palpites-sair" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-sair-title">
+    <button type="button" class="modal-close-x" id="modal-palpites-sair-fechar" title="Fechar" aria-label="Fechar">×</button>
     <h3 id="modal-palpites-sair-title">Palpites não salvos</h3>
     <p style="margin:0 0 1rem">Você tem alterações que ainda não foram salvas. Deseja sair sem salvar?</p>
     <div class="modal-actions">
-      <button type="button" class="secondary" id="modal-palpites-sair-cancelar">Continuar editando</button>
+      <button type="button" class="secondary" id="modal-palpites-sair-cancelar">Continuar</button>
       <button type="button" class="danger" id="modal-palpites-sair-confirmar">Sair sem salvar</button>
     </div>
   </div>
@@ -350,6 +351,7 @@
   }, true);
 
   document.getElementById("modal-palpites-sair-cancelar")?.addEventListener("click", fecharModal);
+  document.getElementById("modal-palpites-sair-fechar")?.addEventListener("click", fecharModal);
   document.getElementById("modal-palpites-sair-confirmar")?.addEventListener("click", () => {
     const href = pendingHref;
     dirty = false;
