@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}LOGUIN — exclusivo Marlon{% endblock %}
+{% block body_class %}page-loguin{% endblock %}
+{% block content %}
+<div class="loguin-wrap">
+  <div class="card loguin-card">
+    <p class="loguin-kicker">Área restrita · ortografia alternativa</p>
+    <h1 class="loguin-title">LOGUIN</h1>
+    <p class="loguin-lead">
+      Página exclusiva do <strong>Marlon Wietzikowski</strong>,
+      o único ser humano que pediu <em>loguin</em> no grupo.
+    </p>
+
+    <figure class="loguin-foto">
+      <img
+        src="/static/img/marlon-lado.svg"
+        alt="Marlon Wietzikowski de lado, como no WhatsApp"
+        width="240"
+        height="320"
+        decoding="async"
+      />
+      <figcaption>Marlon Wietzikowski — aquela foto de lado do Zap</figcaption>
+    </figure>
+
+    {% if erro %}
+    <p class="erro">{{ erro.replace('+', ' ') }}</p>
+    {% endif %}
+
+    {% if sucesso %}
+    <div class="loguin-sucesso" role="status">
+      <p class="loguin-sucesso-title">LOGUIN efetuado com sucesso.</p>
+      <p>
+        Parabéns, <strong>Marlon</strong>. Você entrou.
+        Agora para de encher o saco no grupo e usa o
+        <a href="/login">Já fiz a inscrição</a> igual gente grande —
+        ou o link do WhatsApp, animal.
+      </p>
+      <p class="loguin-sucesso-hint">Sessão de LOGUIN: ilusória · validade: até o Honorato te passar de novo</p>
+      <a class="btn" href="/">Voltar ao início</a>
+    </div>
+    {% else %}
+    <form method="post" action="/loguin" class="form-loguin" id="form-loguin" novalidate>
+      <label for="usuario">Usuário (só o Marlon)</label>
+      <input
+        id="usuario"
+        name="usuario"
+        type="text"
+        class="input-compact"
+        required
+        autocomplete="username"
+        placeholder="Marlon Wietzikowski"
+        value="{{ form_usuario }}"
+      />
+
+      <label for="senha">Senha do LOGUIN</label>
+      <input
+        id="senha"
+        name="senha"
+        type="password"
+        class="input-compact"
+        required
+        autocomplete="current-password"
+        placeholder="••••••••"
+      />
+
+      <button type="submit" class="btn loguin-submit">Fazer LOGUIN</button>
+    </form>
+    <p class="loguin-footnote">
+      Não é o Marlon?
+      <a href="/login">Pedir o link de verdade</a>
+      ·
+      <a href="/">Sair daqui</a>
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

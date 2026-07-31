@@ -264,6 +264,51 @@ def login_get(request: Request):
     )
 
 
+def _eh_marlon(nome: str) -> bool:
+    n = re.sub(r"\s+", " ", (nome or "").strip().casefold())
+    n = n.replace("ł", "l")
+    return "marlon" in n and ("wietz" in n or "wietzikowski" in n or n == "marlon")
+
+
+@app.get("/loguin", response_class=HTMLResponse)
+def loguin_get(request: Request):
+    return render(
+        request,
+        "loguin.html",
+        sucesso=request.query_params.get("sucesso") == "1",
+        erro=request.query_params.get("erro"),
+        form_usuario=request.query_params.get("usuario") or "",
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/loguin")
+async def loguin_post(
+    request: Request,
+    usuario: str = Form(""),
+    senha: str = Form(""),
+):
+    from urllib.parse import quote
+
+    usuario = (usuario or "").strip()
+    senha = (senha or "").strip()
+    if not usuario or not senha:
+        return RedirectResponse(
+            f"/loguin?erro={quote('Preenche usuário e senha do LOGUIN, Marlon.')}"
+            f"&usuario={quote(usuario)}",
+            status_code=303,
+        )
+    if not _eh_marlon(usuario):
+        return RedirectResponse(
+            f"/loguin?erro={quote('Este LOGUIN é exclusivo do Marlon Wietzikowski, animal.')}"
+            f"&usuario={quote(usuario)}",
+            status_code=303,
+        )
+    # Qualquer senha serve — o importante é ele ter feito o LOGUIN
+    request.session["loguin_marlon"] = True
+    return RedirectResponse("/loguin?sucesso=1", status_code=303)
+
+
 @app.post("/login")
 async def login_post(request: Request, celular: str = Form(...)):
     from urllib.parse import quote

@@ -1,7 +1,8 @@
 {% set on_conta = participante_nav and '/conta' in path %}
 {% set on_home = path == '/' or path == '/home' %}
-{% set on_login = path.startswith('/login') %}
-{% set portal_nav = on_home or (on_login and not participante_nav) %}
+{% set on_login = path.startswith('/login') and not path.startswith('/loguin') %}
+{% set on_loguin = path.startswith('/loguin') %}
+{% set portal_nav = on_home or on_loguin or (on_login and not participante_nav) %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="site-sidebar" id="site-sidebar">
@@ -39,11 +40,12 @@
   {% if portal_nav %}
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
-      <details class="site-menu-group" data-group="portal" {% if on_home or not on_login %}open{% endif %}>
+      <details class="site-menu-group" data-group="portal" {% if on_home or on_loguin or not on_login %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>
         <div class="site-menu-items">
           <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
           <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
+          <a class="site-side-link {% if on_loguin %}active{% endif %}" href="/loguin">{{ ico('admin') }}<span>LOGUIN</span></a>
           <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
         </div>
       </details>

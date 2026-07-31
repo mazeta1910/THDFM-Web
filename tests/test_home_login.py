@@ -113,3 +113,28 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     assert db.list_pedidos_recuperacao_pendentes() == []
     updated = db.get_participante(part["id"])
     assert updated and updated.get("link_enviado_em")
+
+
+def test_loguin_so_aceita_marlon(client: TestClient):
+    r = client.get("/loguin")
+    assert r.status_code == 200
+    assert "LOGUIN" in r.text
+    assert "Marlon Wietzikowski" in r.text
+
+    r2 = client.post(
+        "/loguin",
+        data={"usuario": "João", "senha": "123"},
+        follow_redirects=False,
+    )
+    assert r2.status_code == 303
+    assert "erro=" in r2.headers["location"]
+
+    r3 = client.post(
+        "/loguin",
+        data={"usuario": "Marlon Wietzikowski", "senha": "loguin"},
+        follow_redirects=False,
+    )
+    assert r3.status_code == 303
+    assert "sucesso=1" in r3.headers["location"]
+    r4 = client.get("/loguin?sucesso=1")
+    assert "LOGUIN efetuado" in r4.text
