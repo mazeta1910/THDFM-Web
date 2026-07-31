@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=142" />
+  <link rel="stylesheet" href="/static/style.css?v=143" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -62,7 +62,7 @@
           {% block admin_topbar %}{% endblock %}
         </div>
       </header>
-      {% include "partials/theme_toggle.html" %}
+      {% include "partials/top_toggles.html" %}
       {# Páginas do site dentro do chrome admin (ex.: /transparencia) #}
       {% if not on_admin_area %}
       <div class="wrap wide">
@@ -76,7 +76,7 @@
         <button type="button" class="site-mobile-menu" id="site-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-sidebar">☰</button>
         <strong class="site-topbar-title">{% if path == '/' or path == '/home' %}THDFM{% else %}Bolão THDFM{% endif %}</strong>
       </header>
-      {% include "partials/theme_toggle.html" %}
+      {% include "partials/top_toggles.html" %}
       <main class="wrap {% block wrap_class %}{% endblock %}">
   {% endif %}
 
@@ -103,22 +103,6 @@
   {% include "partials/conta_drawer.html" %}
   {% endif %}
 
-  {% if is_admin and path != '/admin/login' %}
-  {# Um único atalho flutuante — sem chips full-width no topo #}
-  <button
-    type="button"
-    class="ui-mode-toggle"
-    id="ui-mode-toggle"
-    data-mode="{{ ui_mode }}"
-    data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if admin_layout %}Ver o site como usuário{% else %}Voltar ao menu admin{% endif %}"
-    aria-label="{% if admin_layout %}Ir para visão de usuário{% else %}Ir para visão admin{% endif %}"
-  >
-    <span class="ui-mode-toggle-icon" aria-hidden="true">{% if admin_layout %}⌂{% else %}⚙{% endif %}</span>
-    <span class="ui-mode-toggle-label">{% if admin_layout %}Site{% else %}Admin{% endif %}</span>
-  </button>
-  {% endif %}
-
   {% block scripts %}{% endblock %}
   <script>
   (function () {
@@ -129,7 +113,6 @@
     const goMode = (mode, userHome) => {
       setMode(mode);
       if (mode === "user") {
-        // Sai do chrome admin: se estiver numa rota /admin, vai para a home do user
         if (location.pathname.startsWith("/admin")) {
           location.href = userHome || "/";
           return;
@@ -137,14 +120,13 @@
         location.reload();
         return;
       }
-      // Volta ao painel admin (mais previsível que só recarregar a home)
       if (!location.pathname.startsWith("/admin") || location.pathname === "/admin/login") {
         location.href = "/admin";
         return;
       }
       location.reload();
     };
-    const btn = document.getElementById("ui-mode-toggle");
+    const btn = document.getElementById("chrome-mode-toggle");
     if (btn) {
       btn.addEventListener("click", () => {
         const inAdminChrome = document.body.classList.contains("admin-body");

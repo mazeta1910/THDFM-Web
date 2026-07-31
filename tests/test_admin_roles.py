@@ -73,24 +73,46 @@ def test_admin_users_aceita_espacos_no_env(monkeypatch: pytest.MonkeyPatch):
 
 def test_toggle_aparece_apos_login_admin(client: TestClient):
     r0 = client.get("/")
+    assert 'id="chrome-mode-toggle"' not in r0.text
     assert 'id="ui-mode-toggle"' not in r0.text
-    assert 'id="ui-mode-chip-fixed"' not in r0.text
     assert 'href="/admin/login"' in r0.text
     assert "Painel admin" in r0.text
 
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/")
-    assert 'id="ui-mode-toggle"' in r.text
-    assert "ui-mode-toggle-label" in r.text
-    # Chips enormes do topo foram removidos — só o FAB + link do menu
-    assert 'id="ui-mode-chip-fixed"' not in r.text
-    assert 'id="ui-mode-chip-admin"' not in r.text
+    # Só o Dono tem o atalho Site/Admin ao lado do tema
+    assert 'id="chrome-mode-toggle"' in r.text
+    assert 'id="ui-mode-toggle"' not in r.text
     assert "admin-shell" in r.text
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
     assert "Ver site" in r.text
-    # Depois do login, o atalho vira o painel (não mais /admin/login)
     assert 'href="/admin/login"' not in r.text or "Painel (Dono)" in r.text
+
+
+def test_moderador_nao_tem_chrome_toggle(client: TestClient):
+    _login_admin(client, "ramos", "senha-mod")
+    r = client.get("/admin")
+    assert r.status_code == 200
+    assert "admin-shell" in r.text
+    assert 'id="chrome-mode-toggle"' not in r.text
+    assert 'id="ui-mode-toggle"' not in r.text
+
+
+def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
+    """Depois de usar o painel, Classificação continua no menu admin."""
+    _login_admin(client, "mazeta", "senha-dono")
+    r_admin = client.get("/admin/palpites")
+    assert r_admin.status_code == 200
+    assert "admin-shell" in r_admin.text
+    assert "thdfm_ui_mode=admin" in (r_admin.headers.get("set-cookie") or "")
+
+    r = client.get("/classificacao")
+    assert r.status_code == 200
+    assert "admin-shell" in r.text
+    assert "site-shell" not in r.text
+    assert "Painel de Admin" in r.text
+    assert "Classificação" in r.text
 
 
 def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: TestClient):
@@ -111,7 +133,7 @@ def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: Tes
     r2 = client.get("/admin")
     assert r2.status_code == 200
     assert "Painel de Admin" in r2.text
-    assert 'id="ui-mode-toggle"' in r2.text
+    assert 'id="chrome-mode-toggle"' in r2.text
     # Conta admin própria — não assalta o Fulano
     mazeta = db.get_participante_por_admin_login("mazeta")
     assert mazeta is not None
@@ -132,7 +154,7 @@ def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
     r2 = client.get("/admin")
     assert r2.status_code == 200
     assert "Painel de Admin" in r2.text
-    assert 'id="ui-mode-toggle"' in r2.text
+    assert 'id="chrome-mode-toggle"' in r2.text
 
 
 def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
@@ -156,11 +178,11 @@ def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
     r2 = client.get("/admin", follow_redirects=False)
     assert r2.status_code == 200
     assert "Painel de Admin" in r2.text
-    assert 'id="ui-mode-toggle"' in r2.text
+    assert 'id="chrome-mode-toggle"' in r2.text
 
     home = client.get("/")
     assert "admin-shell" in home.text
-    assert 'id="ui-mode-toggle"' in home.text
+    assert 'id="chrome-mode-toggle"' in home.text
     assert "Painel de Admin" in home.text
 
 
@@ -177,8 +199,8 @@ def test_sair_do_admin_exige_login_explicito_de_novo(client: TestClient):
     home = client.get("/")
     assert "Painel admin" in home.text
     assert 'href="/admin/login"' in home.text
+    assert 'id="chrome-mode-toggle"' not in home.text
     assert 'id="ui-mode-toggle"' not in home.text
-
 
 def test_admin_mantem_menu_na_transparencia(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
@@ -194,13 +216,24 @@ def test_admin_mantem_menu_na_transparencia(client: TestClient):
 
 
 def test_admin_modo_user_usa_menu_do_site(client: TestClient):
+    """Só o Dono pode pré-visualizar o site; cookie user + página fora do /admin."""
     _login_admin(client, "mazeta", "senha-dono")
-    client.cookies.set("thdfm_ui_mode", "user")
+    # Simula o botão Site (mesmo domínio do cookie do login)
+    client.cookies.set("thdfm_ui_mode", "user", domain="testserver.local")
     r = client.get("/transparencia")
     assert r.status_code == 200
     assert "site-shell" in r.text
     assert "admin-shell" not in r.text
     assert "Portal da Transparência" in r.text
+    assert 'id="chrome-mode-toggle"' in r.text
+    assert "Sair do admin" not in r.text
+
+    # Voltar ao painel restaura o chrome admin nas páginas do site
+    r_admin = client.get("/admin")
+    assert "admin-shell" in r_admin.text
+    r2 = client.get("/classificacao")
+    assert "admin-shell" in r2.text
+    assert "site-shell" not in r2.text
 
 
 def test_dono_acessa_credenciais_e_redefine(client: TestClient):
