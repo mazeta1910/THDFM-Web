@@ -3,7 +3,7 @@
 {% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
 <h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
-<p class="palpites-lead">Faça aqui os seus palpites. <strong>Lembre de salvar</strong> antes de sair da página.</p>
+<p class="palpites-lead">Faça aqui os seus palpites. <strong class="palpites-save-hint">Lembre de salvar</strong> antes de sair da página.</p>
 
 {% if janela == 'fechado' %}
 <p class="erro">Palpites fechados no momento.</p>
