@@ -3,13 +3,12 @@
 {% block wrap_class %}wide{% endblock %}
 {% block content %}
 <div class="cred-dono-page">
-  <p class="credenciais-kicker">Só o Dono · É florida</p>
+  <p class="credenciais-kicker">Só o Dono</p>
   <h1>Gestão de credenciais</h1>
   <p class="login-lead">
     Aqui você vê o <strong>username</strong> de cada liberado e pode
     <strong>redefinir a senha</strong> quando alguém perder o acesso.
-    Senha antiga não aparece — o hash não volta (pelo amord, isso é segurança).
-    Você cria uma senha nova e manda no Zap.
+    A senha antiga não aparece (é hash) — você cria uma nova e manda no Zap.
   </p>
 
   {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
@@ -36,7 +35,7 @@
           </span>
           <span class="cred-dono-hints">
             {% if p.password_hash %}senha cadastrada{% else %}ainda sem senha{% endif %}
-            {% if p.celular %} · Cllr {{ p.celular|celular_fmt }}{% endif %}
+            {% if p.celular %} · {{ p.celular|celular_fmt }}{% endif %}
             {% if p.admin_login %} · admin <code>{{ p.admin_login }}</code>{% endif %}
           </span>
         </div>
@@ -75,7 +74,7 @@
       </form>
     </article>
     {% else %}
-    <p class="login-lead">Nenhum liberado ainda. O painel tá diva de gente.</p>
+    <p class="login-lead">Nenhum liberado ainda.</p>
     {% endfor %}
   </div>
 </div>

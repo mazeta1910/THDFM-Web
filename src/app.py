@@ -152,7 +152,7 @@ def require_dono(request: Request) -> RedirectResponse | None:
         return RedirectResponse("/admin/login", status_code=303)
     if not is_dono(request):
         return RedirectResponse(
-            "/admin?erro=" + quote("Só o Dono pode fazer isso, Adminzinho."),
+            "/admin?erro=" + quote("Só o Dono pode fazer isso."),
             status_code=303,
         )
     return None
@@ -414,7 +414,7 @@ async def entrar_post(
     if not _auth_rate_ok(rate_key):
         return _redirect_acesso(
             "entrar",
-            erro="Muitas tentativas. O site tá diva — aguarde alguns minutos.",
+            erro="Muitas tentativas. Aguarde alguns minutos.",
             usuario=usuario,
         )
 
@@ -423,7 +423,7 @@ async def entrar_post(
     if not part:
         return _redirect_acesso(
             "entrar",
-            erro="Usuário ou senha incorretos. Tá de saca?",
+            erro="Usuário ou senha incorretos",
             usuario=usuario,
         )
 
@@ -439,13 +439,11 @@ async def entrar_post(
 
 
 _MSG_MARLON_PORTA_ERRADA = (
-    "Marlon detectado. Pelo amord, essa é a porta dos civilizados — a sua é o LOGUIN. "
-    "Anda pra lá, animal."
+    "Marlon detectado. Pelo amord, a sua porta é o LOGUIN."
 )
 
 _MSG_LOGUIN_SO_MARLON = (
-    "Tá de saca? Este LOGUIN é exclusivo do Marlon Wietzikowski. "
-    "Gente normal usa Entrar."
+    "Este LOGUIN é exclusivo do Marlon Wietzikowski. Use Entrar."
 )
 
 
@@ -509,7 +507,7 @@ async def loguin_post(
     senha = (senha or "").strip()
     if not usuario or not senha:
         return _redirect_loguin(
-            erro="Pelo amord, preenche usuário e senha do LOGUIN, Marlon.",
+            erro="Preenche usuário e senha do LOGUIN, Marlon.",
             usuario=usuario,
         )
     if not _eh_marlon(usuario):
@@ -524,7 +522,7 @@ async def loguin_post(
     if part and part.get("password_hash"):
         if not db.verificar_senha(senha, part.get("password_hash")):
             return _redirect_loguin(
-                erro="Senha do LOGUIN errada. Tá de saca, Marlon? Nem o lado da foto salva.",
+                erro="Senha do LOGUIN errada, Marlon.",
                 usuario=usuario,
             )
         _remember_participante(request, part["token"])

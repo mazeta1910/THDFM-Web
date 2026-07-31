@@ -130,7 +130,7 @@ def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
     assert r.status_code == 303
     assert "admin" in r.headers["location"]
     loc = unquote(r.headers["location"]).casefold()
-    assert "dono" in loc or "adminzinho" in loc or "erro" in loc
+    assert "dono" in loc or "erro" in loc
 
     r2 = client.post(
         "/admin/apagar",

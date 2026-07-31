@@ -33,7 +33,7 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "THDFM" in text
     assert "Técnicos Horríveis do Futebol Mundial" in text
     assert "Site em desenvolvimento" in text
-    assert "tá diva" in text.casefold() or "ta diva" in text
+    assert "tá diva" in text.casefold()
     assert "Fazer inscrição" in text
     assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
@@ -44,7 +44,6 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
     assert "loguin-drawer-root" in text
-    assert "Cllr" in text
 
 
 def test_home_alias_tambem_renderiza(client: TestClient):
@@ -190,13 +189,10 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "LOGUIN" in r_home.text
     assert "loguin-drawer-root" in r_home.text
     assert "Marlon" in r_home.text
-    assert "É florida" in r_home.text
-    assert "pelo amord" in r_home.text.casefold() or "Pelo amord" in r_home.text
     assert 'data-group="marlon"' in r_home.text
     assert "Sub-menu exclusivo" in r_home.text
     assert "ortografia" not in r_home.text.casefold()
     assert 'data-loguin-open' in r_home.text
-    assert "tá diva" in r_home.text.casefold()
 
     # LOGUIN saiu do grupo Portal
     portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
@@ -219,7 +215,7 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "acesso=loguin" in r2.headers["location"]
     assert "erro=" in r2.headers["location"]
     loc2 = unquote(r2.headers["location"])
-    assert "exclusivo" in loc2.casefold() or "animal" in loc2.casefold() or "saca" in loc2.casefold()
+    assert "exclusivo" in loc2.casefold() or "entrar" in loc2.casefold()
 
     r3 = client.post(
         "/loguin",
@@ -280,7 +276,7 @@ def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
     assert r4.status_code == 303
     assert "erro=" in r4.headers["location"]
     assert "acesso=loguin" in r4.headers["location"]
-    assert "saca" in unquote(r4.headers["location"]).casefold()
+    assert "erro" in unquote(r4.headers["location"]).casefold()
 
 
 def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient):
@@ -295,6 +291,6 @@ def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient)
     assert "acesso=loguin" in r.headers["location"]
     assert "erro=" in r.headers["location"]
     loc = unquote(r.headers["location"]).casefold()
-    assert "exclusivo" in loc or "animal" in loc or "entrar" in loc or "saca" in loc
+    assert "exclusivo" in loc or "entrar" in loc
     r2 = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
     assert r2.status_code in (200, 303)

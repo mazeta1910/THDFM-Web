@@ -27,7 +27,7 @@
       <section class="acesso-panel {% if acesso_modo != 'recuperar' %}is-active{% endif %}" data-acesso-panel="entrar" role="tabpanel">
         <p class="login-lead">
           Use o <strong>username</strong> e a <strong>senha</strong> do bolão.
-          <span class="login-marlon-aside">Marlon, pelo amord, saia daqui. Você entra pelo <a href="/?acesso=loguin" data-loguin-open>Loguin</a>.</span>
+          <span class="login-marlon-aside">Marlon: use o <a href="/?acesso=loguin" data-loguin-open>Loguin</a>.</span>
         </p>
         {% if acesso_erro and acesso_modo != 'recuperar' %}
         <p class="erro">{{ acesso_erro.replace('+', ' ') }}</p>
@@ -80,7 +80,7 @@
 
       <section class="acesso-panel {% if acesso_modo == 'recuperar' %}is-active{% endif %}" data-acesso-panel="recuperar" role="tabpanel">
         <p class="login-lead">
-          Perdeu o link do WhatsApp? Informe o <strong>Cllr</strong> da inscrição.
+          Perdeu o link do WhatsApp? Informe o celular da inscrição.
           Se houver conta liberada, o admin reenvia no Zap.
         </p>
         {% if acesso_erro and acesso_modo == 'recuperar' %}
@@ -92,7 +92,7 @@
         </p>
         {% else %}
         <form method="post" action="/login" class="form-login" novalidate>
-          <label for="drawer-celular">Cllr da inscrição</label>
+          <label for="drawer-celular">Celular da inscrição</label>
           <input
             id="drawer-celular"
             class="input-compact"
@@ -102,7 +102,6 @@
             placeholder="(11) 99999-9999"
             inputmode="tel"
             autocomplete="tel"
-            title="Cllr = celular"
           />
           <button type="submit">Pedir meu link</button>
         </form>
@@ -122,7 +121,7 @@
   >
     <button type="button" class="modal-close-x" id="modal-esqueci-fechar" title="Fechar" aria-label="Fechar">×</button>
     <h3 id="modal-esqueci-title">Esqueceu sua senha?</h3>
-    <p class="modal-esqueci-lead">Tá de saca? Aí o problema não é meu. É florida.</p>
+    <p class="modal-esqueci-lead">Tá de saca? Aí o problema não é meu.</p>
     <figure class="modal-esqueci-gif">
       <img
         src="/static/img/macaco-rindo.gif"
