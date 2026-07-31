@@ -14,7 +14,7 @@
 {% set on_grupo_listra = path.startswith('/grupo/listra') %}
 {% set on_grupo_copypastas = path.startswith('/grupo/copypastas') %}
 {% set on_grupo_cardapio = path.startswith('/grupo/cardapio') %}
-{% set on_acervo_xonha = on_xonhometro or on_grupo_cardapio %}
+{% set on_acervo_xonha = on_xonhometro or on_grupo_cardapio or on_admin_xonhometro %}
 {% set on_grupo_whatsapp = on_grupo_bans or on_grupo_listra or on_grupo_copypastas or on_acervo_xonha %}
 {# Inscrições/Resultados só na home do painel — evita 2 itens ativos em /admin/credenciais etc. #}
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
@@ -57,7 +57,6 @@
           </a>
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
-          <a class="admin-side-link {% if on_admin_xonhometro %}active{% endif %}" href="/admin/xonhometro">{{ ico('xonhometro') }}<span>Xonhômetro</span></a>
           {% if is_dono %}
           <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
           {% endif %}
@@ -73,16 +72,16 @@
         </div>
       </details>
 
-      <details class="admin-menu-group" data-group="grupo-whatsapp" {% if on_grupo_whatsapp %}open{% endif %}>
+      <details class="admin-menu-group" data-group="grupo-whatsapp" {% if on_grupo_whatsapp or on_admin_xonhometro %}open{% endif %}>
         <summary class="admin-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grupo_bans %}active{% endif %}" href="/grupo/bans">{{ ico('bans') }}<span>Contador de Bans</span></a>
           <a class="admin-side-link {% if on_grupo_listra %}active{% endif %}" href="/grupo/listra">{{ ico('listra') }}<span>Listra</span></a>
           <a class="admin-side-link {% if on_grupo_copypastas %}active{% endif %}" href="/grupo/copypastas">{{ ico('copypastas') }}<span>Copypastas</span></a>
-          <details class="admin-menu-subgroup" data-group="acervo-xonha" {% if on_acervo_xonha %}open{% endif %}>
-            <summary class="admin-menu-subsummary">{{ ico('xonhometro', 13) }}<span>Acervo Xonha</span></summary>
+          <details class="admin-menu-subgroup" data-group="acervo-xonha" {% if on_acervo_xonha or on_admin_xonhometro %}open{% endif %}>
+            <summary class="admin-menu-subsummary">{{ ico('xonha', 13) }}<span>Acervo Xonha</span></summary>
             <div class="admin-menu-items admin-menu-items--nested">
-              <a class="admin-side-link {% if on_xonhometro %}active{% endif %}" href="/xonhometro">{{ ico('xonhometro') }}<span>Xonhômetro</span></a>
+              <a class="admin-side-link {% if on_xonhometro or on_admin_xonhometro %}active{% endif %}" href="/xonhometro">{{ ico('xonha') }}<span>Xonhômetro</span></a>
               <a class="admin-side-link {% if on_grupo_cardapio %}active{% endif %}" href="/grupo/cardapio">{{ ico('cardapio') }}<span>Cardápio</span></a>
             </div>
           </details>
