@@ -165,6 +165,14 @@ def test_home_cta_aponta_para_entrar(client: TestClient):
     assert "Já fiz a inscrição" not in r.text or 'href="/entrar">Entrar' in r.text
 
 
+def test_entrar_tem_esqueci_senha_modal(client: TestClient):
+    r = client.get("/entrar")
+    assert r.status_code == 200
+    assert "Esqueci minha senha" in r.text
+    assert "modal-esqueci-senha" in r.text
+    assert "Esqueceu sua senha?" in r.text
+    assert "Aí o problema não é meu" in r.text
+
 def test_alterar_senha_na_conta(client: TestClient):
     part = db.criar_participante("TrocaSenha", status="liberado", celular="11999334455")
     db.definir_credenciais(part["id"], "troca.senha", "antiga123")

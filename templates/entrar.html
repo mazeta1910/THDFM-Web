@@ -39,6 +39,11 @@
       minlength="8"
       placeholder="••••••••"
     />
+    <p class="login-forgot-wrap">
+      <button type="button" class="login-forgot-btn" id="btn-esqueci-senha">
+        Esqueci minha senha
+      </button>
+    </p>
     <button type="submit">Entrar</button>
   </form>
 
@@ -54,4 +59,48 @@
     <span class="login-loguin-hint">Exclusivo Marlon Wietzikowski · ortografia do grupo</span>
   </p>
 </div>
+
+<div class="modal-backdrop" id="modal-esqueci-senha" hidden>
+  <div
+    class="inscricao-modal modal-esqueci"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-esqueci-title"
+  >
+    <button type="button" class="modal-close-x" id="modal-esqueci-fechar" title="Fechar" aria-label="Fechar">×</button>
+    <h3 id="modal-esqueci-title">Esqueceu sua senha?</h3>
+    <p class="modal-esqueci-lead">Aí o problema não é meu.</p>
+    <button type="button" class="modal-ok" id="modal-esqueci-ok">Ok</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const modal = document.getElementById("modal-esqueci-senha");
+  const btn = document.getElementById("btn-esqueci-senha");
+  if (!modal || !btn) return;
+  document.body.appendChild(modal);
+
+  const abrir = () => {
+    modal.removeAttribute("hidden");
+    modal.classList.add("is-open");
+  };
+  const fechar = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("hidden", "");
+  };
+
+  btn.addEventListener("click", abrir);
+  document.getElementById("modal-esqueci-ok")?.addEventListener("click", fechar);
+  document.getElementById("modal-esqueci-fechar")?.addEventListener("click", fechar);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) fechar();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) fechar();
+  });
+})();
+</script>
 {% endblock %}
