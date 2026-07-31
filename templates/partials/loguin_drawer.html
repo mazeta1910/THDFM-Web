@@ -1,0 +1,101 @@
+{# Painel lateral de LOGUIN — exclusivo Marlon #}
+{% set loguin_modo = (request.query_params.get('acesso') or '') == 'loguin' %}
+{% set loguin_erro = (request.query_params.get('erro') or '') if loguin_modo else '' %}
+{% set loguin_usuario = (request.query_params.get('usuario') or '') if loguin_modo else '' %}
+{% set loguin_sucesso = loguin_modo and request.query_params.get('sucesso') == '1' %}
+
+<div class="acesso-drawer-root loguin-drawer-root" id="loguin-drawer-root" hidden>
+  <div class="acesso-drawer-backdrop" id="loguin-drawer-backdrop" tabindex="-1"></div>
+  <aside
+    class="acesso-drawer loguin-drawer"
+    id="loguin-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="loguin-drawer-title"
+  >
+    <header class="acesso-drawer-head">
+      <div>
+        <p class="loguin-kicker loguin-kicker--drawer">Área restrita · É florida</p>
+        <h2 class="acesso-drawer-title" id="loguin-drawer-title">LOGUIN</h2>
+      </div>
+      <button type="button" class="acesso-drawer-close" id="loguin-drawer-close" aria-label="Fechar">×</button>
+    </header>
+
+    <div class="acesso-drawer-body">
+      <p class="login-lead">
+        Boxzinha exclusiva do <strong>Marlon <span data-marlon-sobrenome>Wietzikowski</span></strong>,
+        o único que pediu <em>loguin</em> no grupo. O resto da humanidade usa Entrar —
+        você, pelo amord, não.
+      </p>
+
+      <figure class="loguin-foto loguin-foto--drawer">
+        <img
+          src="/static/img/marlon-lado.svg"
+          alt="Marlon Wietzikowski de lado, como no WhatsApp"
+          width="200"
+          height="260"
+          decoding="async"
+        />
+        <figcaption>Aquela foto de lado do Zap — melhor no IP</figcaption>
+      </figure>
+
+      {% if loguin_erro %}
+      <p class="erro">{{ loguin_erro.replace('+', ' ') }}</p>
+      {% endif %}
+
+      {% if loguin_sucesso %}
+      <div class="loguin-sucesso" role="status">
+        <p class="loguin-sucesso-title">LOGUIN efetuado. É florida.</p>
+        <p>
+          Parabéns, <strong>Marlon</strong>. Você entrou pela porta certa
+          (a errada, digamos). Se o resto do site tá diva, não é problema seu.
+        </p>
+        <p class="loguin-sucesso-hint">Sessão de LOGUIN · validade: até o Honorato te passar de novo</p>
+        <button type="button" class="btn" id="loguin-drawer-ok">Voltar ao início</button>
+      </div>
+      {% else %}
+      <form method="post" action="/loguin" class="form-loguin" id="form-loguin-drawer" novalidate>
+        <label for="loguin-usuario">Usuário (só o Marlon)</label>
+        <input
+          id="loguin-usuario"
+          name="usuario"
+          type="text"
+          class="input-compact"
+          required
+          autocomplete="username"
+          placeholder="Marlon Wietzikowski"
+          value="{{ loguin_usuario }}"
+        />
+
+        <label for="loguin-senha">Senha do LOGUIN</label>
+        <div class="password-field">
+          <input
+            id="loguin-senha"
+            name="senha"
+            type="password"
+            class="input-compact"
+            required
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            aria-label="Mostrar senha"
+            aria-pressed="false"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+
+        <button type="submit" class="btn loguin-submit">Fazer LOGUIN</button>
+      </form>
+      <p class="loguin-footnote">
+        Não é o Marlon? Tá de saca tentar entrar aqui.
+        <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar de verdade</a>
+        · <a href="/">Sair daqui</a>
+      </p>
+      {% endif %}
+    </div>
+  </aside>
+</div>

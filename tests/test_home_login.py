@@ -33,6 +33,7 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "THDFM" in text
     assert "Técnicos Horríveis do Futebol Mundial" in text
     assert "Site em desenvolvimento" in text
+    assert "tá diva" in text.casefold() or "ta diva" in text
     assert "Fazer inscrição" in text
     assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
@@ -42,6 +43,8 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert 'id="drawer-senha"' in text
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
+    assert "loguin-drawer-root" in text
+    assert "Cllr" in text
 
 
 def test_home_alias_tambem_renderiza(client: TestClient):
@@ -177,22 +180,26 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
 
 
 def test_loguin_so_aceita_marlon(client: TestClient):
-    r = client.get("/loguin")
-    assert r.status_code == 200
-    assert "LOGUIN" in r.text
-    assert "Marlon Wietzikowski" in r.text
-    assert 'data-group="marlon"' in r.text
-    assert "Sub-menu exclusivo" in r.text
-    assert "ortografia" not in r.text.casefold()
+    r = client.get("/loguin", follow_redirects=False)
+    assert r.status_code == 303
+    assert "acesso=loguin" in r.headers["location"]
 
-    r_home = client.get("/")
-    assert 'data-group="marlon"' in r_home.text
-    assert 'href="/loguin"' in r_home.text
-    assert "data-marlon-sobrenome" in r_home.text
+    r_home = client.get("/?acesso=loguin")
+    assert r_home.status_code == 200
+    assert "LOGUIN" in r_home.text
+    assert "loguin-drawer-root" in r_home.text
     assert "Marlon" in r_home.text
+    assert "É florida" in r_home.text
+    assert "pelo amord" in r_home.text.casefold() or "Pelo amord" in r_home.text
+    assert 'data-group="marlon"' in r_home.text
+    assert "Sub-menu exclusivo" in r_home.text
+    assert "ortografia" not in r_home.text.casefold()
+    assert 'data-loguin-open' in r_home.text
+    assert "tá diva" in r_home.text.casefold()
+
     # LOGUIN saiu do grupo Portal
     portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
-    assert 'href="/loguin"' not in portal_block
+    assert "data-loguin-open" not in portal_block
     # Entrar vive em Acesso, não misturado no Bolão
     assert 'data-group="acesso"' in r_home.text
     acesso_block = r_home.text.split('data-group="acesso"', 1)[1].split("data-group=", 1)[0]
@@ -208,9 +215,10 @@ def test_loguin_so_aceita_marlon(client: TestClient):
         follow_redirects=False,
     )
     assert r2.status_code == 303
+    assert "acesso=loguin" in r2.headers["location"]
     assert "erro=" in r2.headers["location"]
     loc2 = unquote(r2.headers["location"])
-    assert "exclusivo" in loc2.casefold() or "animal" in loc2.casefold()
+    assert "exclusivo" in loc2.casefold() or "animal" in loc2.casefold() or "saca" in loc2.casefold()
 
     r3 = client.post(
         "/loguin",
@@ -219,8 +227,10 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     )
     assert r3.status_code == 303
     assert "sucesso=1" in r3.headers["location"]
-    r4 = client.get("/loguin?sucesso=1")
+    assert "acesso=loguin" in r3.headers["location"]
+    r4 = client.get("/?acesso=loguin&sucesso=1")
     assert "LOGUIN efetuado" in r4.text
+    assert "É florida" in r4.text
 
 
 def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
@@ -237,9 +247,9 @@ def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
     )
     assert r.status_code == 303
     loc = unquote(r.headers["location"])
-    assert loc.startswith("/loguin")
+    assert "acesso=loguin" in loc
     assert "erro=" in loc
-    assert "marlon" in loc.casefold() or "loguin" in loc.casefold()
+    assert "marlon" in loc.casefold() or "loguin" in loc.casefold() or "amord" in loc.casefold()
 
     # Pelo nome no campo usuário → LOGUIN
     r2 = client.post(
@@ -248,7 +258,7 @@ def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
         follow_redirects=False,
     )
     assert r2.status_code == 303
-    assert unquote(r2.headers["location"]).startswith("/loguin")
+    assert "acesso=loguin" in unquote(r2.headers["location"])
 
     # LOGUIN com senha certa → entra no bolão
     r3 = client.post(
@@ -268,7 +278,8 @@ def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
     )
     assert r4.status_code == 303
     assert "erro=" in r4.headers["location"]
-    assert "/loguin" in r4.headers["location"]
+    assert "acesso=loguin" in r4.headers["location"]
+    assert "saca" in unquote(r4.headers["location"]).casefold()
 
 
 def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient):
@@ -280,13 +291,9 @@ def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient)
         follow_redirects=False,
     )
     assert r.status_code == 303
-    assert "/loguin" in r.headers["location"]
+    assert "acesso=loguin" in r.headers["location"]
     assert "erro=" in r.headers["location"]
-    # Não autenticou no bolão
+    loc = unquote(r.headers["location"]).casefold()
+    assert "exclusivo" in loc or "animal" in loc or "entrar" in loc or "saca" in loc
     r2 = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
-    # Sem sessão de participante criada pelo loguin — conta exige gate/sessão ok via token URL
-    # O token na URL ainda funciona; o ponto é que /loguin não setou login de fulano.
-    # Garantimos só que a resposta do loguin foi erro:
-    assert "exclusivo" in unquote(r.headers["location"]).casefold() or "animal" in unquote(
-        r.headers["location"]
-    ).casefold() or "entrar" in unquote(r.headers["location"]).casefold()
+    assert r2.status_code in (200, 303)

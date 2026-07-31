@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=135" />
+  <link rel="stylesheet" href="/static/style.css?v=136" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -88,6 +88,7 @@
   {% if not participante_nav %}
   {% include "partials/acesso_drawer.html" %}
   {% endif %}
+  {% include "partials/loguin_drawer.html" %}
   {% endif %}
 
   {% if is_admin and path != '/admin/login' %}
@@ -462,6 +463,12 @@
     };
 
     const abrir = (modo) => {
+      // Fecha o LOGUIN se estiver aberto
+      const loguinRoot = document.getElementById("loguin-drawer-root");
+      if (loguinRoot) {
+        loguinRoot.classList.remove("is-open");
+        loguinRoot.hidden = true;
+      }
       setTab(modo);
       root.hidden = false;
       root.classList.add("is-open");
@@ -475,7 +482,8 @@
       root.hidden = true;
       document.body.classList.remove("acesso-drawer-open");
       const url = new URL(location.href);
-      if (url.searchParams.has("acesso")) {
+      const acesso = url.searchParams.get("acesso");
+      if (acesso === "entrar" || acesso === "recuperar" || acesso === "login") {
         url.searchParams.delete("acesso");
         url.searchParams.delete("erro");
         url.searchParams.delete("usuario");
@@ -527,6 +535,73 @@
       modal.addEventListener("click", (e) => {
         if (e.target === modal) fecharModal();
       });
+    }
+  })();
+  </script>
+  <script>
+  (function () {
+    const root = document.getElementById("loguin-drawer-root");
+    if (!root) return;
+    const backdrop = document.getElementById("loguin-drawer-backdrop");
+    const closeBtn = document.getElementById("loguin-drawer-close");
+    const okBtn = document.getElementById("loguin-drawer-ok");
+
+    const fecharAcesso = () => {
+      const acesso = document.getElementById("acesso-drawer-root");
+      if (!acesso) return;
+      acesso.classList.remove("is-open");
+      acesso.hidden = true;
+    };
+
+    const abrir = () => {
+      fecharAcesso();
+      root.hidden = false;
+      root.classList.add("is-open");
+      document.body.classList.add("acesso-drawer-open");
+      document.body.classList.remove("site-sidebar-open");
+      const sb = document.getElementById("site-sidebar-backdrop");
+      if (sb) sb.hidden = true;
+      window.setTimeout(() => document.getElementById("loguin-usuario")?.focus(), 50);
+    };
+
+    const fechar = () => {
+      root.classList.remove("is-open");
+      root.hidden = true;
+      document.body.classList.remove("acesso-drawer-open");
+      const url = new URL(location.href);
+      if (url.searchParams.get("acesso") === "loguin") {
+        url.searchParams.delete("acesso");
+        url.searchParams.delete("erro");
+        url.searchParams.delete("usuario");
+        url.searchParams.delete("sucesso");
+        history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    };
+
+    document.querySelectorAll("[data-loguin-open]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        abrir();
+      });
+    });
+
+    // Ao abrir Entrar a partir do LOGUIN, fecha esta boxzinha
+    document.querySelectorAll("#loguin-drawer-root [data-acesso-open]").forEach((el) => {
+      el.addEventListener("click", () => fechar());
+    });
+
+    closeBtn?.addEventListener("click", fechar);
+    backdrop?.addEventListener("click", fechar);
+    okBtn?.addEventListener("click", () => {
+      fechar();
+      location.href = "/";
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) fechar();
+    });
+
+    if (new URLSearchParams(location.search).get("acesso") === "loguin") {
+      abrir();
     }
   })();
   </script>

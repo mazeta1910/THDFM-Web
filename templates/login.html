@@ -5,7 +5,7 @@
   <h1>Recuperar link</h1>
   <p class="login-lead">
     Perdeu o link do WhatsApp e ainda não tem username/senha?
-    Informe o celular da inscrição. Se houver conta liberada, o admin reenvia o link no Zap.
+    Informe o <strong>Cllr</strong> da inscrição. Se houver conta liberada, o admin reenvia o link no Zap.
   </p>
 
   {% if erro %}
@@ -23,7 +23,7 @@
   </p>
   {% else %}
   <form method="post" action="/login" class="form-login" novalidate>
-    <label for="celular">Celular da inscrição</label>
+    <label for="celular">Cllr da inscrição</label>
     <input
       id="celular"
       class="input-compact"
@@ -43,8 +43,8 @@
     Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
   </p>
   <p class="login-loguin-cta">
-    <a class="btn loguin-entry-btn" href="/loguin">Fazer LOGUIN</a>
-    <span class="login-loguin-hint">Exclusivo Marlon Wietzikowski</span>
+    <a class="btn loguin-entry-btn" href="/?acesso=loguin" data-loguin-open>Fazer Loguin</a>
+    <span class="login-loguin-hint">Exclusivo Marlon · É florida</span>
   </p>
   {% endif %}
 </div>

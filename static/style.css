@@ -5379,3 +5379,19 @@ a.btn.loguin-entry-btn:hover {
 body.acesso-drawer-open {
   overflow: hidden;
 }
+.loguin-drawer-root {
+  z-index: 9610;
+}
+.loguin-kicker--drawer {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+}
+.loguin-foto--drawer {
+  margin: 0 0 0.9rem;
+}
+.loguin-foto--drawer img {
+  width: min(100%, 160px);
+}
+.loguin-drawer .loguin-submit {
+  width: 100%;
+}

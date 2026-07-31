@@ -1,8 +1,8 @@
 {# Painel lateral de Entrar / Recuperar link (visitante) #}
 {% set acesso_modo = request.query_params.get('acesso') or '' %}
-{% set acesso_erro = request.query_params.get('erro') or '' %}
-{% set acesso_usuario = request.query_params.get('usuario') or '' %}
-{% set acesso_enviado = request.query_params.get('enviado') == '1' %}
+{% set acesso_erro = (request.query_params.get('erro') or '') if acesso_modo in ('entrar', 'recuperar', 'login') else '' %}
+{% set acesso_usuario = (request.query_params.get('usuario') or '') if acesso_modo in ('entrar', 'recuperar', 'login') else '' %}
+{% set acesso_enviado = acesso_modo in ('recuperar', 'login') and request.query_params.get('enviado') == '1' %}
 
 <div class="acesso-drawer-root" id="acesso-drawer-root" hidden>
   <div class="acesso-drawer-backdrop" id="acesso-drawer-backdrop" tabindex="-1"></div>
@@ -27,7 +27,7 @@
       <section class="acesso-panel {% if acesso_modo != 'recuperar' %}is-active{% endif %}" data-acesso-panel="entrar" role="tabpanel">
         <p class="login-lead">
           Use o <strong>username</strong> e a <strong>senha</strong> do bolão.
-          <span class="login-marlon-aside">Marlon, saia daqui. Você entra pelo <a href="/loguin">Loguin</a>.</span>
+          <span class="login-marlon-aside">Marlon, pelo amord, saia daqui. Você entra pelo <a href="/?acesso=loguin" data-loguin-open>Loguin</a>.</span>
         </p>
         {% if acesso_erro and acesso_modo != 'recuperar' %}
         <p class="erro">{{ acesso_erro.replace('+', ' ') }}</p>
@@ -80,7 +80,7 @@
 
       <section class="acesso-panel {% if acesso_modo == 'recuperar' %}is-active{% endif %}" data-acesso-panel="recuperar" role="tabpanel">
         <p class="login-lead">
-          Perdeu o link do WhatsApp? Informe o celular da inscrição.
+          Perdeu o link do WhatsApp? Informe o <strong>Cllr</strong> da inscrição.
           Se houver conta liberada, o admin reenvia no Zap.
         </p>
         {% if acesso_erro and acesso_modo == 'recuperar' %}
@@ -92,7 +92,7 @@
         </p>
         {% else %}
         <form method="post" action="/login" class="form-login" novalidate>
-          <label for="drawer-celular">Celular da inscrição</label>
+          <label for="drawer-celular">Cllr da inscrição</label>
           <input
             id="drawer-celular"
             class="input-compact"
@@ -102,6 +102,7 @@
             placeholder="(11) 99999-9999"
             inputmode="tel"
             autocomplete="tel"
+            title="Cllr = celular"
           />
           <button type="submit">Pedir meu link</button>
         </form>
@@ -121,7 +122,7 @@
   >
     <button type="button" class="modal-close-x" id="modal-esqueci-fechar" title="Fechar" aria-label="Fechar">×</button>
     <h3 id="modal-esqueci-title">Esqueceu sua senha?</h3>
-    <p class="modal-esqueci-lead">Aí o problema não é meu.</p>
+    <p class="modal-esqueci-lead">Tá de saca? Aí o problema não é meu. É florida.</p>
     <button type="button" class="modal-ok" id="modal-esqueci-ok">Ok</button>
   </div>
 </div>

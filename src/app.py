@@ -302,6 +302,22 @@ def _redirect_acesso(
     return RedirectResponse("/?" + "&".join(parts), status_code=303)
 
 
+def _redirect_loguin(
+    *,
+    erro: str | None = None,
+    usuario: str | None = None,
+    sucesso: bool = False,
+) -> RedirectResponse:
+    parts = ["acesso=loguin"]
+    if erro:
+        parts.append(f"erro={quote(erro)}")
+    if usuario:
+        parts.append(f"usuario={quote(usuario)}")
+    if sucesso:
+        parts.append("sucesso=1")
+    return RedirectResponse("/?" + "&".join(parts), status_code=303)
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     token = request.session.get("participante_token")
@@ -354,16 +370,15 @@ async def entrar_post(
 
     # Marlon não entra pela porta civilizada — só pelo LOGUIN
     if _tentativa_e_do_marlon(usuario):
-        return RedirectResponse(
-            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
-            f"&usuario={quote(usuario if _eh_marlon(usuario) else 'Marlon Wietzikowski')}",
-            status_code=303,
+        return _redirect_loguin(
+            erro=_MSG_MARLON_PORTA_ERRADA,
+            usuario=usuario if _eh_marlon(usuario) else "Marlon Wietzikowski",
         )
 
     if not _auth_rate_ok(rate_key):
         return _redirect_acesso(
             "entrar",
-            erro="Muitas tentativas. Aguarde alguns minutos.",
+            erro="Muitas tentativas. O site tá diva — aguarde alguns minutos.",
             usuario=usuario,
         )
 
@@ -372,16 +387,15 @@ async def entrar_post(
     if not part:
         return _redirect_acesso(
             "entrar",
-            erro="Usuário ou senha incorretos",
+            erro="Usuário ou senha incorretos. Tá de saca?",
             usuario=usuario,
         )
 
     # Cinto e suspensório: conta do Marlon nunca autentica em /entrar
     if _participante_eh_marlon(part):
-        return RedirectResponse(
-            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
-            f"&usuario={quote('Marlon Wietzikowski')}",
-            status_code=303,
+        return _redirect_loguin(
+            erro=_MSG_MARLON_PORTA_ERRADA,
+            usuario="Marlon Wietzikowski",
         )
 
     _remember_participante(request, part["token"])
@@ -389,12 +403,12 @@ async def entrar_post(
 
 
 _MSG_MARLON_PORTA_ERRADA = (
-    "Marlon detectado. Esta é a porta dos civilizados — a sua é o LOGUIN. "
+    "Marlon detectado. Pelo amord, essa é a porta dos civilizados — a sua é o LOGUIN. "
     "Anda pra lá, animal."
 )
 
 _MSG_LOGUIN_SO_MARLON = (
-    "Este LOGUIN é exclusivo do Marlon Wietzikowski, animal. "
+    "Tá de saca? Este LOGUIN é exclusivo do Marlon Wietzikowski. "
     "Gente normal usa Entrar."
 )
 
@@ -442,13 +456,10 @@ def _buscar_participante_marlon() -> dict | None:
 
 @app.get("/loguin", response_class=HTMLResponse)
 def loguin_get(request: Request):
-    return render(
-        request,
-        "loguin.html",
-        sucesso=request.query_params.get("sucesso") == "1",
+    return _redirect_loguin(
         erro=request.query_params.get("erro"),
-        form_usuario=request.query_params.get("usuario") or "",
-        **_taxa_ctx(),
+        usuario=request.query_params.get("usuario") or "",
+        sucesso=request.query_params.get("sucesso") == "1",
     )
 
 
@@ -461,16 +472,14 @@ async def loguin_post(
     usuario = (usuario or "").strip()
     senha = (senha or "").strip()
     if not usuario or not senha:
-        return RedirectResponse(
-            f"/loguin?erro={quote('Preenche usuário e senha do LOGUIN, Marlon.')}"
-            f"&usuario={quote(usuario)}",
-            status_code=303,
+        return _redirect_loguin(
+            erro="Pelo amord, preenche usuário e senha do LOGUIN, Marlon.",
+            usuario=usuario,
         )
     if not _eh_marlon(usuario):
-        return RedirectResponse(
-            f"/loguin?erro={quote(_MSG_LOGUIN_SO_MARLON)}"
-            f"&usuario={quote(usuario)}",
-            status_code=303,
+        return _redirect_loguin(
+            erro=_MSG_LOGUIN_SO_MARLON,
+            usuario=usuario,
         )
 
     # Exclusivo Marlon: se existir conta no bolão, autentica por aqui
@@ -478,26 +487,31 @@ async def loguin_post(
     part = _buscar_participante_marlon()
     if part and part.get("password_hash"):
         if not db.verificar_senha(senha, part.get("password_hash")):
-            return RedirectResponse(
-                f"/loguin?erro={quote('Senha do LOGUIN errada, Marlon. Nem o lado da foto salva.')}"
-                f"&usuario={quote(usuario)}",
-                status_code=303,
+            return _redirect_loguin(
+                erro="Senha do LOGUIN errada. Tá de saca, Marlon? Nem o lado da foto salva.",
+                usuario=usuario,
             )
         _remember_participante(request, part["token"])
         request.session["loguin_marlon"] = True
         if db.precisa_credenciais(part):
             return _redirect_credenciais(part["token"])
-        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+        return RedirectResponse(
+            f"/p/{part['token']}?msg={quote('LOGUIN efetuado. É florida.')}",
+            status_code=303,
+        )
 
     if part:
         _remember_participante(request, part["token"])
         request.session["loguin_marlon"] = True
         if db.precisa_credenciais(part):
             return _redirect_credenciais(part["token"])
-        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+        return RedirectResponse(
+            f"/p/{part['token']}?msg={quote('LOGUIN efetuado. É florida.')}",
+            status_code=303,
+        )
 
     request.session["loguin_marlon"] = True
-    return RedirectResponse("/loguin?sucesso=1", status_code=303)
+    return _redirect_loguin(sucesso=True)
 
 
 @app.post("/login")
