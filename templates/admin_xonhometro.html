@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Xonhômetro — Admin THDFM{% endblock %}
-{% block wrap_class %}wide{% endblock %}
 {% block content %}
 <div class="xonha-admin">
   <p class="credenciais-kicker">Admin</p>
   <h1>Xonhômetro</h1>
   <p class="login-lead">
-    Registre saídas e voltas do Xonha no grupo do WhatsApp.
-    A página pública em <a href="/xonhometro">/xonhometro</a> é só leitura para o resto do pessoal.
+    Registre saídas e voltas do Xonha.
+    Público em <a href="/xonhometro">/xonhometro</a> (só leitura).
   </p>
 
   {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
@@ -16,27 +15,41 @@
   <div class="xonha-admin-resumo">
     <span><strong>{{ stats.total_saidas }}</strong> saídas</span>
     <span><strong>{{ stats.total_voltas }}</strong> voltas</span>
-    {% if stats.recorde_dia %}
-    <span>recorde: <strong>{{ stats.recorde_dia.quantidade }}×</strong> em {{ stats.recorde_dia.data[8:10] }}/{{ stats.recorde_dia.data[5:7] }}/{{ stats.recorde_dia.data[0:4] }}</span>
+    {% if stats.media_saidas_por_dia is not none %}
+    <span>média/dia: <strong>{{ stats.media_saidas_por_dia }}</strong></span>
+    {% endif %}
+    {% if stats.recorde_mes %}
+    <span>mês pico: <strong>{{ stats.recorde_mes.label }}</strong> ({{ stats.recorde_mes.quantidade }}×)</span>
     {% endif %}
   </div>
 
   <section class="card xonha-admin-form-card">
     <h2>Novo registro</h2>
     <form method="post" action="/admin/xonhometro" class="xonha-admin-form" autocomplete="off">
-      <label for="xonha-tipo">Tipo</label>
-      <select id="xonha-tipo" name="tipo" required>
-        <option value="saida">Saída</option>
-        <option value="volta">Volta</option>
-      </select>
-
-      <label for="xonha-data">Data</label>
-      <input id="xonha-data" type="date" name="data" required />
-
-      <label for="xonha-motivo">Motivo (opcional)</label>
-      <textarea id="xonha-motivo" name="motivo" rows="2" maxlength="500" placeholder="Ex.: brigou por causa do placar"></textarea>
-
-      <button type="submit">Registrar</button>
+      <div class="xonha-admin-row">
+        <div class="xonha-field">
+          <label for="xonha-tipo">Tipo</label>
+          <div class="xonha-select-wrap">
+            <select id="xonha-tipo" name="tipo" required>
+              <option value="saida">Saída</option>
+              <option value="volta">Volta</option>
+            </select>
+          </div>
+        </div>
+        <div class="xonha-field">
+          <label for="xonha-data">Data</label>
+          <input id="xonha-data" class="xonha-input" type="date" name="data" required />
+        </div>
+        <div class="xonha-field">
+          <label for="xonha-hora">Horário</label>
+          <input id="xonha-hora" class="xonha-input" type="time" name="hora" />
+        </div>
+      </div>
+      <div class="xonha-field">
+        <label for="xonha-motivo">Motivo (opcional)</label>
+        <textarea id="xonha-motivo" class="xonha-input" name="motivo" rows="2" maxlength="500" placeholder="Ex.: brigou por causa do placar"></textarea>
+      </div>
+      <button type="submit" class="xonha-btn-primary">Registrar</button>
     </form>
   </section>
 
@@ -46,25 +59,37 @@
     <article class="card xonha-admin-card">
       <form method="post" action="/admin/xonhometro/atualizar" class="xonha-admin-form" autocomplete="off">
         <input type="hidden" name="evento_id" value="{{ e.id }}" />
-        <label for="tipo-{{ e.id }}">Tipo</label>
-        <select id="tipo-{{ e.id }}" name="tipo" required>
-          <option value="saida" {% if e.tipo == 'saida' %}selected{% endif %}>Saída</option>
-          <option value="volta" {% if e.tipo == 'volta' %}selected{% endif %}>Volta</option>
-        </select>
-
-        <label for="data-{{ e.id }}">Data</label>
-        <input id="data-{{ e.id }}" type="date" name="data" value="{{ e.data }}" required />
-
-        <label for="motivo-{{ e.id }}">Motivo</label>
-        <textarea id="motivo-{{ e.id }}" name="motivo" rows="2" maxlength="500">{{ e.motivo or '' }}</textarea>
-
-        <div class="xonha-admin-actions">
-          <button type="submit">Salvar</button>
+        <div class="xonha-admin-row">
+          <div class="xonha-field">
+            <label for="tipo-{{ e.id }}">Tipo</label>
+            <div class="xonha-select-wrap">
+              <select id="tipo-{{ e.id }}" name="tipo" required>
+                <option value="saida" {% if e.tipo == 'saida' %}selected{% endif %}>Saída</option>
+                <option value="volta" {% if e.tipo == 'volta' %}selected{% endif %}>Volta</option>
+              </select>
+            </div>
+          </div>
+          <div class="xonha-field">
+            <label for="data-{{ e.id }}">Data</label>
+            <input id="data-{{ e.id }}" class="xonha-input" type="date" name="data" value="{{ e.data }}" required />
+          </div>
+          <div class="xonha-field">
+            <label for="hora-{{ e.id }}">Horário</label>
+            <input id="hora-{{ e.id }}" class="xonha-input" type="time" name="hora" value="{{ e.hora or '' }}" />
+          </div>
         </div>
-      </form>
-      <form method="post" action="/admin/xonhometro/apagar" class="xonha-admin-apagar" onsubmit="return confirm('Apagar este registro?');">
-        <input type="hidden" name="evento_id" value="{{ e.id }}" />
-        <button type="submit" class="danger">Apagar</button>
+        <div class="xonha-field">
+          <label for="motivo-{{ e.id }}">Motivo</label>
+          <textarea id="motivo-{{ e.id }}" class="xonha-input" name="motivo" rows="2" maxlength="500">{{ e.motivo or '' }}</textarea>
+        </div>
+        <div class="xonha-admin-actions">
+          <button type="submit" class="xonha-icon-btn xonha-icon-btn--save" title="Salvar" aria-label="Salvar">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          </button>
+          <button type="button" class="xonha-icon-btn xonha-icon-btn--delete" title="Apagar" aria-label="Apagar" data-xonha-apagar="{{ e.id }}" data-xonha-label="{% if e.tipo == 'saida' %}Saída{% else %}Volta{% endif %} em {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}{% if e.hora %} · {{ e.hora }}{% endif %}">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
       </form>
     </article>
     {% else %}
@@ -72,4 +97,56 @@
     {% endfor %}
   </section>
 </div>
+
+<div class="modal-backdrop" id="modal-xonha-apagar" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-xonha-apagar-title">
+    <h3 id="modal-xonha-apagar-title">Apagar registro?</h3>
+    <p id="modal-xonha-apagar-texto" style="color:var(--muted);line-height:1.45;margin:0 0 1rem"></p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-xonha-apagar-cancelar">Cancelar</button>
+      <button type="button" class="danger" id="modal-xonha-apagar-confirmar">Apagar</button>
+    </div>
+  </div>
+</div>
+<form id="form-xonha-apagar" method="post" action="/admin/xonhometro/apagar" hidden>
+  <input type="hidden" name="evento_id" id="form-xonha-apagar-id" value="" />
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const modal = document.getElementById("modal-xonha-apagar");
+  const texto = document.getElementById("modal-xonha-apagar-texto");
+  const form = document.getElementById("form-xonha-apagar");
+  const idInput = document.getElementById("form-xonha-apagar-id");
+  if (!modal || !form || !idInput) return;
+
+  const abrir = (id, label) => {
+    idInput.value = String(id);
+    if (texto) texto.textContent = label ? ("Confirma apagar: " + label + "?") : "Esse registro some de vez.";
+    modal.hidden = false;
+    modal.classList.add("is-open");
+  };
+  const fechar = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("hidden", "");
+    idInput.value = "";
+  };
+
+  document.querySelectorAll("[data-xonha-apagar]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      abrir(btn.getAttribute("data-xonha-apagar"), btn.getAttribute("data-xonha-label") || "");
+    });
+  });
+  document.getElementById("modal-xonha-apagar-cancelar")?.addEventListener("click", fechar);
+  document.getElementById("modal-xonha-apagar-confirmar")?.addEventListener("click", () => {
+    if (idInput.value) form.submit();
+  });
+  modal.addEventListener("click", (e) => { if (e.target === modal) fechar(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) fechar();
+  });
+})();
+</script>
 {% endblock %}

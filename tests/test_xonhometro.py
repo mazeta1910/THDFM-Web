@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -51,7 +52,7 @@ def test_xonhometro_publico_vazio(client: TestClient):
 def test_visitante_nao_cria_evento(client: TestClient):
     r = client.post(
         "/admin/xonhometro",
-        data={"tipo": "saida", "data": "2026-07-01", "motivo": "teste"},
+        data={"tipo": "saida", "data": "2026-07-01", "hora": "14:30", "motivo": "teste"},
         follow_redirects=False,
     )
     assert r.status_code == 303
@@ -64,7 +65,12 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
 
     r = client.post(
         "/admin/xonhometro",
-        data={"tipo": "saida", "data": "2026-07-01", "motivo": "Brigou no zap"},
+        data={
+            "tipo": "saida",
+            "data": "2026-07-01",
+            "hora": "10:15",
+            "motivo": "Brigou no zap",
+        },
         follow_redirects=False,
     )
     assert r.status_code == 303
@@ -72,7 +78,12 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
 
     client.post(
         "/admin/xonhometro",
-        data={"tipo": "volta", "data": "2026-07-02", "motivo": "Pediu desculpas"},
+        data={
+            "tipo": "volta",
+            "data": "2026-07-02",
+            "hora": "18:00",
+            "motivo": "Pediu desculpas",
+        },
         follow_redirects=False,
     )
     client.post(
@@ -80,6 +91,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
         data={
             "tipo": "saida",
             "data": "2026-07-01",
+            "hora": "22:40",
             "motivo": "Saiu de novo no mesmo dia",
         },
         follow_redirects=False,
@@ -88,31 +100,41 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     stats = db.xonha_stats()
     assert stats["total_saidas"] == 2
     assert stats["total_voltas"] == 1
-    assert stats["recorde_dia"] is not None
     assert stats["recorde_dia"]["data"] == "2026-07-01"
     assert stats["recorde_dia"]["quantidade"] == 2
     assert stats["media_saidas_por_mes"] == 2.0
-    # Último evento por data: volta em 02/07 → dentro
+    assert stats["recorde_mes"] is not None
+    assert stats["recorde_mes"]["ano_mes"] == "2026-07"
+    assert stats["recorde_mes"]["quantidade"] == 2
+    assert stats["dias_semana"]
+    assert stats["dias_semana"][0]["quantidade"] >= 1
+    # Desde 01/07 até hoje
+    dias = max((date.today() - date(2026, 7, 1)).days + 1, 1)
+    assert stats["media_saidas_por_dia"] == round(2 / dias, 3)
     assert stats["status"] == "dentro"
-    assert stats["media_dias_entre_saidas"] == 0.0  # duas saídas no mesmo dia
+    assert stats["media_dias_entre_saidas"] == 0.0
 
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
     assert "Brigou no zap" in pub.text
-    assert "Pediu desculpas" in pub.text
-    assert "Recorde" in pub.text
+    assert "10:15" in pub.text
+    assert "22:40" in pub.text
+    assert "Média / dia desde o início" in pub.text
+    assert "Mês que mais saiu" in pub.text
+    assert "Dias da semana" in pub.text
     assert "Gerenciar registros" in pub.text
 
 
 def test_admin_atualiza_e_apaga(client: TestClient):
     _login_admin(client)
-    ev = db.criar_xonha_evento("saida", "2026-06-10", "motivo antigo")
+    ev = db.criar_xonha_evento("saida", "2026-06-10", "motivo antigo", hora="09:00")
     r = client.post(
         "/admin/xonhometro/atualizar",
         data={
             "evento_id": ev["id"],
             "tipo": "volta",
             "data": "2026-06-11",
+            "hora": "11:30",
             "motivo": "motivo novo",
         },
         follow_redirects=False,
@@ -122,7 +144,14 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     assert updated is not None
     assert updated["tipo"] == "volta"
     assert updated["data"] == "2026-06-11"
+    assert updated["hora"] == "11:30"
     assert updated["motivo"] == "motivo novo"
+
+    admin = client.get("/admin/xonhometro")
+    assert admin.status_code == 200
+    assert "modal-xonha-apagar" in admin.text
+    assert "data-xonha-apagar" in admin.text
+    assert "confirm(" not in admin.text
 
     r2 = client.post(
         "/admin/xonhometro/apagar",
@@ -145,9 +174,15 @@ def test_moderador_tambem_gerencia(client: TestClient):
     r = client.get("/admin/xonhometro")
     assert r.status_code == 200
     assert "Novo registro" in r.text
+    assert "xonha-select-wrap" in r.text
     r2 = client.post(
         "/admin/xonhometro",
-        data={"tipo": "saida", "data": "2026-05-05", "motivo": "Ramos anotou"},
+        data={
+            "tipo": "saida",
+            "data": "2026-05-05",
+            "hora": "16:05",
+            "motivo": "Ramos anotou",
+        },
         follow_redirects=False,
     )
     assert r2.status_code == 303
