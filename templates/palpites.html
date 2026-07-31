@@ -40,6 +40,23 @@
     </div>
   </div>
 </div>
+
+<div class="modal-backdrop" id="modal-palpite-bizarro" hidden>
+  <div class="inscricao-modal modal-bizarro" role="dialog" aria-modal="true" aria-labelledby="modal-bizarro-title">
+    <button type="button" class="modal-close-x" id="modal-bizarro-fechar" title="Fechar" aria-label="Fechar">×</button>
+    <h3 id="modal-bizarro-title">Você é burro?</h3>
+    <p class="modal-bizarro-lead" id="modal-bizarro-lead">Que caralho de palpite foi esse?</p>
+    <div class="modal-bizarro-scores" id="modal-bizarro-scores" aria-live="polite"></div>
+    <p class="modal-bizarro-honorato">
+      Você está participando do bolão por qual motivo? Pra ficar atrás do Honorato na classificação?
+    </p>
+    <p class="modal-bizarro-ask" id="modal-bizarro-ask">Você deseja mesmo fazer isso?</p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-bizarro-cancelar">Não, vou pensar</button>
+      <button type="button" class="danger" id="modal-bizarro-confirmar">Sim, sou burro</button>
+    </div>
+  </div>
+</div>
 <section class="fases-panel is-collapsed" data-fases-collapse>
 {% include "partials/fases_panel_head.html" %}
 <div class="fases-panel-body">
@@ -317,8 +334,9 @@
   let dirty = false;
   let submitting = false;
   let pendingHref = "";
+  let bizarroOk = false;
 
-  const markDirty = () => { dirty = true; };
+  const markDirty = () => { dirty = true; bizarroOk = false; };
   const abrirModal = (href) => {
     pendingHref = href;
     modal.hidden = false;
@@ -331,11 +349,109 @@
     modal.setAttribute("hidden", "");
   };
 
+  function isBizarro(gm, gv) {
+    const a = Number(gm);
+    const b = Number(gv);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || a < 0 || b < 0) return false;
+    return Math.max(a, b) >= 6 || a + b >= 8 || Math.abs(a - b) >= 5;
+  }
+
+  function collectBizarros() {
+    const panel = form.querySelector(".match-panel:not(.hidden)");
+    if (!panel) return [];
+    const out = [];
+    panel.querySelectorAll(".match-cell").forEach((cell) => {
+      const rows = cell.querySelectorAll(".match-team-row");
+      if (rows.length < 2) return;
+      const inp0 = rows[0].querySelector('input[type="number"]');
+      const inp1 = rows[1].querySelector('input[type="number"]');
+      if (!inp0 || !inp1 || inp0.readOnly || inp1.readOnly || inp0.disabled || inp1.disabled) return;
+      if (inp0.value === "" || inp1.value === "") return;
+      const g0 = Number(inp0.value);
+      const g1 = Number(inp1.value);
+      if (!Number.isFinite(g0) || !Number.isFinite(g1) || !isBizarro(g0, g1)) return;
+      out.push({
+        g0,
+        g1,
+        img0: rows[0].querySelector("img")?.getAttribute("src") || "",
+        img1: rows[1].querySelector("img")?.getAttribute("src") || "",
+        n0: rows[0].querySelector(".clube-nome")?.getAttribute("data-nome") || "",
+        n1: rows[1].querySelector(".clube-nome")?.getAttribute("data-nome") || "",
+      });
+    });
+    return out;
+  }
+
+  const modalBizarro = document.getElementById("modal-palpite-bizarro");
+  const scoresBox = document.getElementById("modal-bizarro-scores");
+  const leadEl = document.getElementById("modal-bizarro-lead");
+  const askEl = document.getElementById("modal-bizarro-ask");
+
+  const fecharBizarro = () => {
+    if (!modalBizarro) return;
+    modalBizarro.classList.remove("is-open");
+    modalBizarro.setAttribute("hidden", "");
+  };
+
+  const abrirBizarro = (items) => {
+    if (!modalBizarro || !scoresBox) return;
+    const plural = items.length > 1;
+    if (leadEl) {
+      leadEl.textContent = plural
+        ? "Que caralho de palpites foram esses?"
+        : "Que caralho de palpite foi esse?";
+    }
+    if (askEl) {
+      askEl.textContent = plural
+        ? "Você deseja mesmo salvar esses placares?"
+        : "Você deseja mesmo fazer isso?";
+    }
+    scoresBox.innerHTML = "";
+    items.forEach((it) => {
+      const row = document.createElement("div");
+      row.className = "modal-bizarro-score";
+      row.innerHTML =
+        '<img src="' + it.img0 + '" alt="' + (it.n0 || "") + '" />' +
+        '<strong class="modal-bizarro-gols">' + it.g0 + '</strong>' +
+        '<span class="modal-bizarro-x">×</span>' +
+        '<strong class="modal-bizarro-gols">' + it.g1 + '</strong>' +
+        '<img src="' + it.img1 + '" alt="' + (it.n1 || "") + '" />';
+      scoresBox.appendChild(row);
+    });
+    modalBizarro.hidden = false;
+    modalBizarro.classList.add("is-open");
+    document.body.appendChild(modalBizarro);
+  };
+
   form.addEventListener("input", markDirty);
   form.addEventListener("change", markDirty);
-  form.addEventListener("submit", () => {
+  form.addEventListener("submit", (e) => {
+    if (bizarroOk) {
+      submitting = true;
+      dirty = false;
+      return;
+    }
+    const bizarros = collectBizarros();
+    if (!bizarros.length) {
+      submitting = true;
+      dirty = false;
+      return;
+    }
+    e.preventDefault();
+    abrirBizarro(bizarros);
+  });
+
+  document.getElementById("modal-bizarro-cancelar")?.addEventListener("click", fecharBizarro);
+  document.getElementById("modal-bizarro-fechar")?.addEventListener("click", fecharBizarro);
+  document.getElementById("modal-bizarro-confirmar")?.addEventListener("click", () => {
+    bizarroOk = true;
+    fecharBizarro();
     submitting = true;
     dirty = false;
+    form.requestSubmit();
+  });
+  modalBizarro?.addEventListener("click", (e) => {
+    if (e.target === modalBizarro) fecharBizarro();
   });
 
   document.addEventListener("click", (e) => {
@@ -362,7 +478,12 @@
     if (e.target === modal) fecharModal();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("is-open")) fecharModal();
+    if (e.key !== "Escape") return;
+    if (modalBizarro?.classList.contains("is-open")) {
+      fecharBizarro();
+      return;
+    }
+    if (modal.classList.contains("is-open")) fecharModal();
   });
 })();
 </script>

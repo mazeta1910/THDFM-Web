@@ -4870,3 +4870,58 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
   padding: 0.45rem 0.7rem;
   text-decoration: none;
 }
+
+/* —— Easter egg: placar bizarro —— */
+.modal-bizarro .modal-bizarro-lead {
+  margin: 0 0 0.85rem;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--text);
+  line-height: 1.35;
+}
+.modal-bizarro-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+}
+.modal-bizarro-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent2) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent2) 10%, var(--card));
+}
+.modal-bizarro-score img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.modal-bizarro-gols {
+  font-size: 1.35rem;
+  font-weight: 800;
+  min-width: 1.4rem;
+  text-align: center;
+  color: var(--text);
+}
+.modal-bizarro-x {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.modal-bizarro-honorato {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.modal-bizarro-ask {
+  margin: 0 0 1rem;
+  font-weight: 650;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
