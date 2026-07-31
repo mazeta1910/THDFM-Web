@@ -399,7 +399,7 @@ nav.site-nav-desktop a.active {
 }
 .theme-toggle,
 .chrome-mode-toggle {
-  position: static;
+  position: relative;
   top: auto;
   right: auto;
   z-index: auto;
@@ -430,6 +430,9 @@ nav.site-nav-desktop a.active {
   letter-spacing: 0.02em;
   line-height: 1;
   color: var(--text);
+}
+.theme-toggle {
+  overflow: hidden;
 }
 .chrome-mode-toggle:hover,
 .theme-toggle:hover {
