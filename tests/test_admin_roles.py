@@ -75,8 +75,8 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     r0 = client.get("/")
     assert 'id="chrome-mode-toggle"' not in r0.text
     assert 'id="ui-mode-toggle"' not in r0.text
-    assert 'href="/admin/login"' in r0.text
-    assert "Painel admin" in r0.text
+    assert "site-side-admin-login" not in r0.text
+    assert 'href="/admin/login"' not in r0.text
 
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/")
@@ -87,7 +87,7 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
     assert "Ver site" in r.text
-    assert 'href="/admin/login"' not in r.text
+    assert "site-side-admin-login" not in r.text
     assert "Painel (Dono)" not in r.text
     assert "site-side-admin-switch" not in r.text
 
@@ -227,8 +227,8 @@ def test_sair_do_admin_exige_login_explicito_de_novo(client: TestClient):
     assert "/admin/login" in r2.headers["location"]
 
     home = client.get("/")
-    assert "Painel admin" in home.text
-    assert 'href="/admin/login"' in home.text
+    assert "site-side-admin-login" not in home.text
+    assert 'href="/admin/login"' not in home.text
     assert 'id="chrome-mode-toggle"' not in home.text
     assert 'id="ui-mode-toggle"' not in home.text
 

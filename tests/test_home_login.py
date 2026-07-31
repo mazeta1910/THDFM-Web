@@ -117,6 +117,8 @@ def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
         assert 'data-group="competicao"' not in html
         assert 'data-group="meu-bolao"' not in html
         assert 'aria-label="Menu do bolão"' not in html
+        assert "site-side-admin-login" not in html
+        assert 'href="/admin/login"' not in html
 
 
 def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):

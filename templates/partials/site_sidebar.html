@@ -88,9 +88,6 @@
       {% endif %}
     </div>
     <div class="site-side-sair-wrap">
-      {% if not is_admin %}
-      <a class="site-side-link site-side-admin-login" href="/admin/login">{{ ico('admin') }}<span>Painel admin</span></a>
-      {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
         <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
