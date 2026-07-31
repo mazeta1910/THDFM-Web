@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Entrar — Bolão THDFM{% endblock %}
+{% block content %}
+<div class="card login-card">
+  <h1>Entrar</h1>
+  <p class="login-lead">
+    Use o <strong>username</strong> e a <strong>senha</strong> que você criou no bolão.
+    Ainda não criou? Abra o link do WhatsApp — o site pede na primeira volta.
+    <span class="login-marlon-aside">Marlon: esquece. Sua porta é o <a href="/loguin">LOGUIN</a>.</span>
+  </p>
+
+  {% if erro %}
+  <p class="erro">{{ erro.replace('+', ' ') }}</p>
+  {% endif %}
+
+  <form method="post" action="/entrar" class="form-login" novalidate>
+    <label for="usuario">Username</label>
+    <input
+      id="usuario"
+      class="input-compact"
+      type="text"
+      name="usuario"
+      required
+      autocomplete="username"
+      autocapitalize="off"
+      spellcheck="false"
+      maxlength="24"
+      value="{{ form_usuario }}"
+      placeholder="seu.username"
+    />
+    <label for="senha">Senha</label>
+    <input
+      id="senha"
+      class="input-compact"
+      type="password"
+      name="senha"
+      required
+      autocomplete="current-password"
+      minlength="8"
+      placeholder="••••••••"
+    />
+    <p class="login-forgot-wrap">
+      <button type="button" class="login-forgot-btn" id="btn-esqueci-senha">
+        Esqueci minha senha
+      </button>
+    </p>
+    <button type="submit">Entrar</button>
+  </form>
+
+  <p class="login-alt">
+    Perdeu o link e ainda não tem senha?
+    <a href="/login">Pedir reenvio no WhatsApp</a>
+  </p>
+  <p class="login-alt">
+    Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
+  </p>
+  <p class="login-loguin-cta">
+    <a class="btn loguin-entry-btn" href="/loguin">Fazer LOGUIN</a>
+    <span class="login-loguin-hint">Exclusivo Marlon Wietzikowski · ortografia do grupo</span>
+  </p>
+</div>
+
+<div class="modal-backdrop" id="modal-esqueci-senha" hidden>
+  <div
+    class="inscricao-modal modal-esqueci"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-esqueci-title"
+  >
+    <button type="button" class="modal-close-x" id="modal-esqueci-fechar" title="Fechar" aria-label="Fechar">×</button>
+    <h3 id="modal-esqueci-title">Esqueceu sua senha?</h3>
+    <p class="modal-esqueci-lead">Aí o problema não é meu.</p>
+    <button type="button" class="modal-ok" id="modal-esqueci-ok">Ok</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const modal = document.getElementById("modal-esqueci-senha");
+  const btn = document.getElementById("btn-esqueci-senha");
+  if (!modal || !btn) return;
+  document.body.appendChild(modal);
+
+  const abrir = () => {
+    modal.removeAttribute("hidden");
+    modal.classList.add("is-open");
+  };
+  const fechar = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("hidden", "");
+  };
+
+  btn.addEventListener("click", abrir);
+  document.getElementById("modal-esqueci-ok")?.addEventListener("click", fechar);
+  document.getElementById("modal-esqueci-fechar")?.addEventListener("click", fechar);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) fechar();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) fechar();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Criar username e senha — Bolão THDFM{% endblock %}
+{% block content %}
+<div class="card login-card credenciais-card">
+  <p class="credenciais-kicker">Acesso seguro · obrigatório</p>
+  <h1>Crie seu username e senha</h1>
+  <p class="login-lead">
+    Olá, <strong>{{ participante.nome }}</strong>. Antes de palpitar de novo,
+    escolha um username e uma senha. Assim você entra pelo site sem depender só do link.
+  </p>
+  <p class="credenciais-hint">
+    O link do WhatsApp continua válido. Username é diferente do nome exibido no bolão.
+  </p>
+
+  {% if erro %}
+  <p class="erro">{{ erro.replace('+', ' ') }}</p>
+  {% endif %}
+
+  <form method="post" action="/p/{{ participante.token }}/credenciais" class="form-login" novalidate>
+    <label for="usuario">Username</label>
+    <input
+      id="usuario"
+      class="input-compact"
+      type="text"
+      name="usuario"
+      required
+      autocomplete="username"
+      autocapitalize="off"
+      spellcheck="false"
+      minlength="3"
+      maxlength="24"
+      pattern="[A-Za-z0-9._\-]{3,24}"
+      value="{{ form_usuario }}"
+      placeholder="ex.: fulano.thdfm"
+    />
+    <p class="conta-hint">3–24 caracteres: letras, números, ponto, _ ou -</p>
+
+    <label for="senha">Senha</label>
+    <input
+      id="senha"
+      class="input-compact"
+      type="password"
+      name="senha"
+      required
+      autocomplete="new-password"
+      minlength="8"
+      placeholder="mínimo 8 caracteres"
+    />
+
+    <label for="senha2">Confirmar senha</label>
+    <input
+      id="senha2"
+      class="input-compact"
+      type="password"
+      name="senha2"
+      required
+      autocomplete="new-password"
+      minlength="8"
+      placeholder="repita a senha"
+    />
+
+    <button type="submit">Salvar e continuar</button>
+  </form>
+</div>
+{% endblock %}

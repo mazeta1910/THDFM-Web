@@ -27,12 +27,12 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=124" />
+  <link rel="stylesheet" href="/static/style.css?v=128" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
 {% set on_admin_area = path.startswith('/admin') and path != '/admin/login' %}
-{% set admin_layout = is_admin and path != '/admin/login' and (on_admin_area or ui_mode != 'user') %}
+{% set admin_layout = is_admin and on_admin_area %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
@@ -91,12 +91,12 @@
     type="button"
     class="ui-mode-toggle"
     id="ui-mode-toggle"
-    data-mode="{{ ui_mode }}"
+    data-mode="{{ 'admin' if on_admin_area else 'user' }}"
     data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if ui_mode == 'user' %}Voltar ao chrome de admin{% else %}Ver como participante (User mode){% endif %}"
-    aria-label="{% if ui_mode == 'user' %}Ativar Admin mode{% else %}Ativar User mode{% endif %}"
+    title="{% if on_admin_area %}Ver o site como na home{% else %}Abrir painel de admin{% endif %}"
+    aria-label="{% if on_admin_area %}Ir para o site{% else %}Ir para o painel admin{% endif %}"
   >
-    <span class="ui-mode-toggle-label">{% if ui_mode == 'user' %}Admin{% else %}User{% endif %}</span>
+    <span class="ui-mode-toggle-label">{% if on_admin_area %}Site{% else %}Admin{% endif %}</span>
   </button>
   {% endif %}
 
@@ -106,15 +106,15 @@
     const btn = document.getElementById("ui-mode-toggle");
     if (!btn) return;
     btn.addEventListener("click", () => {
-      const cur = btn.getAttribute("data-mode") === "user" ? "user" : "admin";
-      const next = cur === "user" ? "admin" : "user";
       const maxAge = 60 * 60 * 24 * 180;
-      document.cookie = "thdfm_ui_mode=" + next + "; path=/; max-age=" + maxAge + "; SameSite=Lax";
-      if (next === "user" && location.pathname.startsWith("/admin")) {
+      const onAdmin = location.pathname.startsWith("/admin");
+      if (onAdmin) {
+        document.cookie = "thdfm_ui_mode=user; path=/; max-age=" + maxAge + "; SameSite=Lax";
         location.href = btn.getAttribute("data-user-home") || "/";
         return;
       }
-      window.location.reload();
+      document.cookie = "thdfm_ui_mode=admin; path=/; max-age=" + maxAge + "; SameSite=Lax";
+      location.href = "/admin";
     });
   })();
   </script>

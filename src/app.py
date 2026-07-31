@@ -5,7 +5,9 @@ from __future__ import annotations
 import os
 import re
 import time
+from collections import defaultdict
 from pathlib import Path
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -64,6 +66,22 @@ AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
+
+# Rate limit em memória: chave → timestamps de tentativas
+_AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
+_AUTH_LIMIT = 8
+_AUTH_WINDOW_SEC = 15 * 60
+
+
+def _auth_rate_ok(key: str) -> bool:
+    now = time.time()
+    bucket = [t for t in _AUTH_ATTEMPTS.get(key, []) if now - t < _AUTH_WINDOW_SEC]
+    _AUTH_ATTEMPTS[key] = bucket
+    return len(bucket) < _AUTH_LIMIT
+
+
+def _auth_rate_hit(key: str) -> None:
+    _AUTH_ATTEMPTS[key].append(time.time())
 
 
 def avatar_padrao_path() -> Path | None:
@@ -174,6 +192,17 @@ def _remember_participante(request: Request, token: str) -> None:
     request.session["participante_token"] = token
 
 
+def _redirect_credenciais(token: str) -> RedirectResponse:
+    return RedirectResponse(f"/p/{token}/credenciais", status_code=303)
+
+
+def _gate_credenciais(part: dict) -> RedirectResponse | None:
+    """Se liberado sem username/senha, obriga o setup antes de palpites/conta."""
+    if db.precisa_credenciais(part):
+        return _redirect_credenciais(part["token"])
+    return None
+
+
 def _enrich_confrontos(confrontos: list) -> list:
     for c in confrontos:
         c["ida"] = next((j for j in c["jogos"] if j["perna"] == "ida"), None)
@@ -214,11 +243,11 @@ def _taxa_ctx() -> dict:
 
 
 def _destino_sessao(request: Request) -> str | None:
-    """Só redireciona admin logado. Participante com token NÃO é mandado embora da home —
-    o portal THDFM deve abrir em / mesmo depois de ter aberto /p/{token}.
+    """Home/portal nunca redireciona por sessão.
+
+    Admin logado e participante com token continuam em / (portal THDFM).
+    O painel fica em /admin; o bolão em /p/{token}.
     """
-    if admin_ok(request):
-        return "/admin"
     return None
 
 
@@ -262,6 +291,8 @@ def login_get(request: Request):
     if token:
         part = db.get_participante_por_token(token)
         if part and part.get("status") == "liberado":
+            if db.precisa_credenciais(part):
+                return _redirect_credenciais(part["token"])
             return RedirectResponse(f"/p/{part['token']}", status_code=303)
     return render(
         request,
@@ -272,10 +303,128 @@ def login_get(request: Request):
     )
 
 
+@app.get("/entrar", response_class=HTMLResponse)
+def entrar_get(request: Request):
+    token = request.session.get("participante_token")
+    if token:
+        part = db.get_participante_por_token(token)
+        if part and part.get("status") == "liberado":
+            if db.precisa_credenciais(part):
+                return _redirect_credenciais(part["token"])
+            return RedirectResponse(f"/p/{part['token']}", status_code=303)
+    return render(
+        request,
+        "entrar.html",
+        erro=request.query_params.get("erro"),
+        form_usuario=request.query_params.get("usuario") or "",
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/entrar")
+async def entrar_post(
+    request: Request,
+    usuario: str = Form(""),
+    senha: str = Form(""),
+):
+    usuario = (usuario or "").strip()
+    senha = senha or ""
+    ip = _client_ip(request)
+    rate_key = f"entrar:{ip}:{usuario.casefold()}"
+
+    if not usuario or not senha:
+        return RedirectResponse(
+            f"/entrar?erro={quote('Informe usuário e senha')}"
+            f"&usuario={quote(usuario)}",
+            status_code=303,
+        )
+
+    # Marlon não entra pela porta civilizada — só pelo LOGUIN
+    if _tentativa_e_do_marlon(usuario):
+        return RedirectResponse(
+            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
+            f"&usuario={quote(usuario if _eh_marlon(usuario) else 'Marlon Wietzikowski')}",
+            status_code=303,
+        )
+
+    if not _auth_rate_ok(rate_key):
+        return RedirectResponse(
+            f"/entrar?erro={quote('Muitas tentativas. Aguarde alguns minutos.')}"
+            f"&usuario={quote(usuario)}",
+            status_code=303,
+        )
+
+    part = db.autenticar_por_username(usuario, senha)
+    _auth_rate_hit(rate_key)
+    if not part:
+        return RedirectResponse(
+            f"/entrar?erro={quote('Usuário ou senha incorretos')}"
+            f"&usuario={quote(usuario)}",
+            status_code=303,
+        )
+
+    # Cinto e suspensório: conta do Marlon nunca autentica em /entrar
+    if _participante_eh_marlon(part):
+        return RedirectResponse(
+            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
+            f"&usuario={quote('Marlon Wietzikowski')}",
+            status_code=303,
+        )
+
+    _remember_participante(request, part["token"])
+    return RedirectResponse(f"/p/{part['token']}", status_code=303)
+
+
+_MSG_MARLON_PORTA_ERRADA = (
+    "Marlon detectado. Esta é a porta dos civilizados — a sua é o LOGUIN. "
+    "Anda pra lá, animal."
+)
+
+_MSG_LOGUIN_SO_MARLON = (
+    "Este LOGUIN é exclusivo do Marlon Wietzikowski, animal. "
+    "Gente normal usa Entrar."
+)
+
+
 def _eh_marlon(nome: str) -> bool:
     n = re.sub(r"\s+", " ", (nome or "").strip().casefold())
     n = n.replace("ł", "l")
-    return "marlon" in n and ("wietz" in n or "wietzikowski" in n or n == "marlon")
+    if not n:
+        return False
+    if n == "marlon":
+        return True
+    return "marlon" in n and ("wietz" in n or "wietzikowski" in n)
+
+
+def _participante_eh_marlon(part: dict | None) -> bool:
+    if not part:
+        return False
+    return _eh_marlon(part.get("nome") or "") or _eh_marlon(part.get("username") or "")
+
+
+def _tentativa_e_do_marlon(usuario: str) -> bool:
+    """True se o campo usuário aponta (ou parece apontar) para o Marlon."""
+    if _eh_marlon(usuario):
+        return True
+    part = db.get_participante_por_username(usuario)
+    if _participante_eh_marlon(part):
+        return True
+    part_nome = db.get_participante_por_nome(usuario)
+    if _participante_eh_marlon(part_nome):
+        return True
+    return False
+
+
+def _buscar_participante_marlon() -> dict | None:
+    """Melhor esforço: acha o participante liberado do Marlon."""
+    for nome in ("Marlon Wietzikowski", "Marlon"):
+        part = db.get_participante_por_nome(nome)
+        if part and part.get("status") == "liberado" and _participante_eh_marlon(part):
+            return part
+    for part in db.list_participantes():
+        if part.get("status") == "liberado" and _participante_eh_marlon(part):
+            return part
+    return None
 
 
 @app.get("/loguin", response_class=HTMLResponse)
@@ -296,8 +445,6 @@ async def loguin_post(
     usuario: str = Form(""),
     senha: str = Form(""),
 ):
-    from urllib.parse import quote
-
     usuario = (usuario or "").strip()
     senha = (senha or "").strip()
     if not usuario or not senha:
@@ -308,19 +455,40 @@ async def loguin_post(
         )
     if not _eh_marlon(usuario):
         return RedirectResponse(
-            f"/loguin?erro={quote('Este LOGUIN é exclusivo do Marlon Wietzikowski, animal.')}"
+            f"/loguin?erro={quote(_MSG_LOGUIN_SO_MARLON)}"
             f"&usuario={quote(usuario)}",
             status_code=303,
         )
-    # Qualquer senha serve — o importante é ele ter feito o LOGUIN
+
+    # Exclusivo Marlon: se existir conta no bolão, autentica por aqui
+    # (nunca pela /entrar). Sem hash ainda: qualquer senha libera o ritual.
+    part = _buscar_participante_marlon()
+    if part and part.get("password_hash"):
+        if not db.verificar_senha(senha, part.get("password_hash")):
+            return RedirectResponse(
+                f"/loguin?erro={quote('Senha do LOGUIN errada, Marlon. Nem o lado da foto salva.')}"
+                f"&usuario={quote(usuario)}",
+                status_code=303,
+            )
+        _remember_participante(request, part["token"])
+        request.session["loguin_marlon"] = True
+        if db.precisa_credenciais(part):
+            return _redirect_credenciais(part["token"])
+        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+
+    if part:
+        _remember_participante(request, part["token"])
+        request.session["loguin_marlon"] = True
+        if db.precisa_credenciais(part):
+            return _redirect_credenciais(part["token"])
+        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+
     request.session["loguin_marlon"] = True
     return RedirectResponse("/loguin?sucesso=1", status_code=303)
 
 
 @app.post("/login")
 async def login_post(request: Request, celular: str = Form(...)):
-    from urllib.parse import quote
-
     celular_raw = (celular or "").strip()
     ip = _client_ip(request)
 
@@ -595,6 +763,10 @@ def pagina_palpites(request: Request, token: str):
             **_taxa_ctx(),
         )
 
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
+
     palpites = db.palpites_do_participante(part["id"])
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
@@ -621,12 +793,89 @@ def pagina_palpites(request: Request, token: str):
     )
 
 
+@app.get("/p/{token}/credenciais", response_class=HTMLResponse)
+def credenciais_get(request: Request, token: str):
+    part = db.get_participante_por_token(token)
+    if not part:
+        raise HTTPException(404, "Link inválido")
+    _remember_participante(request, token)
+
+    if part.get("status") != "liberado":
+        return RedirectResponse(f"/p/{token}", status_code=303)
+    if not db.precisa_credenciais(part):
+        return RedirectResponse(f"/p/{token}", status_code=303)
+
+    return render(
+        request,
+        "credenciais_setup.html",
+        participante=part,
+        erro=request.query_params.get("erro"),
+        form_usuario=request.query_params.get("usuario") or "",
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/p/{token}/credenciais")
+async def credenciais_post(
+    request: Request,
+    token: str,
+    usuario: str = Form(""),
+    senha: str = Form(""),
+    senha2: str = Form(""),
+):
+    part = db.get_participante_por_token(token)
+    if not part:
+        raise HTTPException(404, "Link inválido")
+    _remember_participante(request, token)
+
+    if part.get("status") != "liberado":
+        return RedirectResponse(f"/p/{token}", status_code=303)
+    if not db.precisa_credenciais(part):
+        return RedirectResponse(f"/p/{token}", status_code=303)
+
+    usuario = (usuario or "").strip()
+    senha = senha or ""
+    senha2 = senha2 or ""
+    ip = _client_ip(request)
+    rate_key = f"cred:{ip}:{part['id']}"
+
+    def _erro(msg: str) -> RedirectResponse:
+        return RedirectResponse(
+            f"/p/{token}/credenciais?erro={quote(msg)}&usuario={quote(usuario)}",
+            status_code=303,
+        )
+
+    if not _auth_rate_ok(rate_key):
+        return _erro("Muitas tentativas. Aguarde alguns minutos.")
+
+    if not usuario or not senha or not senha2:
+        _auth_rate_hit(rate_key)
+        return _erro("Preencha usuário, senha e confirmação.")
+    if senha != senha2:
+        _auth_rate_hit(rate_key)
+        return _erro("As senhas não conferem.")
+
+    try:
+        db.definir_credenciais(part["id"], usuario, senha)
+    except ValueError as exc:
+        _auth_rate_hit(rate_key)
+        return _erro(str(exc))
+
+    return RedirectResponse(
+        f"/p/{token}?msg={quote('Username e senha criados. Guarde bem!')}",
+        status_code=303,
+    )
+
+
 @app.get("/p/{token}/conta", response_class=HTMLResponse)
 def conta_participante(request: Request, token: str):
     part = db.get_participante_por_token(token)
     if not part:
         raise HTTPException(404, "Link inválido")
     _remember_participante(request, token)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
     return render(
         request,
         "conta.html",
@@ -647,6 +896,9 @@ async def conta_salvar(
     if not part:
         raise HTTPException(404, "Link inválido")
     _remember_participante(request, token)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
 
     try:
         db.atualizar_nome_participante(part["id"], nome)
@@ -685,10 +937,57 @@ async def conta_salvar(
     return RedirectResponse(f"/p/{token}/conta?msg=Dados+atualizados", status_code=303)
 
 
+@app.post("/p/{token}/conta/senha")
+async def conta_alterar_senha(
+    request: Request,
+    token: str,
+    senha_atual: str = Form(""),
+    senha_nova: str = Form(""),
+    senha_nova2: str = Form(""),
+):
+    part = db.get_participante_por_token(token)
+    if not part:
+        raise HTTPException(404, "Link inválido")
+    _remember_participante(request, token)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
+
+    ip = _client_ip(request)
+    rate_key = f"senha:{ip}:{part['id']}"
+
+    def _erro(msg: str) -> RedirectResponse:
+        return RedirectResponse(
+            f"/p/{token}/conta?erro={quote(msg)}",
+            status_code=303,
+        )
+
+    if not _auth_rate_ok(rate_key):
+        return _erro("Muitas tentativas. Aguarde alguns minutos.")
+
+    if not senha_atual or not senha_nova or not senha_nova2:
+        _auth_rate_hit(rate_key)
+        return _erro("Preencha todos os campos de senha.")
+    if senha_nova != senha_nova2:
+        _auth_rate_hit(rate_key)
+        return _erro("A confirmação da nova senha não confere.")
+
+    try:
+        db.alterar_senha(part["id"], senha_atual, senha_nova)
+    except ValueError as exc:
+        _auth_rate_hit(rate_key)
+        return _erro(str(exc))
+
+    return RedirectResponse(
+        f"/p/{token}/conta?msg={quote('Senha atualizada')}",
+        status_code=303,
+    )
+
+
 @app.post("/conta/sair")
 def conta_sair(request: Request):
     request.session.pop("participante_token", None)
-    return RedirectResponse("/inscricao", status_code=303)
+    return RedirectResponse("/entrar", status_code=303)
 
 
 @app.post("/p/{token}/comprovante")
@@ -736,6 +1035,9 @@ async def salvar_palpites(request: Request, token: str):
         raise HTTPException(404, "Link inválido")
     if part.get("status") != "liberado":
         return RedirectResponse(f"/p/{token}?erro=Inscricao+nao+liberada", status_code=303)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
 
     janela = db.get_janela()
     if janela == "fechado":

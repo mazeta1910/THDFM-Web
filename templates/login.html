@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Já fiz a inscrição — Bolão THDFM{% endblock %}
+{% block title %}Recuperar link — Bolão THDFM{% endblock %}
 {% block content %}
 <div class="card login-card">
-  <h1>Já fiz a inscrição</h1>
+  <h1>Recuperar link</h1>
   <p class="login-lead">
-    Perdeu o link do WhatsApp? Informe o celular da inscrição.
-    Se houver conta liberada com esse número, o admin reenvia o link no seu Zap.
+    Perdeu o link do WhatsApp e ainda não tem username/senha?
+    Informe o celular da inscrição. Se houver conta liberada, o admin reenvia o link no Zap.
   </p>
 
   {% if erro %}
@@ -18,6 +18,7 @@
     Fica de olho nas mensagens.
   </p>
   <p class="login-back">
+    <a class="btn secondary" href="/entrar">Ir para Entrar</a>
     <a class="btn secondary" href="/">Voltar ao início</a>
   </p>
   {% else %}
@@ -35,6 +36,9 @@
     />
     <button type="submit">Pedir meu link</button>
   </form>
+  <p class="login-alt">
+    Já tem username e senha? <a href="/entrar">Entrar</a>
+  </p>
   <p class="login-alt">
     Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
   </p>

@@ -22,6 +22,12 @@
           <label class="conta-label" for="conta-nome">Nome na THDFM</label>
           <input id="conta-nome" class="conta-input" type="text" name="nome" value="{{ participante.nome }}" required autocomplete="nickname" />
 
+          {% if participante.username %}
+          <label class="conta-label" for="conta-username">Username (login)</label>
+          <input id="conta-username" class="conta-input" type="text" value="{{ participante.username }}" readonly disabled />
+          <p class="conta-hint">Username fixo depois de criado. Use-o em <a href="/entrar">Entrar</a>.</p>
+          {% endif %}
+
           <label class="conta-label" for="conta-avatar">Foto de perfil</label>
           <p class="conta-hint">JPG, PNG ou WebP — máx. 3 MB</p>
           <label class="file-pick conta-file-pick" for="conta-avatar">
@@ -46,6 +52,21 @@
     </form>
   </div>
 
+  {% if participante.username and participante.password_hash %}
+  <div class="card conta-card conta-senha-card">
+    <h2 class="conta-senha-title">Alterar senha</h2>
+    <form method="post" action="/p/{{ participante.token }}/conta/senha" class="form-login conta-senha-form" novalidate>
+      <label for="senha-atual">Senha atual</label>
+      <input id="senha-atual" class="input-compact" type="password" name="senha_atual" required autocomplete="current-password" />
+      <label for="senha-nova">Nova senha</label>
+      <input id="senha-nova" class="input-compact" type="password" name="senha_nova" required minlength="8" autocomplete="new-password" />
+      <label for="senha-nova2">Confirmar nova senha</label>
+      <input id="senha-nova2" class="input-compact" type="password" name="senha_nova2" required minlength="8" autocomplete="new-password" />
+      <button type="submit">Atualizar senha</button>
+    </form>
+  </div>
+  {% endif %}
+
   <div class="conta-actions">
     {% if participante.status == 'liberado' %}
     <a class="btn secondary" href="/p/{{ participante.token }}">Ir para palpites</a>
@@ -56,7 +77,7 @@
     <form method="post" action="/conta/sair" class="conta-sair-form">
       <button type="submit" class="secondary">Sair desta conta neste aparelho</button>
     </form>
-    <p class="conta-sair-hint">Isso só esquece o link neste navegador. Guarde seu link pessoal para voltar.</p>
+    <p class="conta-sair-hint">Isso só esquece a sessão neste navegador. Depois entre com username/senha ou pelo link.</p>
   </div>
 </div>
 {% endblock %}
