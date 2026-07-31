@@ -1,0 +1,111 @@
+{# Painel lateral Minha conta — mesmo padrão do Entrar / LOGUIN #}
+{% if participante_nav %}
+{% set conta_modo = (request.query_params.get('conta') or '') == '1' %}
+{% set conta_msg = (request.query_params.get('msg') or '') if conta_modo else '' %}
+{% set conta_erro = (request.query_params.get('erro') or '') if conta_modo else '' %}
+{% set p = participante_nav %}
+
+<div class="acesso-drawer-root conta-drawer-root" id="conta-drawer-root" hidden>
+  <div class="acesso-drawer-backdrop" id="conta-drawer-backdrop" tabindex="-1"></div>
+  <aside
+    class="acesso-drawer conta-drawer"
+    id="conta-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="conta-drawer-title"
+  >
+    <header class="acesso-drawer-head">
+      <div>
+        <p class="conta-drawer-kicker">Perfil</p>
+        <h2 class="acesso-drawer-title" id="conta-drawer-title">Minha conta</h2>
+      </div>
+      <button type="button" class="acesso-drawer-close" id="conta-drawer-close" aria-label="Fechar">×</button>
+    </header>
+
+    <div class="acesso-drawer-body">
+      <p class="badge">{{ p.status }}</p>
+      {% if conta_msg %}<p class="msg">{{ conta_msg.replace('+', ' ') }}</p>{% endif %}
+      {% if conta_erro %}<p class="erro">{{ conta_erro.replace('+', ' ') }}</p>{% endif %}
+
+      <form method="post" action="/p/{{ p.token }}/conta" enctype="multipart/form-data" class="conta-form conta-drawer-form" id="form-conta-drawer">
+        <div class="conta-top conta-top--drawer">
+          <div class="avatar-preview" id="conta-drawer-avatar-preview">
+            {% set conta_av = avatar_url(p.avatar_path) %}
+            {% if conta_av %}
+            <img id="conta-drawer-avatar-live" class="avatar-placeholder" src="{{ conta_av }}" alt="Sua foto" />
+            {% else %}
+            <div class="avatar-placeholder" id="conta-drawer-avatar-live">{{ (p.nome or '??')[:2]|upper }}</div>
+            {% endif %}
+          </div>
+          <div class="conta-fields">
+            <label class="conta-label" for="conta-drawer-nome">Nome na THDFM</label>
+            <input id="conta-drawer-nome" class="conta-input" type="text" name="nome" value="{{ p.nome }}" required autocomplete="nickname" />
+
+            {% if p.username %}
+            <label class="conta-label" for="conta-drawer-username">Username (login)</label>
+            <input id="conta-drawer-username" class="conta-input" type="text" value="{{ p.username }}" readonly disabled />
+            <p class="conta-hint">Username fixo. Use-o em Entrar.</p>
+            {% endif %}
+
+            <label class="conta-label" for="conta-drawer-avatar">Foto de perfil</label>
+            <p class="conta-hint">JPG, PNG ou WebP — máx. 3 MB</p>
+            <label class="file-pick conta-file-pick" for="conta-drawer-avatar">
+              <input id="conta-drawer-avatar" type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden />
+              <span class="file-pick-btn" title="Escolher foto" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+              </span>
+              <span class="file-pick-name" id="conta-drawer-file-name">Nenhuma foto escolhida</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn conta-drawer-save">Salvar</button>
+      </form>
+
+      {% if p.username and p.password_hash %}
+      <div class="conta-drawer-senha">
+        <h3 class="conta-senha-title">Alterar senha</h3>
+        <form method="post" action="/p/{{ p.token }}/conta/senha" class="form-login conta-senha-form" novalidate>
+          <label for="conta-drawer-senha-atual">Senha atual</label>
+          <div class="password-field">
+            <input id="conta-drawer-senha-atual" class="input-compact" type="password" name="senha_atual" required autocomplete="current-password" />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <label for="conta-drawer-senha-nova">Nova senha</label>
+          <div class="password-field">
+            <input id="conta-drawer-senha-nova" class="input-compact" type="password" name="senha_nova" required minlength="8" autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <label for="conta-drawer-senha-nova2">Confirmar nova senha</label>
+          <div class="password-field">
+            <input id="conta-drawer-senha-nova2" class="input-compact" type="password" name="senha_nova2" required minlength="8" autocomplete="new-password" />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <button type="submit">Atualizar senha</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="conta-drawer-actions">
+        {% if p.status == 'liberado' %}
+        <a class="btn secondary" href="/p/{{ p.token }}" data-conta-close>Ir para palpites</a>
+        {% else %}
+        <a class="btn secondary" href="/p/{{ p.token }}" data-conta-close>Ver status da inscrição</a>
+        {% endif %}
+        <form method="post" action="/conta/sair" class="conta-sair-form">
+          <button type="submit" class="secondary">Sair desta conta</button>
+        </form>
+        <p class="conta-sair-hint">Só esquece a sessão neste navegador.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endif %}

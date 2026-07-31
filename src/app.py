@@ -928,6 +928,16 @@ async def credenciais_post(
     )
 
 
+def _redirect_conta_drawer(token: str, *, msg: str | None = None, erro: str | None = None) -> RedirectResponse:
+    """Após salvar conta, reabre o drawer Minha conta sobre a área do participante."""
+    parts = ["conta=1"]
+    if msg:
+        parts.append(f"msg={quote(msg)}")
+    if erro:
+        parts.append(f"erro={quote(erro)}")
+    return RedirectResponse(f"/p/{token}?{'&'.join(parts)}", status_code=303)
+
+
 @app.get("/p/{token}/conta", response_class=HTMLResponse)
 def conta_participante(request: Request, token: str):
     part = db.get_participante_por_token(token)
@@ -937,6 +947,11 @@ def conta_participante(request: Request, token: str):
     gate = _gate_credenciais(part)
     if gate:
         return gate
+    # Preferência: drawer (mesmo padrão do Entrar / LOGUIN)
+    if request.query_params.get("page") != "1":
+        msg = request.query_params.get("msg")
+        erro = request.query_params.get("erro")
+        return _redirect_conta_drawer(token, msg=msg, erro=erro)
     return render(
         request,
         "conta.html",
@@ -964,7 +979,7 @@ async def conta_salvar(
     try:
         db.atualizar_nome_participante(part["id"], nome)
     except Exception as exc:
-        return RedirectResponse(f"/p/{token}/conta?erro={exc}", status_code=303)
+        return _redirect_conta_drawer(token, erro=str(exc))
 
     # Se for o participante do admin logado, atualiza o nick da sessão
     if (
@@ -977,16 +992,10 @@ async def conta_salvar(
     if avatar is not None and getattr(avatar, "filename", None):
         ext = Path(avatar.filename or "").suffix.lower()
         if ext not in AVATAR_EXTS:
-            return RedirectResponse(
-                f"/p/{token}/conta?erro=Foto+deve+ser+jpg/png/webp",
-                status_code=303,
-            )
+            return _redirect_conta_drawer(token, erro="Foto deve ser jpg/png/webp")
         data = await avatar.read()
         if not data or len(data) > AVATAR_MAX_BYTES:
-            return RedirectResponse(
-                f"/p/{token}/conta?erro=Foto+invalida+ou+maior+que+3MB",
-                status_code=303,
-            )
+            return _redirect_conta_drawer(token, erro="Foto invalida ou maior que 3MB")
         if part.get("avatar_path"):
             old = AVATARES_DIR / part["avatar_path"]
             if old.is_file():
@@ -995,7 +1004,7 @@ async def conta_salvar(
         (AVATARES_DIR / rel).write_bytes(data)
         db.salvar_avatar(part["id"], rel)
 
-    return RedirectResponse(f"/p/{token}/conta?msg=Dados+atualizados", status_code=303)
+    return _redirect_conta_drawer(token, msg="Dados atualizados")
 
 
 @app.post("/p/{token}/conta/senha")
@@ -1018,10 +1027,7 @@ async def conta_alterar_senha(
     rate_key = f"senha:{ip}:{part['id']}"
 
     def _erro(msg: str) -> RedirectResponse:
-        return RedirectResponse(
-            f"/p/{token}/conta?erro={quote(msg)}",
-            status_code=303,
-        )
+        return _redirect_conta_drawer(token, erro=msg)
 
     if not _auth_rate_ok(rate_key):
         return _erro("Muitas tentativas. Aguarde alguns minutos.")
@@ -1039,10 +1045,7 @@ async def conta_alterar_senha(
         _auth_rate_hit(rate_key)
         return _erro(str(exc))
 
-    return RedirectResponse(
-        f"/p/{token}/conta?msg={quote('Senha atualizada')}",
-        status_code=303,
-    )
+    return _redirect_conta_drawer(token, msg="Senha atualizada")
 
 
 @app.post("/conta/sair")

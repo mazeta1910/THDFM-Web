@@ -213,6 +213,7 @@ def test_alterar_senha_na_conta(client: TestClient):
     )
     assert r.status_code == 303
     assert "msg=" in r.headers["location"]
+    assert "conta=1" in r.headers["location"]
 
     assert db.autenticar_por_username("troca.senha", "nova45678")
     assert db.autenticar_por_username("troca.senha", "antiga123") is None

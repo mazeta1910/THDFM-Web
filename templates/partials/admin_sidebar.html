@@ -21,7 +21,7 @@
       <button type="button" class="admin-sidebar-close" id="admin-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
-    <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}">
+    <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
       {% set brand_av = avatar_url(participante_nav.avatar_path) %}
       {% if brand_av %}
       <img class="admin-brand-avatar" src="{{ brand_av }}" alt="" />
