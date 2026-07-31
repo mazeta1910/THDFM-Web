@@ -240,10 +240,11 @@
     const readCollapsed = () => {
       try {
         const v = localStorage.getItem(KEY);
-        if (v === null) return true;
+        // Padrão: expandido (maximizado)
+        if (v === null) return false;
         return v === "1";
       } catch (e) {
-        return true;
+        return false;
       }
     };
     const writeCollapsed = (collapsed) => {
@@ -445,10 +446,8 @@
     document.querySelectorAll(".admin-menu-group[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
       if (!id) return;
-      // Garante aberto o grupo da rota ativa (já vem open do servidor; no-op se ok)
-      if (group.querySelector(".admin-side-link.active") && !group.open) {
-        group.open = true;
-      }
+      // Painel abre com todos os grupos maximizados
+      group.open = true;
       group.addEventListener("toggle", () => {
         const next = readGroups();
         next[id] = group.open;

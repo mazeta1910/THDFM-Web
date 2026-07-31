@@ -55,7 +55,7 @@
         </div>
       </details>
 
-      <details class="admin-menu-group" data-group="competicao" {% if open_competicao %}open{% endif %}>
+      <details class="admin-menu-group" data-group="competicao" open>
         <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
@@ -64,7 +64,7 @@
         </div>
       </details>
 
-      <details class="admin-menu-group" data-group="meu-bolao" {% if open_meu_bolao %}open{% endif %}>
+      <details class="admin-menu-group" data-group="meu-bolao" open>
         <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
         <div class="admin-menu-items">
           {% if participante_nav and participante_nav.status == 'liberado' %}
