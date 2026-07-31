@@ -230,7 +230,8 @@ def transparencia(request: Request):
     if perna not in ("ida", "volta"):
         perna = "ida"
     janela = db.get_janela()
-    if perna == "volta" and janela == "ida":
+    volta_liberada = janela != "ida"
+    if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/transparencia?fase={fase}&perna=ida",
             status_code=303,
@@ -243,6 +244,7 @@ def transparencia(request: Request):
         fases=fases_ui,
         perna=perna,
         janela=janela,
+        volta_liberada=volta_liberada,
         tabelas=tabelas,
     )
 
@@ -276,7 +278,8 @@ def admin_palpites(request: Request):
     if perna not in ("ida", "volta"):
         perna = "ida"
     janela = db.get_janela()
-    if perna == "volta" and janela == "ida":
+    volta_liberada = janela != "ida"
+    if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/admin/palpites?fase={fase}&perna=ida",
             status_code=303,
@@ -292,6 +295,7 @@ def admin_palpites(request: Request):
         fases=fases_ui,
         perna=perna,
         janela=janela,
+        volta_liberada=volta_liberada,
         tabelas=tabelas,
     )
 
