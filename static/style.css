@@ -1692,6 +1692,12 @@ input[type="file"] {
 .palpites-card .match-cell {
   padding: 0.35rem 0 0.15rem;
 }
+.palpites-card .match-jogo-tag {
+  display: block;
+  width: fit-content;
+  max-width: calc(100% - 1.2rem);
+  margin: 0.2rem auto 0.25rem;
+}
 .palpites-card .match-teams {
   border-right: none;
   width: 100%;

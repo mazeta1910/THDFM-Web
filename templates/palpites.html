@@ -99,6 +99,8 @@
         {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
         {% if ida %}
         <div class="match-cell" data-confronto="{{ c.id }}">
+          {% set inicio_lbl = formatar_inicio_jogo(ida.inicio_em) %}
+          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}</span>
           <div class="match-teams">
             <div class="match-team-row">
               <img src="{{ emblema_url(c.clube_a) }}" alt="" />
@@ -131,6 +133,8 @@
         {% set p_pen = palpites_pen.get(c.id) %}
         {% if volta %}
         <div class="match-cell" data-confronto="{{ c.id }}">
+          {% set inicio_lbl = formatar_inicio_jogo(volta.inicio_em) %}
+          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}</span>
           <div class="match-ref">
             <span class="match-ref-line">
               Seu palpite (Ida):
