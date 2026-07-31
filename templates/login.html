@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Já fiz a inscrição — Bolão THDFM{% endblock %}
+{% block content %}
+<div class="card login-card">
+  <h1>Já fiz a inscrição</h1>
+  <p class="login-lead">
+    Perdeu o link do WhatsApp? Informe o celular da inscrição.
+    Se houver conta liberada com esse número, o admin reenvia o link no seu Zap.
+  </p>
+
+  {% if erro %}
+  <p class="erro">{{ erro.replace('+', ' ') }}</p>
+  {% endif %}
+
+  {% if enviado %}
+  <p class="msg">
+    Se houver inscrição liberada com esse número, o admin vai reenviar o link no WhatsApp.
+    Fica de olho nas mensagens.
+  </p>
+  <p class="login-back">
+    <a class="btn secondary" href="/">Voltar ao início</a>
+  </p>
+  {% else %}
+  <form method="post" action="/login" class="form-login" novalidate>
+    <label for="celular">Celular da inscrição</label>
+    <input
+      id="celular"
+      class="input-compact"
+      type="tel"
+      name="celular"
+      required
+      placeholder="(11) 99999-9999"
+      inputmode="tel"
+      autocomplete="tel"
+    />
+    <button type="submit">Pedir meu link</button>
+  </form>
+  <p class="login-alt">
+    Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -187,8 +187,8 @@ def _taxa_ctx() -> dict:
     }
 
 
-def _destino_entrada(request: Request) -> str:
-    """Para onde mandar quem abre / ou /home, conforme sessão."""
+def _destino_sessao(request: Request) -> str | None:
+    """Destino se já houver sessão; None = visitante frio (mostra a home)."""
     if admin_ok(request):
         return "/admin"
     token = request.session.get("participante_token")
@@ -196,17 +196,82 @@ def _destino_entrada(request: Request) -> str:
         part = db.get_participante_por_token(token)
         if part:
             return f"/p/{part['token']}"
-    return "/inscricao"
+    return None
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    if request.client and request.client.host:
+        return request.client.host
+    return ""
 
 
 @app.get("/")
 def raiz(request: Request):
-    return RedirectResponse(_destino_entrada(request), status_code=303)
+    dest = _destino_sessao(request)
+    if dest:
+        return RedirectResponse(dest, status_code=303)
+    return render(
+        request,
+        "home.html",
+        janela=db.get_janela(),
+        **_taxa_ctx(),
+    )
 
 
 @app.get("/home")
 def home(request: Request):
-    return RedirectResponse(_destino_entrada(request), status_code=303)
+    dest = _destino_sessao(request)
+    if dest:
+        return RedirectResponse(dest, status_code=303)
+    return render(
+        request,
+        "home.html",
+        janela=db.get_janela(),
+        **_taxa_ctx(),
+    )
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_get(request: Request):
+    dest = _destino_sessao(request)
+    if dest and dest.startswith("/p/"):
+        return RedirectResponse(dest, status_code=303)
+    return render(
+        request,
+        "login.html",
+        enviado=request.query_params.get("enviado") == "1",
+        erro=request.query_params.get("erro"),
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/login")
+async def login_post(request: Request, celular: str = Form(...)):
+    from urllib.parse import quote
+
+    celular_raw = (celular or "").strip()
+    ip = _client_ip(request)
+
+    try:
+        celular_ok = db.normalizar_celular(celular_raw)
+    except ValueError:
+        return RedirectResponse(
+            f"/login?erro={quote('Informe um celular válido com DDD')}",
+            status_code=303,
+        )
+
+    if not db.recuperacao_rate_limit_ok(celular=celular_ok, ip=ip or None):
+        # Mesma UX pública — não revela se o número existe
+        return RedirectResponse("/login?enviado=1", status_code=303)
+
+    part = db.get_participante_liberado_por_celular(celular_ok)
+    if part:
+        db.criar_pedido_recuperacao(part["id"], celular_ok, ip=ip or None)
+
+    return RedirectResponse("/login?enviado=1", status_code=303)
 
 
 @app.get("/regras", response_class=HTMLResponse)
@@ -738,6 +803,7 @@ def admin_home(request: Request):
         fases=fases_ui,
         confrontos_por_fase=confrontos_por_fase,
         participantes=db.list_participantes(),
+        recuperacao_pedidos=db.list_pedidos_recuperacao_pendentes(),
         ultima_rodada=db.get_ultima_rodada_historico(),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
@@ -803,6 +869,38 @@ def admin_avisar_link(request: Request, participante_id: int):
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     msg = db.mensagem_whatsapp_link(part["nome"], base, part["token"])
     db.marcar_link_enviado(participante_id, enviado=True)
+    db.marcar_pedidos_recuperacao_atendidos_participante(participante_id)
+    return RedirectResponse(
+        f"https://wa.me/{wa}?text={quote(msg)}", status_code=303
+    )
+
+
+@app.get("/admin/recuperacao/{pedido_id}/atender")
+def admin_recuperacao_atender(request: Request, pedido_id: int):
+    """Fecha o pedido de recuperação e abre o WhatsApp com o link."""
+    from urllib.parse import quote
+
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    pedido = db.get_pedido_recuperacao(pedido_id)
+    if not pedido:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Pedido+nao+encontrado", status_code=303
+        )
+    if pedido.get("status") != "liberado":
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
+        )
+    wa = db.celular_whatsapp(pedido.get("celular"))
+    if not wa:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Participante+sem+celular", status_code=303
+        )
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    msg = db.mensagem_whatsapp_link(pedido["nome"], base, pedido["token"])
+    db.marcar_pedido_recuperacao_atendido(pedido_id)
+    db.marcar_pedidos_recuperacao_atendidos_participante(pedido["participante_id"])
+    db.marcar_link_enviado(pedido["participante_id"], enviado=True)
     return RedirectResponse(
         f"https://wa.me/{wa}?text={quote(msg)}", status_code=303
     )

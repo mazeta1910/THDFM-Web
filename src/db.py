@@ -183,12 +183,36 @@ def _migrate_jogos(conn: sqlite3.Connection) -> None:
         )
 
 
+def _migrate_recuperacao(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS recuperacao_pedidos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+            celular TEXT NOT NULL,
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            atendido_em TEXT,
+            ip TEXT
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_recuperacao_pendentes "
+        "ON recuperacao_pedidos(atendido_em, criado_em)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_recuperacao_celular_criado "
+        "ON recuperacao_pedidos(celular, criado_em)"
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
         _migrate_participantes(conn)
         _migrate_jogos(conn)
         _migrar_celulares_br(conn)
+        _migrate_recuperacao(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -678,6 +702,133 @@ def regenerar_token(participante_id: int) -> str:
             (token, participante_id),
         )
     return token
+
+
+def get_participante_liberado_por_celular(celular: str) -> dict[str, Any] | None:
+    """Busca participante liberado pelo celular normalizado."""
+    try:
+        celular_ok = normalizar_celular(celular)
+    except ValueError:
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes "
+            "WHERE status = 'liberado' AND celular = ? "
+            "ORDER BY id LIMIT 1",
+            (celular_ok,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+RECUPERACAO_RATE_LIMIT = 3
+RECUPERACAO_RATE_WINDOW_MIN = 15
+
+
+def contar_pedidos_recuperacao_recentes(
+    *, celular: str | None = None, ip: str | None = None
+) -> int:
+    """Conta pedidos na janela de rate limit (por celular e/ou IP)."""
+    mins = RECUPERACAO_RATE_WINDOW_MIN
+    with get_db() as conn:
+        if celular and ip:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM recuperacao_pedidos "
+                "WHERE (celular = ? OR ip = ?) "
+                "AND criado_em >= datetime('now', 'localtime', ?)",
+                (celular, ip, f"-{mins} minutes"),
+            ).fetchone()
+        elif celular:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM recuperacao_pedidos "
+                "WHERE celular = ? "
+                "AND criado_em >= datetime('now', 'localtime', ?)",
+                (celular, f"-{mins} minutes"),
+            ).fetchone()
+        elif ip:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM recuperacao_pedidos "
+                "WHERE ip = ? "
+                "AND criado_em >= datetime('now', 'localtime', ?)",
+                (ip, f"-{mins} minutes"),
+            ).fetchone()
+        else:
+            return 0
+        return int(row["n"] or 0) if row else 0
+
+
+def recuperacao_rate_limit_ok(*, celular: str | None, ip: str | None) -> bool:
+    return (
+        contar_pedidos_recuperacao_recentes(celular=celular, ip=ip)
+        < RECUPERACAO_RATE_LIMIT
+    )
+
+
+def criar_pedido_recuperacao(
+    participante_id: int, celular: str, *, ip: str | None = None
+) -> int:
+    celular_ok = normalizar_celular(celular)
+    with get_db() as conn:
+        cur = conn.execute(
+            "INSERT INTO recuperacao_pedidos (participante_id, celular, ip) "
+            "VALUES (?, ?, ?)",
+            (participante_id, celular_ok, (ip or "").strip() or None),
+        )
+        return int(cur.lastrowid)
+
+
+def list_pedidos_recuperacao_pendentes() -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT r.id, r.participante_id, r.celular, r.criado_em, r.ip, "
+            "p.nome, p.token, p.status "
+            "FROM recuperacao_pedidos r "
+            "JOIN participantes p ON p.id = r.participante_id "
+            "WHERE r.atendido_em IS NULL OR r.atendido_em = '' "
+            "ORDER BY r.criado_em ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def contar_pedidos_recuperacao_pendentes() -> int:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM recuperacao_pedidos "
+            "WHERE atendido_em IS NULL OR atendido_em = ''"
+        ).fetchone()
+        return int(row["n"] or 0) if row else 0
+
+
+def get_pedido_recuperacao(pedido_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT r.id, r.participante_id, r.celular, r.criado_em, r.atendido_em, r.ip, "
+            "p.nome, p.token, p.status "
+            "FROM recuperacao_pedidos r "
+            "JOIN participantes p ON p.id = r.participante_id "
+            "WHERE r.id = ?",
+            (pedido_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def marcar_pedido_recuperacao_atendido(pedido_id: int) -> None:
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE recuperacao_pedidos SET atendido_em = datetime('now', 'localtime') "
+            "WHERE id = ?",
+            (pedido_id,),
+        )
+
+
+def marcar_pedidos_recuperacao_atendidos_participante(participante_id: int) -> int:
+    """Fecha todos os pedidos pendentes daquele participante. Retorna quantos."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE recuperacao_pedidos SET atendido_em = datetime('now', 'localtime') "
+            "WHERE participante_id = ? AND (atendido_em IS NULL OR atendido_em = '')",
+            (participante_id,),
+        )
+        return cur.rowcount
 
 
 def list_confrontos_completos(fase: str | None = None) -> list[dict[str, Any]]:

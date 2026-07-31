@@ -1,10 +1,12 @@
 {% set on_conta = participante_nav and '/conta' in path %}
+{% set on_home = path == '/' or path == '/home' %}
+{% set on_login = path.startswith('/login') %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="site-sidebar" id="site-sidebar">
   <div class="site-brand">
     <div class="site-brand-top">
-      <strong>Bolão THDFM — CdB</strong>
+      <a href="/" class="site-brand-link"><strong>Bolão THDFM — CdB</strong></a>
       <button type="button" class="site-sidebar-close" id="site-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
@@ -36,15 +38,19 @@
         </div>
       </details>
 
-      <details class="site-menu-group" data-group="meu-bolao" {% if on_meu_bolao or on_inscricao or (participante_nav and path.startswith('/p/')) %}open{% endif %}>
+      <details class="site-menu-group" data-group="meu-bolao" {% if on_meu_bolao or on_inscricao or on_login or on_home or (participante_nav and path.startswith('/p/')) %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
         <div class="site-menu-items">
+          {% if not participante_nav %}
+          <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('competicao') }}<span>Início</span></a>
+          {% endif %}
           {% if participante_nav and participante_nav.status == 'liberado' %}
           <a class="site-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
           {% elif participante_nav %}
           <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Inscrição</span></a>
           {% else %}
-          <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Inscrição</span></a>
+          <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
+          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('palpites') }}<span>Já fiz a inscrição</span></a>
           {% endif %}
         </div>
       </details>
