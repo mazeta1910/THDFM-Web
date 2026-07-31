@@ -4,6 +4,36 @@
   --accent2: #ff2d2d;
   --danger: #ff4d4d;
   --site-header-offset: 3.5rem;
+  --scroll-thumb: color-mix(in srgb, var(--accent) 55%, #666);
+  --scroll-thumb-hover: var(--accent);
+  --scroll-track: transparent;
+}
+
+/* Scrollbar do site (Firefox + WebKit) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html[data-theme="dark"],
@@ -662,6 +692,7 @@ html[data-theme="light"] .theme-icon-moon {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  scrollbar-gutter: stable;
 }
 .site-side-sair-wrap {
   flex: 0 0 auto;
@@ -2922,6 +2953,7 @@ body.admin-body .wrap.admin-wrap {
   min-height: 0;
   overflow-y: auto;
   padding-bottom: 0.35rem;
+  scrollbar-gutter: stable;
 }
 .admin-side-label {
   margin: 0.75rem 0.5rem 0.35rem;
