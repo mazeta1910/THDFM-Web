@@ -1126,7 +1126,7 @@ def admin_logout(request: Request):
     request.session.pop("admin_login", None)
     request.session.pop("admin_nome", None)
     request.session.pop("admin", None)
-    return RedirectResponse("/inscricao", status_code=303)
+    return RedirectResponse("/", status_code=303)
 
 
 @app.get("/admin", response_class=HTMLResponse)
