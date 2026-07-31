@@ -99,6 +99,34 @@ def test_moderador_nao_tem_chrome_toggle(client: TestClient):
     assert 'id="ui-mode-toggle"' not in r.text
 
 
+def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
+    """Credenciais não pode deixar Resultados ativo ao mesmo tempo."""
+    import re
+
+    _login_admin(client, "mazeta", "senha-dono")
+
+    def active_admin_items(html: str) -> list[str]:
+        block = html.split('data-group="admin"', 1)[1].split("data-group=", 1)[0]
+        return re.findall(
+            r'class="admin-side-link active"[^>]*>.*?>(Inscrições|Resultados|Palpites|Credenciais)<',
+            block,
+            flags=re.S,
+        )
+
+    r = client.get("/admin/credenciais")
+    assert r.status_code == 200
+    assert active_admin_items(r.text) == ["Credenciais"]
+
+    r2 = client.get("/admin?sec=resultados")
+    assert active_admin_items(r2.text) == ["Resultados"]
+
+    r3 = client.get("/admin?sec=inscricoes")
+    assert active_admin_items(r3.text) == ["Inscrições"]
+
+    r4 = client.get("/admin/palpites")
+    assert active_admin_items(r4.text) == ["Palpites"]
+
+
 def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
     """Depois de usar o painel, Classificação continua no menu admin."""
     _login_admin(client, "mazeta", "senha-dono")

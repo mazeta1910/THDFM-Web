@@ -1,17 +1,17 @@
 {% set path = request.url.path %}
 {% set on_admin = path.startswith('/admin') and path != '/admin/login' %}
+{% set on_admin_home = path.rstrip('/') == '/admin' %}
 {% set on_palpites = participante_nav and path == '/p/' ~ participante_nav.token %}
 {% set on_conta = participante_nav and path == '/p/' ~ participante_nav.token ~ '/conta' %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
+{% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_regras = path.startswith('/regras') %}
-{% set on_admin_resultados = on_admin and admin_sec == 'resultados' and not on_admin_palpites %}
-{% set on_admin_inscricoes = on_admin and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
+{# Inscrições/Resultados só na home do painel — evita 2 itens ativos em /admin/credenciais etc. #}
+{% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
+{% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set pend_n = admin_pendentes_count|default(0) %}
-{% set open_admin = on_admin_inscricoes or on_admin_resultados or on_admin_palpites %}
-{% set open_competicao = on_classificacao or on_transparencia or on_regras %}
-{% set open_meu_bolao = on_palpites %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="admin-sidebar" id="admin-sidebar">
@@ -50,7 +50,7 @@
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
           {% if is_dono %}
-          <a class="admin-side-link {% if path.startswith('/admin/credenciais') %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+          <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
           {% endif %}
         </div>
       </details>
