@@ -150,17 +150,6 @@
         );
       });
     }
-    document.querySelectorAll(".ui-mode-chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        const inAdminChrome = document.body.classList.contains("admin-body");
-        goMode(
-          inAdminChrome ? "user" : "admin",
-          chip.getAttribute("data-user-home") ||
-            document.getElementById("ui-mode-toggle")?.getAttribute("data-user-home") ||
-            "/"
-        );
-      });
-    });
     document.querySelectorAll("[data-ui-mode-switch]").forEach((el) => {
       el.addEventListener("click", (e) => {
         const mode = el.getAttribute("data-ui-mode-switch") === "user" ? "user" : "admin";
