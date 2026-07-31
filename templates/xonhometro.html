@@ -34,9 +34,15 @@
       <span class="xonha-stat-value">{{ stats.total_voltas }}</span>
     </div>
     <div class="xonha-stat" role="listitem">
-      <span class="xonha-stat-label">Média de saídas / mês</span>
+      <span class="xonha-stat-label">Média / mês</span>
       <span class="xonha-stat-value">
         {% if stats.media_saidas_por_mes is not none %}{{ stats.media_saidas_por_mes }}{% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Média / dia desde o início</span>
+      <span class="xonha-stat-value">
+        {% if stats.media_saidas_por_dia is not none %}{{ stats.media_saidas_por_dia }}{% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat" role="listitem">
@@ -46,17 +52,39 @@
       </span>
     </div>
     <div class="xonha-stat xonha-stat--recorde" role="listitem">
-      <span class="xonha-stat-label">Recorde — dia que mais saiu</span>
+      <span class="xonha-stat-label">Recorde — dia</span>
       <span class="xonha-stat-value">
         {% if stats.recorde_dia %}
         {{ stats.recorde_dia.data[8:10] }}/{{ stats.recorde_dia.data[5:7] }}/{{ stats.recorde_dia.data[0:4] }}
         <small>· {{ stats.recorde_dia.quantidade }}×</small>
-        {% else %}
-        —
-        {% endif %}
+        {% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat xonha-stat--recorde" role="listitem">
+      <span class="xonha-stat-label">Mês que mais saiu</span>
+      <span class="xonha-stat-value">
+        {% if stats.recorde_mes %}
+        {{ stats.recorde_mes.label }}
+        <small>· {{ stats.recorde_mes.quantidade }}×</small>
+        {% else %}—{% endif %}
       </span>
     </div>
   </div>
+
+  {% if stats.dias_semana %}
+  <section class="xonha-weekdays card">
+    <h2>Dias da semana em que mais sai</h2>
+    <ol class="xonha-weekday-list">
+      {% for d in stats.dias_semana %}
+      <li>
+        <span class="xonha-weekday-name">{{ d.dia }}</span>
+        <span class="xonha-weekday-bar" style="--pct: {{ (d.quantidade / stats.total_saidas * 100)|round(1) }}%"></span>
+        <span class="xonha-weekday-qtd">{{ d.quantidade }}×</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
 
   <section class="xonha-timeline card">
     <h2>Linha do tempo</h2>
@@ -66,7 +94,10 @@
       <li class="xonha-item xonha-item--{{ e.tipo }}">
         <div class="xonha-item-top">
           <span class="xonha-item-tipo">{% if e.tipo == 'saida' %}Saída{% else %}Volta{% endif %}</span>
-          <time datetime="{{ e.data }}">{{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}</time>
+          <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
+            {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
+            {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
+          </time>
         </div>
         {% if e.motivo %}
         <p class="xonha-item-motivo">{{ e.motivo }}</p>

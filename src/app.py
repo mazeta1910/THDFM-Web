@@ -723,12 +723,13 @@ def admin_xonhometro_criar(
     request: Request,
     tipo: str = Form(...),
     data: str = Form(...),
+    hora: str = Form(""),
     motivo: str = Form(""),
 ):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     try:
-        db.criar_xonha_evento(tipo, data, motivo)
+        db.criar_xonha_evento(tipo, data, motivo, hora=hora)
     except ValueError as exc:
         return RedirectResponse(
             f"/admin/xonhometro?erro={quote(str(exc))}",
@@ -747,12 +748,15 @@ def admin_xonhometro_atualizar(
     evento_id: int = Form(...),
     tipo: str = Form(...),
     data: str = Form(...),
+    hora: str = Form(""),
     motivo: str = Form(""),
 ):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     try:
-        db.atualizar_xonha_evento(evento_id, tipo=tipo, data=data, motivo=motivo)
+        db.atualizar_xonha_evento(
+            evento_id, tipo=tipo, data=data, motivo=motivo, hora=hora
+        )
     except ValueError as exc:
         return RedirectResponse(
             f"/admin/xonhometro?erro={quote(str(exc))}",
