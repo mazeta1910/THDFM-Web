@@ -39,17 +39,29 @@
   {% if portal_nav %}
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
-      <div class="site-menu-items site-menu-items-flat">
-        <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
-        <a class="site-side-link" href="/#bolao">{{ ico('meu-bolao') }}<span>Bolão CdB</span></a>
-        {% if participante_nav and participante_nav.status == 'liberado' %}
-        <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
-        {% else %}
-        <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
-        <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('palpites') }}<span>Já fiz a inscrição</span></a>
-        {% endif %}
-        <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras do bolão</span></a>
-      </div>
+      <details class="site-menu-group" data-group="portal" {% if on_home or not on_login %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>
+        <div class="site-menu-items">
+          <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
+          <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
+          <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
+        </div>
+      </details>
+
+      <details class="site-menu-group" data-group="bolao" {% if on_login or on_inscricao or on_regras or on_home %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Bolão CdB</span></summary>
+        <div class="site-menu-items">
+          <a class="site-side-link" href="/#bolao">{{ ico('competicao') }}<span>Sobre o bolão</span></a>
+          {% if participante_nav and participante_nav.status == 'liberado' %}
+          <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+          {% else %}
+          <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
+          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('palpites') }}<span>Já fiz a inscrição</span></a>
+          {% endif %}
+          <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
+          <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Transparência</span></a>
+        </div>
+      </details>
     </div>
   </nav>
   {% else %}
