@@ -69,6 +69,27 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
     assert 'action="/conta/sair"' in r2.text
     assert "site-side-sair" in r2.text
+    assert 'id="conta-drawer-root"' in r2.text
+    assert "data-conta-open" in r2.text
+    assert "Minha conta" in r2.text
+
+
+def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
+    part = db.criar_participante("ContaBox", status="liberado", celular="11990005566")
+    db.definir_credenciais(part["id"], "conta.box", "senha1234")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
+    assert r.status_code == 303
+    loc = r.headers["location"]
+    assert f"/p/{part['token']}" in loc
+    assert "conta=1" in loc
+
+    r2 = client.get(f"/p/{part['token']}?conta=1&msg=Dados+atualizados")
+    assert r2.status_code == 200
+    assert 'id="conta-drawer-root"' in r2.text
+    assert "Dados atualizados" in r2.text
+    assert 'action="/p/' + part["token"] + '/conta"' in r2.text
 
 
 def test_conta_sair_limpa_sessao(client: TestClient):

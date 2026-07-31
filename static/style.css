@@ -5512,6 +5512,52 @@ body.acesso-drawer-open {
 .loguin-drawer-root {
   z-index: 9610;
 }
+.conta-drawer-root {
+  z-index: 9620;
+}
+.conta-drawer-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.conta-top--drawer {
+  flex-direction: column;
+  align-items: stretch;
+}
+.conta-top--drawer .avatar-preview {
+  align-self: center;
+}
+.conta-drawer-form {
+  margin-bottom: 1.25rem;
+}
+.conta-drawer-save {
+  margin-top: 0.85rem;
+  width: auto;
+  max-width: 100%;
+}
+.conta-drawer-senha {
+  margin: 0 0 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+.conta-drawer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+.conta-drawer-actions .btn.secondary,
+.conta-drawer-actions .secondary {
+  width: 100%;
+}
+.conta-drawer .badge {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+}
 .loguin-kicker--drawer {
   margin: 0 0 0.2rem;
   font-size: 0.72rem;

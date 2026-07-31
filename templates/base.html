@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=139" />
+  <link rel="stylesheet" href="/static/style.css?v=140" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -114,8 +114,12 @@
   </div>
   {% if not participante_nav %}
   {% include "partials/acesso_drawer.html" %}
-  {% endif %}
   {% include "partials/loguin_drawer.html" %}
+  {% endif %}
+  {% endif %}
+
+  {% if participante_nav %}
+  {% include "partials/conta_drawer.html" %}
   {% endif %}
 
   {% if is_admin and path != '/admin/login' %}
@@ -524,12 +528,13 @@
     };
 
     const abrir = (modo) => {
-      // Fecha o LOGUIN se estiver aberto
-      const loguinRoot = document.getElementById("loguin-drawer-root");
-      if (loguinRoot) {
-        loguinRoot.classList.remove("is-open");
-        loguinRoot.hidden = true;
-      }
+      // Fecha LOGUIN / Minha conta se estiverem abertos
+      ["loguin-drawer-root", "conta-drawer-root"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("is-open");
+        el.hidden = true;
+      });
       setTab(modo);
       root.hidden = false;
       root.classList.add("is-open");
@@ -608,10 +613,12 @@
     const okBtn = document.getElementById("loguin-drawer-ok");
 
     const fecharAcesso = () => {
-      const acesso = document.getElementById("acesso-drawer-root");
-      if (!acesso) return;
-      acesso.classList.remove("is-open");
-      acesso.hidden = true;
+      ["acesso-drawer-root", "conta-drawer-root"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("is-open");
+        el.hidden = true;
+      });
     };
 
     const abrir = () => {
@@ -663,6 +670,94 @@
 
     if (new URLSearchParams(location.search).get("acesso") === "loguin") {
       abrir();
+    }
+  })();
+  </script>
+  <script>
+  (function () {
+    const root = document.getElementById("conta-drawer-root");
+    if (!root) return;
+    const backdrop = document.getElementById("conta-drawer-backdrop");
+    const closeBtn = document.getElementById("conta-drawer-close");
+
+    const fecharOutros = () => {
+      ["acesso-drawer-root", "loguin-drawer-root"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("is-open");
+        el.hidden = true;
+      });
+    };
+
+    const fecharMenus = () => {
+      document.body.classList.remove("site-sidebar-open", "admin-sidebar-open");
+      const siteSb = document.getElementById("site-sidebar-backdrop");
+      const adminSb = document.getElementById("admin-sidebar-backdrop");
+      if (siteSb) siteSb.hidden = true;
+      if (adminSb) adminSb.hidden = true;
+    };
+
+    const abrir = () => {
+      fecharOutros();
+      fecharMenus();
+      root.hidden = false;
+      root.classList.add("is-open");
+      document.body.classList.add("acesso-drawer-open");
+      window.setTimeout(() => document.getElementById("conta-drawer-nome")?.focus(), 50);
+    };
+
+    const fechar = () => {
+      root.classList.remove("is-open");
+      root.hidden = true;
+      document.body.classList.remove("acesso-drawer-open");
+      const url = new URL(location.href);
+      if (url.searchParams.get("conta") === "1") {
+        url.searchParams.delete("conta");
+        url.searchParams.delete("msg");
+        url.searchParams.delete("erro");
+        history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    };
+
+    document.querySelectorAll("[data-conta-open]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        abrir();
+      });
+    });
+    document.querySelectorAll("[data-conta-close]").forEach((el) => {
+      el.addEventListener("click", () => fechar());
+    });
+    closeBtn?.addEventListener("click", fechar);
+    backdrop?.addEventListener("click", fechar);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) fechar();
+    });
+
+    if (new URLSearchParams(location.search).get("conta") === "1") {
+      abrir();
+    }
+
+    const input = document.getElementById("conta-drawer-avatar");
+    const nameEl = document.getElementById("conta-drawer-file-name");
+    const preview = document.getElementById("conta-drawer-avatar-preview");
+    if (input && nameEl && preview) {
+      input.addEventListener("change", () => {
+        const file = input.files && input.files[0];
+        nameEl.textContent = file ? file.name : "Nenhuma foto escolhida";
+        if (!file || !file.type.startsWith("image/")) return;
+        const url = URL.createObjectURL(file);
+        let img = preview.querySelector("img");
+        if (!img) {
+          preview.innerHTML = "";
+          img = document.createElement("img");
+          img.alt = "Prévia da foto";
+          preview.appendChild(img);
+        }
+        img.id = "conta-drawer-avatar-live";
+        img.className = "avatar-placeholder";
+        img.src = url;
+      });
     }
   })();
   </script>
