@@ -640,10 +640,6 @@
         <h2 class="participantes-gestao-title">Gestão de Participantes</h2>
         <div class="participantes-toolbar">
           <p class="participantes-lead">Edite nome na tabela, celular e foto. Pendentes ficam separados até a liberação.</p>
-          <label class="participantes-filter-wrap" for="participantes-filter">
-            <span class="sr-only">Filtrar</span>
-            <input id="participantes-filter" type="search" placeholder="Buscar por nome ou celular…" autocomplete="off" />
-          </label>
         </div>
 
         <form method="post" action="/admin/avatar-padrao" enctype="multipart/form-data" class="card avatar-padrao-card">
@@ -672,10 +668,16 @@
         </form>
 
         <section class="participantes-section" data-participantes-section="liberados">
-          <h2 class="participantes-section-title">
-            Liberados
-            <span class="participantes-count">{{ liberados|length }}</span>
-          </h2>
+          <div class="participantes-section-head">
+            <h2 class="participantes-section-title">
+              Liberados
+              <span class="participantes-count" data-filter-count data-filter-total="{{ liberados|length }}">{{ liberados|length }}</span>
+            </h2>
+            <label class="participantes-filter-wrap" for="participantes-filter">
+              <span class="sr-only">Buscar liberados por nome ou celular</span>
+              <input id="participantes-filter" type="search" placeholder="Nome ou celular…" autocomplete="off" enterkeyhint="search" />
+            </label>
+          </div>
           <div class="participantes-grid" data-participantes-grid>
             <form method="post" action="/admin/participante" class="card participante-edit-card participante-create-card" data-nome="novo" data-celular="">
               <div class="participante-edit-top">
@@ -1316,45 +1318,67 @@ document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
 });
 
 (() => {
+  const section = document.querySelector('[data-participantes-section="liberados"]');
   const filter = document.getElementById("participantes-filter");
-  const cards = () => Array.from(document.querySelectorAll(".participantes-dash .participante-edit-card"));
-  if (!cards().length && !filter) return;
+  if (!section || !filter) return;
+
+  const cards = () =>
+    Array.from(section.querySelectorAll(".participante-edit-card:not(.participante-create-card)"));
+  const countEl = section.querySelector("[data-filter-count]");
+  const total = Number(countEl?.dataset.filterTotal || cards().length) || 0;
+
+  const nomeBate = (nome, q) => {
+    if (!q) return true;
+    if (nome.startsWith(q)) return true;
+    return nome.split(/\s+/).some((parte) => parte.startsWith(q));
+  };
+
+  const celularBate = (celular, q, qDigits) => {
+    if (!q) return true;
+    if (qDigits && celular.replace(/\D+/g, "").includes(qDigits)) return true;
+    if (!qDigits && celular.startsWith(q)) return true;
+    return false;
+  };
 
   const applyFilter = () => {
-    const q = (filter?.value || "").trim().toLocaleLowerCase("pt-BR");
+    const q = (filter.value || "").trim().toLocaleLowerCase("pt-BR");
+    const qDigits = q.replace(/\D+/g, "");
+    let visible = 0;
     cards().forEach((card) => {
-      if (card.classList.contains("participante-create-card")) {
-        card.hidden = false;
-        return;
-      }
       const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
       const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
-      const hit = !q || nome.includes(q) || celular.includes(q);
+      const hit = !q || nomeBate(nome, q) || celularBate(celular, q, qDigits);
       card.hidden = !hit;
+      if (hit) visible += 1;
     });
+    if (countEl) {
+      countEl.textContent = q ? `${visible}/${total}` : String(total);
+    }
   };
-  filter?.addEventListener("input", applyFilter);
 
-  document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
-    input.addEventListener("change", () => {
-      const card = input.closest(".participante-edit-card");
-      const nameEl = card?.querySelector("[data-avatar-name]");
-      const wrap = card?.querySelector(".participante-edit-avatar");
-      const file = input.files?.[0];
-      if (nameEl) nameEl.textContent = file ? file.name : "Trocar foto";
-      if (!file || !file.type.startsWith("image/") || !wrap) return;
-      const url = URL.createObjectURL(file);
-      let img = wrap.querySelector("img");
-      if (!img) {
-        wrap.innerHTML = "";
-        img = document.createElement("img");
-        img.alt = "";
-        img.setAttribute("data-avatar-preview", "");
-        wrap.appendChild(img);
-      }
-      img.src = url;
-    });
-  });
+  filter.addEventListener("input", applyFilter);
+  filter.addEventListener("search", applyFilter);
 })();
+
+document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
+  input.addEventListener("change", () => {
+    const card = input.closest(".participante-edit-card");
+    const nameEl = card?.querySelector("[data-avatar-name]");
+    const wrap = card?.querySelector(".participante-edit-avatar");
+    const file = input.files?.[0];
+    if (nameEl) nameEl.textContent = file ? file.name : "Trocar foto";
+    if (!file || !file.type.startsWith("image/") || !wrap) return;
+    const url = URL.createObjectURL(file);
+    let img = wrap.querySelector("img");
+    if (!img) {
+      wrap.innerHTML = "";
+      img = document.createElement("img");
+      img.alt = "";
+      img.setAttribute("data-avatar-preview", "");
+      wrap.appendChild(img);
+    }
+    img.src = url;
+  });
+});
 </script>
 {% endblock %}
