@@ -107,11 +107,20 @@ def admin_nome(request: Request) -> str:
     return request.session.get("admin_nome") or request.session.get("admin_login") or ""
 
 
+def get_ui_mode(request: Request) -> str:
+    """Chrome Admin vs User (só para quem está logado como admin)."""
+    if not admin_ok(request):
+        return "user"
+    raw = (request.cookies.get("thdfm_ui_mode") or "admin").strip().lower()
+    return raw if raw in ("admin", "user") else "admin"
+
+
 def render(request: Request, name: str, **ctx):
     token = request.session.get("participante_token")
     part_nav = db.get_participante_por_token(token) if token else None
     is_adm = admin_ok(request)
     ctx.setdefault("is_admin", is_adm)
+    ctx.setdefault("ui_mode", get_ui_mode(request))
     # Admin logado: garante participante pelo login (não pelo nick)
     if is_adm:
         login = (request.session.get("admin_login") or "").strip().lower()

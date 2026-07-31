@@ -410,6 +410,48 @@ nav.site-nav-desktop a.active {
   border-color: var(--accent);
   color: var(--accent);
 }
+.ui-mode-toggle {
+  position: fixed;
+  left: 0.85rem;
+  bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  z-index: 9500;
+  width: auto;
+  min-width: 4.25rem;
+  height: 2.45rem;
+  margin: 0;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ui-mode-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ui-mode-toggle[data-mode="user"] {
+  border-color: var(--accent);
+  color: #111;
+  background: var(--accent);
+}
+.ui-mode-toggle[data-mode="user"]:hover {
+  color: #111;
+  filter: brightness(1.05);
+}
+.ui-mode-toggle-label {
+  line-height: 1;
+}
 .theme-icon {
   display: none;
   position: absolute;
