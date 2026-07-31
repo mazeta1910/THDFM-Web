@@ -38,12 +38,32 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
+    bolao = text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
+    assert "Fazer inscrição" in bolao
+    assert "Entrar" in bolao
+    assert "Meus Palpites" not in bolao
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
     assert "Entrar no grupo" in text
     assert 'id="drawer-senha"' in text
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
     assert "loguin-drawer-root" in text
+
+
+def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
+    part = db.criar_participante("CtaLogado", status="liberado", celular="11990004455")
+    db.definir_credenciais(part["id"], "cta.logado", "senha1234")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get("/")
+    assert r.status_code == 200
+    bolao = r.text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
+    assert "Meus Palpites" in bolao
+    assert f'href="/p/{part["token"]}"' in bolao
+    assert "Classificação" in bolao
+    assert 'data-acesso-open="entrar"' not in bolao
+    assert ">Entrar<" not in bolao
+    assert "Fazer inscrição" not in bolao
 
 
 def test_home_alias_tambem_renderiza(client: TestClient):

@@ -28,8 +28,19 @@
           <li><span class="home-step-n">3</span><span>Recebe seu link no WhatsApp</span></li>
         </ol>
         <div class="home-ctas">
+          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
+          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+          <a class="btn secondary home-cta-secondary" href="/classificacao">Classificação</a>
+          {% elif participante_nav and participante_nav.status == 'liberado' %}
+          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
+          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Ver inscrição</a>
+          {% elif participante_nav %}
+          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Ver status da inscrição</a>
+          <a class="btn secondary home-cta-secondary" href="/?conta=1" data-conta-open>Minha conta</a>
+          {% else %}
           <a class="btn home-cta-primary" href="/inscricao">Fazer inscrição</a>
           <a class="btn secondary home-cta-secondary" href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
+          {% endif %}
         </div>
       </div>
     </article>
@@ -71,7 +82,13 @@
         </p>
         <div class="home-ctas">
           <button type="button" class="btn home-cta-primary" data-go-slide="0">Ir ao bolão</button>
+          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
+          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+          {% elif participante_nav %}
+          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Minha inscrição</a>
+          {% else %}
           <a class="btn secondary home-cta-secondary" href="/inscricao">Fazer inscrição</a>
+          {% endif %}
         </div>
       </div>
     </article>
