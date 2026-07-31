@@ -41,6 +41,7 @@ from src.config import (
     SOCIAL_YOUTUBE,
     TAXA_PIX,
     TAXA_VALOR_LABEL,
+    WHATSAPP_GROUP_URL,
 )
 from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado

@@ -45,8 +45,15 @@
           A casa digital da página: memes, debate de bola e, agora, também o bolão da Copa do Brasil.
         </p>
         <div class="home-ctas">
-          <button type="button" class="btn home-cta-primary" data-go-slide="0">Ver o bolão</button>
-          <a class="btn secondary home-cta-secondary" href="#site-footer">Redes sociais</a>
+          {% if whatsapp_group_url %}
+          <a
+            class="btn home-cta-primary"
+            href="{{ whatsapp_group_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Entrar no grupo</a>
+          {% endif %}
+          <button type="button" class="btn {% if whatsapp_group_url %}secondary home-cta-secondary{% else %}home-cta-primary{% endif %}" data-go-slide="0">Ver o bolão</button>
         </div>
       </div>
     </article>

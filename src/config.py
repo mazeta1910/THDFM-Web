@@ -44,6 +44,12 @@ SOCIAL_YOUTUBE = os.environ.get("SOCIAL_YOUTUBE", "").strip()
 SOCIAL_TIKTOK = os.environ.get("SOCIAL_TIKTOK", "").strip()
 SOCIAL_WHATSAPP = os.environ.get("SOCIAL_WHATSAPP", "").strip() or ADMIN_WHATSAPP
 
+# Convite do grupo da THDFM no WhatsApp
+WHATSAPP_GROUP_URL = os.environ.get(
+    "WHATSAPP_GROUP_URL",
+    "https://chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz",
+).strip()
+
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
 

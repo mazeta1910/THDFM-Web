@@ -37,6 +37,8 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "Já fiz a inscrição" in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
+    assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
+    assert "Entrar no grupo" in text
 
 
 def test_home_alias_tambem_renderiza(client: TestClient):
