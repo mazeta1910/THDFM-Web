@@ -525,6 +525,61 @@
         btn.innerHTML = show ? EYE_OFF : EYE;
       });
     });
+  <script>
+  (function () {
+    const el = document.querySelector("[data-marlon-sobrenome]");
+    if (!el) return;
+
+    const PRONTOS = [
+      "Wieosafjosj",
+      "Wietaosdfa",
+      "Wieztozker",
+      "Wietziodfjaodi",
+      "Wietzkowski",
+      "Wietzikowski",
+      "Wiezzikowski",
+      "Wietzkoski",
+      "Wietzoalski",
+      "Wieczkowski",
+      "Wietzokowski",
+      "Wietzafski",
+      "Wiebraskowski",
+      "Wietzlkowski",
+      "Wieotrakowski",
+      "Wietzdorski",
+      "Wiezmikowski",
+      "Wietapkowski",
+      "Wieosafkowski",
+      "Wietzufski",
+      "Wieblanowski",
+      "Wietrzikowski",
+      "Wieokowski",
+      "Wietzkyowski",
+      "Wiemazetaowski",
+    ];
+
+    const MEIO = [
+      "osaf", "taos", "ztoz", "tzio", "tzik", "tzk", "zzaf", "bra",
+      "otr", "miko", "tap", "zuf", "bla", "trz", "oky", "dfja",
+      "odi", "alski", "orski", "ufski", "owski", "kowski", "dorski",
+      "josj", "dfa", "ker", "odi", "wski", "zker",
+    ];
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    const gerar = () => {
+      if (Math.random() < 0.55) return pick(PRONTOS);
+      const n = 2 + Math.floor(Math.random() * 3);
+      let s = "Wie";
+      for (let i = 0; i < n; i++) s += pick(MEIO);
+      // Evita ficar curto demais ou eterno
+      if (s.length < 8) s += pick(MEIO);
+      if (s.length > 22) s = s.slice(0, 18 + Math.floor(Math.random() * 5));
+      // Capitaliza só o W inicial (já vem)
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+
+    el.textContent = gerar();
   })();
   </script>
 </body>
