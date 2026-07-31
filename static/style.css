@@ -5275,11 +5275,23 @@ a.btn.loguin-entry-btn:hover {
   line-height: 1.25;
 }
 .modal-esqueci .modal-esqueci-lead {
-  margin: 0 0 1.1rem;
+  margin: 0 0 0.85rem;
   font-size: 0.95rem;
   font-weight: 400;
   line-height: 1.45;
   color: var(--muted);
+}
+.modal-esqueci-gif {
+  margin: 0 0 1.1rem;
+  text-align: center;
+}
+.modal-esqueci-gif img {
+  display: inline-block;
+  width: min(100%, 165px);
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0a0a0a;
 }
 
 /* —— Drawer Entrar / Recuperar —— */
