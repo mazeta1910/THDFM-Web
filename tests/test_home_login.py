@@ -179,6 +179,8 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     r_home = client.get("/")
     assert 'data-group="marlon"' in r_home.text
     assert 'href="/loguin"' in r_home.text
+    assert "data-marlon-sobrenome" in r_home.text
+    assert "Marlon" in r_home.text
     # LOGUIN saiu do grupo Portal
     portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert 'href="/loguin"' not in portal_block
