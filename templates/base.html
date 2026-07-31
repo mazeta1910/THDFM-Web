@@ -447,7 +447,8 @@
       });
     });
 
-    // Persistência leve dos grupos do menu (além do open automático da rota ativa).
+    // Só persiste open/fechado quando o usuário clica no summary.
+    // Não reabre grupos no load (isso fazia o menu "piscar" após navegar).
     const GROUP_KEY = "thdfm-admin-menu-groups";
     const readGroups = () => {
       try {
@@ -459,14 +460,12 @@
     const writeGroups = (map) => {
       try { localStorage.setItem(GROUP_KEY, JSON.stringify(map)); } catch (e) {}
     };
-    const saved = readGroups();
     document.querySelectorAll(".admin-menu-group[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
-      const hasActive = !!group.querySelector(".admin-side-link.active");
-      if (hasActive) {
+      if (!id) return;
+      // Garante aberto o grupo da rota ativa (já vem open do servidor; no-op se ok)
+      if (group.querySelector(".admin-side-link.active") && !group.open) {
         group.open = true;
-      } else if (Object.prototype.hasOwnProperty.call(saved, id)) {
-        group.open = !!saved[id];
       }
       group.addEventListener("toggle", () => {
         const next = readGroups();
