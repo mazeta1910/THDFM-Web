@@ -1513,6 +1513,78 @@ def xonha_stats() -> dict[str, Any]:
     if ultimo:
         status = "fora" if ultimo.get("tipo") == "saida" else "dentro"
 
+    hoje = date_cls.today()
+    saidas_mes_atual = sum(
+        1 for e in saidas if (e.get("data") or "")[:7] == hoje.strftime("%Y-%m")
+    )
+    corte_30 = hoje.toordinal() - 29
+    saidas_ultimos_30_dias = 0
+    for e in saidas:
+        day = (e.get("data") or "")[:10]
+        if not day:
+            continue
+        try:
+            if datetime.strptime(day, "%Y-%m-%d").date().toordinal() >= corte_30:
+                saidas_ultimos_30_dias += 1
+        except ValueError:
+            continue
+
+    dias_desde_ultima_saida: int | None = None
+    if saidas_asc:
+        d_ult = datetime.strptime(saidas_asc[-1]["data"][:10], "%Y-%m-%d").date()
+        dias_desde_ultima_saida = max((hoje - d_ult).days, 0)
+
+    dias_no_status_atual: int | None = None
+    if ultimo and ultimo.get("data"):
+        try:
+            d_ult_ev = datetime.strptime(ultimo["data"][:10], "%Y-%m-%d").date()
+            dias_no_status_atual = max((hoje - d_ult_ev).days, 0)
+        except ValueError:
+            dias_no_status_atual = None
+
+    # Pares saída → próxima volta (tempo fora)
+    ordenados = sorted(eventos, key=_xonha_sort_key)
+    tempos_fora_dias: list[float] = []
+    pendente_saida: dict[str, Any] | None = None
+    for e in ordenados:
+        tipo = e.get("tipo")
+        if tipo == "saida":
+            pendente_saida = e
+        elif tipo == "volta" and pendente_saida is not None:
+            try:
+                h0 = (pendente_saida.get("hora") or "00:00")[:5]
+                h1 = (e.get("hora") or "00:00")[:5]
+                t0 = datetime.strptime(
+                    f"{pendente_saida['data'][:10]} {h0}", "%Y-%m-%d %H:%M"
+                )
+                t1 = datetime.strptime(f"{e['data'][:10]} {h1}", "%Y-%m-%d %H:%M")
+                delta_h = max((t1 - t0).total_seconds() / 3600.0, 0.0)
+                tempos_fora_dias.append(delta_h / 24.0)
+            except ValueError:
+                pass
+            pendente_saida = None
+
+    tempo_medio_fora_dias: float | None = None
+    maior_tempo_fora_dias: float | None = None
+    if tempos_fora_dias:
+        tempo_medio_fora_dias = round(sum(tempos_fora_dias) / len(tempos_fora_dias), 1)
+        maior_tempo_fora_dias = round(max(tempos_fora_dias), 1)
+
+    by_hour: dict[int, int] = {}
+    for e in saidas:
+        hora = (e.get("hora") or "").strip()
+        if len(hora) >= 2 and hora[:2].isdigit():
+            h = int(hora[:2])
+            if 0 <= h <= 23:
+                by_hour[h] = by_hour.get(h, 0) + 1
+    horario_mais_comum: dict[str, Any] | None = None
+    if by_hour:
+        best_h = max(by_hour.items(), key=lambda kv: (kv[1], -kv[0]))
+        horario_mais_comum = {
+            "hora": f"{best_h[0]:02d}h",
+            "quantidade": best_h[1],
+        }
+
     return {
         "total_saidas": total_saidas,
         "total_voltas": total_voltas,
@@ -1524,4 +1596,11 @@ def xonha_stats() -> dict[str, Any]:
         "dias_semana": dias_semana,
         "status": status,
         "ultimo_evento": ultimo,
+        "saidas_mes_atual": saidas_mes_atual,
+        "saidas_ultimos_30_dias": saidas_ultimos_30_dias,
+        "dias_desde_ultima_saida": dias_desde_ultima_saida,
+        "dias_no_status_atual": dias_no_status_atual,
+        "tempo_medio_fora_dias": tempo_medio_fora_dias,
+        "maior_tempo_fora_dias": maior_tempo_fora_dias,
+        "horario_mais_comum": horario_mais_comum,
     }

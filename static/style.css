@@ -5694,25 +5694,62 @@ html.theme-light .xonha-hero {
   background: var(--card);
 }
 .xonha-counter-label {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin: 0 auto;
+  max-width: 28rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  line-height: 1.4;
   color: var(--muted);
 }
 .xonha-counter-value {
-  margin: 0.15rem 0 0.35rem;
-  font-size: clamp(3.4rem, 12vw, 5.5rem);
+  margin: 0.35rem 0 0.85rem;
+  font-size: clamp(2.6rem, 10vw, 4.6rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--accent);
 }
+.xonha-status-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+.xonha-status-foto {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 20%;
+  border: 3px solid var(--border);
+  background: #111;
+  transition: filter 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+}
+.xonha-status-block--dentro .xonha-status-foto {
+  filter: none;
+  border-color: var(--accent);
+}
+.xonha-status-block--fora .xonha-status-foto {
+  filter: grayscale(1);
+  border-color: var(--danger);
+}
+.xonha-status-block--desconhecido .xonha-status-foto {
+  filter: grayscale(1);
+  opacity: 0.72;
+}
 .xonha-status {
   margin: 0;
   font-size: 0.95rem;
   color: var(--muted);
+}
+.xonha-status-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  opacity: 0.9;
 }
 .xonha-status--fora strong { color: var(--danger); }
 .xonha-status--dentro strong { color: var(--accent); }

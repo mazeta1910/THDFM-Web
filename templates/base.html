@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=150" />
+  <link rel="stylesheet" href="/static/style.css?v=151" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -364,8 +364,8 @@
       });
     });
 
-    const GROUP_KEY = "thdfm-site-menu-groups-v4";
-    // Portal fechado; demais abertos.
+    const GROUP_KEY = "thdfm-site-menu-groups-v5";
+    // Portal fechado; demais abertos. Acervo Xonha fica sempre maximizado.
     const DEFAULT_OPEN = {
       portal: false,
       acesso: true,
@@ -374,6 +374,7 @@
       "acervo-xonha": true,
       marlon: true,
     };
+    const ALWAYS_OPEN = new Set(["acervo-xonha"]);
     const readGroups = () => {
       try {
         return JSON.parse(localStorage.getItem(GROUP_KEY) || "{}") || {};
@@ -388,13 +389,16 @@
     try { localStorage.removeItem("thdfm-site-menu-groups"); } catch (e) {}
     try { localStorage.removeItem("thdfm-site-menu-groups-v2"); } catch (e) {}
     try { localStorage.removeItem("thdfm-site-menu-groups-v3"); } catch (e) {}
+    try { localStorage.removeItem("thdfm-site-menu-groups-v4"); } catch (e) {}
 
     document.querySelectorAll(".site-menu-group[data-group], .site-menu-subgroup[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
       if (!id) return;
       const hasActive = !!group.querySelector(".site-side-link.active");
       const saved = readGroups();
-      if (Object.prototype.hasOwnProperty.call(saved, id)) {
+      if (ALWAYS_OPEN.has(id)) {
+        group.open = true;
+      } else if (Object.prototype.hasOwnProperty.call(saved, id)) {
         group.open = !!saved[id];
       } else if (Object.prototype.hasOwnProperty.call(DEFAULT_OPEN, id)) {
         group.open = !!DEFAULT_OPEN[id];
@@ -404,6 +408,10 @@
         group.open = true;
       }
       group.addEventListener("toggle", () => {
+        if (ALWAYS_OPEN.has(id)) {
+          group.open = true;
+          return;
+        }
         const next = readGroups();
         next[id] = group.open;
         writeGroups(next);

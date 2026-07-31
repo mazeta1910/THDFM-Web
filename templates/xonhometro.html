@@ -17,21 +17,52 @@
   </header>
 
   <div class="xonha-counter" aria-live="polite">
-    <p class="xonha-counter-label">Saídas registradas</p>
-    <p class="xonha-counter-value">{{ stats.total_saidas }}</p>
-    {% if stats.status == 'fora' %}
-    <p class="xonha-status xonha-status--fora">Status atual: <strong>fora do grupo</strong></p>
-    {% elif stats.status == 'dentro' %}
-    <p class="xonha-status xonha-status--dentro">Status atual: <strong>de volta no grupo</strong></p>
-    {% else %}
-    <p class="xonha-status">Ainda sem eventos — o placar começa no zero.</p>
-    {% endif %}
+    <p class="xonha-counter-label">
+      Se você recebesse R$1,00 por cada vez que o Xonha saiu do grupo você teria
+    </p>
+    <p class="xonha-counter-value">R${{ stats.total_saidas }},00</p>
+
+    <div class="xonha-status-block xonha-status-block--{{ stats.status }}">
+      <img
+        class="xonha-status-foto"
+        src="/static/img/xonha.png"
+        alt="Xonha"
+        width="140"
+        height="140"
+      />
+      {% if stats.status == 'fora' %}
+      <p class="xonha-status xonha-status--fora">Status atual: <strong>fora do grupo</strong></p>
+      {% elif stats.status == 'dentro' %}
+      <p class="xonha-status xonha-status--dentro">Status atual: <strong>de volta no grupo</strong></p>
+      {% else %}
+      <p class="xonha-status">Ainda sem eventos — o placar começa no zero.</p>
+      {% endif %}
+      {% if stats.dias_no_status_atual is not none and stats.status in ('fora', 'dentro') %}
+      <p class="xonha-status-meta">
+        {% if stats.dias_no_status_atual == 0 %}
+        Nesse status desde hoje.
+        {% elif stats.dias_no_status_atual == 1 %}
+        Há 1 dia nesse status.
+        {% else %}
+        Há {{ stats.dias_no_status_atual }} dias nesse status.
+        {% endif %}
+      </p>
+      {% endif %}
+    </div>
   </div>
 
   <div class="xonha-stats" role="list">
     <div class="xonha-stat" role="listitem">
       <span class="xonha-stat-label">Voltas</span>
       <span class="xonha-stat-value">{{ stats.total_voltas }}</span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Saídas neste mês</span>
+      <span class="xonha-stat-value">{{ stats.saidas_mes_atual }}</span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Saídas nos últimos 30 dias</span>
+      <span class="xonha-stat-value">{{ stats.saidas_ultimos_30_dias }}</span>
     </div>
     <div class="xonha-stat" role="listitem">
       <span class="xonha-stat-label">Média / mês</span>
@@ -49,6 +80,39 @@
       <span class="xonha-stat-label">Média de dias entre saídas</span>
       <span class="xonha-stat-value">
         {% if stats.media_dias_entre_saidas is not none %}{{ stats.media_dias_entre_saidas }}{% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Dias desde a última saída</span>
+      <span class="xonha-stat-value">
+        {% if stats.dias_desde_ultima_saida is not none %}{{ stats.dias_desde_ultima_saida }}{% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Tempo médio fora</span>
+      <span class="xonha-stat-value">
+        {% if stats.tempo_medio_fora_dias is not none %}
+        {{ stats.tempo_medio_fora_dias }}
+        <small>dias</small>
+        {% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat xonha-stat--recorde" role="listitem">
+      <span class="xonha-stat-label">Maior sumiço</span>
+      <span class="xonha-stat-value">
+        {% if stats.maior_tempo_fora_dias is not none %}
+        {{ stats.maior_tempo_fora_dias }}
+        <small>dias fora</small>
+        {% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Horário campeão de saída</span>
+      <span class="xonha-stat-value">
+        {% if stats.horario_mais_comum %}
+        {{ stats.horario_mais_comum.hora }}
+        <small>· {{ stats.horario_mais_comum.quantidade }}×</small>
+        {% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat xonha-stat--recorde" role="listitem">
