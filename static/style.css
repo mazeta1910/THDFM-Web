@@ -5043,3 +5043,34 @@ a.btn.loguin-entry-btn:hover {
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+/* —— Credenciais / entrar —— */
+.credenciais-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.credenciais-hint {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.conta-senha-card {
+  margin-top: 1rem;
+}
+.conta-senha-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+.conta-senha-form button {
+  margin-top: 0.35rem;
+}
+.login-back {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

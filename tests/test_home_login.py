@@ -34,7 +34,7 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "Técnicos Horríveis do Futebol Mundial" in text
     assert "Site em desenvolvimento" in text
     assert "Fazer inscrição" in text
-    assert "Já fiz a inscrição" in text
+    assert 'href="/entrar"' in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
@@ -54,6 +54,7 @@ def test_home_alias_tambem_renderiza(client: TestClient):
 
 def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")
+    db.definir_credenciais(part["id"], "fulano.ok", "senha1234")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
     assert r.status_code == 200
     r2 = client.get("/", follow_redirects=False)
@@ -61,6 +62,15 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert "Técnicos Horríveis do Futebol Mundial" in r2.text
     assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
 
+
+def test_token_sem_senha_abre_setup(client: TestClient):
+    part = db.criar_participante("SemCred", status="liberado", celular="11999776655")
+    r = client.get(f"/p/{part['token']}", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"].endswith("/credenciais")
+    r2 = client.get("/", follow_redirects=False)
+    assert r2.status_code == 200
+    assert "Criar senha" in r2.text or "/credenciais" in r2.text
 
 def test_login_cria_pedido_para_liberado(client: TestClient):
     part = db.criar_participante("Beltrano", status="liberado", celular="11988776655")

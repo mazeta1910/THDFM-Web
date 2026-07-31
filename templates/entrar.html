@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Entrar — Bolão THDFM{% endblock %}
+{% block content %}
+<div class="card login-card">
+  <h1>Entrar</h1>
+  <p class="login-lead">
+    Use o <strong>username</strong> e a <strong>senha</strong> que você criou no bolão.
+    Ainda não criou? Abra o link do WhatsApp — o site pede na primeira volta.
+  </p>
+
+  {% if erro %}
+  <p class="erro">{{ erro.replace('+', ' ') }}</p>
+  {% endif %}
+
+  <form method="post" action="/entrar" class="form-login" novalidate>
+    <label for="usuario">Username</label>
+    <input
+      id="usuario"
+      class="input-compact"
+      type="text"
+      name="usuario"
+      required
+      autocomplete="username"
+      autocapitalize="off"
+      spellcheck="false"
+      maxlength="24"
+      value="{{ form_usuario }}"
+      placeholder="seu.username"
+    />
+    <label for="senha">Senha</label>
+    <input
+      id="senha"
+      class="input-compact"
+      type="password"
+      name="senha"
+      required
+      autocomplete="current-password"
+      minlength="8"
+      placeholder="••••••••"
+    />
+    <button type="submit">Entrar</button>
+  </form>
+
+  <p class="login-alt">
+    Perdeu o link e ainda não tem senha?
+    <a href="/login">Pedir reenvio no WhatsApp</a>
+  </p>
+  <p class="login-alt">
+    Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
+  </p>
+  <p class="login-loguin-cta">
+    <a class="btn loguin-entry-btn" href="/loguin">Fazer LOGUIN</a>
+    <span class="login-loguin-hint">Exclusivo Marlon Wietzikowski · ortografia do grupo</span>
+  </p>
+</div>
+{% endblock %}

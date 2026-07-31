@@ -8,8 +8,13 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+import bcrypt
+
 from src.config import COMPROVANTES_DIR, DATA_DIR, DB_PATH
 from src.seed_data import OITAVAS
+
+USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{3,24}$")
+SENHA_MIN_LEN = 8
 
 
 def _connect() -> sqlite3.Connection:
@@ -161,9 +166,20 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN recusado_em TEXT")
     if "admin_login" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN admin_login TEXT")
+    if "username" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN username TEXT")
+    if "password_hash" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN password_hash TEXT")
+    if "credenciais_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN credenciais_em TEXT")
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_admin_login "
         "ON participantes(admin_login) WHERE admin_login IS NOT NULL AND admin_login != ''"
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_username_lower "
+        "ON participantes(lower(username)) "
+        "WHERE username IS NOT NULL AND username != ''"
     )
 
 
@@ -278,7 +294,8 @@ def set_fase_atual(fase: str) -> None:
 
 _PARTICIPANTE_COLS = (
     "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
-    "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login"
+    "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login, "
+    "username, password_hash, credenciais_em"
 )
 
 
@@ -454,6 +471,138 @@ def get_participante_por_admin_login(login: str) -> dict[str, Any] | None:
             (login,),
         ).fetchone()
         return dict(row) if row else None
+
+
+def normalizar_username(username: str) -> str:
+    u = (username or "").strip()
+    if not USERNAME_RE.fullmatch(u):
+        raise ValueError(
+            "Username inválido: use 3–24 caracteres (letras, números, . _ -)"
+        )
+    return u
+
+
+def hash_senha(senha: str) -> str:
+    return bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("ascii")
+
+
+def verificar_senha(senha: str, password_hash: str | None) -> bool:
+    if not password_hash:
+        return False
+    try:
+        return bcrypt.checkpw(
+            senha.encode("utf-8"),
+            password_hash.encode("ascii"),
+        )
+    except (ValueError, TypeError):
+        return False
+
+
+def validar_senha_nova(senha: str) -> str:
+    senha = senha or ""
+    if len(senha) < SENHA_MIN_LEN:
+        raise ValueError(f"Senha deve ter no mínimo {SENHA_MIN_LEN} caracteres")
+    if len(senha.encode("utf-8")) > 72:
+        raise ValueError("Senha muito longa")
+    return senha
+
+
+def precisa_credenciais(part: dict[str, Any] | None) -> bool:
+    if not part:
+        return False
+    if part.get("status") != "liberado":
+        return False
+    return not bool(part.get("password_hash"))
+
+
+def get_participante_por_username(username: str) -> dict[str, Any] | None:
+    try:
+        u = normalizar_username(username)
+    except ValueError:
+        u = (username or "").strip()
+        if not u:
+            return None
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes "
+            "WHERE lower(username) = lower(?)",
+            (u,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def username_disponivel(username: str, *, exceto_id: int | None = None) -> bool:
+    u = normalizar_username(username)
+    with get_db() as conn:
+        if exceto_id is not None:
+            row = conn.execute(
+                "SELECT id FROM participantes "
+                "WHERE lower(username) = lower(?) AND id != ?",
+                (u, exceto_id),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT id FROM participantes WHERE lower(username) = lower(?)",
+                (u,),
+            ).fetchone()
+        return row is None
+
+
+def definir_credenciais(
+    participante_id: int, username: str, senha: str
+) -> dict[str, Any]:
+    """Primeiro cadastro de username+senha (só se ainda não houver hash)."""
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    if part.get("status") != "liberado":
+        raise ValueError("Inscrição ainda não liberada")
+    if part.get("password_hash"):
+        raise ValueError("Credenciais já definidas")
+
+    u = normalizar_username(username)
+    senha_ok = validar_senha_nova(senha)
+    if not username_disponivel(u, exceto_id=participante_id):
+        raise ValueError("Username já está em uso")
+
+    ph = hash_senha(senha_ok)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET username = ?, password_hash = ?, "
+            "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+            (u, ph, participante_id),
+        )
+    updated = get_participante(participante_id)
+    if not updated:
+        raise ValueError("Falha ao gravar credenciais")
+    return updated
+
+
+def autenticar_por_username(username: str, senha: str) -> dict[str, Any] | None:
+    part = get_participante_por_username(username)
+    if not part or part.get("status") != "liberado":
+        return None
+    if not verificar_senha(senha, part.get("password_hash")):
+        return None
+    return part
+
+
+def alterar_senha(
+    participante_id: int, senha_atual: str, senha_nova: str
+) -> None:
+    part = get_participante(participante_id)
+    if not part or not part.get("password_hash"):
+        raise ValueError("Credenciais ainda não definidas")
+    if not verificar_senha(senha_atual, part.get("password_hash")):
+        raise ValueError("Senha atual incorreta")
+    senha_ok = validar_senha_nova(senha_nova)
+    ph = hash_senha(senha_ok)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET password_hash = ?, "
+            "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+            (ph, participante_id),
+        )
 
 
 def vincular_admin_login(participante_id: int, login: str) -> None:
