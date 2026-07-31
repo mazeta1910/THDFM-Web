@@ -285,6 +285,23 @@ def home(request: Request):
     return _render_home(request)
 
 
+def _redirect_acesso(
+    modo: str,
+    *,
+    erro: str | None = None,
+    usuario: str | None = None,
+    enviado: bool = False,
+) -> RedirectResponse:
+    parts = [f"acesso={modo}"]
+    if erro:
+        parts.append(f"erro={quote(erro)}")
+    if usuario:
+        parts.append(f"usuario={quote(usuario)}")
+    if enviado:
+        parts.append("enviado=1")
+    return RedirectResponse("/?" + "&".join(parts), status_code=303)
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     token = request.session.get("participante_token")
@@ -294,12 +311,10 @@ def login_get(request: Request):
             if db.precisa_credenciais(part):
                 return _redirect_credenciais(part["token"])
             return RedirectResponse(f"/p/{part['token']}", status_code=303)
-    return render(
-        request,
-        "login.html",
-        enviado=request.query_params.get("enviado") == "1",
+    return _redirect_acesso(
+        "recuperar",
         erro=request.query_params.get("erro"),
-        **_taxa_ctx(),
+        enviado=request.query_params.get("enviado") == "1",
     )
 
 
@@ -312,12 +327,10 @@ def entrar_get(request: Request):
             if db.precisa_credenciais(part):
                 return _redirect_credenciais(part["token"])
             return RedirectResponse(f"/p/{part['token']}", status_code=303)
-    return render(
-        request,
-        "entrar.html",
+    return _redirect_acesso(
+        "entrar",
         erro=request.query_params.get("erro"),
-        form_usuario=request.query_params.get("usuario") or "",
-        **_taxa_ctx(),
+        usuario=request.query_params.get("usuario") or "",
     )
 
 
@@ -333,10 +346,10 @@ async def entrar_post(
     rate_key = f"entrar:{ip}:{usuario.casefold()}"
 
     if not usuario or not senha:
-        return RedirectResponse(
-            f"/entrar?erro={quote('Informe usuário e senha')}"
-            f"&usuario={quote(usuario)}",
-            status_code=303,
+        return _redirect_acesso(
+            "entrar",
+            erro="Informe usuário e senha",
+            usuario=usuario,
         )
 
     # Marlon não entra pela porta civilizada — só pelo LOGUIN
@@ -348,19 +361,19 @@ async def entrar_post(
         )
 
     if not _auth_rate_ok(rate_key):
-        return RedirectResponse(
-            f"/entrar?erro={quote('Muitas tentativas. Aguarde alguns minutos.')}"
-            f"&usuario={quote(usuario)}",
-            status_code=303,
+        return _redirect_acesso(
+            "entrar",
+            erro="Muitas tentativas. Aguarde alguns minutos.",
+            usuario=usuario,
         )
 
     part = db.autenticar_por_username(usuario, senha)
     _auth_rate_hit(rate_key)
     if not part:
-        return RedirectResponse(
-            f"/entrar?erro={quote('Usuário ou senha incorretos')}"
-            f"&usuario={quote(usuario)}",
-            status_code=303,
+        return _redirect_acesso(
+            "entrar",
+            erro="Usuário ou senha incorretos",
+            usuario=usuario,
         )
 
     # Cinto e suspensório: conta do Marlon nunca autentica em /entrar
@@ -495,20 +508,20 @@ async def login_post(request: Request, celular: str = Form(...)):
     try:
         celular_ok = db.normalizar_celular(celular_raw)
     except ValueError:
-        return RedirectResponse(
-            f"/login?erro={quote('Informe um celular válido com DDD')}",
-            status_code=303,
+        return _redirect_acesso(
+            "recuperar",
+            erro="Informe um celular válido com DDD",
         )
 
     if not db.recuperacao_rate_limit_ok(celular=celular_ok, ip=ip or None):
         # Mesma UX pública — não revela se o número existe
-        return RedirectResponse("/login?enviado=1", status_code=303)
+        return _redirect_acesso("recuperar", enviado=True)
 
     part = db.get_participante_liberado_por_celular(celular_ok)
     if part:
         db.criar_pedido_recuperacao(part["id"], celular_ok, ip=ip or None)
 
-    return RedirectResponse("/login?enviado=1", status_code=303)
+    return _redirect_acesso("recuperar", enviado=True)
 
 
 @app.get("/regras", response_class=HTMLResponse)
@@ -987,7 +1000,7 @@ async def conta_alterar_senha(
 @app.post("/conta/sair")
 def conta_sair(request: Request):
     request.session.pop("participante_token", None)
-    return RedirectResponse("/entrar", status_code=303)
+    return _redirect_acesso("entrar")
 
 
 @app.post("/p/{token}/comprovante")

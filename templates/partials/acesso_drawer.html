@@ -1,0 +1,117 @@
+{# Painel lateral de Entrar / Recuperar link (visitante) #}
+{% set acesso_modo = request.query_params.get('acesso') or '' %}
+{% set acesso_erro = request.query_params.get('erro') or '' %}
+{% set acesso_usuario = request.query_params.get('usuario') or '' %}
+{% set acesso_enviado = request.query_params.get('enviado') == '1' %}
+
+<div class="acesso-drawer-root" id="acesso-drawer-root" hidden>
+  <div class="acesso-drawer-backdrop" id="acesso-drawer-backdrop" tabindex="-1"></div>
+  <aside
+    class="acesso-drawer"
+    id="acesso-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="acesso-drawer-title"
+  >
+    <header class="acesso-drawer-head">
+      <h2 class="acesso-drawer-title" id="acesso-drawer-title">Acesso</h2>
+      <button type="button" class="acesso-drawer-close" id="acesso-drawer-close" aria-label="Fechar">×</button>
+    </header>
+
+    <div class="acesso-drawer-tabs" role="tablist">
+      <button type="button" class="acesso-tab {% if acesso_modo != 'recuperar' %}is-active{% endif %}" data-acesso-tab="entrar" role="tab">Entrar</button>
+      <button type="button" class="acesso-tab {% if acesso_modo == 'recuperar' %}is-active{% endif %}" data-acesso-tab="recuperar" role="tab">Recuperar link</button>
+    </div>
+
+    <div class="acesso-drawer-body">
+      <section class="acesso-panel {% if acesso_modo != 'recuperar' %}is-active{% endif %}" data-acesso-panel="entrar" role="tabpanel">
+        <p class="login-lead">
+          Use o <strong>username</strong> e a <strong>senha</strong> do bolão.
+          <span class="login-marlon-aside">Marlon, saia daqui. Você entra pelo <a href="/loguin">Loguin</a>.</span>
+        </p>
+        {% if acesso_erro and acesso_modo != 'recuperar' %}
+        <p class="erro">{{ acesso_erro.replace('+', ' ') }}</p>
+        {% endif %}
+        <form method="post" action="/entrar" class="form-login" novalidate>
+          <label for="drawer-usuario">Username</label>
+          <input
+            id="drawer-usuario"
+            class="input-compact"
+            type="text"
+            name="usuario"
+            required
+            autocomplete="username"
+            autocapitalize="off"
+            spellcheck="false"
+            maxlength="24"
+            value="{{ acesso_usuario }}"
+            placeholder="seu.username"
+          />
+          <label for="drawer-senha">Senha</label>
+          <input
+            id="drawer-senha"
+            class="input-compact"
+            type="password"
+            name="senha"
+            required
+            autocomplete="current-password"
+            minlength="8"
+            placeholder="••••••••"
+          />
+          <p class="login-forgot-wrap">
+            <button type="button" class="login-forgot-btn" id="btn-esqueci-senha">
+              Esqueci minha senha
+            </button>
+          </p>
+          <button type="submit">Entrar</button>
+        </form>
+        <p class="login-alt">Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a></p>
+      </section>
+
+      <section class="acesso-panel {% if acesso_modo == 'recuperar' %}is-active{% endif %}" data-acesso-panel="recuperar" role="tabpanel">
+        <p class="login-lead">
+          Perdeu o link do WhatsApp? Informe o celular da inscrição.
+          Se houver conta liberada, o admin reenvia no Zap.
+        </p>
+        {% if acesso_erro and acesso_modo == 'recuperar' %}
+        <p class="erro">{{ acesso_erro.replace('+', ' ') }}</p>
+        {% endif %}
+        {% if acesso_enviado %}
+        <p class="msg">
+          Se houver inscrição liberada com esse número, o admin vai reenviar o link no WhatsApp.
+        </p>
+        {% else %}
+        <form method="post" action="/login" class="form-login" novalidate>
+          <label for="drawer-celular">Celular da inscrição</label>
+          <input
+            id="drawer-celular"
+            class="input-compact"
+            type="tel"
+            name="celular"
+            required
+            placeholder="(11) 99999-9999"
+            inputmode="tel"
+            autocomplete="tel"
+          />
+          <button type="submit">Pedir meu link</button>
+        </form>
+        {% endif %}
+        <p class="login-alt">Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a></p>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<div class="modal-backdrop" id="modal-esqueci-senha" hidden>
+  <div
+    class="inscricao-modal modal-esqueci"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-esqueci-title"
+  >
+    <button type="button" class="modal-close-x" id="modal-esqueci-fechar" title="Fechar" aria-label="Fechar">×</button>
+    <h3 id="modal-esqueci-title">Esqueceu sua senha?</h3>
+    <p class="modal-esqueci-lead">Aí o problema não é meu.</p>
+    <button type="button" class="modal-ok" id="modal-esqueci-ok">Ok</button>
+  </div>
+</div>
