@@ -5517,3 +5517,230 @@ body.acesso-drawer-open {
 .loguin-drawer .loguin-submit {
   width: 100%;
 }
+
+/* ——— Xonhômetro ——— */
+.xonha-page {
+  --xonha-ink: #1a1410;
+  --xonha-glow: rgba(232, 93, 4, 0.22);
+  padding-bottom: 2rem;
+}
+.xonha-hero {
+  margin: 0 0 1.25rem;
+  padding: 1.35rem 1.2rem 1.2rem;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 10% 0%, var(--xonha-glow), transparent 55%),
+    linear-gradient(160deg, rgba(40, 28, 18, 0.55), rgba(12, 12, 12, 0.2));
+  border: 1px solid var(--border);
+}
+html.theme-light .xonha-hero {
+  background:
+    radial-gradient(120% 90% at 12% 0%, rgba(232, 93, 4, 0.14), transparent 55%),
+    linear-gradient(160deg, #fff7ef, #ffffff);
+}
+.xonha-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.xonha-title {
+  margin: 0 0 0.45rem;
+  font-size: clamp(2rem, 5vw, 2.85rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.xonha-lead {
+  margin: 0;
+  max-width: 38rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+.xonha-admin-link {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.xonha-counter {
+  text-align: center;
+  margin: 0 0 1.1rem;
+  padding: 1.4rem 1rem 1.2rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.xonha-counter-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.xonha-counter-value {
+  margin: 0.15rem 0 0.35rem;
+  font-size: clamp(3.4rem, 12vw, 5.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+.xonha-status {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.xonha-status--fora strong { color: var(--danger); }
+.xonha-status--dentro strong { color: var(--accent); }
+.xonha-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0 0 1.25rem;
+}
+@media (min-width: 720px) {
+  .xonha-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.xonha-stat {
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 4.5rem;
+}
+.xonha-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.xonha-stat-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.xonha-stat-value small {
+  display: inline-block;
+  margin-left: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.xonha-stat--recorde {
+  border-color: rgba(232, 93, 4, 0.35);
+}
+.xonha-timeline h2 {
+  margin-top: 0;
+}
+.xonha-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.xonha-item {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid var(--accent);
+}
+.xonha-item--volta {
+  border-left-color: #3d9a6a;
+}
+html.theme-light .xonha-item {
+  background: #faf7f4;
+}
+.xonha-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.xonha-item-tipo {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+.xonha-item--saida .xonha-item-tipo { color: var(--danger); }
+.xonha-item--volta .xonha-item-tipo { color: #3d9a6a; }
+.xonha-item time {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.xonha-item-motivo {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+}
+.xonha-item-motivo--vazio {
+  color: var(--muted);
+  font-style: italic;
+}
+.xonha-empty {
+  margin: 0;
+  color: var(--muted);
+}
+.xonha-admin-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.xonha-admin-form {
+  display: grid;
+  gap: 0.35rem;
+}
+.xonha-admin-form label {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+.xonha-admin-form textarea,
+.xonha-admin-form select,
+.xonha-admin-form input[type="date"] {
+  width: 100%;
+  max-width: 28rem;
+}
+.xonha-admin-form button[type="submit"] {
+  margin-top: 0.65rem;
+  justify-self: start;
+}
+.xonha-admin-list {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.xonha-admin-list > h2 {
+  margin: 0;
+}
+.xonha-admin-card {
+  display: grid;
+  gap: 0.65rem;
+}
+.xonha-admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.xonha-admin-apagar {
+  margin: 0;
+}
+.xonha-admin-apagar button {
+  background: transparent;
+  border: 1px solid var(--erro-border);
+  color: var(--danger);
+}

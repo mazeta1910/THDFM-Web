@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=144" />
+  <link rel="stylesheet" href="/static/style.css?v=145" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -38,6 +38,7 @@
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
+{% set on_xonhometro = path.startswith('/xonhometro') or path.startswith('/admin/xonhometro') %}
 {% set on_inscricao = path.startswith('/inscricao') %}
 {% set on_palpites = participante_nav and path == '/p/' + participante_nav.token and '/conta' not in path %}
 {% set on_competicao = on_classificacao or on_transparencia or on_regras %}

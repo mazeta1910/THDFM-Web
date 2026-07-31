@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Xonhômetro — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<section class="xonha-page">
+  <header class="xonha-hero">
+    <p class="xonha-kicker">THDFM · WhatsApp</p>
+    <h1 class="xonha-title">Xonhômetro</h1>
+    <p class="xonha-lead">
+      Contador oficial das saídas (e voltas) do Xonha no grupo.
+      {% if is_admin %}
+      <a class="xonha-admin-link" href="/admin/xonhometro">Gerenciar registros</a>
+      {% else %}
+      Só leitura por enquanto — quem registra é a administração.
+      {% endif %}
+    </p>
+  </header>
+
+  <div class="xonha-counter" aria-live="polite">
+    <p class="xonha-counter-label">Saídas registradas</p>
+    <p class="xonha-counter-value">{{ stats.total_saidas }}</p>
+    {% if stats.status == 'fora' %}
+    <p class="xonha-status xonha-status--fora">Status atual: <strong>fora do grupo</strong></p>
+    {% elif stats.status == 'dentro' %}
+    <p class="xonha-status xonha-status--dentro">Status atual: <strong>de volta no grupo</strong></p>
+    {% else %}
+    <p class="xonha-status">Ainda sem eventos — o placar começa no zero.</p>
+    {% endif %}
+  </div>
+
+  <div class="xonha-stats" role="list">
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Voltas</span>
+      <span class="xonha-stat-value">{{ stats.total_voltas }}</span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Média de saídas / mês</span>
+      <span class="xonha-stat-value">
+        {% if stats.media_saidas_por_mes is not none %}{{ stats.media_saidas_por_mes }}{% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Média de dias entre saídas</span>
+      <span class="xonha-stat-value">
+        {% if stats.media_dias_entre_saidas is not none %}{{ stats.media_dias_entre_saidas }}{% else %}—{% endif %}
+      </span>
+    </div>
+    <div class="xonha-stat xonha-stat--recorde" role="listitem">
+      <span class="xonha-stat-label">Recorde — dia que mais saiu</span>
+      <span class="xonha-stat-value">
+        {% if stats.recorde_dia %}
+        {{ stats.recorde_dia.data[8:10] }}/{{ stats.recorde_dia.data[5:7] }}/{{ stats.recorde_dia.data[0:4] }}
+        <small>· {{ stats.recorde_dia.quantidade }}×</small>
+        {% else %}
+        —
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <section class="xonha-timeline card">
+    <h2>Linha do tempo</h2>
+    {% if eventos %}
+    <ol class="xonha-list">
+      {% for e in eventos %}
+      <li class="xonha-item xonha-item--{{ e.tipo }}">
+        <div class="xonha-item-top">
+          <span class="xonha-item-tipo">{% if e.tipo == 'saida' %}Saída{% else %}Volta{% endif %}</span>
+          <time datetime="{{ e.data }}">{{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}</time>
+        </div>
+        {% if e.motivo %}
+        <p class="xonha-item-motivo">{{ e.motivo }}</p>
+        {% else %}
+        <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo anotado</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="xonha-empty">Nenhuma saída ou volta registrada ainda. O Xonha está em modo zen… por enquanto.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

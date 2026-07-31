@@ -7,7 +7,9 @@
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
 {% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
+{% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
 {% set on_regras = path.startswith('/regras') %}
+{% set on_xonhometro = path.startswith('/xonhometro') %}
 {# Inscrições/Resultados só na home do painel — evita 2 itens ativos em /admin/credenciais etc. #}
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
@@ -49,6 +51,7 @@
           </a>
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+          <a class="admin-side-link {% if on_admin_xonhometro %}active{% endif %}" href="/admin/xonhometro">{{ ico('xonhometro') }}<span>Xonhômetro</span></a>
           {% if is_dono %}
           <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
           {% endif %}
@@ -61,6 +64,7 @@
           <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
           <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
           <a class="admin-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
+          <a class="admin-side-link {% if on_xonhometro %}active{% endif %}" href="/xonhometro">{{ ico('xonhometro') }}<span>Ver Xonhômetro</span></a>
         </div>
       </details>
 
