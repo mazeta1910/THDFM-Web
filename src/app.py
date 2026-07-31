@@ -243,11 +243,11 @@ def _taxa_ctx() -> dict:
 
 
 def _destino_sessao(request: Request) -> str | None:
-    """Só redireciona admin logado. Participante com token NÃO é mandado embora da home —
-    o portal THDFM deve abrir em / mesmo depois de ter aberto /p/{token}.
+    """Home/portal nunca redireciona por sessão.
+
+    Admin logado e participante com token continuam em / (portal THDFM).
+    O painel fica em /admin; o bolão em /p/{token}.
     """
-    if admin_ok(request):
-        return "/admin"
     return None
 
 

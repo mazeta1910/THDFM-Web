@@ -63,6 +63,20 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
 
 
+def test_raiz_mostra_home_mesmo_com_admin_logado(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    import src.app as app_mod
+
+    monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
+    monkeypatch.setattr(app_mod, "admin_nome", lambda request: "Mazeta")
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 200
+    assert "Técnicos Horríveis do Futebol Mundial" in r.text
+    assert "home-hero-slider" in r.text
+    assert "admin-shell" not in r.text
+    assert "site-shell" in r.text
+
 def test_token_sem_senha_abre_setup(client: TestClient):
     part = db.criar_participante("SemCred", status="liberado", celular="11999776655")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
