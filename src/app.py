@@ -130,8 +130,35 @@ def _startup() -> None:
     limpar_demo()
 
 
+def _promover_admin_da_conta(request: Request) -> bool:
+    """Se a conta do bolão está vinculada a um admin do .env, abre o painel.
+
+    Um login basta: quem já entrou como Mazeta/Ramos/João JEC no bolão
+    não precisa digitar de novo em /admin/login.
+    """
+    if request.session.get("admin_login"):
+        return True
+    # "Sair do admin" mantém o bolão, mas evita reabrir o painel sozinho
+    if request.session.get("admin_opt_out"):
+        return False
+    token = request.session.get("participante_token")
+    if not token:
+        return False
+    part = db.get_participante_por_token(token)
+    if not part:
+        return False
+    login = (part.get("admin_login") or "").strip().lower()
+    admin = get_admin(login) if login else None
+    if not admin:
+        return False
+    _estabelecer_sessao_admin(request, admin, token_preferido=part.get("token"))
+    return True
+
+
 def admin_ok(request: Request) -> bool:
-    return bool(request.session.get("admin_login"))
+    if request.session.get("admin_login"):
+        return True
+    return _promover_admin_da_conta(request)
 
 
 def admin_nome(request: Request) -> str:
@@ -257,6 +284,7 @@ def _estabelecer_sessao_admin(
     request.session["admin_nome"] = admin.nome
     request.session["admin_role"] = admin.papel
     request.session.pop("admin", None)
+    request.session.pop("admin_opt_out", None)
     try:
         part = db.garantir_participante_admin(
             admin.login,
@@ -501,9 +529,12 @@ async def entrar_post(
         )
 
     _remember_participante(request, part["token"])
-    # Conta ligada a um admin: se a senha for a do .env, libera o painel
+    # Conta ligada a um admin: senha do .env → painel; senha do bolão → mesma sessão
     if _tentar_admin_com_senha(request, usuario=usuario, senha=senha, part=part):
         return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
+    # Vinculado ao .env: libera o painel na mesma sessão (sem 2º login)
+    if _promover_admin_da_conta(request):
+        return _set_cookie_ui_admin(RedirectResponse(f"/p/{part['token']}", status_code=303))
     return RedirectResponse(f"/p/{part['token']}", status_code=303)
 
 
@@ -1127,6 +1158,11 @@ async def conta_alterar_senha(
 @app.post("/conta/sair")
 def conta_sair(request: Request):
     request.session.pop("participante_token", None)
+    request.session.pop("admin_login", None)
+    request.session.pop("admin_nome", None)
+    request.session.pop("admin_role", None)
+    request.session.pop("admin", None)
+    request.session.pop("admin_opt_out", None)
     return _redirect_acesso("entrar")
 
 
@@ -1258,6 +1294,8 @@ def admin_logout(request: Request):
     request.session.pop("admin_nome", None)
     request.session.pop("admin_role", None)
     request.session.pop("admin", None)
+    # Mantém a conta do bolão, mas exige login explícito para voltar ao painel
+    request.session["admin_opt_out"] = True
     return RedirectResponse("/", status_code=303)
 
 

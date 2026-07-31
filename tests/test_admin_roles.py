@@ -135,6 +135,51 @@ def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
     assert 'id="ui-mode-toggle"' in r2.text
 
 
+def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
+    """Entrar no bolão com a conta do admin já libera /admin — sem digitar de novo."""
+    _login_admin(client, "mazeta", "senha-dono")
+    mazeta = db.get_participante_por_admin_login("mazeta")
+    assert mazeta is not None
+    db.definir_credenciais(mazeta["id"], "mazeta.bolao", "senha-bolao-99")
+
+    # Sai de tudo e entra só pelo bolão (senha diferente da do .env)
+    client.post("/conta/sair", follow_redirects=False)
+    r = client.post(
+        "/entrar",
+        data={"usuario": "mazeta.bolao", "senha": "senha-bolao-99"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == f"/p/{mazeta['token']}"
+
+    # Sem passar por /admin/login de novo
+    r2 = client.get("/admin", follow_redirects=False)
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert 'id="ui-mode-toggle"' in r2.text
+
+    home = client.get("/")
+    assert "admin-shell" in home.text
+    assert 'id="ui-mode-toggle"' in home.text
+    assert "Painel de Admin" in home.text
+
+
+def test_sair_do_admin_exige_login_explicito_de_novo(client: TestClient):
+    _login_admin(client, "mazeta", "senha-dono")
+    r = client.get("/admin/logout", follow_redirects=False)
+    assert r.status_code == 303
+
+    # Conta do bolão continua, mas o painel pede login de novo
+    r2 = client.get("/admin", follow_redirects=False)
+    assert r2.status_code == 303
+    assert "/admin/login" in r2.headers["location"]
+
+    home = client.get("/")
+    assert "Painel admin" in home.text
+    assert 'href="/admin/login"' in home.text
+    assert 'id="ui-mode-toggle"' not in home.text
+
+
 def test_admin_mantem_menu_na_transparencia(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/transparencia")
