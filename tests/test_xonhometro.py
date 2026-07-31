@@ -232,6 +232,7 @@ def test_moderador_tambem_gerencia(client: TestClient):
     assert r.status_code == 200
     assert "Novo registro" in r.text
     assert "xonha-select-wrap" in r.text
+    assert 'value="banimento"' in r.text
     r2 = client.post(
         "/admin/xonhometro",
         data={
@@ -244,3 +245,28 @@ def test_moderador_tambem_gerencia(client: TestClient):
     )
     assert r2.status_code == 303
     assert db.xonha_stats()["total_saidas"] == 1
+
+
+def test_admin_registra_banimento(client: TestClient):
+    _login_admin(client)
+    r = client.post(
+        "/admin/xonhometro",
+        data={
+            "tipo": "banimento",
+            "data": "2026-07-20",
+            "hora": "21:10",
+            "motivo": "Passou do limite",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    stats = db.xonha_stats()
+    assert stats["total_banimentos"] == 1
+    assert stats["status"] == "banido"
+
+    pub = client.get("/xonhometro")
+    assert pub.status_code == 200
+    assert "Banimento" in pub.text
+    assert "banido do grupo" in pub.text
+    assert "xonha-status-block--banido" in pub.text
+    assert "Passou do limite" in pub.text

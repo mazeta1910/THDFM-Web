@@ -786,9 +786,12 @@ def admin_xonhometro_criar(
             f"/admin/xonhometro?erro={quote(str(exc))}",
             status_code=303,
         )
-    label = "Saída" if (tipo or "").strip().lower() == "saida" else "Volta"
+    tipo_n = (tipo or "").strip().lower()
+    label = {"saida": "Saída", "volta": "Volta", "banimento": "Banimento"}.get(
+        tipo_n, "Registro"
+    )
     return RedirectResponse(
-        f"/admin/xonhometro?msg={quote(label + ' registrada')}",
+        f"/admin/xonhometro?msg={quote(label + ' registrado')}",
         status_code=303,
     )
 
