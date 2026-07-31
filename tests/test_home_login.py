@@ -180,6 +180,25 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     assert updated and updated.get("link_enviado_em")
 
 
+def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
+    part = db.criar_participante("LogadoX", status="liberado", celular="11990003344")
+    db.definir_credenciais(part["id"], "logado.x", "senha1234")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get("/")
+    assert r.status_code == 200
+    assert 'data-group="marlon"' not in r.text
+    assert 'id="loguin-drawer-root"' not in r.text
+    assert "Fazer Loguin" not in r.text
+    assert ">Loguin<" not in r.text
+
+    r2 = client.get("/classificacao")
+    assert r2.status_code == 200
+    assert 'data-group="marlon"' not in r2.text
+    assert 'id="loguin-drawer-root"' not in r2.text
+    assert ">Loguin<" not in r2.text
+
+
 def test_loguin_so_aceita_marlon(client: TestClient):
     r = client.get("/loguin", follow_redirects=False)
     assert r.status_code == 303
