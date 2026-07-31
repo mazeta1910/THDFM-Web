@@ -179,6 +179,16 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     # LOGUIN saiu do grupo Portal
     portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert 'href="/loguin"' not in portal_block
+    # Entrar vive em Acesso, não misturado no Bolão
+    assert 'data-group="acesso"' in r_home.text
+    acesso_block = r_home.text.split('data-group="acesso"', 1)[1].split("data-group=", 1)[0]
+    assert 'href="/entrar"' in acesso_block
+    assert "Entrar" in acesso_block
+    assert 'href="/login"' in acesso_block
+    bolao_block = r_home.text.split('data-group="bolao"', 1)[1].split("data-group=", 1)[0]
+    assert 'href="/entrar"' not in bolao_block
+    assert 'href="/inscricao"' in bolao_block
+
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},
