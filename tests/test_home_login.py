@@ -100,6 +100,12 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     assert "site-shell" in r.text
     assert 'id="ui-mode-toggle"' in r.text
     assert "ui-mode-toggle-label" in r.text
+    assert "Painel admin" in r.text
+    assert 'data-group="portal"' in r.text
+    # Portal sem open no HTML; demais grupos com open
+    assert 'data-group="portal">' in r.text or 'data-group="portal" >' in r.text
+    assert 'data-group="bolao" open' in r.text
+    assert 'data-group="marlon" open' in r.text
 
 def test_token_sem_senha_abre_setup(client: TestClient):
     part = db.criar_participante("SemCred", status="liberado", celular="11999776655")

@@ -27,11 +27,12 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=133" />
+  <link rel="stylesheet" href="/static/style.css?v=134" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
 {% set on_admin_area = path.startswith('/admin') and path != '/admin/login' %}
+{% set is_admin = is_admin if is_admin is defined else false %}
 {% set admin_layout = is_admin and on_admin_area %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
@@ -99,6 +100,7 @@
     title="{% if on_admin_area %}Ver o site como na home{% else %}Abrir painel de admin{% endif %}"
     aria-label="{% if on_admin_area %}Ir para o site{% else %}Ir para o painel admin{% endif %}"
   >
+    <span class="ui-mode-toggle-icon" aria-hidden="true">{% if on_admin_area %}⌂{% else %}⚙{% endif %}</span>
     <span class="ui-mode-toggle-label">{% if on_admin_area %}Site{% else %}Admin{% endif %}</span>
   </button>
   {% endif %}
@@ -106,18 +108,32 @@
   {% block scripts %}{% endblock %}
   <script>
   (function () {
+    const maxAge = 60 * 60 * 24 * 180;
+    const setMode = (mode) => {
+      document.cookie = "thdfm_ui_mode=" + mode + "; path=/; max-age=" + maxAge + "; SameSite=Lax";
+    };
     const btn = document.getElementById("ui-mode-toggle");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      const maxAge = 60 * 60 * 24 * 180;
-      const onAdmin = location.pathname.startsWith("/admin");
-      if (onAdmin) {
-        document.cookie = "thdfm_ui_mode=user; path=/; max-age=" + maxAge + "; SameSite=Lax";
-        location.href = btn.getAttribute("data-user-home") || "/";
-        return;
-      }
-      document.cookie = "thdfm_ui_mode=admin; path=/; max-age=" + maxAge + "; SameSite=Lax";
-      location.href = "/admin";
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const onAdmin = location.pathname.startsWith("/admin");
+        if (onAdmin) {
+          setMode("user");
+          location.href = btn.getAttribute("data-user-home") || "/";
+          return;
+        }
+        setMode("admin");
+        location.href = "/admin";
+      });
+    }
+    document.querySelectorAll("[data-ui-mode-switch]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        const mode = el.getAttribute("data-ui-mode-switch") === "user" ? "user" : "admin";
+        setMode(mode);
+        if (mode === "user") {
+          e.preventDefault();
+          location.href = el.getAttribute("data-user-home") || el.getAttribute("href") || "/";
+        }
+      });
     });
   })();
   </script>
@@ -325,7 +341,16 @@
       });
     });
 
-    const GROUP_KEY = "thdfm-site-menu-groups";
+    const GROUP_KEY = "thdfm-site-menu-groups-v2";
+    // Portal fechado; Acesso, Bolão, Marlon (e grupos do bolão) abertos.
+    const DEFAULT_OPEN = {
+      portal: false,
+      acesso: true,
+      bolao: true,
+      marlon: true,
+      competicao: true,
+      "meu-bolao": true,
+    };
     const readGroups = () => {
       try {
         return JSON.parse(localStorage.getItem(GROUP_KEY) || "{}") || {};
@@ -336,14 +361,22 @@
     const writeGroups = (map) => {
       try { localStorage.setItem(GROUP_KEY, JSON.stringify(map)); } catch (e) {}
     };
-    const saved = readGroups();
+    // Limpa chave antiga que forçava Portal aberto / demais fechados.
+    try { localStorage.removeItem("thdfm-site-menu-groups"); } catch (e) {}
+
     document.querySelectorAll(".site-menu-group[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
+      if (!id) return;
       const hasActive = !!group.querySelector(".site-side-link.active");
-      if (hasActive) {
-        group.open = true;
-      } else if (Object.prototype.hasOwnProperty.call(saved, id)) {
+      const saved = readGroups();
+      if (Object.prototype.hasOwnProperty.call(saved, id)) {
         group.open = !!saved[id];
+      } else if (Object.prototype.hasOwnProperty.call(DEFAULT_OPEN, id)) {
+        group.open = !!DEFAULT_OPEN[id];
+      }
+      // Mantém aberto o grupo da página atual, exceto Portal (fica minimizado na home).
+      if (hasActive && id !== "portal") {
+        group.open = true;
       }
       group.addEventListener("toggle", () => {
         const next = readGroups();

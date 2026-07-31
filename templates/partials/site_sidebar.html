@@ -94,6 +94,9 @@
     </div>
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
+      {% if is_admin %}
+      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>Painel admin</span></a>
+      {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
         <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
@@ -158,6 +161,9 @@
     </div>
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
+      {% if is_admin %}
+      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>Painel admin</span></a>
+      {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
         <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
