@@ -5,6 +5,9 @@
 {% set on_loguin = path.startswith('/loguin') %}
 {% set on_credenciais = '/credenciais' in path %}
 {% set portal_nav = on_home or on_loguin or on_entrar or on_credenciais or (on_login and not participante_nav) %}
+{% set guest = not participante_nav %}
+{% set liberado_ok = participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
+{% set liberado_sem_senha = participante_nav and participante_nav.status == 'liberado' and not participante_nav.password_hash %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="site-sidebar" id="site-sidebar">
@@ -40,9 +43,10 @@
   </div>
 
   {% if portal_nav %}
+  {# Orientação → Acesso → Produto → Easter egg (IA: separar browse de auth) #}
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
-      <details class="site-menu-group" data-group="portal" {% if on_home or (not on_login and not on_entrar and not on_loguin) %}open{% endif %}>
+      <details class="site-menu-group" data-group="portal" {% if on_home and not on_entrar and not on_login and not on_loguin %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>
         <div class="site-menu-items">
           <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
@@ -51,18 +55,28 @@
         </div>
       </details>
 
-      <details class="site-menu-group" data-group="bolao" {% if on_login or on_entrar or on_inscricao or on_regras or on_home %}open{% endif %}>
+      {% if guest %}
+      <details class="site-menu-group site-menu-group--acesso" data-group="acesso" {% if on_entrar or on_login or on_home %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('acesso', 13) }}<span>Acesso</span></summary>
+        <div class="site-menu-items">
+          <a class="site-side-link site-side-link--destaque {% if on_entrar %}active{% endif %}" href="/entrar">{{ ico('acesso') }}<span>Entrar</span></a>
+          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('inscricao') }}<span>Recuperar link</span></a>
+        </div>
+      </details>
+      {% endif %}
+
+      <details class="site-menu-group" data-group="bolao" {% if on_inscricao or on_regras or on_transparencia or on_credenciais or (on_home and not guest) or liberado_ok or liberado_sem_senha %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Bolão CdB</span></summary>
         <div class="site-menu-items">
           <a class="site-side-link" href="/#bolao">{{ ico('competicao') }}<span>Sobre o bolão</span></a>
-          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
+          {% if liberado_ok %}
           <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
-          {% elif participante_nav and participante_nav.status == 'liberado' %}
-          <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('palpites') }}<span>Criar senha</span></a>
+          {% elif liberado_sem_senha %}
+          <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('acesso') }}<span>Criar senha</span></a>
+          {% elif participante_nav %}
+          <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Status da inscrição</span></a>
           {% else %}
           <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
-          <a class="site-side-link {% if on_entrar %}active{% endif %}" href="/entrar">{{ ico('palpites') }}<span>Entrar</span></a>
-          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('inscricao') }}<span>Recuperar link</span></a>
           {% endif %}
           <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
           <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Transparência</span></a>
@@ -96,10 +110,21 @@
       <div class="site-menu-items site-menu-items-flat" style="margin-bottom:0.65rem">
         <a class="site-side-link" href="/">{{ ico('inicio') }}<span>Portal THDFM</span></a>
       </div>
+
+      {% if guest %}
+      <details class="site-menu-group site-menu-group--acesso" data-group="acesso" {% if on_entrar or on_login %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('acesso', 13) }}<span>Acesso</span></summary>
+        <div class="site-menu-items">
+          <a class="site-side-link site-side-link--destaque {% if on_entrar %}active{% endif %}" href="/entrar">{{ ico('acesso') }}<span>Entrar</span></a>
+          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('inscricao') }}<span>Recuperar link</span></a>
+        </div>
+      </details>
+      {% endif %}
+
       <details class="site-menu-group" data-group="competicao" {% if on_competicao or not on_meu_bolao %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
         <div class="site-menu-items">
-          {% if participante_nav and participante_nav.status == 'liberado' %}
+          {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
           <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
           {% endif %}
           <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
@@ -107,19 +132,17 @@
         </div>
       </details>
 
-      <details class="site-menu-group" data-group="meu-bolao" {% if on_meu_bolao or on_inscricao or on_login or on_entrar or (participante_nav and path.startswith('/p/')) %}open{% endif %}>
+      <details class="site-menu-group" data-group="meu-bolao" {% if on_meu_bolao or on_inscricao or on_credenciais or (participante_nav and path.startswith('/p/')) %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
         <div class="site-menu-items">
-          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
+          {% if liberado_ok %}
           <a class="site-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
-          {% elif participante_nav and participante_nav.status == 'liberado' %}
-          <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('palpites') }}<span>Criar senha</span></a>
+          {% elif liberado_sem_senha %}
+          <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('acesso') }}<span>Criar senha</span></a>
           {% elif participante_nav %}
-          <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Inscrição</span></a>
+          <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Status da inscrição</span></a>
           {% else %}
           <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
-          <a class="site-side-link {% if on_entrar %}active{% endif %}" href="/entrar">{{ ico('palpites') }}<span>Entrar</span></a>
-          <a class="site-side-link {% if on_login %}active{% endif %}" href="/login">{{ ico('inscricao') }}<span>Recuperar link</span></a>
           {% endif %}
         </div>
       </details>

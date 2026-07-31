@@ -671,6 +671,25 @@ html[data-theme="light"] .theme-icon-moon {
 .site-menu-group:not([open]) > .site-menu-summary::after {
   transform: rotate(-90deg);
 }
+.site-menu-group--acesso {
+  margin: 0.1rem 0;
+  padding: 0.2rem 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.site-menu-group--acesso > .site-menu-summary {
+  color: var(--accent);
+}
+.site-side-link--destaque {
+  font-weight: 800;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+.site-side-link--destaque:hover,
+.site-side-link--destaque.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--card));
+}
 .site-menu-group--marlon {
   margin-top: 0.15rem;
   padding-top: 0.35rem;
