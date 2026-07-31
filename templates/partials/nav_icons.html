@@ -1,7 +1,9 @@
 {# Ícones SVG reutilizáveis no header / sidebar #}
 {% macro ico(name, size=15) -%}
 <svg class="nav-ico" viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-{%- if name == 'competicao' %}
+{%- if name == 'inicio' %}
+  <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-5h4v5h5V9.5"/>
+{%- elif name == 'competicao' %}
   <path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 6H3a2 2 0 0 0 2 4"/><path d="M19 6h2a2 2 0 0 1-2 4"/>
 {%- elif name == 'meu-bolao' %}
   <circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><path d="M3 12h18"/><path d="M12 3c2.5 2.8 2.5 14.2 0 18"/><path d="M12 3c-2.5 2.8-2.5 14.2 0 18"/>

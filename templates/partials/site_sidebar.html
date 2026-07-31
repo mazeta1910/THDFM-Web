@@ -40,7 +40,7 @@
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
       <div class="site-menu-items site-menu-items-flat">
-        <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('competicao') }}<span>Início</span></a>
+        <a class="site-side-link {% if on_home %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
         <a class="site-side-link" href="/#bolao">{{ ico('meu-bolao') }}<span>Bolão CdB</span></a>
         {% if participante_nav and participante_nav.status == 'liberado' %}
         <a class="site-side-link" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
@@ -56,7 +56,7 @@
   <nav class="site-side-nav" aria-label="Menu do bolão">
     <div class="site-side-nav-scroll">
       <div class="site-menu-items site-menu-items-flat" style="margin-bottom:0.65rem">
-        <a class="site-side-link" href="/">{{ ico('competicao') }}<span>Portal THDFM</span></a>
+        <a class="site-side-link" href="/">{{ ico('inicio') }}<span>Portal THDFM</span></a>
       </div>
       <details class="site-menu-group" data-group="competicao" {% if on_competicao or not on_meu_bolao %}open{% endif %}>
         <summary class="site-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
