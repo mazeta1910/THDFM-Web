@@ -148,6 +148,7 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "Marlon Wietzikowski" in r.text
     assert 'data-group="marlon"' in r.text
     assert "Sub-menu exclusivo" in r.text
+    assert "ortografia" not in r.text.casefold()
 
     r_home = client.get("/")
     assert 'data-group="marlon"' in r_home.text

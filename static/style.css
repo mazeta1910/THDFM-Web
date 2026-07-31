@@ -976,6 +976,48 @@ input[type="number"], input[type="text"], input[type="password"], input[type="te
   font-family: inherit;
   color-scheme: inherit;
 }
+.password-field {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-bottom: 0.65rem;
+}
+.password-field > input[type="password"],
+.password-field > input[type="text"] {
+  margin-bottom: 0;
+  padding-right: 2.75rem;
+}
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.password-toggle:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--hover-bg) 80%, transparent);
+}
+.password-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.password-toggle svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+}
 input[type="search"] {
   -webkit-appearance: none;
   appearance: none;
