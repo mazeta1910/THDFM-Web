@@ -1,0 +1,24 @@
+{# Modal de corte de foto de perfil — pan + zoom #}
+<div class="modal-backdrop avatar-crop-modal" id="avatar-crop-modal" hidden>
+  <div
+    class="inscricao-modal avatar-crop-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="avatar-crop-title"
+  >
+    <h3 id="avatar-crop-title">Ajustar foto</h3>
+    <p class="avatar-crop-hint">Arraste para enquadrar e use o zoom. A área circular é o que fica no perfil.</p>
+    <div class="avatar-crop-stage" id="avatar-crop-stage">
+      <canvas id="avatar-crop-canvas" width="280" height="280" aria-label="Área de corte"></canvas>
+      <div class="avatar-crop-mask" aria-hidden="true"></div>
+    </div>
+    <label class="avatar-crop-zoom-label" for="avatar-crop-zoom">
+      Zoom
+      <input id="avatar-crop-zoom" type="range" min="1" max="3" step="0.01" value="1" />
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="avatar-crop-cancel">Cancelar</button>
+      <button type="button" id="avatar-crop-apply">Usar foto</button>
+    </div>
+  </div>
+</div>

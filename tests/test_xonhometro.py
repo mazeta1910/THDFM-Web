@@ -167,6 +167,11 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     assert "modal-xonha-apagar" in admin.text
     assert "data-xonha-apagar" in admin.text
     assert "confirm(" not in admin.text
+    assert "xonha-admin-details" in admin.text
+    assert 'class="xonha-admin-details"' in admin.text
+    assert "xonha-btn-primary" not in admin.text
+    assert 'aria-label="Registrar"' in admin.text
+    assert "avatar-crop-modal" in admin.text
 
     r2 = client.post(
         "/admin/xonhometro/apagar",

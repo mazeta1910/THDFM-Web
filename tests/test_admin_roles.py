@@ -80,13 +80,14 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
 
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/")
-    # Só o Dono tem o atalho Site/Admin ao lado do tema
+    # Só o Dono tem o atalho Usuário/Admin ao lado do tema
     assert 'id="chrome-mode-toggle"' in r.text
     assert 'id="ui-mode-toggle"' not in r.text
     assert "admin-shell" in r.text
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
-    assert "Ver site" in r.text
+    assert "Usuário" in r.text or ">Admin<" in r.text
+    assert "Ver site" not in r.text
     assert "site-side-admin-login" not in r.text
     assert "Painel (Dono)" not in r.text
     assert "site-side-admin-switch" not in r.text
@@ -329,4 +330,5 @@ def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
 
     r3 = client.get("/admin")
     assert "is-moderador" in r3.text
-    assert "/admin/credenciais" not in r3.text or "Credenciais" not in r3.text.split("admin-side-nav", 1)[-1].split("Ver site", 1)[0]
+    nav = r3.text.split("admin-side-nav", 1)[-1].split("admin-side-sair", 1)[0]
+    assert "/admin/credenciais" not in nav or "Credenciais" not in nav

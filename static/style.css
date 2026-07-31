@@ -459,7 +459,7 @@ nav.site-nav-desktop a.active {
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
-  color: var(--text);
+  color: var(--accent);
 }
 .theme-toggle {
   overflow: hidden;
@@ -471,6 +471,7 @@ nav.site-nav-desktop a.active {
 }
 .chrome-mode-toggle-label {
   line-height: 1;
+  color: inherit;
 }
 /* FAB antigo removido */
 .ui-mode-toggle,
@@ -5907,38 +5908,43 @@ html.theme-light .xonha-item { background: #faf7f4; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.55rem;
+  align-items: start;
 }
 @media (min-width: 520px) {
   .xonha-admin-row {
-    grid-template-columns: 7.5rem 1fr 6.5rem;
-    align-items: end;
+    grid-template-columns: minmax(7rem, 0.9fr) minmax(0, 1.2fr) minmax(6.2rem, 0.85fr);
   }
 }
 .xonha-field {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.28rem;
+  min-width: 0;
 }
 .xonha-field label {
   margin: 0;
+  min-height: 1.05rem;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--muted);
+  line-height: 1.05rem;
 }
 .xonha-input,
 .xonha-select-wrap select {
   width: 100%;
   max-width: none;
   box-sizing: border-box;
-  min-height: 2.45rem;
-  padding: 0.45rem 0.7rem;
+  height: 2.55rem;
+  min-height: 2.55rem;
+  padding: 0 0.7rem;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--card);
   color: var(--text);
   font: inherit;
   font-size: 0.95rem;
-  line-height: 1.3;
+  line-height: 2.55rem;
   box-shadow: none;
   appearance: none;
   -webkit-appearance: none;
@@ -5952,9 +5958,14 @@ html.theme-light .xonha-item { background: #faf7f4; }
 .xonha-input[type="date"],
 .xonha-input[type="time"] {
   min-width: 0;
+  line-height: normal;
+  display: flex;
+  align-items: center;
 }
 .xonha-select-wrap {
   position: relative;
+  height: 2.55rem;
+  min-height: 2.55rem;
 }
 .xonha-select-wrap::after {
   content: "";
@@ -5969,33 +5980,87 @@ html.theme-light .xonha-item { background: #faf7f4; }
   pointer-events: none;
 }
 .xonha-select-wrap select {
+  height: 100%;
   padding-right: 2rem;
   cursor: pointer;
 }
 textarea.xonha-input {
+  height: auto;
   min-height: 4.2rem;
-  resize: vertical;
   line-height: 1.4;
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
 }
-.xonha-btn-primary {
+.xonha-admin-form > .xonha-icon-btn {
   justify-self: start;
-  margin-top: 0.15rem;
-  min-height: 2.45rem;
-  padding: 0.55rem 1.1rem;
-  border: none;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 800;
-  cursor: pointer;
+  margin-top: 0.1rem;
 }
 .xonha-admin-list {
   margin-top: 1.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.55rem;
 }
-.xonha-admin-list > h2 { margin: 0; font-size: 1.15rem; }
+.xonha-admin-list > h2 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+.xonha-admin-details {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+}
+.xonha-admin-summary {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.45rem 0.65rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.xonha-admin-summary::-webkit-details-marker { display: none; }
+.xonha-admin-summary::after {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  justify-self: end;
+  transition: transform 0.15s ease;
+}
+.xonha-admin-details[open] > .xonha-admin-summary::after {
+  transform: rotate(-135deg);
+}
+.xonha-admin-summary-tipo {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.xonha-admin-summary-tipo--saida { color: var(--danger); }
+.xonha-admin-summary-tipo--volta { color: var(--accent); }
+.xonha-admin-summary time {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.xonha-admin-summary-motivo {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xonha-admin-details .xonha-admin-card {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+}
 .xonha-admin-actions {
   display: flex;
   gap: 0.45rem;
@@ -6029,4 +6094,53 @@ textarea.xonha-input {
 }
 .xonha-icon-btn--delete:hover {
   background: var(--erro-bg);
+}
+
+/* —— Crop de avatar —— */
+.avatar-crop-dialog {
+  max-width: 22rem;
+  width: min(22rem, calc(100vw - 2rem));
+}
+.avatar-crop-hint {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.avatar-crop-stage {
+  position: relative;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto 0.85rem;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #111;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.avatar-crop-stage:active { cursor: grabbing; }
+.avatar-crop-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.avatar-crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 46%, rgba(0, 0, 0, 0.55) 47%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.avatar-crop-zoom-label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.avatar-crop-zoom-label input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
 }
