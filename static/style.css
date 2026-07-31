@@ -2446,6 +2446,10 @@ body.admin-body .wrap.admin-wrap {
   margin-left: auto;
 }
 .admin-side-link .nav-ico {
+  flex: 0 0 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
   opacity: 0.85;
 }
 a.admin-side-link {

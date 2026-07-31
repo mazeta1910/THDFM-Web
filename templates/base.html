@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=116" />
+  <link rel="stylesheet" href="/static/style.css?v=117" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -45,8 +45,8 @@
   {% set _sec_raw = request.query_params.get('sec') or 'resultados' %}
   {% if _sec_raw in ['config', 'rodada', 'operacao'] %}
     {% set admin_sec = 'resultados' %}
-  {% elif _sec_raw == 'cadastro' %}
-    {% set admin_sec = 'participantes' %}
+  {% elif _sec_raw in ['cadastro', 'participantes'] %}
+    {% set admin_sec = 'inscricoes' %}
   {% else %}
     {% set admin_sec = _sec_raw %}
   {% endif %}

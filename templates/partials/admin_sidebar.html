@@ -7,10 +7,9 @@
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_admin_resultados = on_admin and admin_sec == 'resultados' and not on_admin_palpites %}
-{% set on_admin_inscricoes = on_admin and admin_sec == 'inscricoes' %}
-{% set on_admin_participantes = on_admin and admin_sec == 'participantes' %}
+{% set on_admin_inscricoes = on_admin and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set pend_n = admin_pendentes_count|default(0) %}
-{% set open_admin = on_admin_inscricoes or on_admin_participantes or on_admin_resultados or on_admin_palpites %}
+{% set open_admin = on_admin_inscricoes or on_admin_resultados or on_admin_palpites %}
 {% set open_competicao = on_classificacao or on_transparencia or on_regras %}
 {% set open_meu_bolao = on_palpites %}
 {% from "partials/nav_icons.html" import ico %}
@@ -47,7 +46,6 @@
             {{ ico('inscricoes') }}<span>Inscrições</span>
             {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
           </a>
-          <a href="/admin?sec=participantes" class="admin-side-link {% if on_admin_participantes %}active{% endif %}" data-sec="participantes">{{ ico('gestao') }}<span>Gestão</span></a>
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
         </div>

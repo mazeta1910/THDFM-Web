@@ -602,10 +602,9 @@
           </section>
         </div>
       </div>
-    </section>
 
-    <section class="admin-panel" data-panel="participantes">
-      <div class="participantes-dash">
+      <div class="participantes-dash inscricoes-gestao-block">
+        <h2 class="participantes-gestao-title">Gestão de Participantes</h2>
         <div class="participantes-toolbar">
           <p class="participantes-lead">Edite nome na tabela, celular e foto. Pendentes ficam separados até a liberação.</p>
           <label class="participantes-filter-wrap" for="participantes-filter">
@@ -710,6 +709,7 @@
         {% endif %}
       </div>
     </section>
+
 {% endblock %}
 
 {% block scripts %}
@@ -830,13 +830,13 @@ const TITLES = {
   operacao: "Resultados",
   resultados: "Resultados",
   inscricoes: "Inscrições",
-  participantes: "Gestão de Participantes",
-  cadastro: "Gestão de Participantes",
+  participantes: "Inscrições",
+  cadastro: "Inscrições",
 };
 const KEY_SEC = "admin-section";
 const showSection = (sec, pushUrl = false) => {
   if (sec === "config" || sec === "rodada" || sec === "operacao") sec = "resultados";
-  if (sec === "cadastro") sec = "participantes";
+  if (sec === "cadastro" || sec === "participantes") sec = "inscricoes";
   if (!TITLES[sec]) sec = "resultados";
   document.querySelectorAll(".admin-panel").forEach((p) => {
     p.classList.toggle("active", p.dataset.panel === sec);

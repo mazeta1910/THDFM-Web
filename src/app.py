@@ -950,17 +950,17 @@ def admin_participante(
             celular_ok = db.normalizar_celular(celular)
         except ValueError:
             return RedirectResponse(
-                "/admin?sec=participantes&erro=Celular+invalido",
+                "/admin?sec=inscricoes&erro=Celular+invalido",
                 status_code=303,
             )
     try:
         db.criar_participante(nome, status=status, celular=celular_ok)
     except Exception as exc:
         return RedirectResponse(
-            f"/admin?sec=participantes&erro={exc}", status_code=303
+            f"/admin?sec=inscricoes&erro={exc}", status_code=303
         )
     return RedirectResponse(
-        "/admin?sec=participantes&msg=Participante+criado", status_code=303
+        "/admin?sec=inscricoes&msg=Participante+criado", status_code=303
     )
 
 
@@ -974,13 +974,13 @@ async def admin_avatar_padrao(
     ext = Path(avatar.filename or "").suffix.lower()
     if ext not in AVATAR_EXTS:
         return RedirectResponse(
-            "/admin?sec=participantes&erro=Foto+padrao+deve+ser+jpg/png/webp",
+            "/admin?sec=inscricoes&erro=Foto+padrao+deve+ser+jpg/png/webp",
             status_code=303,
         )
     data = await avatar.read()
     if not data or len(data) > AVATAR_MAX_BYTES:
         return RedirectResponse(
-            "/admin?sec=participantes&erro=Foto+padrao+invalida+ou+maior+que+3MB",
+            "/admin?sec=inscricoes&erro=Foto+padrao+invalida+ou+maior+que+3MB",
             status_code=303,
         )
     for old in STATIC.glob(f"{AVATAR_PADRAO_STEM}.*"):
@@ -989,7 +989,7 @@ async def admin_avatar_padrao(
     dest = STATIC / f"{AVATAR_PADRAO_STEM}{ext}"
     dest.write_bytes(data)
     return RedirectResponse(
-        "/admin?sec=participantes&msg=Foto+padrao+atualizada", status_code=303
+        "/admin?sec=inscricoes&msg=Foto+padrao+atualizada", status_code=303
     )
 
 
@@ -1009,7 +1009,7 @@ async def admin_atualizar_participante(
     part = db.get_participante(participante_id)
     if not part:
         return RedirectResponse(
-            "/admin?sec=participantes&erro=Participante+nao+encontrado",
+            "/admin?sec=inscricoes&erro=Participante+nao+encontrado",
             status_code=303,
         )
     try:
@@ -1017,11 +1017,11 @@ async def admin_atualizar_participante(
         db.atualizar_celular_participante(participante_id, celular)
     except ValueError as exc:
         return RedirectResponse(
-            f"/admin?sec=participantes&erro={quote(str(exc))}", status_code=303
+            f"/admin?sec=inscricoes&erro={quote(str(exc))}", status_code=303
         )
     except Exception as exc:
         return RedirectResponse(
-            f"/admin?sec=participantes&erro={quote(str(exc))}", status_code=303
+            f"/admin?sec=inscricoes&erro={quote(str(exc))}", status_code=303
         )
 
     if (
@@ -1041,13 +1041,13 @@ async def admin_atualizar_participante(
         ext = Path(avatar.filename or "").suffix.lower()
         if ext not in AVATAR_EXTS:
             return RedirectResponse(
-                "/admin?sec=participantes&erro=Foto+deve+ser+jpg/png/webp",
+                "/admin?sec=inscricoes&erro=Foto+deve+ser+jpg/png/webp",
                 status_code=303,
             )
         data = await avatar.read()
         if not data or len(data) > AVATAR_MAX_BYTES:
             return RedirectResponse(
-                "/admin?sec=participantes&erro=Foto+invalida+ou+maior+que+3MB",
+                "/admin?sec=inscricoes&erro=Foto+invalida+ou+maior+que+3MB",
                 status_code=303,
             )
         if part.get("avatar_path"):
@@ -1059,7 +1059,7 @@ async def admin_atualizar_participante(
         db.salvar_avatar(participante_id, rel)
 
     return RedirectResponse(
-        "/admin?sec=participantes&msg=Participante+atualizado", status_code=303
+        "/admin?sec=inscricoes&msg=Participante+atualizado", status_code=303
     )
 
 
