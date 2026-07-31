@@ -44,8 +44,11 @@ def test_xonhometro_publico_vazio(client: TestClient):
     r = client.get("/xonhometro")
     assert r.status_code == 200
     assert "Xonhômetro" in r.text
-    assert "Saídas registradas" in r.text
+    assert "R$1,00 por cada vez que o Xonha saiu" in r.text
+    assert "R$0,00" in r.text
     assert "xonha-counter-value" in r.text
+    assert "/static/img/xonha.png" in r.text
+    assert "xonha-status-foto" in r.text
     assert 'action="/admin/xonhometro"' not in r.text
 
 
@@ -113,15 +116,27 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["media_saidas_por_dia"] == round(2 / dias, 3)
     assert stats["status"] == "dentro"
     assert stats["media_dias_entre_saidas"] == 0.0
+    assert stats["saidas_mes_atual"] >= 0
+    assert stats["saidas_ultimos_30_dias"] >= 0
+    assert stats["dias_desde_ultima_saida"] is not None
+    assert stats["dias_no_status_atual"] is not None
+    assert stats["tempo_medio_fora_dias"] is not None
+    assert stats["maior_tempo_fora_dias"] is not None
+    assert stats["horario_mais_comum"] is not None
+    assert stats["horario_mais_comum"]["hora"] in ("10h", "22h")
 
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
     assert "Brigou no zap" in pub.text
     assert "10:15" in pub.text
     assert "22:40" in pub.text
+    assert "R$2,00" in pub.text
     assert "Média / dia desde o início" in pub.text
     assert "Mês que mais saiu" in pub.text
     assert "Dias da semana" in pub.text
+    assert "Maior sumiço" in pub.text
+    assert "Horário campeão" in pub.text
+    assert "xonha-status-block--dentro" in pub.text
     assert "Gerenciar registros" in pub.text
 
 
@@ -174,6 +189,9 @@ def test_menu_tem_xonhometro(client: TestClient):
     assert 'href="/xonhometro"' in r.text
     assert "Xonhômetro" in r.text
     assert 'ico(\'xonha\'' not in r.text  # rendered SVG, not macro call
+    # Acervo Xonha começa maximizado no HTML
+    assert 'data-group="acervo-xonha" open' in r.text
+    assert "thdfm-site-menu-groups-v5" in r.text
     # Saiu do Portal
     portal = r.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert "Xonhômetro" not in portal
