@@ -34,7 +34,7 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "Técnicos Horríveis do Futebol Mundial" in text
     assert "Site em desenvolvimento" in text
     assert "Fazer inscrição" in text
-    assert 'href="/entrar"' in text
+    assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
@@ -71,10 +71,9 @@ def test_conta_sair_limpa_sessao(client: TestClient):
     client.get(f"/p/{part['token']}")
     r = client.post("/conta/sair", follow_redirects=False)
     assert r.status_code == 303
-    assert r.headers["location"] == "/entrar"
+    assert "acesso=entrar" in r.headers["location"]
     r2 = client.get("/", follow_redirects=False)
     assert 'action="/conta/sair"' not in r2.text
-
 
 def test_admin_logout_vai_para_home(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
@@ -114,6 +113,7 @@ def test_login_cria_pedido_para_liberado(client: TestClient):
     r = client.post("/login", data={"celular": "(11) 98877-6655"}, follow_redirects=False)
     assert r.status_code == 303
     assert "enviado=1" in r.headers["location"]
+    assert "acesso=recuperar" in r.headers["location"]
     pedidos = db.list_pedidos_recuperacao_pendentes()
     assert len(pedidos) == 1
     assert pedidos[0]["participante_id"] == part["id"]
@@ -124,6 +124,7 @@ def test_login_celular_inexistente_nao_cria_pedido(client: TestClient):
     r = client.post("/login", data={"celular": "11911112222"}, follow_redirects=False)
     assert r.status_code == 303
     assert "enviado=1" in r.headers["location"]
+    assert "acesso=recuperar" in r.headers["location"]
     assert db.list_pedidos_recuperacao_pendentes() == []
 
 
@@ -182,13 +183,12 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     # Entrar vive em Acesso, não misturado no Bolão
     assert 'data-group="acesso"' in r_home.text
     acesso_block = r_home.text.split('data-group="acesso"', 1)[1].split("data-group=", 1)[0]
-    assert 'href="/entrar"' in acesso_block
+    assert 'href="/?acesso=entrar"' in acesso_block or 'data-acesso-open="entrar"' in acesso_block
     assert "Entrar" in acesso_block
-    assert 'href="/login"' in acesso_block
+    assert 'href="/?acesso=recuperar"' in acesso_block or 'data-acesso-open="recuperar"' in acesso_block
     bolao_block = r_home.text.split('data-group="bolao"', 1)[1].split("data-group=", 1)[0]
-    assert 'href="/entrar"' not in bolao_block
+    assert 'data-acesso-open="entrar"' not in bolao_block
     assert 'href="/inscricao"' in bolao_block
-
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},

@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=131" />
+  <link rel="stylesheet" href="/static/style.css?v=132" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -84,6 +84,9 @@
       {% include "partials/site_footer.html" %}
     </div>
   </div>
+  {% if not participante_nav %}
+  {% include "partials/acesso_drawer.html" %}
+  {% endif %}
   {% endif %}
 
   {% if is_admin and path != '/admin/login' %}
@@ -408,6 +411,92 @@
   })();
   </script>
   {% endif %}
+  <script>
+  (function () {
+    const root = document.getElementById("acesso-drawer-root");
+    if (!root) return;
+    const backdrop = document.getElementById("acesso-drawer-backdrop");
+    const closeBtn = document.getElementById("acesso-drawer-close");
+    const titleEl = document.getElementById("acesso-drawer-title");
+    const tabs = root.querySelectorAll("[data-acesso-tab]");
+    const panels = root.querySelectorAll("[data-acesso-panel]");
+
+    const setTab = (modo) => {
+      const m = modo === "recuperar" ? "recuperar" : "entrar";
+      tabs.forEach((t) => t.classList.toggle("is-active", t.getAttribute("data-acesso-tab") === m));
+      panels.forEach((p) => p.classList.toggle("is-active", p.getAttribute("data-acesso-panel") === m));
+      if (titleEl) titleEl.textContent = m === "recuperar" ? "Recuperar link" : "Entrar";
+    };
+
+    const abrir = (modo) => {
+      setTab(modo);
+      root.hidden = false;
+      root.classList.add("is-open");
+      document.body.classList.add("acesso-drawer-open");
+      const focusId = modo === "recuperar" ? "drawer-celular" : "drawer-usuario";
+      window.setTimeout(() => document.getElementById(focusId)?.focus(), 50);
+    };
+
+    const fechar = () => {
+      root.classList.remove("is-open");
+      root.hidden = true;
+      document.body.classList.remove("acesso-drawer-open");
+      const url = new URL(location.href);
+      if (url.searchParams.has("acesso")) {
+        url.searchParams.delete("acesso");
+        url.searchParams.delete("erro");
+        url.searchParams.delete("usuario");
+        url.searchParams.delete("enviado");
+        history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    };
+
+    document.querySelectorAll("[data-acesso-open]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        abrir(el.getAttribute("data-acesso-open") || "entrar");
+        // Fecha menu mobile se estiver aberto
+        document.body.classList.remove("site-sidebar-open");
+        const sb = document.getElementById("site-sidebar-backdrop");
+        if (sb) sb.hidden = true;
+      });
+    });
+
+    tabs.forEach((t) => t.addEventListener("click", () => setTab(t.getAttribute("data-acesso-tab"))));
+    closeBtn?.addEventListener("click", fechar);
+    backdrop?.addEventListener("click", fechar);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) fechar();
+    });
+
+    const params = new URLSearchParams(location.search);
+    const acesso = params.get("acesso");
+    if (acesso === "entrar" || acesso === "recuperar" || acesso === "login") {
+      abrir(acesso === "login" ? "recuperar" : acesso);
+    }
+
+    // Modal esqueci senha
+    const modal = document.getElementById("modal-esqueci-senha");
+    const btnForgot = document.getElementById("btn-esqueci-senha");
+    if (modal && btnForgot) {
+      document.body.appendChild(modal);
+      const abrirModal = () => {
+        modal.removeAttribute("hidden");
+        modal.classList.add("is-open");
+      };
+      const fecharModal = () => {
+        modal.classList.remove("is-open");
+        modal.setAttribute("hidden", "");
+      };
+      btnForgot.addEventListener("click", abrirModal);
+      document.getElementById("modal-esqueci-ok")?.addEventListener("click", fecharModal);
+      document.getElementById("modal-esqueci-fechar")?.addEventListener("click", fecharModal);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) fecharModal();
+      });
+    }
+  })();
+  </script>
   <script>
   (function () {
     const EYE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';

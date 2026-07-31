@@ -161,21 +161,39 @@ def test_entrar_rate_limit(client: TestClient):
 def test_home_cta_aponta_para_entrar(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
-    assert 'href="/entrar"' in r.text
-    assert "Já fiz a inscrição" not in r.text or 'href="/entrar">Entrar' in r.text
+    assert 'data-acesso-open="entrar"' in r.text
+    assert "Já fiz a inscrição" not in r.text or "Entrar" in r.text
 
 
 def test_entrar_tem_esqueci_senha_modal(client: TestClient):
-    r = client.get("/entrar")
-    assert r.status_code == 200
-    assert "Esqueci minha senha" in r.text
-    assert "modal-esqueci-senha" in r.text
-    assert "Esqueceu sua senha?" in r.text
-    assert "Aí o problema não é meu" in r.text
-    assert 'type="password"' in r.text
-    assert "password-toggle" in r.text  # script global do olhinho
-    assert "ortografia" not in r.text.casefold()
+    r = client.get("/entrar", follow_redirects=False)
+    assert r.status_code == 303
+    assert "acesso=entrar" in r.headers["location"]
 
+    r2 = client.get("/?acesso=entrar")
+    assert r2.status_code == 200
+    assert "acesso-drawer" in r2.text
+    assert "Esqueci minha senha" in r2.text
+    assert "modal-esqueci-senha" in r2.text
+    assert "Esqueceu sua senha?" in r2.text
+    assert "Aí o problema não é meu" in r2.text
+    assert "Marlon, saia daqui" in r2.text
+    assert "Você entra pelo" in r2.text
+    assert 'type="password"' in r2.text
+    assert "password-toggle" in r2.text
+    assert "ortografia" not in r2.text.casefold()
+
+
+def test_menu_portal_minimizado_e_loguin_capitalizacao(client: TestClient):
+    r = client.get("/")
+    assert r.status_code == 200
+    # Portal sem open no markup inicial
+    assert 'data-group="portal"' in r.text
+    portal_tag = r.text.split('data-group="portal"', 1)[0].rsplit("<details", 1)[-1]
+    assert " open" not in portal_tag.split(">", 1)[0]
+    assert 'data-group="acesso" open' in r.text or 'data-group="acesso"open' in r.text.replace(" ", "")
+    assert ">Loguin<" in r.text
+    assert ">LOGUIN<" not in r.text.split("data-group=\"marlon\"", 1)[1].split("</details>", 1)[0]
 def test_alterar_senha_na_conta(client: TestClient):
     part = db.criar_participante("TrocaSenha", status="liberado", celular="11999334455")
     db.definir_credenciais(part["id"], "troca.senha", "antiga123")

@@ -709,8 +709,9 @@ html[data-theme="light"] .theme-icon-moon {
   color: var(--muted);
 }
 .site-side-link--loguin span {
-  letter-spacing: 0.06em;
-  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  text-transform: none;
 }
 .site-menu-items {
   display: flex;
@@ -5210,10 +5211,115 @@ a.btn.loguin-entry-btn:hover {
 .login-forgot-btn:hover {
   opacity: 0.85;
 }
+.modal-esqueci #modal-esqueci-title {
+  margin: 0 0 0.55rem;
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
 .modal-esqueci .modal-esqueci-lead {
   margin: 0 0 1.1rem;
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* —— Drawer Entrar / Recuperar —— */
+.acesso-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9600;
+  pointer-events: none;
+}
+.acesso-drawer-root.is-open {
+  pointer-events: auto;
+}
+.acesso-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.acesso-drawer-root.is-open .acesso-drawer-backdrop {
+  opacity: 1;
+}
+.acesso-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(100%, 420px);
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+  transform: translateX(105%);
+  transition: transform 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem 1rem 1.25rem;
+  overflow: auto;
+}
+.acesso-drawer-root.is-open .acesso-drawer {
+  transform: translateX(0);
+}
+.acesso-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.acesso-drawer-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text);
+}
+.acesso-drawer-close {
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.acesso-drawer-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.acesso-tab {
+  margin: 0;
+  padding: 0.55rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.acesso-tab.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+.acesso-panel {
+  display: none;
+}
+.acesso-panel.is-active {
+  display: block;
+}
+body.acesso-drawer-open {
+  overflow: hidden;
 }
