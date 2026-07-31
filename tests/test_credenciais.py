@@ -172,6 +172,9 @@ def test_entrar_tem_esqueci_senha_modal(client: TestClient):
     assert "modal-esqueci-senha" in r.text
     assert "Esqueceu sua senha?" in r.text
     assert "Aí o problema não é meu" in r.text
+    assert 'type="password"' in r.text
+    assert "password-toggle" in r.text  # script global do olhinho
+    assert "ortografia" not in r.text.casefold()
 
 def test_alterar_senha_na_conta(client: TestClient):
     part = db.criar_participante("TrocaSenha", status="liberado", celular="11999334455")
