@@ -4322,21 +4322,36 @@ tr.planilha-sem-palpite .planilha-num {
   line-height: 1.4;
   flex: 1 1 240px;
 }
+.participantes-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+}
 .participantes-filter-wrap {
   margin: 0;
-  flex: 1 1 220px;
-  max-width: 320px;
+  flex: 0 1 11.5rem;
+  max-width: 13rem;
+  min-width: 8.5rem;
 }
-.participantes-filter-wrap input {
+.participantes-filter-wrap input,
+.participantes-filter-wrap input[type="search"] {
   margin: 0;
   width: 100%;
+  height: 2rem;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.75rem;
-  font-size: 1.05rem;
+  border-radius: 8px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.82rem;
   font-family: inherit;
+  line-height: 1.2;
+}
+.participantes-filter-wrap input::placeholder {
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 .participantes-section {
   display: flex;
@@ -4381,6 +4396,9 @@ tr.planilha-sem-palpite .planilha-num {
   margin: 0;
   padding: 0.9rem 0.95rem 0.95rem;
   min-height: 100%;
+}
+.participante-edit-card[hidden] {
+  display: none !important;
 }
 .participante-edit-card label {
   margin-top: 0.55rem;
@@ -4529,6 +4547,7 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
 }
 @media (max-width: 640px) {
   .participantes-filter-wrap {
+    flex: 1 1 100%;
     max-width: none;
   }
 }
