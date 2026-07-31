@@ -296,6 +296,41 @@
   });
 })();
 </script>
+<script>
+(() => {
+  const form = document.getElementById("form-palpites");
+  if (!form) return;
+  let dirty = false;
+  let submitting = false;
+  const markDirty = () => { dirty = true; };
+  form.addEventListener("input", markDirty);
+  form.addEventListener("change", markDirty);
+  form.addEventListener("submit", () => {
+    submitting = true;
+    dirty = false;
+  });
+  window.addEventListener("beforeunload", (e) => {
+    if (!dirty || submitting) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+  document.addEventListener("click", (e) => {
+    if (!dirty || submitting) return;
+    const link = e.target.closest("a[href]");
+    if (!link) return;
+    const href = link.getAttribute("href") || "";
+    if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    const ok = window.confirm(
+      "Você tem palpites não salvos. Deseja sair sem salvar?"
+    );
+    if (!ok) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+})();
+</script>
 {% if janela == 'volta' %}
 <script src="/static/palpites.js"></script>
 {% endif %}
