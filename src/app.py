@@ -32,6 +32,7 @@ from src.config import (
     FASES,
     FASE_IDS,
     JANELAS,
+    NOME_MAX_LEN,
     PUBLIC_BASE_URL,
     ROOT_DIR,
     SECRET_KEY,
@@ -753,6 +754,13 @@ async def inscricao_post(
     if not nome:
         return _inscricao_erro(
             request, "Informe seu nome", nome=nome, celular=celular_raw
+        )
+    if len(nome) > NOME_MAX_LEN:
+        return _inscricao_erro(
+            request,
+            f"Nome com no máximo {NOME_MAX_LEN} caracteres",
+            nome=nome[:NOME_MAX_LEN],
+            celular=celular_raw,
         )
     if nome.casefold() == "daniel":
         return TEMPLATES.TemplateResponse(request, "acesso_proibido.html", {})
