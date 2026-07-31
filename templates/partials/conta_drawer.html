@@ -39,7 +39,8 @@
           </div>
           <div class="conta-fields">
             <label class="conta-label" for="conta-drawer-nome">Nome na THDFM</label>
-            <input id="conta-drawer-nome" class="conta-input" type="text" name="nome" value="{{ p.nome }}" required autocomplete="nickname" />
+            <input id="conta-drawer-nome" class="conta-input" type="text" name="nome" value="{{ p.nome }}" required maxlength="30" autocomplete="nickname" />
+            <p class="conta-hint">Máximo 30 caracteres.</p>
 
             {% if p.username %}
             <label class="conta-label" for="conta-drawer-username">Username (login)</label>
