@@ -95,7 +95,7 @@
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
       {% if is_admin %}
-      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>Painel admin</span></a>
+      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>{% if is_dono %}Painel (Dono){% else %}Painel (Moderador){% endif %}</span></a>
       {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">
@@ -162,7 +162,7 @@
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
       {% if is_admin %}
-      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>Painel admin</span></a>
+      <a class="site-side-link site-side-admin-switch" href="/admin" data-ui-mode-switch="admin">{{ ico('admin') }}<span>{% if is_dono %}Painel (Dono){% else %}Painel (Moderador){% endif %}</span></a>
       {% endif %}
       {% if participante_nav %}
       <form method="post" action="/conta/sair" class="site-sair-form">

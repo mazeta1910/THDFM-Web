@@ -30,16 +30,17 @@
       {% endif %}
       <span class="admin-brand-user-text">
         <span class="admin-brand-name">{{ admin_nome }}</span>
-        <span class="admin-brand-hint">Minha conta</span>
+        <span class="admin-brand-hint">{% if is_dono %}Dono · acesso total{% else %}Moderador · Adminzinho{% endif %}</span>
       </span>
     </a>
     {% else %}
     <span class="admin-brand-name-solo">{{ admin_nome }}</span>
+    <span class="admin-brand-hint" style="display:block;margin-top:0.2rem">{% if is_dono %}Dono{% else %}Moderador{% endif %}</span>
     {% endif %}
   </div>
   <nav class="admin-side-nav" aria-label="Menu do painel">
     <div class="admin-side-nav-scroll">
-      <details class="admin-menu-group" data-group="admin" {% if open_admin or not (open_competicao or open_meu_bolao) %}open{% endif %}>
+      <details class="admin-menu-group" data-group="admin" {% if open_admin or not (open_competicao or open_meu_bolao) or path.startswith('/admin/credenciais') %}open{% endif %}>
         <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
         <div class="admin-menu-items">
           <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
@@ -48,6 +49,9 @@
           </a>
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+          {% if is_dono %}
+          <a class="admin-side-link {% if path.startswith('/admin/credenciais') %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+          {% endif %}
         </div>
       </details>
 

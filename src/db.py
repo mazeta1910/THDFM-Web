@@ -605,6 +605,47 @@ def alterar_senha(
         )
 
 
+def admin_redefinir_credenciais(
+    participante_id: int,
+    *,
+    senha_nova: str,
+    username: str | None = None,
+) -> dict[str, Any]:
+    """Dono redefine senha (e opcionalmente username). Não devolve a senha em claro."""
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    if part.get("status") != "liberado":
+        raise ValueError("Só dá para redefinir conta liberada")
+
+    senha_ok = validar_senha_nova(senha_nova)
+    ph = hash_senha(senha_ok)
+
+    u = None
+    if username is not None and str(username).strip():
+        u = normalizar_username(username)
+        if not username_disponivel(u, exceto_id=participante_id):
+            raise ValueError("Username já está em uso")
+
+    with get_db() as conn:
+        if u is not None:
+            conn.execute(
+                "UPDATE participantes SET username = ?, password_hash = ?, "
+                "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+                (u, ph, participante_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE participantes SET password_hash = ?, "
+                "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+                (ph, participante_id),
+            )
+    updated = get_participante(participante_id)
+    if not updated:
+        raise ValueError("Falha ao redefinir credenciais")
+    return updated
+
+
 def vincular_admin_login(participante_id: int, login: str) -> None:
     login = (login or "").strip().lower()
     if not login:

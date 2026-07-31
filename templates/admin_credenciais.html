@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Credenciais — Dono THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block content %}
+<div class="cred-dono-page">
+  <p class="credenciais-kicker">Só o Dono · É florida</p>
+  <h1>Gestão de credenciais</h1>
+  <p class="login-lead">
+    Aqui você vê o <strong>username</strong> de cada liberado e pode
+    <strong>redefinir a senha</strong> quando alguém perder o acesso.
+    Senha antiga não aparece — o hash não volta (pelo amord, isso é segurança).
+    Você cria uma senha nova e manda no Zap.
+  </p>
+
+  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+  <div class="cred-dono-list">
+    {% for p in participantes %}
+    <article class="card cred-dono-card">
+      <div class="cred-dono-head">
+        {% set av = avatar_url(p.avatar_path) %}
+        {% if av %}
+        <img class="cred-dono-avatar" src="{{ av }}" alt="" />
+        {% else %}
+        <span class="cred-dono-avatar cred-dono-avatar-fallback">{{ (p.nome or '??')[:2]|upper }}</span>
+        {% endif %}
+        <div class="cred-dono-meta">
+          <strong>{{ p.nome }}</strong>
+          <span class="cred-dono-user">
+            {% if p.username %}
+            username: <code>{{ p.username }}</code>
+            {% else %}
+            <em>sem username ainda</em>
+            {% endif %}
+          </span>
+          <span class="cred-dono-hints">
+            {% if p.password_hash %}senha cadastrada{% else %}ainda sem senha{% endif %}
+            {% if p.celular %} · Cllr {{ p.celular|celular_fmt }}{% endif %}
+            {% if p.admin_login %} · admin <code>{{ p.admin_login }}</code>{% endif %}
+          </span>
+        </div>
+      </div>
+      <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-form" autocomplete="off">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <label for="user-{{ p.id }}">Username</label>
+        <input
+          id="user-{{ p.id }}"
+          class="input-compact"
+          type="text"
+          name="username"
+          value="{{ p.username or '' }}"
+          maxlength="24"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="deixe igual ou ajuste"
+        />
+        <label for="senha-{{ p.id }}">Nova senha (mín. 8)</label>
+        <div class="password-field">
+          <input
+            id="senha-{{ p.id }}"
+            class="input-compact"
+            type="password"
+            name="senha_nova"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="senha temporária pro Zap"
+          />
+          <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button type="submit">Redefinir e anotar no Zap</button>
+      </form>
+    </article>
+    {% else %}
+    <p class="login-lead">Nenhum liberado ainda. O painel tá diva de gente.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

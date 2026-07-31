@@ -461,6 +461,122 @@ nav.site-nav-desktop a.active {
 .ui-mode-toggle-label {
   line-height: 1;
 }
+.ui-mode-chip {
+  flex: 0 0 auto;
+  margin: 0 0 0 0.5rem;
+  margin-left: auto;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 122, 0, 0.55);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff8a1a, #e56700);
+  color: #111;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-body .ui-mode-chip {
+  margin-right: 0.35rem;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(40, 40, 46, 0.98), rgba(18, 18, 22, 0.98));
+  color: var(--text);
+}
+.ui-mode-chip:hover {
+  filter: brightness(1.06);
+}
+.ui-mode-chip--fixed {
+  position: fixed;
+  top: calc(var(--site-header-offset, 3.5rem) + 0.65rem);
+  right: calc(0.85rem + 48px + 0.45rem);
+  z-index: 10051;
+  margin: 0;
+}
+.admin-body .ui-mode-chip--fixed {
+  top: 0.85rem;
+  right: calc(0.85rem + 48px + 0.45rem);
+}
+.site-body .ui-mode-chip--fixed {
+  top: 0.85rem;
+}
+@media (max-width: 900px) {
+  .ui-mode-chip--fixed {
+    top: 0.75rem;
+    right: calc(0.75rem + 44px + 0.35rem);
+  }
+  /* No mobile o chip da topbar já aparece; evita duplicar */
+  .site-topbar .ui-mode-chip {
+    display: inline-flex;
+  }
+  .site-body .ui-mode-chip--fixed {
+    display: none;
+  }
+}
+.site-topbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+body.is-moderador .btn-apagar-x,
+body.is-moderador #btn-recusar-todos {
+  display: none !important;
+}
+.cred-dono-page {
+  max-width: 820px;
+  margin: 0 auto;
+}
+.cred-dono-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.cred-dono-card {
+  padding: 0.9rem 1rem 1rem;
+}
+.cred-dono-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.75rem;
+}
+.cred-dono-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cred-dono-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.cred-dono-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.cred-dono-user,
+.cred-dono-hints {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.cred-dono-form label {
+  display: block;
+  margin: 0.45rem 0 0.25rem;
+  font-size: 0.85rem;
+}
+.cred-dono-form button[type="submit"] {
+  margin-top: 0.55rem;
+}
 .theme-icon {
   display: none;
   position: absolute;
@@ -801,6 +917,8 @@ html[data-theme="light"] .theme-icon-moon {
   z-index: 30;
 }
 .site-topbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 0.95rem;
   color: var(--text);
 }

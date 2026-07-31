@@ -60,14 +60,18 @@ PC ligado + uvicorn + túnel = site no ar. A cada reinício do túnel *rápido* 
 Cada um tem usuário e senha próprios no `.env`:
 
 ```env
-ADMIN_USERS=mazeta=SENHA1=Mazeta|ramos=SENHA2=Ramos|joaojec=SENHA3=João JEC
+ADMIN_USERS=mazeta=SENHA1=Mazeta:dono|ramos=SENHA2=Ramos:moderador|joaojec=SENHA3=João JEC:adminzinho
 ```
 
-Formato: `login=senha=NomeExibido` separados por `|`.
+Formato: `login=senha=Nome[:papel]` separados por `|`.
+
+Papéis:
+- **Dono** (`dono` / `sagrado`) — Mazeta: tudo + painel `/admin/credenciais` (ver username e redefinir senha; senha antiga nunca aparece).
+- **Moderador** (`moderador` / `adminzinho`) — Ramos e João JEC: inscrições, resultados, palpites, links. Sem apagar em massa nem credenciais.
 
 1. Compartilhe a URL pública do túnel.
-2. Cada um abre `/admin/login` com o **próprio** usuário/senha.
-3. A nav mostra o nome (ex.: João Vitor) + **Sair**.
+2. Cada um abre `/admin/login` com o **próprio** usuário/senha (isso ativa o botão Admin/Site).
+3. A nav mostra o nome + papel + **Sair**.
 
 ## Fluxo admin
 

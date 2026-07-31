@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from src import db
-from src.admins import autenticar_admin, list_admins
+from src.admins import autenticar_admin, get_admin, list_admins
 from src.config import (
     ADMIN_WHATSAPP,
     ADMIN_WHATSAPP_MSG,
@@ -132,6 +132,32 @@ def admin_nome(request: Request) -> str:
     return request.session.get("admin_nome") or request.session.get("admin_login") or ""
 
 
+def admin_papel(request: Request) -> str:
+    raw = (request.session.get("admin_role") or "").strip().lower()
+    if raw in ("dono", "moderador"):
+        return raw
+    login = (request.session.get("admin_login") or "").strip().lower()
+    admin = get_admin(login) if login else None
+    if admin:
+        return admin.papel
+    return "moderador"
+
+
+def is_dono(request: Request) -> bool:
+    return admin_ok(request) and admin_papel(request) == "dono"
+
+
+def require_dono(request: Request) -> RedirectResponse | None:
+    if not admin_ok(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    if not is_dono(request):
+        return RedirectResponse(
+            "/admin?erro=" + quote("Só o Dono pode fazer isso, Adminzinho."),
+            status_code=303,
+        )
+    return None
+
+
 def get_ui_mode(request: Request) -> str:
     """Chrome Admin vs User (só para quem está logado como admin)."""
     if not admin_ok(request):
@@ -146,6 +172,16 @@ def render(request: Request, name: str, **ctx):
     is_adm = admin_ok(request)
     ctx.setdefault("is_admin", is_adm)
     ctx.setdefault("ui_mode", get_ui_mode(request))
+    ctx.setdefault("admin_papel", admin_papel(request) if is_adm else "")
+    ctx.setdefault("is_dono", is_dono(request) if is_adm else False)
+    ctx.setdefault(
+        "admin_papel_label",
+        {"dono": "Dono", "moderador": "Moderador"}.get(
+            admin_papel(request), "Moderador"
+        )
+        if is_adm
+        else "",
+    )
     # Admin logado: garante participante pelo login (não pelo nick)
     if is_adm:
         login = (request.session.get("admin_login") or "").strip().lower()
@@ -1136,6 +1172,7 @@ def admin_login(
         return RedirectResponse("/admin/login?erro=Usuario+ou+senha+incorretos", status_code=303)
     request.session["admin_login"] = admin.login
     request.session["admin_nome"] = admin.nome
+    request.session["admin_role"] = admin.papel
     request.session.pop("admin", None)  # legado
     # Admin também palpita: vínculo estável por login (não pelo nick)
     token_atual = request.session.get("participante_token")
@@ -1152,6 +1189,7 @@ def admin_login(
 def admin_logout(request: Request):
     request.session.pop("admin_login", None)
     request.session.pop("admin_nome", None)
+    request.session.pop("admin_role", None)
     request.session.pop("admin", None)
     return RedirectResponse("/", status_code=303)
 
@@ -1170,6 +1208,8 @@ def admin_home(request: Request):
                 (a for a in list_admins() if a.login == login_atual), None
             )
             nome_cfg = admin_atual.nome if admin_atual else admin_nome(request)
+            if admin_atual:
+                request.session["admin_role"] = admin_atual.papel
             part = db.garantir_participante_admin(
                 login_atual, nome_cfg, token_preferido=token_atual
             )
@@ -1209,6 +1249,55 @@ def admin_home(request: Request):
         inscricao_url=f"{base}/inscricao",
         public_url_configurada=bool(PUBLIC_BASE_URL),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/admin/credenciais", response_class=HTMLResponse)
+def admin_credenciais(request: Request):
+    negado = require_dono(request)
+    if negado:
+        return negado
+    partes = [
+        p
+        for p in db.list_participantes()
+        if p.get("status") == "liberado"
+    ]
+    return render(
+        request,
+        "admin_credenciais.html",
+        participantes=partes,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/admin/credenciais/redefinir")
+def admin_credenciais_redefinir(
+    request: Request,
+    participante_id: int = Form(...),
+    username: str = Form(""),
+    senha_nova: str = Form(...),
+):
+    negado = require_dono(request)
+    if negado:
+        return negado
+    try:
+        updated = db.admin_redefinir_credenciais(
+            participante_id,
+            senha_nova=senha_nova,
+            username=username.strip() or None,
+        )
+    except ValueError as e:
+        return RedirectResponse(
+            f"/admin/credenciais?erro={quote(str(e))}",
+            status_code=303,
+        )
+    nome = updated.get("nome") or "participante"
+    user = updated.get("username") or "(sem username)"
+    return RedirectResponse(
+        f"/admin/credenciais?msg={quote(f'Credenciais de {nome} ({user}) redefinidas. Passe a senha nova no Zap.')}",
+        status_code=303,
     )
 
 
@@ -1343,8 +1432,9 @@ def admin_link_enviado(
 
 @app.post("/admin/apagar")
 def admin_apagar(request: Request, participante_id: int = Form(...)):
-    if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+    negado = require_dono(request)
+    if negado:
+        return negado
     part = db.get_participante(participante_id)
     if not part:
         return RedirectResponse(
@@ -1399,8 +1489,9 @@ def admin_reabrir(request: Request, participante_id: int = Form(...)):
 
 @app.post("/admin/recusar-todos")
 def admin_recusar_todos(request: Request):
-    if not admin_ok(request):
-        return RedirectResponse("/admin/login", status_code=303)
+    negado = require_dono(request)
+    if negado:
+        return negado
     n = db.recusar_todos_pendentes()
     return RedirectResponse(
         f"/admin?sec=inscricoes&msg={n}+inscricao(oes)+recusada(s)",

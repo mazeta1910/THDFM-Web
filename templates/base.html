@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=137" />
+  <link rel="stylesheet" href="/static/style.css?v=138" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -41,7 +41,7 @@
 {% set on_palpites = participante_nav and path == '/p/' + participante_nav.token and '/conta' not in path %}
 {% set on_competicao = on_classificacao or on_transparencia or on_regras %}
 {% set on_meu_bolao = on_palpites %}
-<body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% else %} site-body{% endif %}">
+<body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% else %} site-body{% endif %}{% if is_admin and not is_dono %} is-moderador{% endif %}{% if is_dono %} is-dono{% endif %}">
   {% if admin_layout %}
   {% set _sec_raw = request.query_params.get('sec') or 'resultados' %}
   {% if _sec_raw in ['config', 'rodada', 'operacao'] %}
@@ -60,6 +60,16 @@
         <div class="admin-topbar-slot">
           {% block admin_topbar %}{% endblock %}
         </div>
+        {% if is_admin %}
+        <button
+          type="button"
+          class="ui-mode-chip"
+          id="ui-mode-chip-admin"
+          data-mode="admin"
+          data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
+          title="Ver o site"
+        >Ver site</button>
+        {% endif %}
       </header>
       {% include "partials/theme_toggle.html" %}
   {% else %}
@@ -70,6 +80,15 @@
       <header class="site-topbar" id="site-header">
         <button type="button" class="site-mobile-menu" id="site-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-sidebar">☰</button>
         <strong class="site-topbar-title">{% if path == '/' or path == '/home' %}THDFM{% else %}Bolão THDFM{% endif %}</strong>
+        {% if is_admin %}
+        <button
+          type="button"
+          class="ui-mode-chip"
+          id="ui-mode-chip-site"
+          data-mode="user"
+          title="Abrir painel admin"
+        >Admin</button>
+        {% endif %}
       </header>
       {% include "partials/theme_toggle.html" %}
       <main class="wrap {% block wrap_class %}{% endblock %}">
@@ -94,6 +113,14 @@
   {% if is_admin and path != '/admin/login' %}
   <button
     type="button"
+    class="ui-mode-chip ui-mode-chip--fixed"
+    id="ui-mode-chip-fixed"
+    data-mode="{{ 'admin' if on_admin_area else 'user' }}"
+    data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
+    title="{% if on_admin_area %}Ver o site{% else %}Abrir painel admin{% endif %}"
+  >{% if on_admin_area %}Ver site{% else %}Admin{% endif %}</button>
+  <button
+    type="button"
     class="ui-mode-toggle"
     id="ui-mode-toggle"
     data-mode="{{ 'admin' if on_admin_area else 'user' }}"
@@ -113,19 +140,35 @@
     const setMode = (mode) => {
       document.cookie = "thdfm_ui_mode=" + mode + "; path=/; max-age=" + maxAge + "; SameSite=Lax";
     };
+    const goMode = (mode, userHome) => {
+      setMode(mode);
+      if (mode === "user") {
+        location.href = userHome || "/";
+        return;
+      }
+      location.href = "/admin";
+    };
     const btn = document.getElementById("ui-mode-toggle");
     if (btn) {
       btn.addEventListener("click", () => {
         const onAdmin = location.pathname.startsWith("/admin");
-        if (onAdmin) {
-          setMode("user");
-          location.href = btn.getAttribute("data-user-home") || "/";
-          return;
-        }
-        setMode("admin");
-        location.href = "/admin";
+        goMode(
+          onAdmin ? "user" : "admin",
+          btn.getAttribute("data-user-home") || "/"
+        );
       });
     }
+    document.querySelectorAll(".ui-mode-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const onAdmin = location.pathname.startsWith("/admin");
+        goMode(
+          onAdmin ? "user" : "admin",
+          chip.getAttribute("data-user-home") ||
+            document.getElementById("ui-mode-toggle")?.getAttribute("data-user-home") ||
+            "/"
+        );
+      });
+    });
     document.querySelectorAll("[data-ui-mode-switch]").forEach((el) => {
       el.addEventListener("click", (e) => {
         const mode = el.getAttribute("data-ui-mode-switch") === "user" ? "user" : "admin";
