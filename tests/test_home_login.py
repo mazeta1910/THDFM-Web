@@ -140,6 +140,8 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     )
     assert r2.status_code == 303
     assert "erro=" in r2.headers["location"]
+    loc2 = unquote(r2.headers["location"])
+    assert "exclusivo" in loc2.casefold() or "animal" in loc2.casefold()
 
     r3 = client.post(
         "/loguin",
@@ -150,3 +152,72 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "sucesso=1" in r3.headers["location"]
     r4 = client.get("/loguin?sucesso=1")
     assert "LOGUIN efetuado" in r4.text
+
+
+def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
+    part = db.criar_participante(
+        "Marlon Wietzikowski", status="liberado", celular="11990001122"
+    )
+    db.definir_credenciais(part["id"], "marlon.w", "senha1234")
+
+    # Pelo username civilizado → LOGUIN
+    r = client.post(
+        "/entrar",
+        data={"usuario": "marlon.w", "senha": "senha1234"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = unquote(r.headers["location"])
+    assert loc.startswith("/loguin")
+    assert "erro=" in loc
+    assert "marlon" in loc.casefold() or "loguin" in loc.casefold()
+
+    # Pelo nome no campo usuário → LOGUIN
+    r2 = client.post(
+        "/entrar",
+        data={"usuario": "Marlon Wietzikowski", "senha": "qualquer"},
+        follow_redirects=False,
+    )
+    assert r2.status_code == 303
+    assert unquote(r2.headers["location"]).startswith("/loguin")
+
+    # LOGUIN com senha certa → entra no bolão
+    r3 = client.post(
+        "/loguin",
+        data={"usuario": "Marlon Wietzikowski", "senha": "senha1234"},
+        follow_redirects=False,
+    )
+    assert r3.status_code == 303
+    assert r3.headers["location"].startswith(f"/p/{part['token']}")
+
+    # LOGUIN com senha errada → fica no ritual
+    client.post("/conta/sair", follow_redirects=False)
+    r4 = client.post(
+        "/loguin",
+        data={"usuario": "Marlon Wietzikowski", "senha": "errada999"},
+        follow_redirects=False,
+    )
+    assert r4.status_code == 303
+    assert "erro=" in r4.headers["location"]
+    assert "/loguin" in r4.headers["location"]
+
+
+def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient):
+    part = db.criar_participante("Fulano Normal", status="liberado", celular="11991112233")
+    db.definir_credenciais(part["id"], "fulano.n", "senha1234")
+    r = client.post(
+        "/loguin",
+        data={"usuario": "fulano.n", "senha": "senha1234"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert "/loguin" in r.headers["location"]
+    assert "erro=" in r.headers["location"]
+    # Não autenticou no bolão
+    r2 = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
+    # Sem sessão de participante criada pelo loguin — conta exige gate/sessão ok via token URL
+    # O token na URL ainda funciona; o ponto é que /loguin não setou login de fulano.
+    # Garantimos só que a resposta do loguin foi erro:
+    assert "exclusivo" in unquote(r.headers["location"]).casefold() or "animal" in unquote(
+        r.headers["location"]
+    ).casefold() or "entrar" in unquote(r.headers["location"]).casefold()

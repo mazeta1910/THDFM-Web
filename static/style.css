@@ -5074,3 +5074,9 @@ a.btn.loguin-entry-btn:hover {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+.login-marlon-aside {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}

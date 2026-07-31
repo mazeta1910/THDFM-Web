@@ -339,6 +339,14 @@ async def entrar_post(
             status_code=303,
         )
 
+    # Marlon não entra pela porta civilizada — só pelo LOGUIN
+    if _tentativa_e_do_marlon(usuario):
+        return RedirectResponse(
+            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
+            f"&usuario={quote(usuario if _eh_marlon(usuario) else 'Marlon Wietzikowski')}",
+            status_code=303,
+        )
+
     if not _auth_rate_ok(rate_key):
         return RedirectResponse(
             f"/entrar?erro={quote('Muitas tentativas. Aguarde alguns minutos.')}"
@@ -355,14 +363,68 @@ async def entrar_post(
             status_code=303,
         )
 
+    # Cinto e suspensório: conta do Marlon nunca autentica em /entrar
+    if _participante_eh_marlon(part):
+        return RedirectResponse(
+            f"/loguin?erro={quote(_MSG_MARLON_PORTA_ERRADA)}"
+            f"&usuario={quote('Marlon Wietzikowski')}",
+            status_code=303,
+        )
+
     _remember_participante(request, part["token"])
     return RedirectResponse(f"/p/{part['token']}", status_code=303)
+
+
+_MSG_MARLON_PORTA_ERRADA = (
+    "Marlon detectado. Esta é a porta dos civilizados — a sua é o LOGUIN. "
+    "Anda pra lá, animal."
+)
+
+_MSG_LOGUIN_SO_MARLON = (
+    "Este LOGUIN é exclusivo do Marlon Wietzikowski, animal. "
+    "Gente normal usa Entrar."
+)
 
 
 def _eh_marlon(nome: str) -> bool:
     n = re.sub(r"\s+", " ", (nome or "").strip().casefold())
     n = n.replace("ł", "l")
-    return "marlon" in n and ("wietz" in n or "wietzikowski" in n or n == "marlon")
+    if not n:
+        return False
+    if n == "marlon":
+        return True
+    return "marlon" in n and ("wietz" in n or "wietzikowski" in n)
+
+
+def _participante_eh_marlon(part: dict | None) -> bool:
+    if not part:
+        return False
+    return _eh_marlon(part.get("nome") or "") or _eh_marlon(part.get("username") or "")
+
+
+def _tentativa_e_do_marlon(usuario: str) -> bool:
+    """True se o campo usuário aponta (ou parece apontar) para o Marlon."""
+    if _eh_marlon(usuario):
+        return True
+    part = db.get_participante_por_username(usuario)
+    if _participante_eh_marlon(part):
+        return True
+    part_nome = db.get_participante_por_nome(usuario)
+    if _participante_eh_marlon(part_nome):
+        return True
+    return False
+
+
+def _buscar_participante_marlon() -> dict | None:
+    """Melhor esforço: acha o participante liberado do Marlon."""
+    for nome in ("Marlon Wietzikowski", "Marlon"):
+        part = db.get_participante_por_nome(nome)
+        if part and part.get("status") == "liberado" and _participante_eh_marlon(part):
+            return part
+    for part in db.list_participantes():
+        if part.get("status") == "liberado" and _participante_eh_marlon(part):
+            return part
+    return None
 
 
 @app.get("/loguin", response_class=HTMLResponse)
@@ -393,11 +455,34 @@ async def loguin_post(
         )
     if not _eh_marlon(usuario):
         return RedirectResponse(
-            f"/loguin?erro={quote('Este LOGUIN é exclusivo do Marlon Wietzikowski, animal.')}"
+            f"/loguin?erro={quote(_MSG_LOGUIN_SO_MARLON)}"
             f"&usuario={quote(usuario)}",
             status_code=303,
         )
-    # Qualquer senha serve — o importante é ele ter feito o LOGUIN
+
+    # Exclusivo Marlon: se existir conta no bolão, autentica por aqui
+    # (nunca pela /entrar). Sem hash ainda: qualquer senha libera o ritual.
+    part = _buscar_participante_marlon()
+    if part and part.get("password_hash"):
+        if not db.verificar_senha(senha, part.get("password_hash")):
+            return RedirectResponse(
+                f"/loguin?erro={quote('Senha do LOGUIN errada, Marlon. Nem o lado da foto salva.')}"
+                f"&usuario={quote(usuario)}",
+                status_code=303,
+            )
+        _remember_participante(request, part["token"])
+        request.session["loguin_marlon"] = True
+        if db.precisa_credenciais(part):
+            return _redirect_credenciais(part["token"])
+        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+
+    if part:
+        _remember_participante(request, part["token"])
+        request.session["loguin_marlon"] = True
+        if db.precisa_credenciais(part):
+            return _redirect_credenciais(part["token"])
+        return RedirectResponse(f"/p/{part['token']}?msg={quote('LOGUIN efetuado')}", status_code=303)
+
     request.session["loguin_marlon"] = True
     return RedirectResponse("/loguin?sucesso=1", status_code=303)
 
