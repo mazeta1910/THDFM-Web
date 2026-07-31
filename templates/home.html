@@ -1,61 +1,145 @@
 {% extends "base.html" %}
-{% block title %}THDFM — Bolão Copa do Brasil{% endblock %}
+{% block title %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block wrap_class %}wrap-home{% endblock %}
 {% block content %}
-<section class="home-hero" aria-label="Início THDFM">
-  <div class="home-hero-media" aria-hidden="true">
-    <img
-      src="/static/img/coringao-campeao.jpg"
-      alt=""
-      width="1600"
-      height="900"
-      fetchpriority="high"
-      decoding="async"
-    />
-  </div>
-  <div class="home-hero-scrim" aria-hidden="true"></div>
-  <div class="home-hero-inner">
-    <p class="home-brand">THDFM</p>
-    <h1 class="home-headline">Bolão da Copa do Brasil</h1>
-    <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
-    <div class="home-ctas">
-      <a class="btn home-cta-primary" href="/inscricao">Fazer inscrição</a>
-      <a class="btn secondary home-cta-secondary" href="/login">Já fiz a inscrição</a>
-    </div>
-  </div>
-</section>
+<section class="home-hero home-hero-slider" id="home-hero" aria-roledescription="carrossel" aria-label="Destaques THDFM">
+  <div class="home-slides" id="home-slides">
+    {# Slide 1 — apresentação #}
+    <article class="home-slide is-active" data-slide="0" id="apresentacao" aria-hidden="false">
+      <div class="home-hero-media home-hero-media--grad home-hero-media--welcome" aria-hidden="true"></div>
+      <div class="home-hero-scrim" aria-hidden="true"></div>
+      <div class="home-hero-inner">
+        <p class="home-brand">THDFM</p>
+        <h1 class="home-headline">Técnicos Horríveis do Futebol Mundial</h1>
+        <p class="home-lead">
+          A casa digital da página: memes, debate de bola e, agora, também o bolão da Copa do Brasil.
+        </p>
+        <div class="home-ctas">
+          <button type="button" class="btn home-cta-primary" data-go-slide="2">Ver o bolão</button>
+          <a class="btn secondary home-cta-secondary" href="#site-footer">Redes sociais</a>
+        </div>
+      </div>
+    </article>
 
-<section class="home-how" aria-labelledby="home-how-title">
-  <h2 id="home-how-title">Como funciona</h2>
-  <p class="home-how-lead">Três passos e você está no bolão.</p>
-  <ol class="home-steps">
-    <li>
-      <span class="home-step-n">1</span>
-      <div>
-        <strong>PIX da inscrição</strong>
-        <span>Paga a taxa ({{ taxa_valor_label }}) e guarda o comprovante.</span>
+    {# Slide 2 — em desenvolvimento #}
+    <article class="home-slide" data-slide="1" id="em-desenvolvimento" aria-hidden="true">
+      <div class="home-hero-media home-hero-media--grad home-hero-media--wip" aria-hidden="true"></div>
+      <div class="home-hero-scrim" aria-hidden="true"></div>
+      <div class="home-hero-inner">
+        <p class="home-kicker">Aviso</p>
+        <h2 class="home-headline">Site em desenvolvimento</h2>
+        <p class="home-lead">
+          Estamos construindo o portal da THDFM aos poucos. Algumas áreas ainda vão mudar —
+          o bolão da Copa do Brasil já está no ar para a galera.
+        </p>
+        <div class="home-ctas">
+          <button type="button" class="btn home-cta-primary" data-go-slide="2">Ir ao bolão</button>
+          <a class="btn secondary home-cta-secondary" href="/inscricao">Fazer inscrição</a>
+        </div>
       </div>
-    </li>
-    <li>
-      <span class="home-step-n">2</span>
-      <div>
-        <strong>Envia no site</strong>
-        <span>Nome, WhatsApp e comprovante — a gente confere.</span>
+    </article>
+
+    {# Slide 3 — bolão + como participar no viewport #}
+    <article class="home-slide" data-slide="2" id="bolao" aria-hidden="true">
+      <div class="home-hero-media" aria-hidden="true">
+        <img
+          src="/static/img/coringao-campeao.jpg"
+          alt=""
+          width="1600"
+          height="900"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
-    </li>
-    <li>
-      <span class="home-step-n">3</span>
-      <div>
-        <strong>Recebe seu link</strong>
-        <span>Link pessoal no WhatsApp para palpitar e acompanhar.</span>
+      <div class="home-hero-scrim home-hero-scrim--deep" aria-hidden="true"></div>
+      <div class="home-hero-inner home-hero-inner--bolao">
+        <p class="home-kicker">Em andamento</p>
+        <h2 class="home-headline">Bolão da Copa do Brasil</h2>
+        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
+        <ol class="home-steps home-steps--hero" aria-label="Como participar">
+          <li><span class="home-step-n">1</span><span>PIX da inscrição ({{ taxa_valor_label }})</span></li>
+          <li><span class="home-step-n">2</span><span>Envia nome, Zap e comprovante</span></li>
+          <li><span class="home-step-n">3</span><span>Recebe seu link no WhatsApp</span></li>
+        </ol>
+        <div class="home-ctas">
+          <a class="btn home-cta-primary" href="/inscricao">Fazer inscrição</a>
+          <a class="btn secondary home-cta-secondary" href="/login">Já fiz a inscrição</a>
+        </div>
       </div>
-    </li>
-  </ol>
-  <p class="home-how-links">
-    <a href="/regras">Regras</a>
-    <span aria-hidden="true">·</span>
-    <a href="/transparencia">Portal da Transparência</a>
-  </p>
+    </article>
+  </div>
+
+  <div class="home-slider-ui">
+    <button type="button" class="home-slider-btn" id="home-slide-prev" aria-label="Slide anterior">‹</button>
+    <div class="home-slider-dots" id="home-slide-dots" role="tablist" aria-label="Slides">
+      <button type="button" class="home-dot is-active" role="tab" aria-selected="true" aria-controls="apresentacao" data-slide="0"></button>
+      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="em-desenvolvimento" data-slide="1"></button>
+      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="bolao" data-slide="2"></button>
+    </div>
+    <button type="button" class="home-slider-btn" id="home-slide-next" aria-label="Próximo slide">›</button>
+  </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const root = document.getElementById("home-hero");
+  if (!root) return;
+  const slides = Array.from(root.querySelectorAll(".home-slide"));
+  const dots = Array.from(root.querySelectorAll(".home-dot"));
+  const prev = document.getElementById("home-slide-prev");
+  const next = document.getElementById("home-slide-next");
+  let idx = 0;
+  let timer = null;
+  const AUTO_MS = 7000;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function go(n, { user } = {}) {
+    idx = (n + slides.length) % slides.length;
+    slides.forEach((s, i) => {
+      const on = i === idx;
+      s.classList.toggle("is-active", on);
+      s.setAttribute("aria-hidden", on ? "false" : "true");
+    });
+    dots.forEach((d, i) => {
+      const on = i === idx;
+      d.classList.toggle("is-active", on);
+      d.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (user) restart();
+  }
+
+  function restart() {
+    if (reduce) return;
+    clearInterval(timer);
+    timer = setInterval(() => go(idx + 1), AUTO_MS);
+  }
+
+  prev?.addEventListener("click", () => go(idx - 1, { user: true }));
+  next?.addEventListener("click", () => go(idx + 1, { user: true }));
+  dots.forEach((d) => d.addEventListener("click", () => go(Number(d.dataset.slide) || 0, { user: true })));
+  root.querySelectorAll("[data-go-slide]").forEach((btn) => {
+    btn.addEventListener("click", () => go(Number(btn.getAttribute("data-go-slide")) || 0, { user: true }));
+  });
+
+  root.addEventListener("mouseenter", () => clearInterval(timer));
+  root.addEventListener("mouseleave", restart);
+  root.addEventListener("focusin", () => clearInterval(timer));
+  root.addEventListener("focusout", (e) => {
+    if (!root.contains(e.relatedTarget)) restart();
+  });
+
+  // Deep link /#bolao ou /#em-desenvolvimento
+  function fromHash() {
+    const hash = (location.hash || "").replace("#", "");
+    const map = { apresentacao: 0, "em-desenvolvimento": 1, bolao: 2 };
+    if (hash in map) go(map[hash], { user: true });
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+  restart();
+})();
+</script>
 {% endblock %}

@@ -33,6 +33,12 @@ from src.config import (
     PUBLIC_BASE_URL,
     ROOT_DIR,
     SECRET_KEY,
+    SOCIAL_FACEBOOK,
+    SOCIAL_INSTAGRAM,
+    SOCIAL_TIKTOK,
+    SOCIAL_WHATSAPP,
+    SOCIAL_X,
+    SOCIAL_YOUTUBE,
     TAXA_PIX,
     TAXA_VALOR_LABEL,
 )
@@ -142,6 +148,8 @@ def render(request: Request, name: str, **ctx):
     else:
         ctx.setdefault("admin_nome", admin_nome(request))
     ctx.setdefault("participante_nav", part_nav)
+    if "social_links" not in ctx:
+        ctx.update({k: v for k, v in _taxa_ctx().items() if k == "social_links"})
     if is_adm and "admin_pendentes_count" not in ctx:
         try:
             if "participantes" in ctx:
@@ -180,10 +188,20 @@ def _taxa_ctx() -> dict:
         from urllib.parse import quote
 
         wa_url = f"https://wa.me/{wa_digits}?text={quote(wa_msg)}"
+    social_wa = re.sub(r"\D+", "", SOCIAL_WHATSAPP or "")
+    social_wa_url = f"https://wa.me/{social_wa}" if social_wa else ""
     return {
         "taxa_pix": os.environ.get("TAXA_PIX", TAXA_PIX),
         "taxa_valor_label": os.environ.get("TAXA_VALOR_LABEL", TAXA_VALOR_LABEL),
         "admin_whatsapp_url": wa_url,
+        "social_links": {
+            "facebook": SOCIAL_FACEBOOK or os.environ.get("SOCIAL_FACEBOOK", ""),
+            "x": SOCIAL_X or os.environ.get("SOCIAL_X", ""),
+            "instagram": SOCIAL_INSTAGRAM or os.environ.get("SOCIAL_INSTAGRAM", ""),
+            "youtube": SOCIAL_YOUTUBE or os.environ.get("SOCIAL_YOUTUBE", ""),
+            "tiktok": SOCIAL_TIKTOK or os.environ.get("SOCIAL_TIKTOK", ""),
+            "whatsapp": social_wa_url,
+        },
     }
 
 

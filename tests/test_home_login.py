@@ -31,15 +31,19 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert r.status_code == 200
     text = r.text
     assert "THDFM" in text
+    assert "Técnicos Horríveis do Futebol Mundial" in text
+    assert "Site em desenvolvimento" in text
     assert "Fazer inscrição" in text
     assert "Já fiz a inscrição" in text
+    assert "home-hero-slider" in text
+    assert "site-footer" in text
 
 
 def test_home_alias_tambem_renderiza(client: TestClient):
     r = client.get("/home", follow_redirects=False)
     assert r.status_code == 200
     assert "Bolão da Copa do Brasil" in r.text
-
+    assert "PIX da inscrição" in r.text
 
 def test_raiz_redireciona_participante_com_sessao(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")

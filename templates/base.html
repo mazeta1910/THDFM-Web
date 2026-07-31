@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>{% block title %}Bolão THDFM — CdB{% endblock %}</title>
+  <title>{% block title %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}</title>
   <script>
   (function () {
     try {
@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=121" />
+  <link rel="stylesheet" href="/static/style.css?v=122" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -68,7 +68,7 @@
     <div class="site-main">
       <header class="site-topbar" id="site-header">
         <button type="button" class="site-mobile-menu" id="site-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-sidebar">☰</button>
-        <strong class="site-topbar-title">Bolão THDFM</strong>
+        <strong class="site-topbar-title">{% if path == '/' or path == '/home' %}THDFM{% else %}Bolão THDFM{% endif %}</strong>
       </header>
       {% include "partials/theme_toggle.html" %}
       <main class="wrap {% block wrap_class %}{% endblock %}">
@@ -81,6 +81,7 @@
   </div>
   {% else %}
       </main>
+      {% include "partials/site_footer.html" %}
     </div>
   </div>
   {% endif %}
