@@ -84,6 +84,7 @@
         </div>
       </details>
 
+      {% if guest %}
       <details class="site-menu-group site-menu-group--marlon" data-group="marlon" open>
         <summary class="site-menu-summary">{{ ico('admin', 13) }}<span>Marlon <span class="marlon-sobrenome" data-marlon-sobrenome>Wietzikowski</span></span></summary>
         <div class="site-menu-items">
@@ -91,6 +92,7 @@
           <a class="site-side-link site-side-link--loguin {% if on_loguin %}active{% endif %}" href="/?acesso=loguin" data-loguin-open>{{ ico('admin') }}<span>Loguin</span></a>
         </div>
       </details>
+      {% endif %}
     </div>
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
@@ -151,6 +153,7 @@
         </div>
       </details>
 
+      {% if guest %}
       <details class="site-menu-group site-menu-group--marlon" data-group="marlon" open>
         <summary class="site-menu-summary">{{ ico('admin', 13) }}<span>Marlon <span class="marlon-sobrenome" data-marlon-sobrenome>Wietzikowski</span></span></summary>
         <div class="site-menu-items">
@@ -158,6 +161,7 @@
           <a class="site-side-link site-side-link--loguin {% if on_loguin %}active{% endif %}" href="/?acesso=loguin" data-loguin-open>{{ ico('admin') }}<span>Loguin</span></a>
         </div>
       </details>
+      {% endif %}
     </div>
     {% if participante_nav or is_admin %}
     <div class="site-side-sair-wrap">
