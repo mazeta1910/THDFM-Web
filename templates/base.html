@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=139" />
+  <link rel="stylesheet" href="/static/style.css?v=141" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -61,16 +61,6 @@
         <div class="admin-topbar-slot">
           {% block admin_topbar %}{% endblock %}
         </div>
-        {% if is_admin %}
-        <button
-          type="button"
-          class="ui-mode-chip"
-          id="ui-mode-chip-admin"
-          data-mode="admin"
-          data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-          title="Ver o site como usuário"
-        >Ver site</button>
-        {% endif %}
       </header>
       {% include "partials/theme_toggle.html" %}
       {# Páginas do site dentro do chrome admin (ex.: /transparencia) #}
@@ -85,15 +75,6 @@
       <header class="site-topbar" id="site-header">
         <button type="button" class="site-mobile-menu" id="site-mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-sidebar">☰</button>
         <strong class="site-topbar-title">{% if path == '/' or path == '/home' %}THDFM{% else %}Bolão THDFM{% endif %}</strong>
-        {% if is_admin %}
-        <button
-          type="button"
-          class="ui-mode-chip"
-          id="ui-mode-chip-site"
-          data-mode="user"
-          title="Voltar ao menu admin"
-        >Admin</button>
-        {% endif %}
       </header>
       {% include "partials/theme_toggle.html" %}
       <main class="wrap {% block wrap_class %}{% endblock %}">
@@ -119,14 +100,7 @@
   {% endif %}
 
   {% if is_admin and path != '/admin/login' %}
-  <button
-    type="button"
-    class="ui-mode-chip ui-mode-chip--fixed"
-    id="ui-mode-chip-fixed"
-    data-mode="{{ ui_mode }}"
-    data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if admin_layout %}Ver o site como usuário{% else %}Voltar ao menu admin{% endif %}"
-  >{% if admin_layout %}Ver site{% else %}Admin{% endif %}</button>
+  {# Um único atalho flutuante — sem chips full-width no topo #}
   <button
     type="button"
     class="ui-mode-toggle"
