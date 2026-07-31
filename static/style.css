@@ -1066,22 +1066,29 @@ input[type="number"], input[type="text"], input[type="password"], input[type="te
   top: 50%;
   right: 0.35rem;
   transform: translateY(-50%);
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin: 0;
-  padding: 0;
-  border: none;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
   border-radius: 8px;
-  background: transparent;
-  color: var(--muted);
+  background: transparent !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-align: center;
   cursor: pointer;
+  z-index: 2;
 }
 .password-toggle:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--hover-bg) 80%, transparent);
+  color: var(--text) !important;
+  background: color-mix(in srgb, var(--hover-bg) 80%, transparent) !important;
+  filter: none;
 }
 .password-toggle:focus-visible {
   outline: 2px solid var(--accent);
@@ -1091,6 +1098,12 @@ input[type="number"], input[type="text"], input[type="password"], input[type="te
   width: 1.2rem;
   height: 1.2rem;
   display: block;
+}
+.form-login .password-field {
+  margin-bottom: 0.85rem;
+}
+.form-login .password-toggle {
+  margin-top: 0 !important;
 }
 input[type="search"] {
   -webkit-appearance: none;
