@@ -328,26 +328,13 @@
 <script>
 (() => {
   const form = document.getElementById("form-palpites");
-  const modal = document.getElementById("modal-palpites-sair");
-  if (!form || !modal) return;
+  if (!form) return;
 
   let dirty = false;
   let submitting = false;
   let pendingHref = "";
-  let bizarroOk = false;
 
-  const markDirty = () => { dirty = true; bizarroOk = false; };
-  const abrirModal = (href) => {
-    pendingHref = href;
-    modal.hidden = false;
-    modal.classList.add("is-open");
-    document.body.appendChild(modal);
-  };
-  const fecharModal = () => {
-    pendingHref = "";
-    modal.classList.remove("is-open");
-    modal.setAttribute("hidden", "");
-  };
+  const markDirty = () => { dirty = true; };
 
   function isBizarro(gm, gv) {
     const a = Number(gm);
@@ -357,26 +344,35 @@
   }
 
   function collectBizarros() {
-    const panel = form.querySelector(".match-panel:not(.hidden)");
-    if (!panel) return [];
+    const pairs = {};
+    form.querySelectorAll('input[type="number"][name]').forEach((inp) => {
+      if (inp.disabled || inp.readOnly) return;
+      const m = String(inp.name || "").match(/^(ida|volta)_(\d+)_(m|v)$/);
+      if (!m) return;
+      const key = m[1] + "_" + m[2];
+      if (!pairs[key]) pairs[key] = { perna: m[1], id: m[2] };
+      const raw = String(inp.value ?? "").trim();
+      if (raw === "") return;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return;
+      pairs[key][m[3]] = n;
+      pairs[key]["el_" + m[3]] = inp;
+    });
+
     const out = [];
-    panel.querySelectorAll(".match-cell").forEach((cell) => {
-      const rows = cell.querySelectorAll(".match-team-row");
-      if (rows.length < 2) return;
-      const inp0 = rows[0].querySelector('input[type="number"]');
-      const inp1 = rows[1].querySelector('input[type="number"]');
-      if (!inp0 || !inp1 || inp0.readOnly || inp1.readOnly || inp0.disabled || inp1.disabled) return;
-      if (inp0.value === "" || inp1.value === "") return;
-      const g0 = Number(inp0.value);
-      const g1 = Number(inp1.value);
-      if (!Number.isFinite(g0) || !Number.isFinite(g1) || !isBizarro(g0, g1)) return;
+    Object.keys(pairs).forEach((key) => {
+      const p = pairs[key];
+      if (!Number.isFinite(p.m) || !Number.isFinite(p.v)) return;
+      if (!isBizarro(p.m, p.v)) return;
+      const rowM = p.el_m && p.el_m.closest(".match-team-row");
+      const rowV = p.el_v && p.el_v.closest(".match-team-row");
       out.push({
-        g0,
-        g1,
-        img0: rows[0].querySelector("img")?.getAttribute("src") || "",
-        img1: rows[1].querySelector("img")?.getAttribute("src") || "",
-        n0: rows[0].querySelector(".clube-nome")?.getAttribute("data-nome") || "",
-        n1: rows[1].querySelector(".clube-nome")?.getAttribute("data-nome") || "",
+        g0: p.m,
+        g1: p.v,
+        img0: (rowM && rowM.querySelector("img") && rowM.querySelector("img").getAttribute("src")) || "",
+        img1: (rowV && rowV.querySelector("img") && rowV.querySelector("img").getAttribute("src")) || "",
+        n0: (rowM && rowM.querySelector(".clube-nome") && rowM.querySelector(".clube-nome").getAttribute("data-nome")) || "",
+        n1: (rowV && rowV.querySelector(".clube-nome") && rowV.querySelector(".clube-nome").getAttribute("data-nome")) || "",
       });
     });
     return out;
@@ -406,16 +402,26 @@
         ? "Você deseja mesmo salvar esses placares?"
         : "Você deseja mesmo fazer isso?";
     }
-    scoresBox.innerHTML = "";
+    scoresBox.textContent = "";
     items.forEach((it) => {
       const row = document.createElement("div");
       row.className = "modal-bizarro-score";
-      row.innerHTML =
-        '<img src="' + it.img0 + '" alt="' + (it.n0 || "") + '" />' +
-        '<strong class="modal-bizarro-gols">' + it.g0 + '</strong>' +
-        '<span class="modal-bizarro-x">×</span>' +
-        '<strong class="modal-bizarro-gols">' + it.g1 + '</strong>' +
-        '<img src="' + it.img1 + '" alt="' + (it.n1 || "") + '" />';
+      const img0 = document.createElement("img");
+      img0.src = it.img0;
+      img0.alt = it.n0 || "";
+      const g0 = document.createElement("strong");
+      g0.className = "modal-bizarro-gols";
+      g0.textContent = String(it.g0);
+      const x = document.createElement("span");
+      x.className = "modal-bizarro-x";
+      x.textContent = "×";
+      const g1 = document.createElement("strong");
+      g1.className = "modal-bizarro-gols";
+      g1.textContent = String(it.g1);
+      const img1 = document.createElement("img");
+      img1.src = it.img1;
+      img1.alt = it.n1 || "";
+      row.append(img0, g0, x, g1, img1);
       scoresBox.appendChild(row);
     });
     modalBizarro.hidden = false;
@@ -423,14 +429,8 @@
     document.body.appendChild(modalBizarro);
   };
 
-  form.addEventListener("input", markDirty);
-  form.addEventListener("change", markDirty);
+  // Capture: intercepta antes de qualquer outro handler e do envio
   form.addEventListener("submit", (e) => {
-    if (bizarroOk) {
-      submitting = true;
-      dirty = false;
-      return;
-    }
     const bizarros = collectBizarros();
     if (!bizarros.length) {
       submitting = true;
@@ -438,53 +438,72 @@
       return;
     }
     e.preventDefault();
+    e.stopImmediatePropagation();
     abrirBizarro(bizarros);
-  });
+  }, true);
+
+  form.addEventListener("input", markDirty);
+  form.addEventListener("change", markDirty);
 
   document.getElementById("modal-bizarro-cancelar")?.addEventListener("click", fecharBizarro);
   document.getElementById("modal-bizarro-fechar")?.addEventListener("click", fecharBizarro);
   document.getElementById("modal-bizarro-confirmar")?.addEventListener("click", () => {
-    bizarroOk = true;
     fecharBizarro();
     submitting = true;
     dirty = false;
-    form.requestSubmit();
+    // submit() nativo não dispara o evento submit — grava de fato
+    HTMLFormElement.prototype.submit.call(form);
   });
   modalBizarro?.addEventListener("click", (e) => {
     if (e.target === modalBizarro) fecharBizarro();
   });
 
-  document.addEventListener("click", (e) => {
-    if (!dirty || submitting) return;
-    const link = e.target.closest("a[href]");
-    if (!link) return;
-    const href = link.getAttribute("href") || "";
-    if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
-    if (link.target === "_blank" || link.hasAttribute("download")) return;
-    e.preventDefault();
-    e.stopPropagation();
-    abrirModal(link.href);
-  }, true);
+  const modalSair = document.getElementById("modal-palpites-sair");
+  if (modalSair) {
+    const abrirModal = (href) => {
+      pendingHref = href;
+      modalSair.hidden = false;
+      modalSair.classList.add("is-open");
+      document.body.appendChild(modalSair);
+    };
+    const fecharModal = () => {
+      pendingHref = "";
+      modalSair.classList.remove("is-open");
+      modalSair.setAttribute("hidden", "");
+    };
 
-  document.getElementById("modal-palpites-sair-cancelar")?.addEventListener("click", fecharModal);
-  document.getElementById("modal-palpites-sair-fechar")?.addEventListener("click", fecharModal);
-  document.getElementById("modal-palpites-sair-confirmar")?.addEventListener("click", () => {
-    const href = pendingHref;
-    dirty = false;
-    fecharModal();
-    if (href) window.location.href = href;
-  });
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) fecharModal();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if (modalBizarro?.classList.contains("is-open")) {
-      fecharBizarro();
-      return;
-    }
-    if (modal.classList.contains("is-open")) fecharModal();
-  });
+    document.addEventListener("click", (e) => {
+      if (!dirty || submitting) return;
+      const link = e.target.closest("a[href]");
+      if (!link) return;
+      const href = link.getAttribute("href") || "";
+      if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+      if (link.target === "_blank" || link.hasAttribute("download")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      abrirModal(link.href);
+    }, true);
+
+    document.getElementById("modal-palpites-sair-cancelar")?.addEventListener("click", fecharModal);
+    document.getElementById("modal-palpites-sair-fechar")?.addEventListener("click", fecharModal);
+    document.getElementById("modal-palpites-sair-confirmar")?.addEventListener("click", () => {
+      const href = pendingHref;
+      dirty = false;
+      fecharModal();
+      if (href) window.location.href = href;
+    });
+    modalSair.addEventListener("click", (e) => {
+      if (e.target === modalSair) fecharModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (modalBizarro?.classList.contains("is-open")) {
+        fecharBizarro();
+        return;
+      }
+      if (modalSair.classList.contains("is-open")) fecharModal();
+    });
+  }
 })();
 </script>
 {% if janela == 'volta' %}

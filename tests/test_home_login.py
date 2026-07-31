@@ -44,6 +44,11 @@ def test_home_alias_tambem_renderiza(client: TestClient):
     assert r.status_code == 200
     assert "Bolão da Copa do Brasil" in r.text
     assert "PIX da inscrição" in r.text
+    # Bolão é o primeiro slide (is-active no #bolao)
+    bolao_pos = r.text.find('id="bolao"')
+    apres_pos = r.text.find('id="apresentacao"')
+    assert 0 <= bolao_pos < apres_pos
+    assert 'id="bolao" aria-hidden="false"' in r.text or 'is-active" data-slide="0" id="bolao"' in r.text
 
 def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")

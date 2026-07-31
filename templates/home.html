@@ -5,57 +5,22 @@
 {% block content %}
 <section class="home-hero home-hero-slider" id="home-hero" aria-roledescription="carrossel" aria-label="Destaques THDFM">
   <div class="home-slides" id="home-slides">
-    {# Slide 1 — apresentação #}
-    <article class="home-slide is-active" data-slide="0" id="apresentacao" aria-hidden="false">
-      <div class="home-hero-media home-hero-media--grad home-hero-media--welcome" aria-hidden="true"></div>
-      <div class="home-hero-scrim" aria-hidden="true"></div>
-      <div class="home-hero-inner">
-        <p class="home-brand">THDFM</p>
-        <h1 class="home-headline">Técnicos Horríveis do Futebol Mundial</h1>
-        <p class="home-lead">
-          A casa digital da página: memes, debate de bola e, agora, também o bolão da Copa do Brasil.
-        </p>
-        <div class="home-ctas">
-          <button type="button" class="btn home-cta-primary" data-go-slide="2">Ver o bolão</button>
-          <a class="btn secondary home-cta-secondary" href="#site-footer">Redes sociais</a>
-        </div>
-      </div>
-    </article>
-
-    {# Slide 2 — em desenvolvimento #}
-    <article class="home-slide" data-slide="1" id="em-desenvolvimento" aria-hidden="true">
-      <div class="home-hero-media home-hero-media--grad home-hero-media--wip" aria-hidden="true"></div>
-      <div class="home-hero-scrim" aria-hidden="true"></div>
-      <div class="home-hero-inner">
-        <p class="home-kicker">Aviso</p>
-        <h2 class="home-headline">Site em desenvolvimento</h2>
-        <p class="home-lead">
-          Estamos construindo o portal da THDFM aos poucos. Algumas áreas ainda vão mudar —
-          o bolão da Copa do Brasil já está no ar para a galera.
-        </p>
-        <div class="home-ctas">
-          <button type="button" class="btn home-cta-primary" data-go-slide="2">Ir ao bolão</button>
-          <a class="btn secondary home-cta-secondary" href="/inscricao">Fazer inscrição</a>
-        </div>
-      </div>
-    </article>
-
-    {# Slide 3 — bolão + como participar no viewport #}
-    <article class="home-slide" data-slide="2" id="bolao" aria-hidden="true">
+    {# Slide 1 — bolão #}
+    <article class="home-slide is-active" data-slide="0" id="bolao" aria-hidden="false">
       <div class="home-hero-media" aria-hidden="true">
         <img
           src="/static/img/coringao-campeao.jpg"
           alt=""
           width="1600"
           height="900"
-          loading="lazy"
+          fetchpriority="high"
           decoding="async"
         />
       </div>
       <div class="home-hero-scrim home-hero-scrim--deep" aria-hidden="true"></div>
       <div class="home-hero-inner home-hero-inner--bolao">
         <p class="home-kicker">Em andamento</p>
-        <h2 class="home-headline">Bolão da Copa do Brasil</h2>
+        <h1 class="home-headline">Bolão da Copa do Brasil</h1>
         <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
         <ol class="home-steps home-steps--hero" aria-label="Como participar">
           <li><span class="home-step-n">1</span><span>PIX da inscrição ({{ taxa_valor_label }})</span></li>
@@ -68,14 +33,49 @@
         </div>
       </div>
     </article>
+
+    {# Slide 2 — apresentação #}
+    <article class="home-slide" data-slide="1" id="apresentacao" aria-hidden="true">
+      <div class="home-hero-media home-hero-media--grad home-hero-media--welcome" aria-hidden="true"></div>
+      <div class="home-hero-scrim" aria-hidden="true"></div>
+      <div class="home-hero-inner">
+        <p class="home-brand">THDFM</p>
+        <h2 class="home-headline">Técnicos Horríveis do Futebol Mundial</h2>
+        <p class="home-lead">
+          A casa digital da página: memes, debate de bola e, agora, também o bolão da Copa do Brasil.
+        </p>
+        <div class="home-ctas">
+          <button type="button" class="btn home-cta-primary" data-go-slide="0">Ver o bolão</button>
+          <a class="btn secondary home-cta-secondary" href="#site-footer">Redes sociais</a>
+        </div>
+      </div>
+    </article>
+
+    {# Slide 3 — em desenvolvimento #}
+    <article class="home-slide" data-slide="2" id="em-desenvolvimento" aria-hidden="true">
+      <div class="home-hero-media home-hero-media--grad home-hero-media--wip" aria-hidden="true"></div>
+      <div class="home-hero-scrim" aria-hidden="true"></div>
+      <div class="home-hero-inner">
+        <p class="home-kicker">Aviso</p>
+        <h2 class="home-headline">Site em desenvolvimento</h2>
+        <p class="home-lead">
+          Estamos construindo o portal da THDFM aos poucos. Algumas áreas ainda vão mudar —
+          o bolão da Copa do Brasil já está no ar para a galera.
+        </p>
+        <div class="home-ctas">
+          <button type="button" class="btn home-cta-primary" data-go-slide="0">Ir ao bolão</button>
+          <a class="btn secondary home-cta-secondary" href="/inscricao">Fazer inscrição</a>
+        </div>
+      </div>
+    </article>
   </div>
 
   <div class="home-slider-ui">
     <button type="button" class="home-slider-btn" id="home-slide-prev" aria-label="Slide anterior">‹</button>
     <div class="home-slider-dots" id="home-slide-dots" role="tablist" aria-label="Slides">
-      <button type="button" class="home-dot is-active" role="tab" aria-selected="true" aria-controls="apresentacao" data-slide="0"></button>
-      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="em-desenvolvimento" data-slide="1"></button>
-      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="bolao" data-slide="2"></button>
+      <button type="button" class="home-dot is-active" role="tab" aria-selected="true" aria-controls="bolao" data-slide="0"></button>
+      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="apresentacao" data-slide="1"></button>
+      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="em-desenvolvimento" data-slide="2"></button>
     </div>
     <button type="button" class="home-slider-btn" id="home-slide-next" aria-label="Próximo slide">›</button>
   </div>
@@ -131,10 +131,9 @@
     if (!root.contains(e.relatedTarget)) restart();
   });
 
-  // Deep link /#bolao ou /#em-desenvolvimento
   function fromHash() {
     const hash = (location.hash || "").replace("#", "");
-    const map = { apresentacao: 0, "em-desenvolvimento": 1, bolao: 2 };
+    const map = { bolao: 0, apresentacao: 1, "em-desenvolvimento": 2 };
     if (hash in map) go(map[hash], { user: true });
   }
   window.addEventListener("hashchange", fromHash);
