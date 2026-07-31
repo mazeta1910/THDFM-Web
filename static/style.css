@@ -412,7 +412,8 @@ nav.site-nav-desktop a.active {
 }
 .ui-mode-toggle {
   position: fixed;
-  left: 0.85rem;
+  right: 0.85rem;
+  left: auto;
   bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
   z-index: 9500;
   width: auto;
@@ -604,6 +605,33 @@ html[data-theme="light"] .theme-icon-moon {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+.site-side-sair-wrap {
+  flex: 0 0 auto;
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.site-sair-form {
+  margin: 0;
+  padding: 0;
+}
+.site-sair-form .site-side-sair {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.site-side-sair {
+  color: var(--accent2) !important;
+}
+.site-side-sair:hover {
+  color: var(--accent) !important;
 }
 .site-menu-group {
   margin: 0;

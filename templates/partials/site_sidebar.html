@@ -77,6 +77,18 @@
         </div>
       </details>
     </div>
+    {% if participante_nav or is_admin %}
+    <div class="site-side-sair-wrap">
+      {% if participante_nav %}
+      <form method="post" action="/conta/sair" class="site-sair-form">
+        <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
+      </form>
+      {% endif %}
+      {% if is_admin %}
+      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
+      {% endif %}
+    </div>
+    {% endif %}
   </nav>
   {% else %}
   <nav class="site-side-nav" aria-label="Menu do bolão">
@@ -120,6 +132,18 @@
         </div>
       </details>
     </div>
+    {% if participante_nav or is_admin %}
+    <div class="site-side-sair-wrap">
+      {% if participante_nav %}
+      <form method="post" action="/conta/sair" class="site-sair-form">
+        <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
+      </form>
+      {% endif %}
+      {% if is_admin %}
+      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
+      {% endif %}
+    </div>
+    {% endif %}
   </nav>
   {% endif %}
 </aside>

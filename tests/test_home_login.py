@@ -61,7 +61,30 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert r2.status_code == 200
     assert "Técnicos Horríveis do Futebol Mundial" in r2.text
     assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
+    assert 'action="/conta/sair"' in r2.text
+    assert "site-side-sair" in r2.text
 
+
+def test_conta_sair_limpa_sessao(client: TestClient):
+    part = db.criar_participante("SaiFora", status="liberado", celular="11991234567")
+    db.definir_credenciais(part["id"], "sai.fora", "senha1234")
+    client.get(f"/p/{part['token']}")
+    r = client.post("/conta/sair", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/entrar"
+    r2 = client.get("/", follow_redirects=False)
+    assert 'action="/conta/sair"' not in r2.text
+
+
+def test_admin_logout_vai_para_home(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    import src.app as app_mod
+
+    monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
+    r = client.get("/admin/logout", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/"
 
 def test_raiz_mostra_home_mesmo_com_admin_logado(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
