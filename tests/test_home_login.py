@@ -100,21 +100,19 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     monkeypatch.setattr(app_mod, "admin_nome", lambda request: "Mazeta")
     monkeypatch.setattr(app_mod, "is_dono", lambda request: True)
     monkeypatch.setattr(app_mod, "admin_papel", lambda request: "dono")
+    monkeypatch.setattr(app_mod, "get_ui_mode", lambda request: "admin")
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 200
     assert "Técnicos Horríveis do Futebol Mundial" in r.text
     assert "home-hero-slider" in r.text
-    assert "admin-shell" not in r.text
-    assert "site-shell" in r.text
-    assert "Painel (Dono)" in r.text or "Painel admin" in r.text
+    # Admin em modo admin: chrome do painel em qualquer página
+    assert "admin-shell" in r.text
+    assert "site-shell" not in r.text
     assert 'id="ui-mode-toggle"' in r.text
     assert "ui-mode-toggle-label" in r.text
     assert 'id="ui-mode-chip-fixed"' in r.text
-    assert 'data-group="portal"' in r.text
-    # Portal sem open no HTML; demais grupos com open
-    assert 'data-group="portal">' in r.text or 'data-group="portal" >' in r.text
-    assert 'data-group="bolao" open' in r.text
-    assert 'data-group="marlon" open' in r.text
+    assert "Ver site" in r.text
+
 
 def test_token_sem_senha_abre_setup(client: TestClient):
     part = db.criar_participante("SemCred", status="liberado", celular="11999776655")

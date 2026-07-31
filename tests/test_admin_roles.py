@@ -67,9 +67,33 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     assert 'id="ui-mode-toggle"' in r.text
     assert 'id="ui-mode-chip-fixed"' in r.text
     assert "ui-mode-chip--fixed" in r.text
-    assert "Admin" in r.text
-    assert "Painel (Dono)" in r.text
+    assert "admin-shell" in r.text
+    assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
+    assert "Ver site" in r.text
+
+
+def test_admin_mantem_menu_na_transparencia(client: TestClient):
+    _login_admin(client, "mazeta", "senha-dono")
+    r = client.get("/transparencia")
+    assert r.status_code == 200
+    assert "admin-shell" in r.text
+    assert "site-shell" not in r.text
+    assert "Portal da Transparência" in r.text
+    assert "Painel de Admin" in r.text
+    # Item ativo no menu admin
+    assert "admin-side-link" in r.text
+    assert "/transparencia" in r.text
+
+
+def test_admin_modo_user_usa_menu_do_site(client: TestClient):
+    _login_admin(client, "mazeta", "senha-dono")
+    client.cookies.set("thdfm_ui_mode", "user")
+    r = client.get("/transparencia")
+    assert r.status_code == 200
+    assert "site-shell" in r.text
+    assert "admin-shell" not in r.text
+    assert "Portal da Transparência" in r.text
 
 
 def test_dono_acessa_credenciais_e_redefine(client: TestClient):

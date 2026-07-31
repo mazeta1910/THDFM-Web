@@ -27,13 +27,14 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=138" />
+  <link rel="stylesheet" href="/static/style.css?v=139" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
 {% set on_admin_area = path.startswith('/admin') and path != '/admin/login' %}
 {% set is_admin = is_admin if is_admin is defined else false %}
-{% set admin_layout = is_admin and on_admin_area %}
+{# Admin logado: menu lateral do painel em qualquer página, até o toggle ir para User. #}
+{% set admin_layout = is_admin and path != '/admin/login' and (on_admin_area or ui_mode != 'user') %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
@@ -67,11 +68,15 @@
           id="ui-mode-chip-admin"
           data-mode="admin"
           data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-          title="Ver o site"
+          title="Ver o site como usuário"
         >Ver site</button>
         {% endif %}
       </header>
       {% include "partials/theme_toggle.html" %}
+      {# Páginas do site dentro do chrome admin (ex.: /transparencia) #}
+      {% if not on_admin_area %}
+      <div class="wrap wide">
+      {% endif %}
   {% else %}
   <div class="site-shell">
     <div class="site-sidebar-backdrop" id="site-sidebar-backdrop" hidden></div>
@@ -86,7 +91,7 @@
           class="ui-mode-chip"
           id="ui-mode-chip-site"
           data-mode="user"
-          title="Abrir painel admin"
+          title="Voltar ao menu admin"
         >Admin</button>
         {% endif %}
       </header>
@@ -97,6 +102,9 @@
         {% block content %}{% endblock %}
 
   {% if admin_layout %}
+      {% if not on_admin_area %}
+      </div>
+      {% endif %}
     </div>
   </div>
   {% else %}
@@ -115,21 +123,21 @@
     type="button"
     class="ui-mode-chip ui-mode-chip--fixed"
     id="ui-mode-chip-fixed"
-    data-mode="{{ 'admin' if on_admin_area else 'user' }}"
+    data-mode="{{ ui_mode }}"
     data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if on_admin_area %}Ver o site{% else %}Abrir painel admin{% endif %}"
-  >{% if on_admin_area %}Ver site{% else %}Admin{% endif %}</button>
+    title="{% if admin_layout %}Ver o site como usuário{% else %}Voltar ao menu admin{% endif %}"
+  >{% if admin_layout %}Ver site{% else %}Admin{% endif %}</button>
   <button
     type="button"
     class="ui-mode-toggle"
     id="ui-mode-toggle"
-    data-mode="{{ 'admin' if on_admin_area else 'user' }}"
+    data-mode="{{ ui_mode }}"
     data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if on_admin_area %}Ver o site como na home{% else %}Abrir painel de admin{% endif %}"
-    aria-label="{% if on_admin_area %}Ir para o site{% else %}Ir para o painel admin{% endif %}"
+    title="{% if admin_layout %}Ver o site como usuário{% else %}Voltar ao menu admin{% endif %}"
+    aria-label="{% if admin_layout %}Ir para visão de usuário{% else %}Ir para visão admin{% endif %}"
   >
-    <span class="ui-mode-toggle-icon" aria-hidden="true">{% if on_admin_area %}⌂{% else %}⚙{% endif %}</span>
-    <span class="ui-mode-toggle-label">{% if on_admin_area %}Site{% else %}Admin{% endif %}</span>
+    <span class="ui-mode-toggle-icon" aria-hidden="true">{% if admin_layout %}⌂{% else %}⚙{% endif %}</span>
+    <span class="ui-mode-toggle-label">{% if admin_layout %}Site{% else %}Admin{% endif %}</span>
   </button>
   {% endif %}
 
@@ -143,26 +151,32 @@
     const goMode = (mode, userHome) => {
       setMode(mode);
       if (mode === "user") {
-        location.href = userHome || "/";
+        // Sai do chrome admin: se estiver numa rota /admin, vai para a home do user
+        if (location.pathname.startsWith("/admin")) {
+          location.href = userHome || "/";
+          return;
+        }
+        location.reload();
         return;
       }
-      location.href = "/admin";
+      // Volta ao chrome admin na mesma URL (ex.: /transparencia mantém o menu admin)
+      location.reload();
     };
     const btn = document.getElementById("ui-mode-toggle");
     if (btn) {
       btn.addEventListener("click", () => {
-        const onAdmin = location.pathname.startsWith("/admin");
+        const inAdminChrome = document.body.classList.contains("admin-body");
         goMode(
-          onAdmin ? "user" : "admin",
+          inAdminChrome ? "user" : "admin",
           btn.getAttribute("data-user-home") || "/"
         );
       });
     }
     document.querySelectorAll(".ui-mode-chip").forEach((chip) => {
       chip.addEventListener("click", () => {
-        const onAdmin = location.pathname.startsWith("/admin");
+        const inAdminChrome = document.body.classList.contains("admin-body");
         goMode(
-          onAdmin ? "user" : "admin",
+          inAdminChrome ? "user" : "admin",
           chip.getAttribute("data-user-home") ||
             document.getElementById("ui-mode-toggle")?.getAttribute("data-user-home") ||
             "/"
@@ -175,7 +189,11 @@
         setMode(mode);
         if (mode === "user") {
           e.preventDefault();
-          location.href = el.getAttribute("data-user-home") || el.getAttribute("href") || "/";
+          if (location.pathname.startsWith("/admin")) {
+            location.href = el.getAttribute("data-user-home") || el.getAttribute("href") || "/";
+          } else {
+            location.reload();
+          }
         }
       });
     });
