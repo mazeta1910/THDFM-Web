@@ -4460,24 +4460,35 @@ html[data-theme="light"] .home-hero-scrim {
   flex: 1 1 10rem;
   min-width: 10rem;
   padding: 0.85rem 1.1rem;
-  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease;
-}
-.home-cta-primary {
-  background: var(--accent);
-  color: #111;
-}
-.home-cta-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .home-ctas .btn:hover {
   transform: translateY(-1px);
   filter: brightness(1.06);
 }
-.home-cta-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+.home-cta-primary {
+  background: var(--accent);
+  color: #111;
+}
+/* Specifidade > .btn.secondary (cor var(--text) no light) */
+.home-ctas .btn.home-cta-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  color: #ffffff;
+}
+.home-ctas .btn.home-cta-secondary:hover,
+.home-ctas .btn.home-cta-secondary:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ffffff;
+  color: #ffffff;
+  filter: none;
+}
+html.theme-light .home-ctas .btn.home-cta-secondary,
+html[data-theme="light"] .home-ctas .btn.home-cta-secondary,
+html.theme-light .home-ctas .btn.home-cta-secondary:hover,
+html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
+  color: #ffffff;
+  border-color: #ffffff;
 }
 
 .home-how {
