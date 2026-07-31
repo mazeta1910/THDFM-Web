@@ -417,6 +417,7 @@ nav.site-nav-desktop a.active {
   bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
   z-index: 10050;
   width: auto;
+  max-width: max-content;
   min-width: 5.5rem;
   height: 2.65rem;
   margin: 0;
@@ -437,6 +438,8 @@ nav.site-nav-desktop a.active {
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
 }
 .ui-mode-toggle:hover {
   border-color: rgba(255, 122, 0, 0.75);
@@ -462,22 +465,31 @@ nav.site-nav-desktop a.active {
   line-height: 1;
 }
 .ui-mode-chip {
+  /* Não herdar width:100% / padding gordo do button global */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
+  width: auto;
+  max-width: max-content;
   margin: 0 0 0 0.5rem;
   margin-left: auto;
-  padding: 0.4rem 0.75rem;
+  padding: 0.35rem 0.7rem;
   border: 1px solid rgba(255, 122, 0, 0.55);
   border-radius: 999px;
   background: linear-gradient(180deg, #ff8a1a, #e56700);
   color: #111;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.2;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .admin-body .ui-mode-chip {
   margin-right: 0.35rem;
@@ -492,6 +504,7 @@ nav.site-nav-desktop a.active {
   position: fixed;
   top: calc(var(--site-header-offset, 3.5rem) + 0.65rem);
   right: calc(0.85rem + 48px + 0.45rem);
+  left: auto;
   z-index: 10051;
   margin: 0;
 }
@@ -502,16 +515,25 @@ nav.site-nav-desktop a.active {
 .site-body .ui-mode-chip--fixed {
   top: 0.85rem;
 }
+/* Topbar já tem o chip — o fixo fica só quando a topbar some */
+.admin-topbar .ui-mode-chip,
+.site-topbar .ui-mode-chip {
+  display: inline-flex;
+}
+@media (min-width: 901px) {
+  /* No desktop admin a topbar some sem h1; o chip fixo cobre isso */
+  .admin-topbar .ui-mode-chip {
+    display: none;
+  }
+}
 @media (max-width: 900px) {
   .ui-mode-chip--fixed {
     top: 0.75rem;
     right: calc(0.75rem + 44px + 0.35rem);
   }
   /* No mobile o chip da topbar já aparece; evita duplicar */
-  .site-topbar .ui-mode-chip {
-    display: inline-flex;
-  }
-  .site-body .ui-mode-chip--fixed {
+  .site-body .ui-mode-chip--fixed,
+  .admin-body .ui-mode-chip--fixed {
     display: none;
   }
 }
