@@ -61,12 +61,15 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     r0 = client.get("/")
     assert 'id="ui-mode-toggle"' not in r0.text
     assert 'id="ui-mode-chip-fixed"' not in r0.text
+    assert "ui-mode-chip" not in r0.text or 'id="ui-mode-chip' not in r0.text
 
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/")
     assert 'id="ui-mode-toggle"' in r.text
-    assert 'id="ui-mode-chip-fixed"' in r.text
-    assert "ui-mode-chip--fixed" in r.text
+    assert "ui-mode-toggle-label" in r.text
+    # Chips enormes do topo foram removidos — só o FAB + link do menu
+    assert 'id="ui-mode-chip-fixed"' not in r.text
+    assert 'id="ui-mode-chip-admin"' not in r.text
     assert "admin-shell" in r.text
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text

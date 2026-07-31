@@ -130,7 +130,7 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     assert "site-shell" not in r.text
     assert 'id="ui-mode-toggle"' in r.text
     assert "ui-mode-toggle-label" in r.text
-    assert 'id="ui-mode-chip-fixed"' in r.text
+    assert 'id="ui-mode-chip-fixed"' not in r.text
     assert "Ver site" in r.text
 
 
