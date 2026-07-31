@@ -87,7 +87,9 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     assert "Painel de Admin" in r.text
     assert "is-dono" in r.text
     assert "Ver site" in r.text
-    assert 'href="/admin/login"' not in r.text or "Painel (Dono)" in r.text
+    assert 'href="/admin/login"' not in r.text
+    assert "Painel (Dono)" not in r.text
+    assert "site-side-admin-switch" not in r.text
 
 
 def test_moderador_nao_tem_chrome_toggle(client: TestClient):
@@ -255,6 +257,9 @@ def test_admin_modo_user_usa_menu_do_site(client: TestClient):
     assert "Portal da Transparência" in r.text
     assert 'id="chrome-mode-toggle"' in r.text
     assert "Sair do admin" not in r.text
+    assert "Painel (Dono)" not in r.text
+    assert "site-side-admin-switch" not in r.text
+    assert "site-side-sair" in r.text
 
     # Voltar ao painel restaura o chrome admin nas páginas do site
     r_admin = client.get("/admin")
