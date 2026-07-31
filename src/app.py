@@ -192,9 +192,11 @@ def require_dono(request: Request) -> RedirectResponse | None:
 
 
 def get_ui_mode(request: Request) -> str:
-    """Chrome Admin vs User (só para quem está logado como admin)."""
+    """Chrome Admin vs Site. Só o Dono pode pré-visualizar o site."""
     if not admin_ok(request):
         return "user"
+    if not is_dono(request):
+        return "admin"
     raw = (request.cookies.get("thdfm_ui_mode") or "admin").strip().lower()
     return raw if raw in ("admin", "user") else "admin"
 
@@ -203,8 +205,14 @@ def render(request: Request, name: str, **ctx):
     token = request.session.get("participante_token")
     part_nav = db.get_participante_por_token(token) if token else None
     is_adm = admin_ok(request)
+    path = request.url.path
+    # Ao usar o painel (/admin/*), volta o chrome admin — Classificação etc. não trocam o menu
+    on_admin_area = path.startswith("/admin") and path != "/admin/login"
+    force_admin_cookie = bool(is_adm and on_admin_area)
+    ui = "admin" if force_admin_cookie else get_ui_mode(request)
+
     ctx.setdefault("is_admin", is_adm)
-    ctx.setdefault("ui_mode", get_ui_mode(request))
+    ctx.setdefault("ui_mode", ui)
     ctx.setdefault("admin_papel", admin_papel(request) if is_adm else "")
     ctx.setdefault("is_dono", is_dono(request) if is_adm else False)
     ctx.setdefault(
@@ -254,7 +262,17 @@ def render(request: Request, name: str, **ctx):
                 )
         except Exception:
             ctx["admin_pendentes_count"] = 0
-    return TEMPLATES.TemplateResponse(request, name, ctx)
+    resp = TEMPLATES.TemplateResponse(request, name, ctx)
+    if force_admin_cookie:
+        resp.set_cookie(
+            "thdfm_ui_mode",
+            "admin",
+            max_age=60 * 60 * 24 * 180,
+            httponly=False,
+            samesite="lax",
+            path="/",
+        )
+    return resp
 
 
 def _remember_participante(request: Request, token: str) -> None:

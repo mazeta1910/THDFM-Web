@@ -107,9 +107,8 @@
       <form method="post" action="/conta/sair" class="site-sair-form">
         <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
       </form>
-      {% endif %}
-      {% if is_admin %}
-      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
+      {% elif is_admin %}
+      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
       {% endif %}
     </div>
   </nav>
@@ -176,9 +175,8 @@
       <form method="post" action="/conta/sair" class="site-sair-form">
         <button type="submit" class="site-side-link site-side-sair">{{ ico('sair') }}<span>Sair</span></button>
       </form>
-      {% endif %}
-      {% if is_admin %}
-      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>{% if participante_nav %}Sair do admin{% else %}Sair{% endif %}</span></a>
+      {% elif is_admin %}
+      <a class="site-side-link site-side-sair" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
       {% endif %}
     </div>
   </nav>
