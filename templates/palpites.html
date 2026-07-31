@@ -48,14 +48,14 @@
         data-tab="ida"
         class="{% if f.ativa and janela != 'volta' %}active{% endif %}"
         {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
-      >Jogo 1 (Ida)</button>
+      ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
       <button
         type="button"
         data-fase="{{ f.id }}"
         data-tab="volta"
         class="{% if f.ativa and janela == 'volta' %}active{% endif %}"
         {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% elif janela == 'ida' %}disabled title="Volta ainda não liberada"{% endif %}
-      >Jogo 2 (Volta)</button>
+      ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
     </div>
   </div>
   {% endfor %}

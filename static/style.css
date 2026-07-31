@@ -2836,6 +2836,10 @@ html[data-theme="light"] .admin-main {
 .transparencia-nav-col.is-locked {
   opacity: 0.72;
 }
+.transparencia-nav-col.is-locked .transparencia-nav-fase,
+.transparencia-nav-col.is-locked .transparencia-nav-pernas {
+  opacity: 0.72;
+}
 .transparencia-nav-pernas {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2885,27 +2889,45 @@ html[data-theme="light"] .admin-main {
   cursor: not-allowed;
   color: var(--muted);
 }
+.nav-perna-short {
+  display: none;
+}
+/* Mobile: chips de fase numa linha; Ida/Volta só da fase ativa */
 @media (max-width: 720px) {
   .transparencia-nav {
-    grid-template-columns: 1fr 1fr;
-  }
-  .transparencia-nav-col:nth-child(2n) {
-    border-right: none;
-  }
-  .transparencia-nav-col:nth-child(-n+2) {
-    border-bottom: 1px solid var(--border);
-  }
-}
-@media (max-width: 420px) {
-  .transparencia-nav {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .transparencia-nav-col {
-    border-right: none;
+    display: contents;
+  }
+  .transparencia-nav-col:not(.is-active) .transparencia-nav-pernas {
+    display: none;
+  }
+  .transparencia-nav-fase {
+    padding: 0.5rem 0.15rem;
+    font-size: 0.78rem;
+    border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
   }
-  .transparencia-nav-col:last-child {
-    border-bottom: none;
+  .transparencia-nav-col:last-child .transparencia-nav-fase {
+    border-right: none;
+  }
+  .transparencia-nav-pernas {
+    grid-column: 1 / -1;
+    padding: 0.4rem;
+    gap: 0.35rem;
+  }
+  .transparencia-nav-pernas a,
+  .transparencia-nav-pernas button,
+  .transparencia-nav-pernas span.is-disabled {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.78rem;
+  }
+  .nav-perna-long {
+    display: none;
+  }
+  .nav-perna-short {
+    display: inline;
   }
 }
 

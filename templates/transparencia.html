@@ -21,17 +21,17 @@
       <a
         href="/transparencia?fase={{ f.id }}&perna=ida"
         class="{% if f.id == fase and perna == 'ida' %}active{% endif %}"
-      >Jogo 1 (Ida)</a>
+      ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></a>
       <a
         href="/transparencia?fase={{ f.id }}&perna=volta"
         class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
-      >Jogo 2 (Volta)</a>
+      ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></a>
     </div>
     {% else %}
     <span class="transparencia-nav-fase is-disabled" title="Aguardando liberação desta fase">{{ f.label }}</span>
     <div class="transparencia-nav-pernas">
-      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 1 (Ida)</span>
-      <span class="is-disabled" title="Aguardando liberação desta fase">Jogo 2 (Volta)</span>
+      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></span>
+      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
     </div>
     {% endif %}
   </div>
