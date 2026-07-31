@@ -183,7 +183,8 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     assert "site-shell" not in r.text
     assert 'id="chrome-mode-toggle"' in r.text
     assert 'id="ui-mode-toggle"' not in r.text
-    assert "Ver site" in r.text
+    assert "Usuário" in r.text or "Admin" in r.text
+    assert "Ver site" not in r.text
 
 
 def test_token_sem_senha_abre_setup(client: TestClient):

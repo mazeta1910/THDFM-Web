@@ -1399,25 +1399,17 @@ document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
   filter.addEventListener("search", applyFilter);
 })();
 
-document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
-  input.addEventListener("change", () => {
+setTimeout(() => {
+  document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
     const card = input.closest(".participante-edit-card");
-    const nameEl = card?.querySelector("[data-avatar-name]");
-    const wrap = card?.querySelector(".participante-edit-avatar");
-    const file = input.files?.[0];
-    if (nameEl) nameEl.textContent = file ? file.name : "Trocar foto";
-    if (!file || !file.type.startsWith("image/") || !wrap) return;
-    const url = URL.createObjectURL(file);
-    let img = wrap.querySelector("img");
-    if (!img) {
-      wrap.innerHTML = "";
-      img = document.createElement("img");
-      img.alt = "";
-      img.setAttribute("data-avatar-preview", "");
-      wrap.appendChild(img);
-    }
-    img.src = url;
+    if (!window.thdfmBindAvatarCrop) return;
+    window.thdfmBindAvatarCrop(input, {
+      preview: card?.querySelector(".participante-edit-avatar"),
+      nameEl: card?.querySelector("[data-avatar-name]"),
+      nameEmpty: "Trocar foto",
+      previewAttr: "data-avatar-preview",
+    });
   });
-});
+}, 0);
 </script>
 {% endblock %}

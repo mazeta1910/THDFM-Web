@@ -1,4 +1,4 @@
-{# Atalhos fixos no canto: chrome Admin/Site (só Dono) + tema #}
+{# Atalhos fixos no canto: chrome Admin/Usuário (só Dono) + tema #}
 <div class="top-toggles" id="top-toggles">
   {% if is_dono and path != '/admin/login' %}
   <button
@@ -7,10 +7,10 @@
     id="chrome-mode-toggle"
     data-mode="{% if admin_layout %}admin{% else %}user{% endif %}"
     data-user-home="{% if participante_nav %}/p/{{ participante_nav.token }}{% else %}/{% endif %}"
-    title="{% if admin_layout %}Ver o site como usuário{% else %}Voltar ao menu admin{% endif %}"
+    title="{% if admin_layout %}Ver como usuário{% else %}Voltar ao menu admin{% endif %}"
     aria-label="{% if admin_layout %}Ir para visão de usuário{% else %}Ir para visão admin{% endif %}"
   >
-    <span class="chrome-mode-toggle-label">{% if admin_layout %}Site{% else %}Admin{% endif %}</span>
+    <span class="chrome-mode-toggle-label">{% if admin_layout %}Usuário{% else %}Admin{% endif %}</span>
   </button>
   {% endif %}
   {% include "partials/theme_toggle.html" %}

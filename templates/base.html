@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=151" />
+  <link rel="stylesheet" href="/static/style.css?v=152" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -109,6 +109,7 @@
   {% if participante_nav %}
   {% include "partials/conta_drawer.html" %}
   {% endif %}
+  {% include "partials/avatar_crop_modal.html" %}
 
   {% block scripts %}{% endblock %}
   <script>
@@ -639,6 +640,198 @@
   </script>
   <script>
   (function () {
+    const modal = document.getElementById("avatar-crop-modal");
+    const canvas = document.getElementById("avatar-crop-canvas");
+    const zoomEl = document.getElementById("avatar-crop-zoom");
+    const btnApply = document.getElementById("avatar-crop-apply");
+    const btnCancel = document.getElementById("avatar-crop-cancel");
+    if (!modal || !canvas || !zoomEl || !btnApply || !btnCancel) return;
+
+    const ctx = canvas.getContext("2d");
+    const VIEW = canvas.width;
+    let img = null;
+    let scale = 1;
+    let ox = 0;
+    let oy = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let onApply = null;
+    let onCancel = null;
+    let objectUrl = null;
+
+    const cropSize = () => {
+      if (!img) return 1;
+      return Math.min(img.naturalWidth, img.naturalHeight) / scale;
+    };
+
+    const clamp = () => {
+      if (!img) return;
+      const c = cropSize();
+      const half = c / 2;
+      ox = Math.min(Math.max(ox, half), img.naturalWidth - half);
+      oy = Math.min(Math.max(oy, half), img.naturalHeight - half);
+    };
+
+    const draw = () => {
+      if (!img || !ctx) return;
+      clamp();
+      const c = cropSize();
+      ctx.clearRect(0, 0, VIEW, VIEW);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, VIEW, VIEW);
+      ctx.drawImage(img, ox - c / 2, oy - c / 2, c, c, 0, 0, VIEW, VIEW);
+    };
+
+    const close = (cancelled) => {
+      modal.classList.remove("is-open");
+      modal.setAttribute("hidden", "");
+      dragging = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      img = null;
+      const cb = cancelled ? onCancel : null;
+      onApply = null;
+      onCancel = null;
+      if (cancelled && typeof cb === "function") cb();
+    };
+
+    const open = (file, handlers = {}) => {
+      onApply = handlers.onApply || null;
+      onCancel = handlers.onCancel || null;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      const next = new Image();
+      next.onload = () => {
+        img = next;
+        scale = 1;
+        zoomEl.value = "1";
+        ox = img.naturalWidth / 2;
+        oy = img.naturalHeight / 2;
+        draw();
+        modal.hidden = false;
+        modal.classList.add("is-open");
+      };
+      next.onerror = () => close(true);
+      next.src = objectUrl;
+    };
+
+    zoomEl.addEventListener("input", () => {
+      scale = Math.max(1, Math.min(3, Number(zoomEl.value) || 1));
+      draw();
+    });
+
+    const pointerDown = (e) => {
+      if (!img) return;
+      dragging = true;
+      const pt = e.touches ? e.touches[0] : e;
+      lastX = pt.clientX;
+      lastY = pt.clientY;
+      e.preventDefault();
+    };
+    const pointerMove = (e) => {
+      if (!dragging || !img) return;
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - lastX;
+      const dy = pt.clientY - lastY;
+      lastX = pt.clientX;
+      lastY = pt.clientY;
+      const c = cropSize();
+      ox -= (dx / VIEW) * c;
+      oy -= (dy / VIEW) * c;
+      draw();
+      e.preventDefault();
+    };
+    const pointerUp = () => { dragging = false; };
+
+    canvas.addEventListener("mousedown", pointerDown);
+    window.addEventListener("mousemove", pointerMove);
+    window.addEventListener("mouseup", pointerUp);
+    canvas.addEventListener("touchstart", pointerDown, { passive: false });
+    window.addEventListener("touchmove", pointerMove, { passive: false });
+    window.addEventListener("touchend", pointerUp);
+
+    btnCancel.addEventListener("click", () => close(true));
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(true); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) close(true);
+    });
+
+    btnApply.addEventListener("click", () => {
+      if (!img) return;
+      const out = document.createElement("canvas");
+      out.width = 512;
+      out.height = 512;
+      const octx = out.getContext("2d");
+      const c = cropSize();
+      octx.drawImage(img, ox - c / 2, oy - c / 2, c, c, 0, 0, 512, 512);
+      const applyCb = onApply;
+      out.toBlob((blob) => {
+        if (!blob) {
+          close(true);
+          return;
+        }
+        const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+        close(false);
+        if (typeof applyCb === "function") applyCb(file);
+      }, "image/jpeg", 0.92);
+    });
+
+    window.thdfmOpenAvatarCrop = open;
+
+    window.thdfmBindAvatarCrop = (input, opts = {}) => {
+      if (!input || input.dataset.cropBound === "1") return;
+      input.dataset.cropBound = "1";
+      const preview = opts.preview || null;
+      const nameEl = opts.nameEl || null;
+      const nameEmpty = opts.nameEmpty || "Nenhuma foto escolhida";
+      const previewImgId = opts.previewImgId || "";
+      const previewImgClass = opts.previewImgClass || "";
+      const previewAttr = opts.previewAttr || "";
+
+      const setPreview = (url) => {
+        if (!preview) return;
+        let el = preview.querySelector("img");
+        if (!el) {
+          preview.innerHTML = "";
+          el = document.createElement("img");
+          el.alt = "Prévia da foto";
+          if (previewAttr) el.setAttribute(previewAttr, "");
+          preview.appendChild(el);
+        }
+        if (previewImgId) el.id = previewImgId;
+        if (previewImgClass) el.className = previewImgClass;
+        el.src = url;
+      };
+
+      input.addEventListener("change", () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          if (nameEl) nameEl.textContent = nameEmpty;
+          return;
+        }
+        input.value = "";
+        open(file, {
+          onApply: (cropped) => {
+            const dt = new DataTransfer();
+            dt.items.add(cropped);
+            input.files = dt.files;
+            if (nameEl) nameEl.textContent = cropped.name;
+            setPreview(URL.createObjectURL(cropped));
+          },
+          onCancel: () => {
+            if (nameEl) nameEl.textContent = nameEmpty;
+          },
+        });
+      });
+    };
+  })();
+  </script>
+  <script>
+  (function () {
     const root = document.getElementById("conta-drawer-root");
     if (!root) return;
     const backdrop = document.getElementById("conta-drawer-backdrop");
@@ -705,22 +898,13 @@
     const input = document.getElementById("conta-drawer-avatar");
     const nameEl = document.getElementById("conta-drawer-file-name");
     const preview = document.getElementById("conta-drawer-avatar-preview");
-    if (input && nameEl && preview) {
-      input.addEventListener("change", () => {
-        const file = input.files && input.files[0];
-        nameEl.textContent = file ? file.name : "Nenhuma foto escolhida";
-        if (!file || !file.type.startsWith("image/")) return;
-        const url = URL.createObjectURL(file);
-        let img = preview.querySelector("img");
-        if (!img) {
-          preview.innerHTML = "";
-          img = document.createElement("img");
-          img.alt = "Prévia da foto";
-          preview.appendChild(img);
-        }
-        img.id = "conta-drawer-avatar-live";
-        img.className = "avatar-placeholder";
-        img.src = url;
+    if (input && window.thdfmBindAvatarCrop) {
+      window.thdfmBindAvatarCrop(input, {
+        preview,
+        nameEl,
+        nameEmpty: "Nenhuma foto escolhida",
+        previewImgId: "conta-drawer-avatar-live",
+        previewImgClass: "avatar-placeholder",
       });
     }
   })();
