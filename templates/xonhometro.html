@@ -7,7 +7,7 @@
     <p class="xonha-kicker">THDFM · WhatsApp</p>
     <h1 class="xonha-title">Xonhômetro</h1>
     <p class="xonha-lead">
-      Contador oficial das saídas (e voltas) do Xonha no grupo.
+      Contador oficial das saídas, voltas e banimentos do Xonha no grupo.
       {% if is_admin %}
       <a class="xonha-admin-link" href="/admin/xonhometro">Gerenciar registros</a>
       {% else %}
@@ -32,12 +32,14 @@
       />
       {% if stats.status == 'fora' %}
       <p class="xonha-status xonha-status--fora">Status atual: <strong>fora do grupo</strong></p>
+      {% elif stats.status == 'banido' %}
+      <p class="xonha-status xonha-status--banido">Status atual: <strong>banido do grupo</strong></p>
       {% elif stats.status == 'dentro' %}
       <p class="xonha-status xonha-status--dentro">Status atual: <strong>de volta no grupo</strong></p>
       {% else %}
       <p class="xonha-status">Ainda sem eventos — o placar começa no zero.</p>
       {% endif %}
-      {% if stats.dias_no_status_atual is not none and stats.status in ('fora', 'dentro') %}
+      {% if stats.dias_no_status_atual is not none and stats.status in ('fora', 'dentro', 'banido') %}
       <p class="xonha-status-meta">
         {% if stats.dias_no_status_atual == 0 %}
         Nesse status desde hoje.
@@ -55,6 +57,10 @@
     <div class="xonha-stat" role="listitem">
       <span class="xonha-stat-label">Voltas</span>
       <span class="xonha-stat-value">{{ stats.total_voltas }}</span>
+    </div>
+    <div class="xonha-stat" role="listitem">
+      <span class="xonha-stat-label">Banimentos</span>
+      <span class="xonha-stat-value">{{ stats.total_banimentos }}</span>
     </div>
     <div class="xonha-stat" role="listitem">
       <span class="xonha-stat-label">Saídas neste mês</span>
@@ -157,7 +163,7 @@
       {% for e in eventos %}
       <li class="xonha-item xonha-item--{{ e.tipo }}">
         <div class="xonha-item-top">
-          <span class="xonha-item-tipo">{% if e.tipo == 'saida' %}Saída{% else %}Volta{% endif %}</span>
+          <span class="xonha-item-tipo">{% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}</span>
           <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
             {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
             {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
@@ -172,7 +178,7 @@
       {% endfor %}
     </ol>
     {% else %}
-    <p class="xonha-empty">Nenhuma saída ou volta registrada ainda. O Xonha está em modo zen… por enquanto.</p>
+    <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
   </section>
 </section>

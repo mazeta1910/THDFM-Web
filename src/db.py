@@ -238,7 +238,7 @@ def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS xonha_eventos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo TEXT NOT NULL CHECK (tipo IN ('saida', 'volta')),
+            tipo TEXT NOT NULL CHECK (tipo IN ('saida', 'volta', 'banimento')),
             data TEXT NOT NULL,
             hora TEXT,
             motivo TEXT,
@@ -251,6 +251,30 @@ def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
     }
     if "hora" not in cols:
         conn.execute("ALTER TABLE xonha_eventos ADD COLUMN hora TEXT")
+
+    # Bancos antigos: CHECK só tinha saida/volta — reconstrói a tabela.
+    ddl = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='xonha_eventos'"
+    ).fetchone()
+    ddl_sql = (ddl[0] if ddl else "") or ""
+    if "banimento" not in ddl_sql:
+        conn.executescript(
+            """
+            CREATE TABLE xonha_eventos__new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT NOT NULL CHECK (tipo IN ('saida', 'volta', 'banimento')),
+                data TEXT NOT NULL,
+                hora TEXT,
+                motivo TEXT,
+                criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            );
+            INSERT INTO xonha_eventos__new (id, tipo, data, hora, motivo, criado_em)
+            SELECT id, tipo, data, hora, motivo, criado_em FROM xonha_eventos;
+            DROP TABLE xonha_eventos;
+            ALTER TABLE xonha_eventos__new RENAME TO xonha_eventos;
+            """
+        )
+
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_xonha_eventos_data "
         "ON xonha_eventos(data DESC, id DESC)"
@@ -1306,7 +1330,8 @@ def db_path() -> Path:
 
 # ——— Xonhômetro (saídas/voltas do Xonha no WhatsApp) ———
 
-_XONHA_TIPOS = frozenset({"saida", "volta"})
+_XONHA_TIPOS = frozenset({"saida", "volta", "banimento"})
+_XONHA_TIPOS_FORA = frozenset({"saida", "banimento"})
 _XONHA_DIAS_SEMANA = (
     "segunda",
     "terça",
@@ -1390,7 +1415,7 @@ def criar_xonha_evento(
 ) -> dict[str, Any]:
     tipo_n = (tipo or "").strip().lower()
     if tipo_n not in _XONHA_TIPOS:
-        raise ValueError("Tipo inválido. Use saída ou volta.")
+        raise ValueError("Tipo inválido. Use saída, volta ou banimento.")
     data_n = _validar_data_xonha(data)
     hora_n = _validar_hora_xonha(hora)
     motivo_n = (motivo or "").strip() or None
@@ -1419,7 +1444,7 @@ def atualizar_xonha_evento(
         raise ValueError("Evento não encontrado.")
     tipo_n = (tipo or "").strip().lower()
     if tipo_n not in _XONHA_TIPOS:
-        raise ValueError("Tipo inválido. Use saída ou volta.")
+        raise ValueError("Tipo inválido. Use saída, volta ou banimento.")
     data_n = _validar_data_xonha(data)
     hora_n = _validar_hora_xonha(hora)
     motivo_n = (motivo or "").strip() or None
@@ -1448,8 +1473,10 @@ def xonha_stats() -> dict[str, Any]:
     eventos = list_xonha_eventos()
     saidas = [e for e in eventos if e.get("tipo") == "saida"]
     voltas = [e for e in eventos if e.get("tipo") == "volta"]
+    banimentos = [e for e in eventos if e.get("tipo") == "banimento"]
     total_saidas = len(saidas)
     total_voltas = len(voltas)
+    total_banimentos = len(banimentos)
 
     saidas_asc = sorted(saidas, key=_xonha_sort_key)
     media_dias_entre_saidas: float | None = None
@@ -1511,7 +1538,13 @@ def xonha_stats() -> dict[str, Any]:
     ultimo = max(eventos, key=_xonha_sort_key) if eventos else None
     status = "desconhecido"
     if ultimo:
-        status = "fora" if ultimo.get("tipo") == "saida" else "dentro"
+        tipo_u = ultimo.get("tipo")
+        if tipo_u == "banimento":
+            status = "banido"
+        elif tipo_u == "saida":
+            status = "fora"
+        elif tipo_u == "volta":
+            status = "dentro"
 
     hoje = date_cls.today()
     saidas_mes_atual = sum(
@@ -1542,13 +1575,13 @@ def xonha_stats() -> dict[str, Any]:
         except ValueError:
             dias_no_status_atual = None
 
-    # Pares saída → próxima volta (tempo fora)
+    # Pares saída/banimento → próxima volta (tempo fora)
     ordenados = sorted(eventos, key=_xonha_sort_key)
     tempos_fora_dias: list[float] = []
     pendente_saida: dict[str, Any] | None = None
     for e in ordenados:
         tipo = e.get("tipo")
-        if tipo == "saida":
+        if tipo in _XONHA_TIPOS_FORA:
             pendente_saida = e
         elif tipo == "volta" and pendente_saida is not None:
             try:
@@ -1588,6 +1621,7 @@ def xonha_stats() -> dict[str, Any]:
     return {
         "total_saidas": total_saidas,
         "total_voltas": total_voltas,
+        "total_banimentos": total_banimentos,
         "media_saidas_por_mes": media_saidas_por_mes,
         "media_saidas_por_dia": media_saidas_por_dia,
         "media_dias_entre_saidas": media_dias_entre_saidas,
