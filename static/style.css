@@ -3758,6 +3758,18 @@ tr.planilha-sem-palpite .planilha-num {
   flex-direction: column;
   gap: 1.15rem;
 }
+.inscricoes-gestao-block {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--border);
+}
+.participantes-gestao-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
 .participantes-toolbar {
   display: flex;
   flex-wrap: wrap;
