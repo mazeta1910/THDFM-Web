@@ -794,6 +794,96 @@ html[data-theme="light"] .theme-icon-moon {
   gap: 0.2rem;
   padding: 0.15rem 0 0.35rem;
 }
+.site-menu-subgroup {
+  margin: 0.15rem 0 0.1rem;
+  border: none;
+  background: transparent;
+}
+.site-menu-subgroup > summary {
+  list-style: none;
+}
+.site-menu-subgroup > summary::-webkit-details-marker { display: none; }
+.site-menu-subsummary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  user-select: none;
+}
+.site-menu-subsummary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+.site-menu-subgroup:not([open]) > .site-menu-subsummary::after {
+  transform: rotate(-90deg);
+}
+.site-menu-items--nested {
+  padding: 0.05rem 0 0.2rem 0.7rem;
+  margin-left: 0.35rem;
+  border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+.admin-menu-subgroup {
+  margin: 0.1rem 0;
+}
+.admin-menu-subgroup > summary {
+  list-style: none;
+}
+.admin-menu-subgroup > summary::-webkit-details-marker { display: none; }
+.admin-menu-subsummary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  user-select: none;
+}
+.admin-menu-subsummary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.admin-menu-subgroup:not([open]) > .admin-menu-subsummary::after {
+  transform: rotate(-90deg);
+  display: inline-block;
+}
+.admin-menu-items--nested {
+  padding: 0.05rem 0 0.25rem 0.65rem;
+  margin-left: 0.3rem;
+  border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.em-breve-page {
+  padding: 0.5rem 0 1.5rem;
+}
+.em-breve-page .xonha-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
 .site-side-link {
   display: flex;
   align-items: center;

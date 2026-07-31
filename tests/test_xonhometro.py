@@ -165,8 +165,31 @@ def test_admin_atualiza_e_apaga(client: TestClient):
 def test_menu_tem_xonhometro(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
+    assert "Grupo do WhatsApp" in r.text
+    assert "Acervo Xonha" in r.text
+    assert "Contador de Bans" in r.text
+    assert "Listra" in r.text
+    assert "Copypastas" in r.text
+    assert "Cardápio" in r.text
     assert 'href="/xonhometro"' in r.text
     assert "Xonhômetro" in r.text
+    # Saiu do Portal
+    portal = r.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
+    assert "Xonhômetro" not in portal
+
+
+def test_paginas_grupo_placeholder(client: TestClient):
+    for path, title in (
+        ("/grupo/bans", "Contador de Bans"),
+        ("/grupo/listra", "Listra"),
+        ("/grupo/copypastas", "Copypastas"),
+        ("/grupo/cardapio", "Cardápio"),
+    ):
+        r = client.get(path)
+        assert r.status_code == 200
+        assert title in r.text
+        assert "em-breve-page" in r.text
+        assert "Grupo do WhatsApp" in r.text or "Acervo Xonha" in r.text
 
 
 def test_moderador_tambem_gerencia(client: TestClient):

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} — THDFM{% endblock %}
+{% block content %}
+<section class="em-breve-page">
+  <p class="xonha-kicker">{{ secao or "Grupo do WhatsApp" }}</p>
+  <h1>{{ titulo }}</h1>
+  <p class="login-lead">
+    {{ lead or "Essa área ainda está em montagem. Em breve entra no ar." }}
+  </p>
+  {% if is_admin %}
+  <p class="login-lead"><a href="/admin">Voltar ao painel</a></p>
+  {% endif %}
+</section>
+{% endblock %}
