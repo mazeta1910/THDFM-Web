@@ -146,11 +146,9 @@ def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
     assert "avatar-edit-camera" in r2.text
     assert 'id="conta-drawer-file-name"' not in r2.text
     assert "conta-file-pick" not in r2.text
-    assert "Quero mudar o meu username" in r2.text
-    assert 'id="modal-mudar-username"' in r2.text
-    assert "Vai ficar querendo." in r2.text
-    assert "data-mudar-username-open" in r2.text
-    assert "macaco-rindo.gif" in r2.text
+    assert "Quero mudar o meu username" not in r2.text
+    assert 'id="modal-mudar-username"' not in r2.text
+    assert "Vai ficar querendo." not in r2.text
 
 
 def test_conta_sair_limpa_sessao(client: TestClient):
