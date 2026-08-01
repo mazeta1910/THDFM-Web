@@ -7120,6 +7120,39 @@ mark.listra-destaque {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.listra-meliante-vinculo-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin: 0;
+}
+.listra-meliante-vinculo-select {
+  min-width: 9rem;
+  max-width: 14rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+}
+.listra-meliante-link-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.listra-meliante-link-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.listra-meliante-link-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .listra-meliantes-table .listra-meliante-acoes {
   width: 3rem;
   text-align: right;

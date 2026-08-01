@@ -2054,6 +2054,25 @@ def list_participantes_candidatos_meliante() -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def list_participantes_para_vincular_meliante() -> list[dict[str, Any]]:
+    """Liberados ainda sem vínculo de meliante (para link manual)."""
+    cols_p = ", ".join(f"p.{c.strip()}" for c in _PARTICIPANTE_COLS.split(","))
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT {cols_p}
+            FROM participantes p
+            WHERE p.status = 'liberado'
+              AND NOT EXISTS (
+                SELECT 1 FROM listra_meliantes m
+                WHERE m.participante_id = p.id
+              )
+            ORDER BY p.nome COLLATE NOCASE
+            """
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
 def ensure_listra_meliante(nome: str) -> str:
     """Registra o meliante (se novo) e devolve o nome normalizado."""
     nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
@@ -2154,6 +2173,63 @@ def apagar_listra_meliante(nome: str) -> bool:
             (nome_ok,),
         )
         return cur.rowcount > 0
+
+
+def vincular_listra_meliante(nome: str, participante_id: int) -> str:
+    """Associa manualmente um meliante existente a um usuário liberado."""
+    nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome_ok:
+        raise ValueError("Meliante não encontrado.")
+    part = get_participante(int(participante_id))
+    if not part or part.get("status") != "liberado":
+        raise ValueError("Participante inválido para vínculo.")
+    with get_db() as conn:
+        mel = conn.execute(
+            "SELECT nome, participante_id FROM listra_meliantes "
+            "WHERE nome = ? COLLATE NOCASE LIMIT 1",
+            (nome_ok,),
+        ).fetchone()
+        if not mel:
+            raise ValueError("Meliante não encontrado.")
+        if mel["participante_id"]:
+            raise ValueError("Esse meliante já está vinculado a um usuário.")
+        ocupado = conn.execute(
+            "SELECT nome FROM listra_meliantes WHERE participante_id = ? LIMIT 1",
+            (int(participante_id),),
+        ).fetchone()
+        if ocupado:
+            raise ValueError(
+                f"O usuário já está vinculado ao meliante {ocupado['nome']}."
+            )
+        conn.execute(
+            "UPDATE listra_meliantes SET participante_id = ? "
+            "WHERE nome = ? COLLATE NOCASE",
+            (int(participante_id), nome_ok),
+        )
+    return str(mel["nome"])
+
+
+def desvincular_listra_meliante(nome: str) -> str:
+    """Remove o vínculo com usuário, mantendo o meliante como nome livre."""
+    nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome_ok:
+        raise ValueError("Meliante não encontrado.")
+    with get_db() as conn:
+        mel = conn.execute(
+            "SELECT nome, participante_id FROM listra_meliantes "
+            "WHERE nome = ? COLLATE NOCASE LIMIT 1",
+            (nome_ok,),
+        ).fetchone()
+        if not mel:
+            raise ValueError("Meliante não encontrado.")
+        if not mel["participante_id"]:
+            raise ValueError("Esse meliante já está livre.")
+        conn.execute(
+            "UPDATE listra_meliantes SET participante_id = NULL "
+            "WHERE nome = ? COLLATE NOCASE",
+            (nome_ok,),
+        )
+    return str(mel["nome"])
 
 
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:

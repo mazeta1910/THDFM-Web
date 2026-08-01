@@ -73,6 +73,7 @@
             <th scope="col">Meliante</th>
             <th scope="col">Origem</th>
             <th scope="col">Frases</th>
+            <th scope="col">Vínculo</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -93,6 +94,37 @@
               {% endif %}
             </td>
             <td class="listra-meliante-usos">{{ m.usos }}</td>
+            <td class="listra-meliante-vinculo">
+              {% if m.vinculado %}
+              <form method="post" action="/admin/listra/meliantes/desvincular" class="listra-meliante-vinculo-form">
+                <input type="hidden" name="nome" value="{{ m.nome }}" />
+                <button type="submit" class="listra-meliante-link-btn">Desvincular</button>
+              </form>
+              {% else %}
+              <form method="post" action="/admin/listra/meliantes/vincular" class="listra-meliante-vinculo-form">
+                <input type="hidden" name="nome" value="{{ m.nome }}" />
+                <select
+                  name="participante_id"
+                  class="listra-input listra-meliante-vinculo-select"
+                  required
+                  aria-label="Vincular {{ m.nome }} a um usuário"
+                  {% if not candidatos_vincular %}disabled{% endif %}
+                >
+                  <option value="">
+                    {% if candidatos_vincular %}Usuário…{% else %}Sem usuários livres{% endif %}
+                  </option>
+                  {% for p in candidatos_vincular %}
+                  <option value="{{ p.id }}">{{ p.nome }}{% if p.username %} (@{{ p.username }}){% endif %}</option>
+                  {% endfor %}
+                </select>
+                <button
+                  type="submit"
+                  class="listra-meliante-link-btn"
+                  {% if not candidatos_vincular %}disabled{% endif %}
+                >Vincular</button>
+              </form>
+              {% endif %}
+            </td>
             <td class="listra-meliante-acoes">
               <form
                 method="post"
@@ -106,7 +138,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="4" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
+            <td colspan="5" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
           </tr>
           {% endfor %}
         </tbody>
