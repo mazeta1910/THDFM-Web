@@ -406,11 +406,8 @@
     title="Ir para o fim da Listra"
     data-mode="down"
   >
-    <svg class="listra-scroll-fab-icon listra-scroll-fab-icon--down" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <svg class="listra-scroll-fab-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 9 12 15 18 9"/>
-    </svg>
-    <svg class="listra-scroll-fab-icon listra-scroll-fab-icon--up" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden>
-      <polyline points="6 15 12 9 18 15"/>
     </svg>
   </button>
 </section>
@@ -419,8 +416,6 @@
 (function () {
   var fab = document.getElementById("listra-scroll-fab");
   if (!fab) return;
-  var iconDown = fab.querySelector(".listra-scroll-fab-icon--down");
-  var iconUp = fab.querySelector(".listra-scroll-fab-icon--up");
   var reduceMotion =
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -479,8 +474,6 @@
           : "Ir para o fim da Listra";
     fab.setAttribute("aria-label", label);
     fab.title = label;
-    if (iconDown) iconDown.hidden = mode !== "down";
-    if (iconUp) iconUp.hidden = mode !== "up";
   }
 
   function atualizar() {
