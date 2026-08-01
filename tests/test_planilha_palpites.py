@@ -124,8 +124,9 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-metricas-bloco-title" in r.text
     assert "Nesta fase/perna" not in r.text
     assert "Palpites por jogo" in r.text
-    assert "Mais gols casa" in r.text
-    assert "Mais gols fora" in r.text
+    assert "Mais vitórias casa" in r.text
+    assert "Mais vitórias fora" in r.text
+    assert "· 1 gols)" in r.text or " gols)" in r.text
     assert "— Ida" not in r.text
     assert "Foto User" in r.text
     assert "data-planilha-export" in r.text

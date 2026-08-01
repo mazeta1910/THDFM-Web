@@ -168,13 +168,13 @@
             {% if m.mais_gols %}
             <div class="planilha-metrica planilha-metrica-wide">
               <span class="planilha-metrica-label">Mais gols</span>
-              <span class="planilha-metrica-value">{{ m.mais_gols.nome }} <small>({{ m.mais_gols.placar }} · {{ m.mais_gols.total }})</small></span>
+              <span class="planilha-metrica-value">{{ m.mais_gols.nome }} <small>({{ m.mais_gols.placar }} · {{ m.mais_gols.total }} gols)</small></span>
             </div>
             {% endif %}
             {% if m.menos_gols %}
             <div class="planilha-metrica planilha-metrica-wide">
               <span class="planilha-metrica-label">Menos gols</span>
-              <span class="planilha-metrica-value">{{ m.menos_gols.nome }} <small>({{ m.menos_gols.placar }} · {{ m.menos_gols.total }})</small></span>
+              <span class="planilha-metrica-value">{{ m.menos_gols.nome }} <small>({{ m.menos_gols.placar }} · {{ m.menos_gols.total }} gols)</small></span>
             </div>
             {% endif %}
             {% if m.placar_mais_comum %}
