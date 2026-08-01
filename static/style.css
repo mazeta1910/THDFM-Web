@@ -508,6 +508,9 @@ body.is-moderador #btn-recusar-todos {
   width: 100%;
   box-sizing: border-box;
 }
+.cred-dono-toolbar .listra-custom-select {
+  width: 100%;
+}
 .cred-dono-list {
   display: flex;
   flex-direction: column;
