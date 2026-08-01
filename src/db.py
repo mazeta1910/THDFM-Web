@@ -1633,11 +1633,13 @@ def xonha_stats() -> dict[str, Any]:
 
     saidas_asc = sorted(saidas, key=_xonha_sort_key)
     fora_asc = sorted(saidas + banimentos, key=_xonha_sort_key)
+
+    # Média de tempo entre sumiços (saída ou banimento)
     media_dias_entre_saidas: float | None = None
     media_tempo_entre_saidas_texto: str | None = None
-    if len(saidas_asc) >= 2:
+    if len(fora_asc) >= 2:
         gaps_s: list[float] = []
-        for prev, cur in zip(saidas_asc, saidas_asc[1:]):
+        for prev, cur in zip(fora_asc, fora_asc[1:]):
             t0 = _xonha_evento_dt(prev)
             t1 = _xonha_evento_dt(cur)
             if t0 is None or t1 is None:
@@ -1659,10 +1661,13 @@ def xonha_stats() -> dict[str, Any]:
         months = max(months, 1)
         media_saidas_por_mes = round(total_saidas / months, 2)
 
-        # Desde a primeira saída até hoje (dias corridos)
+        # Mantido para compatibilidade (admin legado); UI pública usa recorde de permanência.
         hoje = date_cls.today()
         dias = max((hoje - d_first).days + 1, 1)
         media_saidas_por_dia = round(total_saidas / dias, 3)
+    elif fora_asc:
+        # Só banimentos: ainda dá pra estimar média mensal de "saídas" = 0
+        pass
 
     # Recordes / ranking: saídas + banimentos (mesmo critério do placar)
     by_day: dict[str, dict[str, int]] = {}
@@ -1771,12 +1776,14 @@ def xonha_stats() -> dict[str, Any]:
             status = "dentro"
 
     hoje = date_cls.today()
+    ym_atual = hoje.strftime("%Y-%m")
+    # Conta sumiços do mês (saídas + banimentos), alinhado ao placar
     saidas_mes_atual = sum(
-        1 for e in saidas if (e.get("data") or "")[:7] == hoje.strftime("%Y-%m")
+        1 for e in fora_asc if (e.get("data") or "")[:7] == ym_atual
     )
     corte_30 = hoje.toordinal() - 29
     saidas_ultimos_30_dias = 0
-    for e in saidas:
+    for e in fora_asc:
         day = (e.get("data") or "")[:10]
         if not day:
             continue
@@ -1787,9 +1794,18 @@ def xonha_stats() -> dict[str, Any]:
             continue
 
     dias_desde_ultima_saida: int | None = None
-    if saidas_asc:
-        d_ult = datetime.strptime(saidas_asc[-1]["data"][:10], "%Y-%m-%d").date()
+    tempo_desde_ultima_saida_texto: str | None = None
+    if fora_asc:
+        ult_fora = fora_asc[-1]
+        d_ult = datetime.strptime(ult_fora["data"][:10], "%Y-%m-%d").date()
         dias_desde_ultima_saida = max((hoje - d_ult).days, 0)
+        t_ult = _xonha_evento_dt(ult_fora)
+        if t_ult is not None:
+            tempo_desde_ultima_saida_texto = formatar_duracao(
+                max((datetime.now() - t_ult).total_seconds(), 0),
+                prefixo="",
+                sufixo="",
+            )
 
     dias_no_status_atual: int | None = None
     status_desde: str | None = None
@@ -1817,34 +1833,64 @@ def xonha_stats() -> dict[str, Any]:
 
     # Pares saída/banimento → próxima volta (tempo fora)
     ordenados = sorted(eventos, key=_xonha_sort_key)
-    tempos_fora_dias: list[float] = []
+    tempos_fora_s: list[float] = []
     pendente_saida: dict[str, Any] | None = None
     for e in ordenados:
         tipo = e.get("tipo")
         if tipo in _XONHA_TIPOS_FORA:
             pendente_saida = e
         elif tipo == "volta" and pendente_saida is not None:
-            try:
-                h0 = (pendente_saida.get("hora") or "00:00")[:5]
-                h1 = (e.get("hora") or "00:00")[:5]
-                t0 = datetime.strptime(
-                    f"{pendente_saida['data'][:10]} {h0}", "%Y-%m-%d %H:%M"
-                )
-                t1 = datetime.strptime(f"{e['data'][:10]} {h1}", "%Y-%m-%d %H:%M")
-                delta_h = max((t1 - t0).total_seconds() / 3600.0, 0.0)
-                tempos_fora_dias.append(delta_h / 24.0)
-            except ValueError:
-                pass
+            t0 = _xonha_evento_dt(pendente_saida)
+            t1 = _xonha_evento_dt(e)
+            if t0 is not None and t1 is not None:
+                delta_s = (t1 - t0).total_seconds()
+                if delta_s > 0:
+                    tempos_fora_s.append(delta_s)
             pendente_saida = None
 
     tempo_medio_fora_dias: float | None = None
     maior_tempo_fora_dias: float | None = None
-    if tempos_fora_dias:
-        tempo_medio_fora_dias = round(sum(tempos_fora_dias) / len(tempos_fora_dias), 1)
-        maior_tempo_fora_dias = round(max(tempos_fora_dias), 1)
+    tempo_medio_fora_texto: str | None = None
+    maior_tempo_fora_texto: str | None = None
+    if tempos_fora_s:
+        media_s = sum(tempos_fora_s) / len(tempos_fora_s)
+        max_s = max(tempos_fora_s)
+        tempo_medio_fora_dias = round(media_s / 86400.0, 2)
+        maior_tempo_fora_dias = round(max_s / 86400.0, 2)
+        tempo_medio_fora_texto = formatar_duracao(media_s, prefixo="", sufixo="")
+        maior_tempo_fora_texto = formatar_duracao(max_s, prefixo="", sufixo="")
+
+    # Recorde de permanência: maior tempo contínuo DENTRO (volta → próxima saída/ban)
+    permanencias_s: list[float] = []
+    pendente_volta: dict[str, Any] | None = None
+    for e in ordenados:
+        tipo = e.get("tipo")
+        if tipo == "volta":
+            pendente_volta = e
+        elif tipo in _XONHA_TIPOS_FORA and pendente_volta is not None:
+            t0 = _xonha_evento_dt(pendente_volta)
+            t1 = _xonha_evento_dt(e)
+            if t0 is not None and t1 is not None:
+                delta_s = (t1 - t0).total_seconds()
+                if delta_s > 0:
+                    permanencias_s.append(delta_s)
+            pendente_volta = None
+    if pendente_volta is not None and status == "dentro":
+        t0 = _xonha_evento_dt(pendente_volta)
+        if t0 is not None:
+            delta_s = (datetime.now() - t0).total_seconds()
+            if delta_s > 0:
+                permanencias_s.append(delta_s)
+
+    recorde_permanencia_dias: float | None = None
+    recorde_permanencia_texto: str | None = None
+    if permanencias_s:
+        max_perm = max(permanencias_s)
+        recorde_permanencia_dias = round(max_perm / 86400.0, 2)
+        recorde_permanencia_texto = formatar_duracao(max_perm, prefixo="", sufixo="")
 
     by_hour: dict[int, int] = {}
-    for e in saidas:
+    for e in fora_asc:
         hora = (e.get("hora") or "").strip()
         if len(hora) >= 2 and hora[:2].isdigit():
             h = int(hora[:2])
@@ -1896,11 +1942,16 @@ def xonha_stats() -> dict[str, Any]:
         "saidas_mes_atual": saidas_mes_atual,
         "saidas_ultimos_30_dias": saidas_ultimos_30_dias,
         "dias_desde_ultima_saida": dias_desde_ultima_saida,
+        "tempo_desde_ultima_saida_texto": tempo_desde_ultima_saida_texto,
         "dias_no_status_atual": dias_no_status_atual,
         "status_desde": status_desde,
         "status_duracao_texto": status_duracao_texto,
         "tempo_medio_fora_dias": tempo_medio_fora_dias,
         "maior_tempo_fora_dias": maior_tempo_fora_dias,
+        "tempo_medio_fora_texto": tempo_medio_fora_texto,
+        "maior_tempo_fora_texto": maior_tempo_fora_texto,
+        "recorde_permanencia_dias": recorde_permanencia_dias,
+        "recorde_permanencia_texto": recorde_permanencia_texto,
         "horario_mais_comum": horario_mais_comum,
         "taxa_retorno": taxa_retorno,
         "recorde_paz_dias": recorde_paz_dias,
