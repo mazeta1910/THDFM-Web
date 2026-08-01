@@ -110,7 +110,7 @@
       <div class="listra-add-actions">
         <button
           type="submit"
-          class="listra-save-btn"
+          class="listra-icon-action listra-save-btn"
           title="Salvar na Listra {{ ano_atual }}"
           aria-label="Salvar na Listra {{ ano_atual }}"
         >
@@ -360,8 +360,20 @@
             </div>
             <div class="listra-edit-actions">
               <button
+                type="button"
+                class="listra-icon-action listra-edit-cancel"
+                data-listra-edit-cancel
+                title="Cancelar"
+                aria-label="Cancelar edição"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 6 6 18"/>
+                  <path d="m6 6 12 12"/>
+                </svg>
+              </button>
+              <button
                 type="submit"
-                class="listra-save-btn"
+                class="listra-icon-action listra-save-btn"
                 title="Salvar"
                 aria-label="Salvar frase"
               >
@@ -371,7 +383,6 @@
                   <polyline points="7 3 7 8 15 8"/>
                 </svg>
               </button>
-              <button type="button" class="listra-edit-cancel" data-listra-edit-cancel>Cancelar</button>
             </div>
           </form>
           {% endif %}
