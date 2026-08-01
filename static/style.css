@@ -4539,6 +4539,10 @@ tr.planilha-sem-palpite .planilha-num {
   font-weight: 700;
   text-align: center;
 }
+.planilha-pts-total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .cell-venc-ok {
   background: var(--cell-venc-ok);
   color: var(--text);

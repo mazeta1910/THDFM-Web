@@ -3,8 +3,16 @@
 from __future__ import annotations
 
 from src.db import list_confrontos_completos, list_participantes, palpites_do_participante
-from src.scoring import classificar_palpite, lado_por_clube
+from src.scoring import classificar_palpite, lado_por_clube, pontos_detalhados
 from src.seed_data import formatar_inicio_jogo
+
+_PTS_VAZIOS = {
+    "pts_placar": 0,
+    "pts_vencedor": 0,
+    "pts_gols_casa": 0,
+    "pts_gols_fora": 0,
+    "pts_total": None,
+}
 
 _GRUPO_ORDEM = {"casa": 0, "empate": 1, "fora": 2, "sem": 3}
 _ACERTOU_ORDEM = {"Placar": 0, "Gols Casa": 1, "Gols fora": 2, "Nada": 3, "": 4}
@@ -108,6 +116,7 @@ def _linhas_agrupadas_por_time(
                 "vencedor": "",
                 "acertou_class": "",
                 "vencedor_class": "",
+                **_PTS_VAZIOS,
                 "sem_palpite": False,
                 "avatar_path": None,
                 "n": len(items),
@@ -395,6 +404,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         ),
                         "acertou_class": "",
                         "vencedor_class": "cell-venc-oficial",
+                        **_PTS_VAZIOS,
                         "sem_palpite": False,
                         "avatar_path": None,
                     }
@@ -423,6 +433,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                             "vencedor": "",
                             "acertou_class": "",
                             "vencedor_class": "",
+                            **_PTS_VAZIOS,
                             "sem_palpite": True,
                         }
                     )
@@ -453,6 +464,17 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         real_penaltis=real_pen,
                         permite_empate=True,
                     )
+                    det = pontos_detalhados(
+                        int(pj["gols_mandante"]),
+                        int(pj["gols_visitante"]),
+                        real_m,
+                        real_v,
+                        fase=c["fase"],
+                        clube_casa_id=mandante_id,
+                        palpite_penaltis=palpite_pen,
+                        real_penaltis=real_pen,
+                        permite_empate=True,
+                    )
                     acertou_slug = {
                         "Placar": "placar",
                         "Gols Casa": "gols-casa",
@@ -470,6 +492,11 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                             "vencedor": "Acertou" if acertou_venc else "Errou",
                             "acertou_class": f"cell-acertou-{acertou_slug}",
                             "vencedor_class": "cell-venc-ok" if acertou_venc else "cell-venc-erro",
+                            "pts_placar": det.placar,
+                            "pts_vencedor": det.vencedor,
+                            "pts_gols_casa": det.gols_casa,
+                            "pts_gols_fora": det.gols_fora,
+                            "pts_total": det.total,
                             "sem_palpite": False,
                         }
                     )
@@ -485,6 +512,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                             "vencedor": "",
                             "acertou_class": "",
                             "vencedor_class": "",
+                            **_PTS_VAZIOS,
                             "sem_palpite": False,
                         }
                     )

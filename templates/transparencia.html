@@ -106,13 +106,14 @@
           <th>Pênaltis</th>
           <th>Acertou</th>
           <th>Vencedor</th>
+          <th>Total</th>
         </tr>
       </thead>
       <tbody>
         {% for row in t.linhas %}
         {% if row.tipo == 'grupo' %}
         <tr class="planilha-grupo planilha-grupo--{{ row.grupo }}" data-planilha-grupo="{{ row.grupo }}">
-          <td colspan="7">
+          <td colspan="8">
             <div class="planilha-grupo-row">
               <span class="planilha-grupo-label">
                 {% if row.grupo == 'casa' %}
@@ -160,8 +161,17 @@
           <td class="planilha-x">x</td>
           <td class="planilha-num">{{ row.gols_v }}</td>
           <td>{{ row.penaltis }}</td>
-          <td class="{{ row.acertou_class }}">{{ row.acertou }}</td>
-          <td class="{{ row.vencedor_class }}">{{ row.vencedor }}</td>
+          <td class="{{ row.acertou_class }}">
+            {% if row.acertou == 'Placar' and row.pts_placar %}Placar +{{ row.pts_placar }}
+            {% elif row.acertou == 'Gols Casa' and row.pts_gols_casa %}Gols Casa +{{ row.pts_gols_casa }}
+            {% elif row.acertou == 'Gols fora' and row.pts_gols_fora %}Gols fora +{{ row.pts_gols_fora }}
+            {% else %}{{ row.acertou }}{% endif %}
+          </td>
+          <td class="{{ row.vencedor_class }}">
+            {% if row.vencedor == 'Acertou' and row.pts_vencedor %}Acertou +{{ row.pts_vencedor }}
+            {% else %}{{ row.vencedor }}{% endif %}
+          </td>
+          <td class="planilha-num planilha-pts-total">{% if row.pts_total is not none %}{{ row.pts_total }}{% endif %}</td>
         </tr>
         {% endif %}
         {% endfor %}

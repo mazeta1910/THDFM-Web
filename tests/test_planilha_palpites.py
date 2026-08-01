@@ -236,3 +236,68 @@ def test_montar_portal_inclui_metricas(client: TestClient):
     assert m["n_empate"] >= 1
     assert m["media_gols_partida"] is not None
     assert m["maior_diferenca"]["diff"] == 4
+
+
+def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
+    placar = db.criar_participante("Placar Ok", status="liberado", celular="11990000201")
+    so_venc = db.criar_participante("So Venc", status="liberado", celular="11990000202")
+    gols = db.criar_participante("Gols Casa", status="liberado", celular="11990000203")
+    errou = db.criar_participante("Errou Tudo", status="liberado", celular="11990000204")
+
+    confrontos = db.list_confrontos_completos("oitavas")
+    c = confrontos[0]
+    jogo = next(j for j in c["jogos"] if j.get("perna") == "ida")
+    # Resultado oficial 2x1 (mandante vence)
+    db.set_resultado_jogo(jogo["id"], 2, 1, None)
+
+    db.salvar_palpite_jogo(placar["id"], jogo["id"], 2, 1)  # placar + vencedor
+    db.salvar_palpite_jogo(so_venc["id"], jogo["id"], 3, 0)  # só vencedor
+    db.salvar_palpite_jogo(gols["id"], jogo["id"], 2, 0)  # gols casa + vencedor
+    db.salvar_palpite_jogo(errou["id"], jogo["id"], 0, 3)  # nada
+
+    tabelas = [
+        t
+        for t in montar_portal("oitavas", exigir_resultado=True)
+        if t["jogo_id"] == jogo["id"]
+    ]
+    assert len(tabelas) == 1
+    by_nome = {
+        r["nome"]: r
+        for r in tabelas[0]["linhas"]
+        if r.get("tipo") == "palpite"
+    }
+
+    p = by_nome["Placar Ok"]
+    assert p["acertou"] == "Placar"
+    assert p["vencedor"] == "Acertou"
+    assert p["pts_placar"] == 10
+    assert p["pts_vencedor"] == 7
+    assert p["pts_total"] == 17
+
+    v = by_nome["So Venc"]
+    assert v["acertou"] == "Nada"
+    assert v["vencedor"] == "Acertou"
+    assert v["pts_vencedor"] == 7
+    assert v["pts_total"] == 7
+
+    g = by_nome["Gols Casa"]
+    assert g["acertou"] == "Gols Casa"
+    assert g["vencedor"] == "Acertou"
+    assert g["pts_gols_casa"] == 5
+    assert g["pts_vencedor"] == 7
+    assert g["pts_total"] == 12
+
+    e = by_nome["Errou Tudo"]
+    assert e["acertou"] == "Nada"
+    assert e["vencedor"] == "Errou"
+    assert e["pts_total"] == 0
+
+    _login_admin(client)
+    r = client.get("/transparencia")
+    assert r.status_code == 200
+    assert ">Total<" in r.text or ">Total</th>" in r.text
+    assert "Placar +10" in r.text
+    assert "Acertou +7" in r.text
+    assert "Gols Casa +5" in r.text
+    assert "planilha-pts-total" in r.text
+    assert "/static/style.css?v=204" in r.text
