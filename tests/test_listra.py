@@ -83,6 +83,9 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "data-listra-ordenar" in body
     assert "Nome do meliante:" in body
     assert 'id="listra-toast-host"' in body
+    assert 'id="listra-meliantes-list"' in body
+    assert "Usar seleção" not in body
+    assert "data-listra-destaque-sel" not in body
 
 
 def test_admin_adiciona_com_emoji_e_destaque(client: TestClient):
@@ -203,9 +206,12 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     # Novo item guarda data e hora (YYYY-MM-DD HH:MM:…)
     assert len(frase["criado_em"]) >= 16
     assert frase["criado_em"][10] == " "
+    assert "Mazeta" in db.list_listra_meliantes()
     pub = client.get("/grupo/listra")
     assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text
+    assert 'list="listra-meliantes-list"' in pub.text
+    assert "Usar seleção" not in pub.text
     assert "Nome do meliante:" in pub.text
     # Exibe data · hora no card
     import re
@@ -241,6 +247,7 @@ def test_admin_edita_frase(client: TestClient):
     atualizada = db.get_listra_frase(criada["id"])
     assert atualizada["texto"] == "Texto editado"
     assert atualizada["responsavel"] == "Ciclano"
+    assert "Ciclano" in db.list_listra_meliantes()
     pub = client.get(
         f"/grupo/listra?msg=Edi%C3%A7%C3%A3o+feita+com+sucesso#listra-frase-{criada['id']}"
     )

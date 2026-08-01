@@ -796,6 +796,7 @@ def grupo_listra(request: Request):
         pode_adicionar=caps["pode_adicionar"],
         pode_enviar=caps["pode_enviar"],
         participante_listra=caps["participante"],
+        listra_meliantes=db.list_listra_meliantes(),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),

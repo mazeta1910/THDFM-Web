@@ -6860,33 +6860,6 @@ textarea.xonha-input {
   min-height: 3.35rem;
   resize: none;
 }
-.listra-destaque-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: stretch;
-}
-.listra-destaque-row .listra-input {
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-.listra-destaque-sel {
-  flex: 0 0 auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.55rem 0.8rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.listra-destaque-sel:hover {
-  color: var(--text);
-  border-color: var(--muted);
-}
 .listra-input {
   width: 100%;
   box-sizing: border-box;
@@ -6948,21 +6921,22 @@ textarea.xonha-input {
 }
 .listra-item-main {
   display: flex;
-  gap: 0.55rem;
+  align-items: baseline;
+  gap: 0.4rem;
   min-width: 0;
   width: 100%;
 }
 .listra-item-bullet {
   flex-shrink: 0;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--accent);
   line-height: 1.45;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
-  min-width: 1.6rem;
 }
 .listra-item-emoji {
   flex-shrink: 0;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   line-height: 1.45;
 }
 .listra-item-texto {
