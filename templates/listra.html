@@ -396,7 +396,162 @@
     </details>
     {% endfor %}
   </div>
+
+  <button
+    type="button"
+    class="listra-scroll-fab"
+    id="listra-scroll-fab"
+    hidden
+    aria-label="Ir para o fim da Listra"
+    title="Ir para o fim da Listra"
+    data-mode="down"
+  >
+    <svg class="listra-scroll-fab-icon listra-scroll-fab-icon--down" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+    <svg class="listra-scroll-fab-icon listra-scroll-fab-icon--up" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden>
+      <polyline points="6 15 12 9 18 15"/>
+    </svg>
+  </button>
 </section>
+
+<script>
+(function () {
+  var fab = document.getElementById("listra-scroll-fab");
+  if (!fab) return;
+  var iconDown = fab.querySelector(".listra-scroll-fab-icon--down");
+  var iconUp = fab.querySelector(".listra-scroll-fab-icon--up");
+  var reduceMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ticking = false;
+
+  function cards() {
+    return Array.prototype.slice.call(
+      document.querySelectorAll("details.listra-ano-card")
+    );
+  }
+
+  function cardAtivo() {
+    var lista = cards();
+    var abertos = lista.filter(function (c) {
+      return c.open;
+    });
+    var pool = abertos.length ? abertos : lista;
+    if (!pool.length) return null;
+    var mid = window.innerHeight * 0.4;
+    var best = null;
+    var bestDist = Infinity;
+    pool.forEach(function (card) {
+      var r = card.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var center = (r.top + r.bottom) / 2;
+      var dist = Math.abs(center - mid);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = card;
+      }
+    });
+    if (best) return best;
+    return (
+      pool.find(function (c) {
+        return c.classList.contains("listra-ano-card--atual");
+      }) || pool[0]
+    );
+  }
+
+  function pertoDoFim(card) {
+    var r = card.getBoundingClientRect();
+    return r.bottom <= window.innerHeight + 96;
+  }
+
+  function pertoDoTopoPagina() {
+    return (window.pageYOffset || document.documentElement.scrollTop || 0) < 160;
+  }
+
+  function setMode(mode, ano) {
+    fab.setAttribute("data-mode", mode);
+    var label =
+      mode === "up"
+        ? "Ir para o topo da página"
+        : ano
+          ? "Ir para o fim da Listra " + ano
+          : "Ir para o fim da Listra";
+    fab.setAttribute("aria-label", label);
+    fab.title = label;
+    if (iconDown) iconDown.hidden = mode !== "down";
+    if (iconUp) iconUp.hidden = mode !== "up";
+  }
+
+  function atualizar() {
+    var card = cardAtivo();
+    var pageLong =
+      document.documentElement.scrollHeight > window.innerHeight * 1.4;
+    if (!card || !pageLong || pertoDoTopoPagina()) {
+      fab.hidden = true;
+      return;
+    }
+    fab.hidden = false;
+    var ano = card.getAttribute("data-ano") || "";
+    if (pertoDoFim(card)) setMode("up", ano);
+    else setMode("down", ano);
+
+    var toastHost = document.getElementById("listra-toast-host");
+    fab.classList.toggle(
+      "has-toast",
+      !!(toastHost && toastHost.children.length)
+    );
+  }
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      ticking = false;
+      atualizar();
+    });
+  }
+
+  fab.addEventListener("click", function () {
+    var mode = fab.getAttribute("data-mode") || "down";
+    if (mode === "up") {
+      try {
+        window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
+      return;
+    }
+    var card = cardAtivo();
+    if (!card) return;
+    if (!card.open) card.open = true;
+    var last =
+      card.querySelector(".listra-item:last-of-type") ||
+      card.querySelector(".listra-list") ||
+      card.querySelector(".listra-empty") ||
+      card;
+    requestAnimationFrame(function () {
+      try {
+        last.scrollIntoView({
+          block: "end",
+          behavior: reduceMotion ? "auto" : "smooth",
+        });
+      } catch (e) {
+        last.scrollIntoView(false);
+      }
+    });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  document.addEventListener("toggle", function (ev) {
+    if (ev.target && ev.target.matches && ev.target.matches("details.listra-ano-card")) {
+      onScroll();
+    }
+  }, true);
+  atualizar();
+})();
+</script>
 
 <script>
 (function () {
