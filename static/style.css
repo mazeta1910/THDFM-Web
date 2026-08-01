@@ -4590,30 +4590,50 @@ tr.planilha-sem-palpite .planilha-num {
 }
 .classificacao-table .col-pts { font-weight: 700; min-width: 3rem; }
 .classificacao-table .col-pts strong { font-size: 1.02rem; color: var(--text); }
-.classificacao-table th.col-player,
-.classificacao-table td.col-player {
+
+.classificacao-table th.col-pos,
+.classificacao-table td.col-pos {
   position: sticky;
   left: 0;
   z-index: 4;
   background-color: var(--zona-meio-solid);
-  min-width: 11.5rem;
-  max-width: 12.5rem;
-  width: 12.5rem;
-  overflow: hidden;
+  width: 3.1rem;
+  min-width: 3.1rem;
+  max-width: 3.1rem;
+  padding-left: 0.45rem;
+  padding-right: 0.35rem;
+  text-align: center;
+  box-shadow: none;
+}
+.classificacao-table thead th.col-pos {
+  z-index: 6;
+  background-color: var(--card);
+}
+.classificacao-table th.col-player,
+.classificacao-table td.col-player {
+  position: sticky;
+  left: 3.1rem;
+  z-index: 4;
+  background-color: var(--zona-meio-solid);
+  min-width: 12rem;
+  max-width: 18rem;
+  width: 14rem;
+  white-space: normal;
+  overflow: visible;
   box-shadow: 8px 0 12px -8px rgba(0, 0, 0, 0.75);
   border-right: 1px solid var(--border);
 }
 .classificacao-table thead th.col-player {
   z-index: 5;
   background-color: var(--card);
+  white-space: nowrap;
 }
 .classificacao-player {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
 }
 .classificacao-table .classificacao-pos {
   display: flex;
@@ -4621,16 +4641,16 @@ tr.planilha-sem-palpite .planilha-num {
   align-items: center;
   justify-content: center;
   gap: 0.05rem;
-  min-width: 1.55rem;
-  flex: 0 0 auto;
+  min-width: 0;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 .classificacao-table .pos-num {
   display: inline-block;
-  min-width: 1rem;
   text-align: center;
+  font-size: 0.88rem;
+  line-height: 1.15;
 }
 .classificacao-table .pos-mov {
   display: inline-block;
@@ -4645,33 +4665,53 @@ tr.planilha-sem-palpite .planilha-num {
 .classificacao-table tbody tr.zona-alta td { background: var(--zona-alta); }
 .classificacao-table tbody tr.zona-risco td { background: var(--zona-risco); }
 .classificacao-table tbody tr.zona-meio td { background: var(--card); }
-/* Fundos OPAQUES na coluna sticky — evita número das outras colunas aparecerem por baixo */
+/* Fundos OPAQUES nas colunas sticky — evita número das outras colunas aparecerem por baixo */
+.classificacao-table tbody tr.zona-campeao td.col-pos,
 .classificacao-table tbody tr.zona-campeao td.col-player {
   background-color: var(--zona-campeao-solid);
+}
+.classificacao-table tbody tr.zona-campeao td.col-pos {
   border-left: 3px solid var(--zona-campeao-bar);
 }
+.classificacao-table tbody tr.zona-podio td.col-pos,
 .classificacao-table tbody tr.zona-podio td.col-player {
   background-color: var(--zona-podio-solid);
+}
+.classificacao-table tbody tr.zona-podio td.col-pos {
   border-left: 3px solid var(--zona-podio-bar);
 }
+.classificacao-table tbody tr.zona-alta td.col-pos,
 .classificacao-table tbody tr.zona-alta td.col-player {
   background-color: var(--zona-alta-solid);
+}
+.classificacao-table tbody tr.zona-alta td.col-pos {
   border-left: 3px solid var(--zona-alta-bar);
 }
+.classificacao-table tbody tr.zona-risco td.col-pos,
 .classificacao-table tbody tr.zona-risco td.col-player {
   background-color: var(--zona-risco-solid);
+}
+.classificacao-table tbody tr.zona-risco td.col-pos {
   border-left: 3px solid var(--zona-risco-bar);
 }
+.classificacao-table tbody tr.zona-meio td.col-pos,
 .classificacao-table tbody tr.zona-meio td.col-player {
   background-color: var(--zona-meio-solid);
+}
+.classificacao-table tbody tr.zona-meio td.col-pos {
   border-left: 3px solid var(--zona-meio-bar);
 }
 .classificacao-table tbody tr.is-eu td {
   box-shadow: inset 0 2px 0 0 var(--accent), inset 0 -2px 0 0 var(--accent);
 }
-.classificacao-table tbody tr.is-eu td.col-player {
+.classificacao-table tbody tr.is-eu td.col-pos {
   box-shadow:
     inset 3px 0 0 0 var(--accent),
+    inset 0 2px 0 0 var(--accent),
+    inset 0 -2px 0 0 var(--accent);
+}
+.classificacao-table tbody tr.is-eu td.col-player {
+  box-shadow:
     inset 0 2px 0 0 var(--accent),
     inset 0 -2px 0 0 var(--accent),
     6px 0 10px -7px rgba(0, 0, 0, 0.65);
@@ -4716,16 +4756,75 @@ tr.planilha-sem-palpite .planilha-num {
   color: var(--muted);
 }
 .classificacao-nome {
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word;
   min-width: 0;
   flex: 1 1 auto;
-  max-width: none;
   color: var(--text);
   font-weight: 600;
   font-size: 0.88rem;
+}
+.classificacao-table .th-sort {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+.classificacao-table .th-sort:hover,
+.classificacao-table .th-sort:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+.classificacao-table .th-sort-icon {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.7rem;
+  flex: 0 0 auto;
+  opacity: 0.35;
+  background:
+    linear-gradient(currentColor, currentColor) center 0.05rem / 0.45rem 0.1rem no-repeat,
+    linear-gradient(currentColor, currentColor) center 0.55rem / 0.45rem 0.1rem no-repeat;
+  position: relative;
+}
+.classificacao-table .th-sort-icon::before,
+.classificacao-table .th-sort-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 0.22rem solid transparent;
+  border-right: 0.22rem solid transparent;
+  transform: translateX(-50%);
+}
+.classificacao-table .th-sort-icon::before {
+  top: -0.05rem;
+  border-bottom: 0.22rem solid currentColor;
+  opacity: 0.35;
+}
+.classificacao-table .th-sort-icon::after {
+  bottom: -0.05rem;
+  border-top: 0.22rem solid currentColor;
+  opacity: 0.35;
+}
+.classificacao-table th[aria-sort="ascending"] .th-sort-icon::before { opacity: 1; }
+.classificacao-table th[aria-sort="ascending"] .th-sort-icon::after { opacity: 0.2; }
+.classificacao-table th[aria-sort="descending"] .th-sort-icon::before { opacity: 0.2; }
+.classificacao-table th[aria-sort="descending"] .th-sort-icon::after { opacity: 1; }
+.classificacao-table th[aria-sort="ascending"] .th-sort-icon,
+.classificacao-table th[aria-sort="descending"] .th-sort-icon {
+  opacity: 1;
 }
 .classificacao-rod.positivo { color: var(--accent); font-weight: 700; }
 .classificacao-rod.negativo { color: #e74c3c; font-weight: 700; }
@@ -4852,11 +4951,20 @@ tr.planilha-sem-palpite .planilha-num {
   }
   .classificacao-table .th-full { display: none; }
   .classificacao-table .th-short { display: inline; }
+  .classificacao-table th.col-pos,
+  .classificacao-table td.col-pos {
+    width: 2.7rem;
+    min-width: 2.7rem;
+    max-width: 2.7rem;
+    padding-left: 0.3rem;
+    padding-right: 0.25rem;
+  }
   .classificacao-table th.col-player,
   .classificacao-table td.col-player {
-    min-width: 10.5rem;
-    max-width: 10.5rem;
-    width: 10.5rem;
+    left: 2.7rem;
+    min-width: 9.5rem;
+    max-width: 13rem;
+    width: 11rem;
     padding-left: 0.4rem;
     padding-right: 0.45rem;
   }

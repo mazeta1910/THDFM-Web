@@ -29,56 +29,89 @@
 
 <div class="card classificacao-card">
   <div class="classificacao-scroll">
-    <table class="classificacao-table">
+    <table class="classificacao-table" id="classificacao-table" data-classificacao-sort>
       <thead>
         <tr>
-          <th class="col-player">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Participante</span><span class="th-short">Jogador</span>
-              <span class="col-tip-bubble" role="tooltip">Colocação, foto e nome. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada.</span>
-            </span>
+          <th class="col-pos is-sortable" data-sort-key="pos" data-sort-type="number" aria-sort="ascending">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Pos.</span><span class="th-short">#</span>
+                <span class="col-tip-bubble" role="tooltip">Colocação oficial. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada. Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num col-pts">
-            <span class="col-tip col-tip-end" tabindex="0">
-              <span class="th-full">Pontos</span><span class="th-short">Pts</span>
-              <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus.</span>
-            </span>
+          <th class="col-player is-sortable" data-sort-key="nome" data-sort-type="string" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Participante</span><span class="th-short">Jogador</span>
+                <span class="col-tip-bubble" role="tooltip">Foto e nome do participante. Clique para ordenar A–Z ou Z–A.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip col-tip-end" tabindex="0">
-              <span class="th-full">Rodada</span><span class="th-short">Rod</span>
-              <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %}</span>
-            </span>
+          <th class="col-num col-pts is-sortable" data-sort-key="soma" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip col-tip-end" tabindex="0">
+                <span class="th-full">Pontos</span><span class="th-short">Pts</span>
+                <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Placar</span><span class="th-short">Plc</span>
-              <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato.</span>
-            </span>
+          <th class="col-num is-sortable" data-sort-key="rod" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip col-tip-end" tabindex="0">
+                <span class="th-full">Rodada</span><span class="th-short">Rod</span>
+                <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Vencedor</span><span class="th-short">Ven</span>
-              <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate).</span>
-            </span>
+          <th class="col-num is-sortable" data-sort-key="placar" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Placar</span><span class="th-short">Plc</span>
+                <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato. Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Gols casa</span><span class="th-short">GC</span>
-              <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante.</span>
-            </span>
+          <th class="col-num is-sortable" data-sort-key="vencedor" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Vencedor</span><span class="th-short">Ven</span>
+                <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate). Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Gols fora</span><span class="th-short">GF</span>
-              <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante.</span>
-            </span>
+          <th class="col-num is-sortable" data-sort-key="gols_casa" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Gols casa</span><span class="th-short">GC</span>
+                <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante. Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
-          <th class="col-num">
-            <span class="col-tip" tabindex="0">
-              <span class="th-full">Bônus</span><span class="th-short">Bôn</span>
-              <span class="col-tip-bubble" role="tooltip">Bônus de fidelidade dos palpites (detalhes em Regras).</span>
-            </span>
+          <th class="col-num is-sortable" data-sort-key="gols_fora" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Gols fora</span><span class="th-short">GF</span>
+                <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante. Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
+          </th>
+          <th class="col-num is-sortable" data-sort-key="fidelidade" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip" tabindex="0">
+                <span class="th-full">Bônus</span><span class="th-short">Bôn</span>
+                <span class="col-tip-bubble" role="tooltip">Bônus de fidelidade dos palpites (detalhes em Regras). Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true"></span>
+            </button>
           </th>
         </tr>
       </thead>
@@ -88,17 +121,19 @@
           (r.participante_id is defined and r.participante_id == participante_nav.id)
           or r.participante == participante_nav.nome
         ) %}
-        <tr class="zona-{{ r.zona }}{% if sou_eu %} is-eu{% endif %}">
-          <td class="col-player">
+        <tr class="zona-{{ r.zona }}{% if sou_eu %} is-eu{% endif %}" data-row-index="{{ loop.index0 }}">
+          <td class="col-pos" data-value="{{ r.posicao }}">
+            <div class="classificacao-pos">
+              <span class="pos-num">{{ r.posicao }}º</span>
+              {% if r.movimento is not none and r.movimento != 0 %}
+              <span class="pos-mov {% if r.movimento > 0 %}up{% else %}down{% endif %}" title="{% if r.movimento > 0 %}Subiu {{ r.movimento }}{% else %}Desceu {{ -r.movimento }}{% endif %}">
+                {% if r.movimento > 0 %}▲{{ r.movimento }}{% else %}▼{{ -r.movimento }}{% endif %}
+              </span>
+              {% endif %}
+            </div>
+          </td>
+          <td class="col-player" data-value="{{ r.participante }}">
             <div class="classificacao-player">
-              <div class="classificacao-pos">
-                <span class="pos-num">{{ r.posicao }}</span>
-                {% if r.movimento is not none and r.movimento != 0 %}
-                <span class="pos-mov {% if r.movimento > 0 %}up{% else %}down{% endif %}" title="{% if r.movimento > 0 %}Subiu {{ r.movimento }}{% else %}Desceu {{ -r.movimento }}{% endif %}">
-                  {% if r.movimento > 0 %}▲{{ r.movimento }}{% else %}▼{{ -r.movimento }}{% endif %}
-                </span>
-                {% endif %}
-              </div>
               {% set row_av = avatar_url(r.avatar_path) %}
               {% if row_av %}
               <img class="classificacao-avatar" src="{{ row_av }}" alt="" />
@@ -109,16 +144,16 @@
               {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
             </div>
           </td>
-          <td class="col-num col-pts"><strong>{{ r.soma }}</strong></td>
-          <td class="col-num classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
-          <td class="col-num">{{ r.placar }}</td>
-          <td class="col-num">{{ r.vencedor }}</td>
-          <td class="col-num">{{ r.gols_casa }}</td>
-          <td class="col-num">{{ r.gols_fora }}</td>
-          <td class="col-num">{{ r.fidelidade }}</td>
+          <td class="col-num col-pts" data-value="{{ r.soma }}"><strong>{{ r.soma }}</strong></td>
+          <td class="col-num classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}" data-value="{{ r.rod }}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
+          <td class="col-num" data-value="{{ r.placar }}">{{ r.placar }}</td>
+          <td class="col-num" data-value="{{ r.vencedor }}">{{ r.vencedor }}</td>
+          <td class="col-num" data-value="{{ r.gols_casa }}">{{ r.gols_casa }}</td>
+          <td class="col-num" data-value="{{ r.gols_fora }}">{{ r.gols_fora }}</td>
+          <td class="col-num" data-value="{{ r.fidelidade }}">{{ r.fidelidade }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="8">Sem participantes ainda.</td></tr>
+        <tr><td colspan="9">Sem participantes ainda.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -138,7 +173,7 @@
 <p class="classificacao-zona-hint">
   Regra de 3 com o Brasileirão (4 em 20 ≈ 20% no topo e 20% embaixo). Com {{ linhas|length }} participante(s): 1 campeão · {% if zona_faixa > 1 %}{{ zona_faixa - 1 }} zona alta · {% endif %}{{ zona_faixa }} zona de risco.
   {% if not modo_historico %} O movimento (▲/▼) compara com a última rodada confirmada. Ao confirmar a rodada, a tabela é arquivada neste histórico.{% endif %}
-  No celular, deslize a tabela para o lado — posição, foto e nome ficam fixos.
+  Clique no cabeçalho de qualquer coluna para ordenar. No celular, deslize a tabela para o lado — colocação, foto e nome ficam fixos.
 </p>
 {% endif %}
 <div class="col-tip-host" id="col-tip-host" hidden></div>
@@ -201,6 +236,78 @@
   }, true);
   window.addEventListener("resize", () => {
     if (activeTip && !host.hidden) place(activeTip);
+  });
+})();
+
+(() => {
+  const table = document.querySelector("[data-classificacao-sort]");
+  if (!table) return;
+  const tbody = table.tBodies[0];
+  if (!tbody) return;
+
+  const headers = Array.from(table.querySelectorAll("thead th.is-sortable"));
+  let activeKey = "pos";
+  let activeDir = "asc";
+
+  const cellValue = (row, key) => {
+    const th = table.querySelector(`thead th[data-sort-key="${key}"]`);
+    if (!th) return "";
+    const idx = Array.from(th.parentNode.children).indexOf(th);
+    const td = row.children[idx];
+    if (!td) return "";
+    return td.getAttribute("data-value") || "";
+  };
+
+  const compare = (a, b, key, type, dir) => {
+    const av = cellValue(a, key);
+    const bv = cellValue(b, key);
+    let cmp = 0;
+    if (type === "number") {
+      cmp = (Number(av) || 0) - (Number(bv) || 0);
+    } else {
+      cmp = String(av).localeCompare(String(bv), "pt-BR", { sensitivity: "base" });
+    }
+    if (cmp === 0) {
+      const ai = Number(a.getAttribute("data-row-index") || 0);
+      const bi = Number(b.getAttribute("data-row-index") || 0);
+      cmp = ai - bi;
+    }
+    return dir === "desc" ? -cmp : cmp;
+  };
+
+  const applySort = (key, type, dir) => {
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter((tr) => tr.children.length > 1);
+    rows.sort((a, b) => compare(a, b, key, type, dir));
+    rows.forEach((row) => tbody.appendChild(row));
+    headers.forEach((th) => {
+      const k = th.getAttribute("data-sort-key");
+      th.setAttribute("aria-sort", k === key ? (dir === "asc" ? "ascending" : "descending") : "none");
+    });
+    activeKey = key;
+    activeDir = dir;
+  };
+
+  const defaultDir = (key, type) => {
+    if (key === "pos" || type === "string") return "asc";
+    return "desc";
+  };
+
+  headers.forEach((th) => {
+    const btn = th.querySelector("[data-sort]");
+    if (!btn) return;
+    btn.addEventListener("click", (ev) => {
+      // Não interfere com teclado/foco do tooltip.
+      if (ev.target.closest(".col-tip") && ev.detail === 0) return;
+      const key = th.getAttribute("data-sort-key") || "";
+      const type = th.getAttribute("data-sort-type") || "string";
+      let dir;
+      if (activeKey === key) {
+        dir = activeDir === "asc" ? "desc" : "asc";
+      } else {
+        dir = defaultDir(key, type);
+      }
+      applySort(key, type, dir);
+    });
   });
 })();
 </script>
