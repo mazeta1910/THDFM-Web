@@ -4,6 +4,7 @@ import json
 import re
 import secrets
 import sqlite3
+import unicodedata
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -1808,13 +1809,6 @@ _LISTRA_FRASE_COLS = (
     "id, texto, responsavel, criado_por_id, criado_em, ordem, ano, emoji, destaque"
 )
 
-# Emojis frequentes na Listra (atalhos no formulário).
-LISTRA_EMOJI_OPCOES = (
-    "📺", "⚽", "🏆", "🎤", "🎶", "🎮", "💊", "🥊", "🤝", "🤔",
-    "🥸", "🤡", "😎", "🤧", "🧙‍♂️", "👴", "🎸", "🇧🇷", "🇦🇷", "🇩🇪",
-    "🇯🇵", "🇯🇲", "🏳️‍🌈", "🚫", "❌", "💡", "🔒", "📆", "🍲", "🌀",
-)
-
 
 def split_leading_emoji(texto: str) -> tuple[str, str]:
     """Separa emoji inicial (estilo Listra 2025) do restante do texto."""
@@ -1939,6 +1933,7 @@ def listra_texto_whatsapp(
     *,
     ano: int | None = None,
 ) -> str:
+    """Export estilo Listra 2025: título + linhas `N. emoji frase`."""
     from src.listra_seed import LISTRA_ANO_ATUAL, listra_titulo
 
     if frases is None:
@@ -1952,23 +1947,61 @@ def listra_texto_whatsapp(
         itens = frases
         titulo = listra_titulo(ano_ok)
     linhas = [f"*{titulo}*", ""]
+    n = 0
     for f in itens:
         linha = listra_linha_compartilhar(f)
         if not linha:
             continue
+        n += 1
         for i, parte in enumerate(linha.splitlines()):
             parte = parte.strip()
             if not parte:
                 continue
-            prefixo = "* " if i == 0 else "  "
-            linhas.append(f"{prefixo}{parte}")
+            if i == 0:
+                linhas.append(f"{n}. {parte}")
+            else:
+                # Continuação de linha (frase multilinha): alinha sob o texto.
+                linhas.append(f"   {parte}")
     return "\n".join(linhas).rstrip() + "\n"
+
+
+def _eh_somente_emoji(valor: str) -> bool:
+    """True se o valor for só emoji/símbolo (sem texto alfabético)."""
+    if not valor:
+        return True
+    if re.search(r"[A-Za-z]", valor):
+        return False
+    for ch in valor:
+        o = ord(ch)
+        if o < 128:
+            # Dígitos / # / * só entram em keycaps (1️⃣, #️⃣).
+            if ch.isdigit() or ch in "#*":
+                continue
+            return False
+    # Precisa de algum caractere de emoji/símbolo ou marcador de sequência.
+    tem_emoji = False
+    for ch in valor:
+        o = ord(ch)
+        cat = unicodedata.category(ch)
+        if (
+            o >= 0x2600
+            or cat in ("So", "Sk")
+            or ch in ("\u200d", "\ufe0e", "\ufe0f", "\u20e3")
+            or 0x1F3FB <= o <= 0x1F3FF
+        ):
+            tem_emoji = True
+            break
+    return tem_emoji
 
 
 def _normalizar_listra_emoji(emoji: str) -> str:
     emoji_ok = re.sub(r"\s+", "", (emoji or "").strip())
+    if not emoji_ok:
+        return ""
     if len(emoji_ok) > 16:
         raise ValueError("Emoji com no máximo 16 caracteres.")
+    if not _eh_somente_emoji(emoji_ok):
+        raise ValueError("O campo emoji aceita apenas emojis.")
     return emoji_ok
 
 

@@ -27,25 +27,12 @@
   {% if pode_adicionar %}
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
-    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual. No WhatsApp vai o emoji + o trecho compartilhável (ou a frase inteira).</p>
+    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual. No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).</p>
     <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off" data-listra-frase-form>
       <input type="hidden" name="ano" value="{{ ano_atual }}" />
-      <div class="listra-field">
-        <label for="listra-texto">Frase (contexto na Listra)</label>
-        <textarea
-          id="listra-texto"
-          name="texto"
-          class="listra-input"
-          rows="3"
-          maxlength="2000"
-          required
-          placeholder="Cole a pérola completa — fica na Listra para contextualizar"
-          data-listra-texto
-        ></textarea>
-      </div>
-      <div class="listra-field">
-        <span class="listra-field-label">Emoji</span>
-        <div class="listra-emoji-picker" data-listra-emoji-picker>
+      <div class="listra-frase-row">
+        <div class="listra-field listra-field-emoji">
+          <label for="listra-emoji">Emoji</label>
           <input
             id="listra-emoji"
             name="emoji"
@@ -54,13 +41,23 @@
             maxlength="16"
             placeholder="📺"
             data-listra-emoji
+            autocomplete="off"
+            spellcheck="false"
             aria-label="Emoji da frase"
           />
-          <div class="listra-emoji-opcoes" role="group" aria-label="Emojis rápidos">
-            {% for em in listra_emoji_opcoes %}
-            <button type="button" class="listra-emoji-opt" data-listra-emoji-opt="{{ em }}" title="{{ em }}">{{ em }}</button>
-            {% endfor %}
-          </div>
+        </div>
+        <div class="listra-field listra-field-frase">
+          <label for="listra-texto">Frase (contexto na Listra)</label>
+          <textarea
+            id="listra-texto"
+            name="texto"
+            class="listra-input"
+            rows="3"
+            maxlength="2000"
+            required
+            placeholder="Cole a pérola completa — fica na Listra para contextualizar"
+            data-listra-texto
+          ></textarea>
         </div>
       </div>
       <div class="listra-field">
@@ -206,7 +203,7 @@
         >
           <div class="listra-item-view">
             <div class="listra-item-main">
-              <span class="listra-item-bullet" aria-hidden="true">*</span>
+              <span class="listra-item-bullet" aria-hidden="true">{{ loop.index }}.</span>
               {% if emoji_item %}<span class="listra-item-emoji" aria-hidden="true">{{ emoji_item }}</span>{% endif %}
               <p class="listra-item-texto">{{ texto_ctx|listra_marcar_destaque(f.destaque) }}</p>
             </div>
@@ -259,21 +256,9 @@
             autocomplete="off"
           >
             <input type="hidden" name="frase_id" value="{{ f.id }}" />
-            <div class="listra-field">
-              <label for="listra-edit-texto-{{ f.id }}">Frase (contexto na Listra)</label>
-              <textarea
-                id="listra-edit-texto-{{ f.id }}"
-                name="texto"
-                class="listra-input"
-                rows="3"
-                maxlength="2000"
-                required
-                data-listra-texto
-              >{{ texto_ctx }}</textarea>
-            </div>
-            <div class="listra-field">
-              <span class="listra-field-label">Emoji</span>
-              <div class="listra-emoji-picker" data-listra-emoji-picker>
+            <div class="listra-frase-row">
+              <div class="listra-field listra-field-emoji">
+                <label for="listra-edit-emoji-{{ f.id }}">Emoji</label>
                 <input
                   id="listra-edit-emoji-{{ f.id }}"
                   name="emoji"
@@ -283,19 +268,22 @@
                   value="{{ emoji_item }}"
                   placeholder="📺"
                   data-listra-emoji
+                  autocomplete="off"
+                  spellcheck="false"
                   aria-label="Emoji da frase"
                 />
-                <div class="listra-emoji-opcoes" role="group" aria-label="Emojis rápidos">
-                  {% for em in listra_emoji_opcoes %}
-                  <button
-                    type="button"
-                    class="listra-emoji-opt{% if em == emoji_item %} is-selected{% endif %}"
-                    data-listra-emoji-opt="{{ em }}"
-                    title="{{ em }}"
-                    aria-pressed="{{ 'true' if em == emoji_item else 'false' }}"
-                  >{{ em }}</button>
-                  {% endfor %}
-                </div>
+              </div>
+              <div class="listra-field listra-field-frase">
+                <label for="listra-edit-texto-{{ f.id }}">Frase (contexto na Listra)</label>
+                <textarea
+                  id="listra-edit-texto-{{ f.id }}"
+                  name="texto"
+                  class="listra-input"
+                  rows="3"
+                  maxlength="2000"
+                  required
+                  data-listra-texto
+                >{{ texto_ctx }}</textarea>
               </div>
             </div>
             <div class="listra-field">
@@ -418,12 +406,13 @@
 
 <script>
 (function () {
-  function marcarEmojiSelecionado(form, emoji) {
-    form.querySelectorAll("[data-listra-emoji-opt]").forEach(function (btn) {
-      var sel = btn.getAttribute("data-listra-emoji-opt") === emoji;
-      btn.classList.toggle("is-selected", sel);
-      btn.setAttribute("aria-pressed", sel ? "true" : "false");
-    });
+  function filtrarSoEmoji(valor) {
+    var s = (valor || "").replace(/\s+/g, "");
+    // Remove letras latinas e pontuação ASCII (mantém dígitos/#/* para keycaps).
+    s = s.replace(/[A-Za-z]/g, "");
+    s = s.replace(/[^\d#*\u0080-\uFFFF]/g, "");
+    if (s.length > 16) s = s.slice(0, 16);
+    return s;
   }
 
   document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
@@ -431,24 +420,18 @@
     var textoEl = form.querySelector("[data-listra-texto]");
     var destaqueEl = form.querySelector("[data-listra-destaque]");
 
-    form.querySelectorAll("[data-listra-emoji-opt]").forEach(function (btn) {
-      btn.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        var em = btn.getAttribute("data-listra-emoji-opt") || "";
-        if (!emojiInput) return;
-        if (emojiInput.value === em) {
-          emojiInput.value = "";
-          marcarEmojiSelecionado(form, "");
-        } else {
-          emojiInput.value = em;
-          marcarEmojiSelecionado(form, em);
-        }
-      });
-    });
-
     if (emojiInput) {
       emojiInput.addEventListener("input", function () {
-        marcarEmojiSelecionado(form, (emojiInput.value || "").trim());
+        var limpo = filtrarSoEmoji(emojiInput.value);
+        if (limpo !== emojiInput.value) emojiInput.value = limpo;
+      });
+      emojiInput.addEventListener("paste", function (ev) {
+        ev.preventDefault();
+        var txt = "";
+        try {
+          txt = (ev.clipboardData || window.clipboardData).getData("text") || "";
+        } catch (e) {}
+        emojiInput.value = filtrarSoEmoji(txt);
       });
     }
 
@@ -585,6 +568,7 @@
   function textoDaLista(ano) {
     var linhas = ["*LISTRA THDFM " + ano + "*", ""];
     var sel = '.listra-list[data-listra-lista="' + ano + '"] .listra-item[data-listra-item]';
+    var n = 0;
     document.querySelectorAll(sel).forEach(function (item) {
       var t = (item.getAttribute("data-listra-share") || "").trim();
       if (!t) {
@@ -595,10 +579,11 @@
         t = emoji && corpo ? emoji + " " + corpo : emoji || corpo;
       }
       if (!t) return;
+      n += 1;
       t.split(/\r?\n/).forEach(function (parte, i) {
         parte = parte.replace(/\s+/g, " ").trim();
         if (!parte) return;
-        linhas.push((i === 0 ? "* " : "  ") + parte);
+        linhas.push(i === 0 ? n + ". " + parte : "   " + parte);
       });
     });
     return linhas.join("\n") + "\n";

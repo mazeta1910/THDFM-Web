@@ -121,9 +121,31 @@ def test_admin_adiciona_com_emoji_e_destaque(client: TestClient):
 
     export = client.get(f"/grupo/listra/export.txt?ano={LISTRA_ANO_ATUAL}")
     assert export.status_code == 200
-    assert "* 📺 XPTO SILVA" in export.text
-    assert "* 📺 TESTE FILTRO" not in export.text
+    assert "📺 XPTO SILVA" in export.text
+    assert ". 📺 XPTO SILVA" in export.text  # numerado: N. emoji frase
+    assert "📺 TESTE FILTRO" not in export.text
     assert frase_longa not in export.text
+
+
+def test_emoji_rejeita_texto(client: TestClient):
+    from urllib.parse import unquote
+
+    from src.listra_seed import LISTRA_ANO_ATUAL
+
+    _login_admin(client)
+    r = client.post(
+        "/grupo/listra",
+        data={
+            "texto": "Frase com emoji inválido",
+            "responsavel": "Mazeta",
+            "ano": str(LISTRA_ANO_ATUAL),
+            "emoji": "ABC",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = unquote(r.headers.get("location") or "").lower()
+    assert "emoji" in loc
 
 
 def test_linha_compartilhar_usa_destaque():
@@ -302,8 +324,11 @@ def test_export_por_ano(client: TestClient):
     assert "LISTRA THDFM 2026" in r26.text
     assert "LISTRA THDFM 2025" in r25.text
     assert "LISTRA THDFM 2024" in r24.text
-    assert "📺 Progama" in r25.text
+    assert "1. 📺 Progama" in r25.text
     assert "Chooping" in r24.text
+    # Formato numerado estilo 2025 (não usa bullet "* ").
+    assert "\n* 📺" not in r25.text
+    assert "listra-emoji-opcoes" not in client.get("/grupo/listra").text
 
 
 def test_export_exige_permissao(client: TestClient):
@@ -323,8 +348,8 @@ def test_texto_whatsapp_formatado():
         ano=2026,
     )
     assert texto.startswith(f"*{LISTRA_TITULO}*")
-    assert "* Uma" in texto
-    assert "* Duas" in texto
+    assert "1. Uma" in texto
+    assert "2. Duas" in texto
 
     com_destaque = db.listra_texto_whatsapp(
         [
@@ -337,6 +362,6 @@ def test_texto_whatsapp_formatado():
         ],
         ano=2026,
     )
-    assert "* 📺 ODIEI RIBEIRO" in com_destaque
+    assert "1. 📺 ODIEI RIBEIRO" in com_destaque
     assert "PEDIDURA" not in com_destaque
     assert "EXCELENTE" not in com_destaque
