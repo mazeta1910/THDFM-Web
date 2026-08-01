@@ -3,15 +3,28 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dotenv import load_dotenv
+
+# IANA tz database — no Windows o CPython não embute os fusos; o pacote
+# `tzdata` (em requirements.txt) fornece America/Sao_Paulo etc.
+try:
+    import tzdata  # noqa: F401
+except ImportError:
+    tzdata = None  # type: ignore[assignment]
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 # Encerramento das inscrições do bolão (America/Sao_Paulo).
-_TZ_SP = ZoneInfo("America/Sao_Paulo")
+try:
+    _TZ_SP = ZoneInfo("America/Sao_Paulo")
+except ZoneInfoNotFoundError as exc:
+    raise RuntimeError(
+        "Fuso America/Sao_Paulo indisponível. "
+        "No Windows, rode: pip install tzdata"
+    ) from exc
 INSCRICAO_FECHA_EM = datetime(2026, 8, 1, 13, 30, tzinfo=_TZ_SP)
 
 DATA_DIR = ROOT_DIR / "data"
