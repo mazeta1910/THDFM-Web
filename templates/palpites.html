@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/emblema.html" import emblema %}
 {% block title %}Palpites — {{ participante.nome }}{% endblock %}
 {% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
@@ -131,12 +132,12 @@
           <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}</span>
           <div class="match-teams">
             <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              {{ emblema(c.clube_a) }}
               <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
             </div>
             <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              {{ emblema(c.clube_b) }}
               <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
             </div>
@@ -168,11 +169,11 @@
               Seu palpite (Ida):
               {% if p_ida %}
               <span class="match-ref-score">
-                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                {{ emblema(c.clube_a) }}
                 <strong>{{ p_ida.gols_mandante }}</strong>
                 <span class="match-ref-x">x</span>
                 <strong>{{ p_ida.gols_visitante }}</strong>
-                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                {{ emblema(c.clube_b) }}
               </span>
               {% else %}
               —
@@ -182,11 +183,11 @@
               Resultado Oficial (Ida):
               {% if ida and ida.gols_mandante is not none %}
               <span class="match-ref-score">
-                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                {{ emblema(c.clube_a) }}
                 <strong>{{ ida.gols_mandante }}</strong>
                 <span class="match-ref-x">x</span>
                 <strong>{{ ida.gols_visitante }}</strong>
-                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                {{ emblema(c.clube_b) }}
               </span>
               {% else %}
               —
@@ -195,7 +196,7 @@
           </div>
           <div class="match-teams">
             <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+              {{ emblema(c.clube_b) }}
               <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
                 data-ida-a="{{ p_ida.gols_mandante if p_ida else '' }}"
@@ -204,7 +205,7 @@
                 {% if janela != 'volta' %}readonly{% endif %} />
             </div>
             <div class="match-team-row">
-              <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+              {{ emblema(c.clube_a) }}
               <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
                 value="{{ p_volta.gols_visitante if p_volta else '' }}"
@@ -216,12 +217,12 @@
             <div class="pen-group-choices">
               <label class="pen-choice">
                 <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
-                <img src="{{ emblema_url(c.clube_a) }}" alt="" />
+                {{ emblema(c.clube_a) }}
                 <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               </label>
               <label class="pen-choice">
                 <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
-                <img src="{{ emblema_url(c.clube_b) }}" alt="" />
+                {{ emblema(c.clube_b) }}
                 <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               </label>
             </div>

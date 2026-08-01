@@ -1,0 +1,16 @@
+{# Tiles de métricas da planilha de palpites #}
+{% macro metrica(label, value, wide=false) -%}
+<div class="planilha-metrica{% if wide %} planilha-metrica-wide{% endif %}">
+  <span class="planilha-metrica-label">{{ label }}</span>
+  <span class="planilha-metrica-value">{{ value|safe }}</span>
+</div>
+{%- endmacro %}
+
+{% macro metricas_bloco(title, aria_label=none, grid_class="planilha-metricas") -%}
+<section class="planilha-metricas-bloco" aria-label="{{ aria_label or ('Métricas ' ~ title|lower) }}">
+  <h3 class="planilha-metricas-bloco-title">{{ title }}</h3>
+  <div class="{{ grid_class }}">
+    {{ caller() }}
+  </div>
+</section>
+{%- endmacro %}

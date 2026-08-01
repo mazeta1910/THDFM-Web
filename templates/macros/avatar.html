@@ -1,0 +1,9 @@
+{# Foto do participante com fallback de iniciais #}
+{% macro avatar(path, nome, class_prefix="planilha-avatar", alt="") -%}
+{% set url = avatar_url(path) -%}
+{% if url -%}
+<img class="{{ class_prefix }}" src="{{ url }}" alt="{{ alt }}" />
+{%- else -%}
+<span class="{{ class_prefix }} {{ class_prefix }}-fallback">{{ (nome or '??')[:2]|upper }}</span>
+{%- endif %}
+{%- endmacro %}

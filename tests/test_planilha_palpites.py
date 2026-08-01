@@ -2,46 +2,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
-from src.config import ROOT_DIR
+from tests.conftest import login_admin as _login_admin
 from src.transparencia import (
     _metricas_palpites,
     metricas_gerais,
     montar_portal,
     ranking_apostadores,
 )
-
-
-@pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(ROOT_DIR)
-    monkeypatch.setenv(
-        "ADMIN_USERS",
-        "mazeta=senha-dono=Mazeta:dono",
-    )
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
-
-
-def _login_admin(client: TestClient):
-    r = client.post(
-        "/admin/login",
-        data={"login": "mazeta", "password": "senha-dono"},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
 
 
 def test_montar_portal_agrupa_por_time_e_inclui_avatar(client: TestClient):
@@ -89,7 +59,6 @@ def test_montar_portal_agrupa_por_time_e_inclui_avatar(client: TestClient):
     emp2 = next(r for r in tabelas2[0]["linhas"] if r.get("nome") == "Empate Fan")
     assert emp2["grupo"] == "fora"
 
-
 def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     part = db.criar_participante("Foto User", status="liberado", celular="11990000009")
     db.salvar_avatar(part["id"], "foto.jpg")
@@ -132,7 +101,6 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "data-planilha-export" in r.text
     assert "/static/planilha-export.js" in r.text
 
-
 def test_metricas_palpites_conta_lados_medias_e_extremos():
     rows = [
         {"nome": "A", "grupo": "casa", "gols_m": 3, "gols_v": 0, "sem_palpite": False},
@@ -163,7 +131,6 @@ def test_metricas_palpites_conta_lados_medias_e_extremos():
     assert m["menos_gols"]["nome"] == "C"
     assert m["menos_gols"]["total"] == 2
 
-
 def test_ranking_apostadores_por_fase():
     tabelas = [
         {
@@ -192,7 +159,6 @@ def test_ranking_apostadores_por_fase():
     assert r["placar_mais_alto"]["nome"] == "Alto"
     assert r["placar_mais_alto"]["placar"] == "4 x 1"
 
-
 def test_metricas_gerais_agrega_fase():
     tabelas = [
         {
@@ -216,7 +182,6 @@ def test_metricas_gerais_agrega_fase():
     assert g["total"] == 4
     assert g["favorito"] == "fora"
 
-
 def test_montar_portal_inclui_metricas(client: TestClient):
     a = db.criar_participante("Met A", status="liberado", celular="11990000011")
     b = db.criar_participante("Met B", status="liberado", celular="11990000012")
@@ -236,7 +201,6 @@ def test_montar_portal_inclui_metricas(client: TestClient):
     assert m["n_empate"] >= 1
     assert m["media_gols_partida"] is not None
     assert m["maior_diferenca"]["diff"] == 4
-
 
 def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
     placar = db.criar_participante("Placar Ok", status="liberado", celular="11990000201")

@@ -1,0 +1,4 @@
+{# Emblema de clube #}
+{% macro emblema(clube, alt="", class="") -%}
+<img{% if class %} class="{{ class }}"{% endif %} src="{{ emblema_url(clube) }}" alt="{{ alt }}" />
+{%- endmacro %}

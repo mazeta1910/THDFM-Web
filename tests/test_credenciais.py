@@ -2,30 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from urllib.parse import unquote
 
-import pytest
 from fastapi.testclient import TestClient
 
-import src.app as app_mod
 import src.db as db
-from src.config import ROOT_DIR
-
-
-@pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(ROOT_DIR)
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-    app_mod._AUTH_ATTEMPTS.clear()
-
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
 
 
 def test_liberado_sem_credenciais_e_obrigado_a_criar(client: TestClient):
@@ -41,7 +22,6 @@ def test_liberado_sem_credenciais_e_obrigado_a_criar(client: TestClient):
     r3 = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
     assert r3.status_code == 303
     assert "/credenciais" in r3.headers["location"]
-
 
 def test_setup_credenciais_e_entrar(client: TestClient):
     part = db.criar_participante("ComSenha", status="liberado", celular="11999003344")
@@ -85,7 +65,6 @@ def test_setup_credenciais_e_entrar(client: TestClient):
     assert ok.status_code == 303
     assert ok.headers["location"] == f"/p/{part['token']}"
 
-
 def test_username_duplicado_rejeitado(client: TestClient):
     a = db.criar_participante("Alpha", status="liberado", celular="11999005566")
     b = db.criar_participante("Beta", status="liberado", celular="11999007788")
@@ -105,7 +84,6 @@ def test_username_duplicado_rejeitado(client: TestClient):
     assert "erro=" in loc
     assert "já está em uso" in loc.casefold() or "em uso" in loc.casefold()
     assert db.precisa_credenciais(db.get_participante(b["id"]))
-
 
 def test_senha_curta_e_confirmacao(client: TestClient):
     part = db.criar_participante("Curta", status="liberado", celular="11999009900")
@@ -129,13 +107,11 @@ def test_senha_curta_e_confirmacao(client: TestClient):
     assert r2.status_code == 303
     assert "não conferem" in unquote(r2.headers["location"]).casefold()
 
-
 def test_pendente_nao_e_forcado_a_credenciais(client: TestClient):
     part = db.criar_participante("PendenteX", status="pendente", celular="11999112233")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
     assert r.status_code == 200
     assert "credenciais" not in (r.headers.get("location") or "")
-
 
 def test_entrar_rate_limit(client: TestClient):
     part = db.criar_participante("RateUser", status="liberado", celular="11999223344")
@@ -157,13 +133,11 @@ def test_entrar_rate_limit(client: TestClient):
     assert blocked.status_code == 303
     assert "Muitas tentativas" in unquote(blocked.headers["location"])
 
-
 def test_home_cta_aponta_para_entrar(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
     assert 'data-acesso-open="entrar"' in r.text
     assert "Já fiz a inscrição" not in r.text or "Entrar" in r.text
-
 
 def test_entrar_tem_esqueci_senha_modal(client: TestClient):
     r = client.get("/entrar", follow_redirects=False)
@@ -185,7 +159,6 @@ def test_entrar_tem_esqueci_senha_modal(client: TestClient):
     assert "loguin-drawer-root" in r2.text
     assert "macaco-rindo.gif" in r2.text
     assert "ortografia" not in r2.text.casefold()
-
 
 def test_menu_portal_minimizado_e_loguin_capitalizacao(client: TestClient):
     r = client.get("/")
