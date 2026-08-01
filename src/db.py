@@ -329,6 +329,7 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
         "ON listra_frases(ano DESC, ordem ASC, id ASC)"
     )
     _migrar_listra_emoji_destaque(conn)
+    _migrar_listra_reembolsos_itens(conn)
     for ano in LISTRA_ANOS:
         _seed_listra_ano_se_faltando(conn, int(ano), listra_seed_por_ano(int(ano)))
 
@@ -1891,6 +1892,61 @@ def _migrar_listra_emoji_destaque(conn: sqlite3.Connection) -> None:
             "UPDATE listra_frases SET emoji = ?, texto = ? WHERE id = ?",
             (emoji, resto or row["texto"], row["id"]),
         )
+
+
+def _migrar_listra_reembolsos_itens(conn: sqlite3.Connection) -> None:
+    """Separa 'lista dos reembilos' e 'blodo de notas' do aviso de reembolso."""
+    rows = conn.execute(
+        f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
+        "WHERE texto LIKE '%lista dos reembilos%' "
+        "AND texto LIKE '%blodo de notas%' "
+        "AND instr(texto, char(10) || '- ') > 0"
+    ).fetchall()
+    for row in rows:
+        texto = row["texto"] or ""
+        head: list[str] = []
+        extras: list[str] = []
+        for line in texto.split("\n"):
+            if line.startswith("- "):
+                item = line[2:].strip()
+                if item:
+                    extras.append(item)
+            else:
+                if extras:
+                    # Linha depois de itens com "- ": mantém no último extra.
+                    extras[-1] = f"{extras[-1]}\n{line}".strip()
+                else:
+                    head.append(line)
+        if len(extras) < 2:
+            continue
+        parte1 = "\n".join(head).strip()
+        if not parte1:
+            continue
+        ano = int(row["ano"])
+        ordem = int(row["ordem"])
+        conn.execute(
+            "UPDATE listra_frases SET ordem = ordem + ? "
+            "WHERE ano = ? AND ordem > ?",
+            (len(extras), ano, ordem),
+        )
+        conn.execute(
+            "UPDATE listra_frases SET texto = ? WHERE id = ?",
+            (parte1, row["id"]),
+        )
+        for i, extra in enumerate(extras, start=1):
+            conn.execute(
+                "INSERT INTO listra_frases "
+                "(texto, responsavel, criado_por_id, ordem, ano, criado_em, emoji, destaque) "
+                "VALUES (?, ?, ?, ?, ?, ?, '', '')",
+                (
+                    extra,
+                    row["responsavel"] or "",
+                    row["criado_por_id"],
+                    ordem + i,
+                    ano,
+                    row["criado_em"],
+                ),
+            )
 
 
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
