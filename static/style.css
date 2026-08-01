@@ -6416,9 +6416,16 @@ textarea.xonha-input {
   user-select: none;
 }
 .listra-ano-summary::-webkit-details-marker { display: none; }
+.listra-ano-summary-label--fechar { display: none; }
 .listra-ano-details[open] > .listra-ano-summary {
   margin-bottom: 0.75rem;
   color: var(--text);
+}
+.listra-ano-details[open] > .listra-ano-summary .listra-ano-summary-label--abrir {
+  display: none;
+}
+.listra-ano-details[open] > .listra-ano-summary .listra-ano-summary-label--fechar {
+  display: inline;
 }
 .listra-ano-details .listra-list {
   margin-top: 0.25rem;
