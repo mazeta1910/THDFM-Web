@@ -6,9 +6,8 @@
   <header class="listra-hero">
     <p class="listra-kicker">THDFM · Grupo do WhatsApp</p>
     <h1 class="listra-title">Listra</h1>
-    <p class="listra-subtitle">LISTRA THDFM 2026</p>
     <p class="listra-lead">
-      O acervo oficial das pérolas tipográficas do grupo.
+      Acervo oficial das pérolas tipográficas do grupo, ano a ano.
       {% if is_admin %}
       <a class="listra-admin-link" href="/admin/listra">Gerenciar permissões</a>
       {% elif not pode_adicionar and not pode_enviar %}
@@ -20,32 +19,18 @@
   {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
   {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
-  <div class="listra-toolbar">
-    <p class="listra-count">
-      <strong>{{ frases|length }}</strong>
-      frase{{ 's' if frases|length != 1 else '' }}
-    </p>
-    {% if pode_enviar %}
-    <button
-      type="button"
-      class="btn-whatsapp listra-wa-btn"
-      id="listra-enviar-wa"
-      title="Abre o WhatsApp com a Listra já escrita — escolha o grupo e envie"
-    >
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-      </svg>
-      Enviar no WhatsApp
-    </button>
-    {% endif %}
-  </div>
+  <p class="listra-count-global">
+    <strong>{{ total_frases }}</strong> frases no acervo
+  </p>
 
   <p class="listra-wa-hint" id="listra-wa-hint" hidden role="status"></p>
 
   {% if pode_adicionar %}
   <section class="card listra-add-card">
-    <h2>Nova frase</h2>
+    <h2>Nova frase · {{ ano_atual }}</h2>
+    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual.</p>
     <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off">
+      <input type="hidden" name="ano" value="{{ ano_atual }}" />
       <div class="listra-field">
         <label for="listra-texto">Frase</label>
         <textarea
@@ -71,52 +56,123 @@
           placeholder="Quem soltou essa"
         />
       </div>
-      <button type="submit" class="listra-submit">Adicionar à Listra</button>
+      <button type="submit" class="listra-submit">Adicionar à Listra {{ ano_atual }}</button>
     </form>
   </section>
   {% endif %}
 
-  <ol class="listra-list">
-    {% for f in frases %}
-    <li class="listra-item">
-      <div class="listra-item-main">
-        <span class="listra-item-bullet" aria-hidden="true">*</span>
-        <p class="listra-item-texto">{{ f.texto }}</p>
-      </div>
-      <div class="listra-item-meta">
-        <div class="listra-item-meta-text">
-          {% if f.responsavel %}
-          <span class="listra-item-resp">{{ f.responsavel }}</span>
-          {% else %}
-          <span class="listra-item-resp listra-item-resp--vazio">Acervo 2026</span>
+  <div class="listra-anos">
+    {% for l in listras %}
+    <section class="listra-ano-card {% if l.atual %}listra-ano-card--atual{% endif %}" data-ano="{{ l.ano }}">
+      <header class="listra-ano-head">
+        <div class="listra-ano-head-text">
+          {% if l.atual %}
+          <p class="listra-ano-badge">Ano atual</p>
           {% endif %}
-          {% if f.criado_em %}
-          <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
-            {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
-            {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
-          </time>
-          {% endif %}
+          <h2 class="listra-ano-title">{{ l.titulo }}</h2>
+          <p class="listra-ano-count">
+            <strong>{{ l.total }}</strong> frase{{ 's' if l.total != 1 else '' }}
+          </p>
         </div>
-        {% if is_admin %}
-        <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
-          <input type="hidden" name="frase_id" value="{{ f.id }}" />
-          <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
-        </form>
+        {% if pode_enviar %}
+        <button
+          type="button"
+          class="btn-whatsapp listra-wa-btn"
+          data-listra-enviar
+          data-ano="{{ l.ano }}"
+          title="Abre o WhatsApp com a Listra {{ l.ano }} já escrita"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          Enviar {{ l.ano }}
+        </button>
         {% endif %}
-      </div>
-    </li>
-    {% else %}
-    <li class="listra-empty">A Listra ainda está vazia. Que pecado.</li>
+      </header>
+
+      {% if l.atual %}
+      <ol class="listra-list" data-listra-lista="{{ l.ano }}">
+        {% for f in l.frases %}
+        <li class="listra-item">
+          <div class="listra-item-main">
+            <span class="listra-item-bullet" aria-hidden="true">*</span>
+            <p class="listra-item-texto">{{ f.texto }}</p>
+          </div>
+          <div class="listra-item-meta">
+            <div class="listra-item-meta-text">
+              {% if f.responsavel %}
+              <span class="listra-item-resp">{{ f.responsavel }}</span>
+              {% else %}
+              <span class="listra-item-resp listra-item-resp--vazio">Acervo {{ l.ano }}</span>
+              {% endif %}
+              {% if f.criado_em %}
+              <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
+                {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
+                {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
+              </time>
+              {% endif %}
+            </div>
+            {% if is_admin %}
+            <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
+              <input type="hidden" name="frase_id" value="{{ f.id }}" />
+              <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
+            </form>
+            {% endif %}
+          </div>
+        </li>
+        {% else %}
+        <li class="listra-empty">A Listra {{ l.ano }} ainda está vazia.</li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <details class="listra-ano-details">
+        <summary class="listra-ano-summary">Ver frases de {{ l.ano }}</summary>
+        <ol class="listra-list" data-listra-lista="{{ l.ano }}">
+          {% for f in l.frases %}
+          <li class="listra-item">
+            <div class="listra-item-main">
+              <span class="listra-item-bullet" aria-hidden="true">*</span>
+              <p class="listra-item-texto">{{ f.texto }}</p>
+            </div>
+            <div class="listra-item-meta">
+              <div class="listra-item-meta-text">
+                {% if f.responsavel %}
+                <span class="listra-item-resp">{{ f.responsavel }}</span>
+                {% else %}
+                <span class="listra-item-resp listra-item-resp--vazio">Acervo {{ l.ano }}</span>
+                {% endif %}
+                {% if f.criado_em %}
+                <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
+                  {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
+                  {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
+                </time>
+                {% endif %}
+              </div>
+              {% if is_admin %}
+              <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
+                <input type="hidden" name="frase_id" value="{{ f.id }}" />
+                <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
+              </form>
+              {% endif %}
+            </div>
+          </li>
+          {% else %}
+          <li class="listra-empty">A Listra {{ l.ano }} ainda está vazia.</li>
+          {% endfor %}
+        </ol>
+      </details>
+      {% endif %}
+    </section>
     {% endfor %}
-  </ol>
+  </div>
 </section>
 
 {% if pode_enviar %}
 <script>
 (function () {
-  var btn = document.getElementById("listra-enviar-wa");
   var hint = document.getElementById("listra-wa-hint");
-  if (!btn) return;
+  var botoes = document.querySelectorAll("[data-listra-enviar]");
+  if (!botoes.length) return;
 
   function showHint(msg, ok) {
     if (!hint) return;
@@ -126,9 +182,10 @@
     hint.classList.toggle("listra-wa-hint--erro", !ok);
   }
 
-  function textoDaLista() {
-    var linhas = ["*LISTRA THDFM 2026*", ""];
-    document.querySelectorAll(".listra-item .listra-item-texto").forEach(function (el) {
+  function textoDaLista(ano) {
+    var linhas = ["*LISTRA THDFM " + ano + "*", ""];
+    var sel = '.listra-list[data-listra-lista="' + ano + '"] .listra-item-texto';
+    document.querySelectorAll(sel).forEach(function (el) {
       var t = (el.textContent || "").replace(/\s+\n/g, "\n").trim();
       if (!t) return;
       t.split(/\r?\n/).forEach(function (parte, i) {
@@ -140,9 +197,9 @@
     return linhas.join("\n") + "\n";
   }
 
-  async function textoAtual() {
+  async function textoAtual(ano) {
     try {
-      var r = await fetch("/grupo/listra/export.txt", {
+      var r = await fetch("/grupo/listra/export.txt?ano=" + encodeURIComponent(ano), {
         credentials: "same-origin",
         cache: "no-store",
       });
@@ -151,7 +208,7 @@
         if (t && t.trim()) return t;
       }
     } catch (e) {}
-    return textoDaLista();
+    return textoDaLista(ano);
   }
 
   async function copiar(texto) {
@@ -177,7 +234,6 @@
 
   function abrirWhatsAppComTexto(texto) {
     var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
-    // <a> costuma preservar URLs longas melhor que window.open
     var a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
@@ -187,39 +243,36 @@
     document.body.removeChild(a);
   }
 
-  btn.addEventListener("click", async function () {
-    btn.disabled = true;
-    try {
-      var texto = await textoAtual();
-      if (!texto.trim()) {
-        showHint("A Listra está vazia.", false);
-        return;
-      }
-      var copiou = await copiar(texto);
-
-      // No celular, o share nativo leva o texto inteiro (sem limite de URL).
-      if (navigator.share) {
-        try {
-          await navigator.share({ text: texto });
-          showHint("Escolha o WhatsApp e o grupo THDFM para enviar.", true);
+  botoes.forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var ano = btn.getAttribute("data-ano") || "";
+      btn.disabled = true;
+      try {
+        var texto = await textoAtual(ano);
+        if (!texto.trim()) {
+          showHint("A Listra " + ano + " está vazia.", false);
           return;
-        } catch (e) {
-          if (e && e.name === "AbortError") return;
         }
+        var copiou = await copiar(texto);
+        if (navigator.share) {
+          try {
+            await navigator.share({ text: texto });
+            showHint("Escolha o WhatsApp e o grupo THDFM para enviar a Listra " + ano + ".", true);
+            return;
+          } catch (e) {
+            if (e && e.name === "AbortError") return;
+          }
+        }
+        abrirWhatsAppComTexto(texto);
+        showHint(
+          "WhatsApp aberto com a Listra " + ano + " — escolha o grupo THDFM e toque em Enviar." +
+            (copiou ? " Se algo faltar, cole com Ctrl+V." : ""),
+          true
+        );
+      } finally {
+        btn.disabled = false;
       }
-
-      // Sempre a Listra completa — nunca só o título.
-      abrirWhatsAppComTexto(texto);
-      showHint(
-        "WhatsApp aberto com a Listra completa na mensagem — escolha o grupo THDFM e toque em Enviar." +
-          (copiou
-            ? " Se algo faltar, cole com Ctrl+V (já está copiada)."
-            : ""),
-        true
-      );
-    } finally {
-      btn.disabled = false;
-    }
+    });
   });
 })();
 </script>

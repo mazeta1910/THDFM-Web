@@ -746,12 +746,16 @@ def _listra_caps(request: Request) -> dict:
 
 @app.get("/grupo/listra", response_class=HTMLResponse)
 def grupo_listra(request: Request):
+    from src.listra_seed import LISTRA_ANO_ATUAL
+
     caps = _listra_caps(request)
-    frases = db.list_listra_frases()
+    listras = db.list_listra_por_anos()
     return render(
         request,
         "listra.html",
-        frases=frases,
+        listras=listras,
+        ano_atual=LISTRA_ANO_ATUAL,
+        total_frases=sum(l["total"] for l in listras),
         pode_adicionar=caps["pode_adicionar"],
         pode_enviar=caps["pode_enviar"],
         participante_listra=caps["participante"],
@@ -762,13 +766,18 @@ def grupo_listra(request: Request):
 
 
 @app.get("/grupo/listra/export.txt")
-def grupo_listra_export(request: Request):
-    """Texto atual da Listra para o botão Enviar no WhatsApp (sempre fresco)."""
+def grupo_listra_export(request: Request, ano: int | None = None):
+    """Texto da Listra de um ano para o botão Enviar no WhatsApp."""
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS
+
     caps = _listra_caps(request)
     if not caps["pode_enviar"]:
         raise HTTPException(status_code=403, detail="Sem permissão para exportar a Listra.")
+    ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
+    if ano_ok not in LISTRA_ANOS:
+        raise HTTPException(status_code=404, detail="Ano da Listra não encontrado.")
     return PlainTextResponse(
-        db.listra_texto_whatsapp(),
+        db.listra_texto_whatsapp(ano=ano_ok),
         media_type="text/plain; charset=utf-8",
         headers={"Cache-Control": "no-store"},
     )
@@ -779,7 +788,10 @@ def grupo_listra_criar(
     request: Request,
     texto: str = Form(...),
     responsavel: str = Form(...),
+    ano: int | None = Form(None),
 ):
+    from src.listra_seed import LISTRA_ANO_ATUAL
+
     caps = _listra_caps(request)
     if not caps["pode_adicionar"]:
         return RedirectResponse(
@@ -793,6 +805,7 @@ def grupo_listra_criar(
             texto,
             responsavel,
             criado_por_id=part["id"] if part else None,
+            ano=ano if ano is not None else LISTRA_ANO_ATUAL,
         )
     except ValueError as exc:
         return RedirectResponse(
