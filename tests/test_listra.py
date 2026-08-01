@@ -183,7 +183,27 @@ def test_participante_com_permissao_enviar(client: TestClient):
     r = client.get("/grupo/listra")
     assert "Nova frase" not in r.text
     assert "listra-enviar-wa" in r.text
-    assert "listra-wa-texto" in r.text
+    assert "/grupo/listra/export.txt" in r.text
+
+
+def test_export_inclui_frase_nova(client: TestClient):
+    _login_admin(client)
+    client.post(
+        "/grupo/listra",
+        data={"texto": "Frase fresca pro WhatsApp", "responsavel": "Mazeta"},
+        follow_redirects=False,
+    )
+    r = client.get("/grupo/listra/export.txt")
+    assert r.status_code == 200
+    assert "Cache-Control" in r.headers
+    assert "no-store" in r.headers["Cache-Control"]
+    assert "LISTRA THDFM 2026" in r.text
+    assert "Frase fresca pro WhatsApp" in r.text
+
+
+def test_export_exige_permissao(client: TestClient):
+    r = client.get("/grupo/listra/export.txt")
+    assert r.status_code == 403
 
 
 def test_texto_whatsapp_formatado():

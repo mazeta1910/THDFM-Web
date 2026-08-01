@@ -6322,11 +6322,18 @@ textarea.xonha-input {
   color: var(--muted);
 }
 .listra-title {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.25rem;
   font-size: clamp(1.85rem, 4vw, 2.4rem);
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1.1;
+}
+.listra-subtitle {
+  margin: 0 0 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--accent);
 }
 .listra-lead {
   margin: 0;

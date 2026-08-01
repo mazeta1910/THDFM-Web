@@ -11,7 +11,12 @@ from urllib.parse import quote
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -747,13 +752,25 @@ def grupo_listra(request: Request):
         request,
         "listra.html",
         frases=frases,
-        listra_wa_texto=db.listra_texto_whatsapp(frases),
         pode_adicionar=caps["pode_adicionar"],
         pode_enviar=caps["pode_enviar"],
         participante_listra=caps["participante"],
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/grupo/listra/export.txt")
+def grupo_listra_export(request: Request):
+    """Texto atual da Listra para o botão Enviar no WhatsApp (sempre fresco)."""
+    caps = _listra_caps(request)
+    if not caps["pode_enviar"]:
+        raise HTTPException(status_code=403, detail="Sem permissão para exportar a Listra.")
+    return PlainTextResponse(
+        db.listra_texto_whatsapp(),
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
     )
 
 
