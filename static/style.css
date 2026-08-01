@@ -6371,11 +6371,7 @@ textarea.xonha-input {
   padding: 1.15rem 1.15rem 1.25rem;
 }
 .listra-ano-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
+  display: block;
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -6384,25 +6380,44 @@ textarea.xonha-input {
 .listra-ano-card[open] > .listra-ano-summary {
   margin-bottom: 0.85rem;
 }
+.listra-ano-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.listra-ano-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.85rem;
+}
 .listra-ano-badge {
-  margin: 0 0 0.25rem;
+  margin: 0;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
+  line-height: 1;
+}
+.listra-ano-badge--silent {
+  color: var(--muted);
+  opacity: 0.85;
 }
 .listra-ano-title {
-  margin: 0;
+  margin: 0.15rem 0 0;
   font-size: 1.2rem;
   font-weight: 900;
   letter-spacing: 0.02em;
+  padding-right: 0.25rem;
 }
 .listra-ano-card--atual .listra-ano-title {
   font-size: clamp(1.35rem, 3vw, 1.7rem);
 }
 .listra-ano-count {
-  margin: 0.2rem 0 0;
+  margin: 0.15rem 0 0;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -6411,10 +6426,11 @@ textarea.xonha-input {
   font-variant-numeric: tabular-nums;
 }
 .listra-ano-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.45rem;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
   margin-left: auto;
 }
 .listra-ano-toggle {
@@ -6445,45 +6461,94 @@ textarea.xonha-input {
   margin-top: 0;
 }
 .listra-send-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
 }
-.listra-copiar-btn {
+.listra-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--text);
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.75rem;
   cursor: pointer;
-  white-space: nowrap;
+  box-sizing: border-box;
+  text-decoration: none;
+  flex-shrink: 0;
 }
-.listra-copiar-btn:hover {
+.listra-icon-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+  text-decoration: none;
+}
+.listra-copiar-btn {
+  font: inherit;
 }
 .listra-wa-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
   border: none;
-  cursor: pointer;
-  font: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-  box-sizing: border-box;
+  background: #25d366;
+  color: #fff;
+  gap: 0;
+  font-size: 0;
+  line-height: 0;
 }
 .listra-wa-btn:hover {
+  background: #1ebe57;
+  color: #fff;
+  border-color: transparent;
   text-decoration: none;
+}
+.listra-ordenar {
+  position: relative;
+}
+.listra-ordenar-btn {
+  font: inherit;
+}
+.listra-ordenar.is-open .listra-ordenar-btn {
+  border-color: rgba(232, 93, 4, 0.45);
+  color: var(--accent);
+}
+.listra-ordenar-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 11.5rem;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.listra-ordenar-menu[hidden] {
+  display: none !important;
+}
+.listra-ordenar-menu button {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  cursor: pointer;
+}
+.listra-ordenar-menu button:hover,
+.listra-ordenar-menu button.is-active {
+  background: rgba(232, 93, 4, 0.12);
+  color: var(--accent);
 }
 .listra-wa-hint {
   margin: 0 0 1rem;
@@ -6580,17 +6645,16 @@ textarea.xonha-input {
 }
 .listra-item-view {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.4rem 0.85rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
   width: 100%;
 }
 .listra-item-main {
   display: flex;
   gap: 0.55rem;
   min-width: 0;
-  flex: 1 1 14rem;
+  width: 100%;
 }
 .listra-item-bullet {
   flex-shrink: 0;
@@ -6607,22 +6671,24 @@ textarea.xonha-input {
 }
 .listra-item-meta {
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem;
+  width: 100%;
 }
 .listra-item-meta-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.12rem;
+  align-items: flex-start;
+  gap: 0.15rem;
   min-width: 0;
+  flex: 1 1 auto;
 }
 .listra-item-resp {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
-  max-width: 12rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6644,6 +6710,8 @@ textarea.xonha-input {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .listra-editar-btn,
 .listra-apagar-btn {
@@ -6666,8 +6734,14 @@ textarea.xonha-input {
   color: var(--accent);
   border-color: var(--accent);
 }
+.listra-apagar-btn {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
 .listra-apagar-btn:hover {
-  color: var(--danger);
+  filter: brightness(1.08);
+  color: #fff;
   border-color: var(--danger);
 }
 .listra-edit-form {

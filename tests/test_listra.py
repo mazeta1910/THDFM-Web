@@ -78,6 +78,8 @@ def test_listra_publica_com_anos(client: TestClient):
     assert listra_seed_por_ano(2024)[0] in body
     assert "Nova frase" not in body
     assert "data-listra-enviar" not in body
+    assert "data-listra-ordenar" in body
+    assert "Nome do meliante:" in body
 
 
 def test_visitante_nao_adiciona(client: TestClient):
@@ -201,11 +203,13 @@ def test_participante_com_permissao_enviar(client: TestClient):
     _login_participante(client, part)
     r = client.get("/grupo/listra")
     assert "data-listra-copiar" in r.text
-    assert "data-listra-abrir-grupo" in r.text or "Abrir grupo" in r.text
-    assert "Copiar 2026" in r.text
+    assert "data-listra-abrir-grupo" in r.text
+    assert 'aria-label="Copiar a Listra 2026"' in r.text
+    assert 'aria-label="Abrir grupo do WhatsApp"' in r.text
     assert 'data-ano="2026"' in r.text
     assert 'data-ano="2025"' in r.text
     assert 'data-ano="2024"' in r.text
+    assert "data-listra-ordenar" in r.text
 
 
 def test_export_por_ano(client: TestClient):
