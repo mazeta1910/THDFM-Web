@@ -209,29 +209,32 @@
       <span class="xonha-timeline-toggle" aria-hidden="true"></span>
     </summary>
     {% if eventos %}
-    <ol class="xonha-timeline-track">
-      {% for e in eventos %}
-      <li class="xonha-timeline-event xonha-timeline-event--{{ e.tipo }}">
-        <span class="xonha-timeline-dot" aria-hidden="true"></span>
-        <div class="xonha-timeline-body">
-          <div class="xonha-timeline-top">
-            <span class="xonha-item-tipo">
-              {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
-            </span>
-            <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
-              {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
-              {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
-            </time>
-          </div>
-          {% if e.motivo %}
-          <p class="xonha-item-motivo">{{ e.motivo }}</p>
-          {% else %}
-          <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo anotado</p>
-          {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ol>
+    <div class="xonha-timeline-scroll">
+      <div class="xonha-timeline-chart" style="--count: {{ eventos|length }}">
+        <div class="xonha-timeline-rail" aria-hidden="true"></div>
+        <ol class="xonha-timeline-track">
+          {% for e in eventos|reverse %}
+          <li class="xonha-timeline-event xonha-timeline-event--{{ e.tipo }}">
+            <span class="xonha-timeline-dot" aria-hidden="true"></span>
+            <div class="xonha-timeline-body">
+              <span class="xonha-item-tipo">
+                {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
+              </span>
+              <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
+                {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
+                {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
+              </time>
+              {% if e.motivo %}
+              <p class="xonha-item-motivo">{{ e.motivo }}</p>
+              {% else %}
+              <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}

@@ -5726,7 +5726,7 @@ html.theme-light .xonha-hero {
   border-color: var(--danger);
 }
 .xonha-status-block--banido .xonha-status-foto {
-  border-color: #8b2e2e;
+  border-color: #3b82f6;
 }
 .xonha-status-block--desconhecido .xonha-status-foto {
   filter: grayscale(1);
@@ -5748,7 +5748,7 @@ html.theme-light .xonha-hero {
   color: inherit;
 }
 .xonha-status--fora strong { color: var(--danger); }
-.xonha-status--banido strong { color: #c0392b; }
+.xonha-status--banido strong { color: #3b82f6; }
 .xonha-status--dentro strong { color: var(--accent); }
 .xonha-stats {
   display: grid;
@@ -5828,7 +5828,7 @@ html.theme-light .xonha-hero {
   border-radius: 3px;
 }
 .xonha-weekday-legend-item--saida::before { background: var(--accent); }
-.xonha-weekday-legend-item--banimento::before { background: #c0392b; }
+.xonha-weekday-legend-item--banimento::before { background: #3b82f6; }
 .xonha-weekday-list {
   list-style: none;
   margin: 0;
@@ -5865,7 +5865,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   min-width: 0;
 }
 .xonha-weekday-seg--saida { background: var(--accent); }
-.xonha-weekday-seg--banimento { background: #c0392b; }
+.xonha-weekday-seg--banimento { background: #3b82f6; }
 .xonha-weekday-qtd {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -5873,7 +5873,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   font-size: 0.85rem;
 }
 
-/* Linha do tempo real (colapsável) */
+/* Linha do tempo real (colapsável, horizontal estilo FM) */
 .xonha-timeline {
   margin-bottom: 1.1rem;
 }
@@ -5926,47 +5926,70 @@ html[data-theme="light"] .xonha-weekday-bar {
 .xonha-timeline[open] > .xonha-timeline-summary .xonha-timeline-toggle::after {
   opacity: 0;
 }
-.xonha-timeline-track {
-  list-style: none;
-  margin: 1rem 0 0;
-  padding: 0 0 0 0.35rem;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.xonha-timeline-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 1rem;
+  padding-bottom: 0.4rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
-.xonha-timeline-track::before {
-  content: "";
+.xonha-timeline-chart {
+  --count: 1;
+  --dot-size: 14px;
+  --pad-x: 0.5rem;
+  --item-min: 7.25rem;
+  --rail-y: calc(0.2rem + var(--dot-size) / 2);
+  position: relative;
+  box-sizing: border-box;
+  min-width: 100%;
+  width: max(100%, calc(var(--count) * var(--item-min)));
+  padding: 0.2rem var(--pad-x) 0.15rem;
+}
+.xonha-timeline-rail {
   position: absolute;
-  left: 0.72rem;
-  top: 0.35rem;
-  bottom: 0.35rem;
-  width: 2px;
+  left: calc(var(--pad-x) + (100% - 2 * var(--pad-x)) / var(--count) / 2);
+  right: calc(var(--pad-x) + (100% - 2 * var(--pad-x)) / var(--count) / 2);
+  top: var(--rail-y);
+  height: 2px;
+  transform: translateY(-50%);
   background: linear-gradient(
-    to bottom,
+    to right,
     rgba(232, 93, 4, 0.55),
-    rgba(192, 57, 43, 0.35),
-    rgba(61, 154, 106, 0.45)
+    rgba(59, 130, 246, 0.45),
+    rgba(61, 154, 106, 0.5)
   );
   border-radius: 999px;
+  z-index: 0;
+  pointer-events: none;
+}
+.xonha-timeline-track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
 }
 .xonha-timeline-event {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.5rem 1fr;
-  gap: 0.7rem;
-  padding: 0 0 1.05rem;
+  flex: 1 0 var(--item-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+  padding: 0 0.3rem;
 }
-.xonha-timeline-event:last-child { padding-bottom: 0.15rem; }
 .xonha-timeline-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  margin-top: 0.35rem;
-  margin-left: 0.32rem;
+  width: var(--dot-size);
+  height: var(--dot-size);
   border-radius: 50%;
-  border: 2px solid var(--accent);
+  border: 3px solid var(--accent);
   background: var(--card);
-  box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.15);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.14);
   z-index: 1;
 }
 .xonha-timeline-event--saida .xonha-timeline-dot {
@@ -5974,46 +5997,49 @@ html[data-theme="light"] .xonha-weekday-bar {
   box-shadow: 0 0 0 3px rgba(220, 60, 60, 0.16);
 }
 .xonha-timeline-event--banimento .xonha-timeline-dot {
-  border-color: #c0392b;
-  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 .xonha-timeline-event--volta .xonha-timeline-dot {
   border-color: #3d9a6a;
   box-shadow: 0 0 0 3px rgba(61, 154, 106, 0.18);
 }
 .xonha-timeline-body {
+  margin-top: 0.5rem;
+  width: 100%;
   min-width: 0;
-  padding: 0.65rem 0.8rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
-}
-html.theme-light .xonha-timeline-body,
-html[data-theme="light"] .xonha-timeline-body {
-  background: #faf7f4;
-}
-.xonha-timeline-top {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
 }
 .xonha-item-tipo {
   font-weight: 800;
   text-transform: uppercase;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
 }
 .xonha-timeline-event--saida .xonha-item-tipo { color: var(--danger); }
 .xonha-timeline-event--volta .xonha-item-tipo { color: #3d9a6a; }
-.xonha-timeline-event--banimento .xonha-item-tipo { color: #c0392b; }
-.xonha-timeline-top time {
-  font-size: 0.85rem;
+.xonha-timeline-event--banimento .xonha-item-tipo { color: #3b82f6; }
+.xonha-timeline-body time {
+  font-size: 0.75rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  line-height: 1.25;
 }
 .xonha-item-hora { font-weight: 700; color: var(--text); }
-.xonha-item-motivo { margin: 0.35rem 0 0; font-size: 0.95rem; }
+.xonha-item-motivo {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+}
 .xonha-item-motivo--vazio { color: var(--muted); font-style: italic; }
 .xonha-empty { margin: 0.85rem 0 0; color: var(--muted); }
 
@@ -6173,7 +6199,7 @@ textarea.xonha-input {
 }
 .xonha-admin-summary-tipo--saida { color: var(--danger); }
 .xonha-admin-summary-tipo--volta { color: var(--accent); }
-.xonha-admin-summary-tipo--banimento { color: #c0392b; }
+.xonha-admin-summary-tipo--banimento { color: #3b82f6; }
 .xonha-admin-summary time {
   font-size: 0.9rem;
   font-weight: 700;

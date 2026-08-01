@@ -152,8 +152,10 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "2 saídas" in pub.text
     assert "0 ban" in pub.text
     assert "xonha-weekday-seg--saida" in pub.text
+    assert "xonha-timeline-scroll" in pub.text
     assert "xonha-timeline-track" in pub.text
     assert "xonha-timeline-event" in pub.text
+    assert "xonha-timeline-rail" in pub.text
     assert "Média / dia desde o início" in pub.text
     assert "Mês com mais sumiços" in pub.text
     assert "Dias da semana" in pub.text
