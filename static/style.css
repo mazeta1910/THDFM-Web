@@ -5231,14 +5231,17 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: start;
+  align-items: stretch;
   gap: 0.75rem;
+  margin: 0;
 }
 .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+  position: relative;
   flex: 0 0 calc((100% - 3 * 0.75rem) / 4);
   width: calc((100% - 3 * 0.75rem) / 4);
   max-width: calc((100% - 3 * 0.75rem) / 4);
   box-sizing: border-box;
+  margin-bottom: 0;
 }
 @media (max-width: 1400px) {
   .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
@@ -5262,18 +5265,20 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   }
 }
 .classificacao-hall-card .planilha-metrica-card > .planilha-head {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
+  display: block;
+  position: relative;
+  padding: 0.55rem 1.85rem 0.45rem 0.7rem;
   text-align: left;
 }
+/* ? sobreposto no canto — não compete com a largura do título */
 .hall-card-tip-row {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2;
   margin: 0;
-  flex: 0 0 auto;
-  justify-content: flex-end;
   width: auto;
+  line-height: 1;
 }
 .hall-tip .col-tip-mark {
   width: 1.15rem;
@@ -5281,6 +5286,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.7rem;
 }
 .classificacao-hall-card .planilha-metrica-card .planilha-jogo-tag {
+  display: block;
   color: var(--accent);
   background: transparent;
   padding: 0;
@@ -5289,13 +5295,14 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: 1.3;
   text-transform: none;
   text-align: left;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
-  max-width: calc(100% - 1.75rem);
+  max-width: 100%;
+  width: 100%;
 }
 
 .ficha-dialog {

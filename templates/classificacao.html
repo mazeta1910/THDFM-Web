@@ -156,12 +156,12 @@
     <p class="classificacao-hall-lead">
       Troféus de personalidade do bolão. Passe o mouse (ou foque) no ? para ler o que cada nick significa.
     </p>
-    {% call metricas_bloco("Troféus", "Troféus do Hall da Desgraça", grid_class="planilha-grid planilha-metricas-grid classificacao-hall-grid") %}
+    {% call metricas_bloco("Troféus", "Troféus do Hall da Desgraça", grid_class="classificacao-hall-grid") %}
       {% for card in hall %}
       <div class="card planilha-card planilha-metrica-card" data-hall-id="{{ card.id }}">
         <div class="planilha-head">
           <span class="planilha-jogo-tag">{{ card.titulo }}</span>
-          <div class="planilha-head-main hall-card-tip-row" data-classificacao-export-ignore>
+          <div class="hall-card-tip-row" data-classificacao-export-ignore>
             <span class="col-tip hall-tip" tabindex="0">
               <span class="col-tip-mark" aria-hidden="true">?</span>
               <span class="col-tip-bubble" hidden>{{ card.explicacao }}</span>
