@@ -174,14 +174,14 @@
             {% if card.multi and card.grupos %}
               {% for g in card.grupos %}
               <div class="hall-entry">
+                {{ metrica("Quem", g.nomes_label or (g.nomes|join(" · ")), wide=true) }}
                 {% if g.mostrar_fotos and g.pessoas %}
                 <div class="hall-avatars" data-count="{{ g.pessoas|length }}" aria-hidden="true">
-                  {% for p in g.pessoas %}
+                  {% for p in g.pessoas[:4] %}
                   {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
                   {% endfor %}
                 </div>
                 {% endif %}
-                {{ metrica("Quem", g.nomes_label or (g.nomes|join(" · ")), wide=true) }}
                 {% if g.valor_label %}
                 {{ metrica("Quantidade", g.valor_label) }}
                 {% endif %}
@@ -189,14 +189,14 @@
               {% endfor %}
             {% else %}
               <div class="hall-entry">
+                {{ metrica(card.quem_label or "Quem", card.nomes_label or (card.nomes|join(" · ")), wide=true) }}
                 {% if card.mostrar_fotos and card.pessoas %}
                 <div class="hall-avatars" data-count="{{ card.pessoas|length }}" aria-hidden="true">
-                  {% for p in card.pessoas %}
+                  {% for p in card.pessoas[:4] %}
                   {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
                   {% endfor %}
                 </div>
                 {% endif %}
-                {{ metrica(card.quem_label or "Quem", card.nomes_label or (card.nomes|join(" · ")), wide=true) }}
                 {% if card.valor_label %}
                 {{ metrica("Quantidade", card.valor_label) }}
                 {% endif %}

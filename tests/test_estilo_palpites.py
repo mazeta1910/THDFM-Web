@@ -126,7 +126,7 @@ def test_empate_muitos_nomes_resume_lista(client):
     ids = {card["id"]: card for card in hall["cards"]}
     assert "boquinha" in ids
     assert len(ids["boquinha"]["nomes"]) == 5
-    assert "e mais 2" in ids["boquinha"]["nomes_label"]
+    assert "e mais 1" in ids["boquinha"]["nomes_label"]
     assert ids["boquinha"]["mostrar_fotos"] is False
 
 

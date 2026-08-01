@@ -265,4 +265,4 @@ def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
     assert "Acertou +7" in r.text
     assert "Gols Casa +5" in r.text
     assert "planilha-pts-total" in r.text
-    assert "/static/style.css?v=213" in r.text
+    assert "/static/style.css?v=214" in r.text
