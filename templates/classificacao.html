@@ -135,17 +135,17 @@
   class="card planilha-card planilha-section-card classificacao-hall-card"
   data-planilha-collapse
   data-classificacao-export-target
-  data-export-prefix="estilo"
+  data-export-prefix="desgraca"
   data-export-slug="hall"
-  aria-label="Hall de estilo"
+  aria-label="Hall da Desgraça"
 >
   <div class="planilha-head">
     <div class="planilha-head-top">
       <span class="planilha-head-top-spacer" aria-hidden="true"></span>
-      <span class="planilha-jogo-tag">Hall de estilo</span>
+      <span class="planilha-jogo-tag">Hall da Desgraça</span>
       <div class="planilha-head-actions" data-classificacao-export-ignore data-planilha-export-ignore>
-        {{ btn_export_png("classificacao", "Exportar Hall de estilo em PNG") }}
-        <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="true" title="Minimizar Hall">
+        {{ btn_export_png("classificacao", "Exportar Hall da Desgraça em PNG") }}
+        <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="true" title="Minimizar Hall da Desgraça">
           <span class="toggle-chevron" aria-hidden="true">▾</span>
           <span class="btn-toggle-planilha-label">Minimizar</span>
         </button>
@@ -156,7 +156,7 @@
     <p class="classificacao-hall-lead">
       Troféus de personalidade do bolão. Passe o mouse (ou foque) no ? para ler o que cada nick significa.
     </p>
-    {% call metricas_bloco("Troféus", "Troféus do Hall de estilo", grid_class="planilha-grid planilha-metricas-grid") %}
+    {% call metricas_bloco("Troféus", "Troféus do Hall da Desgraça", grid_class="planilha-grid planilha-metricas-grid classificacao-hall-grid") %}
       {% for card in hall %}
       <div class="card planilha-card planilha-metrica-card" data-hall-id="{{ card.id }}">
         <div class="planilha-head">

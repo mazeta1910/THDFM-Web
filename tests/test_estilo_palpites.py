@@ -1,4 +1,4 @@
-"""Hall de estilo, ficha, gate de login e inscrição fechada."""
+"""Hall da Desgraça, ficha, gate de login e inscrição fechada."""
 
 from __future__ import annotations
 
@@ -79,15 +79,16 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "casalzinho" in ids
     assert set(ids["casalzinho"]["nomes"]) == {"Alpha", "Beta"}
 
-    # Classificação renderiza Hall em cards exportáveis
+    # Classificação renderiza Hall da Desgraça em cards exportáveis
     r = client.get("/classificacao")
     assert r.status_code == 200
-    assert "Hall de estilo" in r.text
+    assert "Hall da Desgraça" in r.text
     assert "classificacao-hall-card" in r.text
+    assert "classificacao-hall-grid" in r.text
     assert "planilha-metrica-card" in r.text
     assert 'data-export-slug="hall"' in r.text
     assert "data-classificacao-export" in r.text
-    assert "Exportar Hall de estilo em PNG" in r.text
+    assert "Exportar Hall da Desgraça em PNG" in r.text
     assert "Boquinha de Cemitério" in r.text
     assert "Acha que todo goleiro é o Matheus Donelli" in r.text
     assert "Triângulo Amoroso" in r.text or "Casalzinho" in r.text
