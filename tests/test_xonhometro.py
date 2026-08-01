@@ -125,9 +125,6 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert len(stats["dias_semana"]) == 7
     assert sum(d["quantidade"] for d in stats["dias_semana"]) == 2
     assert all("saida_pct" in d and "ban_pct" in d for d in stats["dias_semana"])
-    # Desde 01/07 até hoje
-    dias = max((date.today() - date(2026, 7, 1)).days + 1, 1)
-    assert stats["media_saidas_por_dia"] == round(2 / dias, 3)
     assert stats["status"] == "dentro"
     # Saídas no mesmo dia 10:15 → 22:40 = 12h25m
     assert stats["media_dias_entre_saidas"] == 0.5
@@ -141,8 +138,12 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["status_desde"] == "2026-07-02T18:00:00"
     assert stats["status_duracao_texto"]
     assert "nesse status." in stats["status_duracao_texto"]
-    assert stats["tempo_medio_fora_dias"] is not None
-    assert stats["maior_tempo_fora_dias"] is not None
+    # Tempo fora: última saída 22:40 → volta 18:00 = 19h20
+    assert stats["tempo_medio_fora_texto"] == "19 horas, 20 minutos e 0 segundos"
+    assert stats["maior_tempo_fora_texto"] == "19 horas, 20 minutos e 0 segundos"
+    assert stats["tempo_medio_fora_dias"] == 0.81
+    assert stats["recorde_permanencia_texto"]
+    assert stats["recorde_permanencia_dias"] is not None
     assert stats["horario_mais_comum"] is not None
     assert stats["horario_mais_comum"]["hora"] in ("10h", "22h")
 
@@ -163,7 +164,9 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "xonha-timeline-track" in pub.text
     assert "xonha-timeline-event" in pub.text
     assert "xonha-timeline-rail" in pub.text
-    assert "Média / dia desde o início" in pub.text
+    assert "Recorde de permanência" in pub.text
+    assert "Média / dia desde o início" not in pub.text
+    assert "Média de saída / mês" in pub.text
     assert "Mês com mais sumiços" in pub.text
     assert "Dias da semana" in pub.text
     assert "Maior sumiço" in pub.text
@@ -177,6 +180,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "setInterval" in pub.text
     assert "Média de tempo entre saídas" in pub.text
     assert "12 horas, 25 minutos e 0 segundos" in pub.text
+    assert "19 horas, 20 minutos e 0 segundos" in pub.text
 
 
 def test_formatar_duracao_status_unidades():
@@ -358,3 +362,59 @@ def test_admin_registra_banimento(client: TestClient):
     assert "1 ban" in pub.text
     assert "Data com mais banimentos" in pub.text
     assert "xonha-weekday-seg--banimento" in pub.text
+
+
+def test_xonha_metricas_mes_gaps_e_permanencia(client: TestClient):
+    """Mês atual conta bans; gaps incluem bans; tempo fora e permanência em texto."""
+    from datetime import date, timedelta
+
+    _login_admin(client)
+    hoje = date.today()
+    ontem = hoje - timedelta(days=1)
+    hoje_s = hoje.isoformat()
+    ontem_s = ontem.isoformat()
+
+    client.post(
+        "/admin/xonhometro",
+        data={"tipo": "saida", "data": ontem_s, "hora": "10:00", "motivo": "antes"},
+        follow_redirects=False,
+    )
+    client.post(
+        "/admin/xonhometro",
+        data={"tipo": "volta", "data": ontem_s, "hora": "12:00", "motivo": "voltou rápido"},
+        follow_redirects=False,
+    )
+    client.post(
+        "/admin/xonhometro",
+        data={"tipo": "banimento", "data": hoje_s, "hora": "09:00", "motivo": "ban do mês"},
+        follow_redirects=False,
+    )
+    client.post(
+        "/admin/xonhometro",
+        data={"tipo": "volta", "data": hoje_s, "hora": "11:30", "motivo": "voltou do ban"},
+        follow_redirects=False,
+    )
+    client.post(
+        "/admin/xonhometro",
+        data={"tipo": "saida", "data": hoje_s, "hora": "15:00", "motivo": "saiu de novo"},
+        follow_redirects=False,
+    )
+
+    stats = db.xonha_stats()
+    # Mês atual: pelo menos ban + saida de hoje (ontem pode ser outro mês no dia 1)
+    assert stats["saidas_mes_atual"] >= 2
+    assert stats["saidas_ultimos_30_dias"] >= 3
+    # Gaps entre sumiços (saida + ban + saida)
+    assert stats["media_tempo_entre_saidas_texto"]
+    assert stats["media_dias_entre_saidas"] is not None
+    # Tempos fora: 2h (ontem) e 2h30 (hoje) → média 2h15
+    assert stats["tempo_medio_fora_texto"] == "2 horas, 15 minutos e 0 segundos"
+    assert stats["maior_tempo_fora_texto"] == "2 horas, 30 minutos e 0 segundos"
+    # Permanência: volta 12:00 → ban 09:00; volta 11:30 → saida 15:00 = 3h30
+    assert stats["recorde_permanencia_texto"]
+    assert "hora" in stats["recorde_permanencia_texto"] or "dia" in stats["recorde_permanencia_texto"]
+
+    pub = client.get("/xonhometro")
+    assert "Recorde de permanência" in pub.text
+    assert "Média de saída / mês" in pub.text
+    assert stats["tempo_medio_fora_texto"] in pub.text

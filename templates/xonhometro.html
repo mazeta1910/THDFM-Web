@@ -94,15 +94,15 @@
       <span class="xonha-stat-value">{{ stats.saidas_ultimos_30_dias }}</span>
     </div>
     <div class="xonha-stat" role="listitem">
-      <span class="xonha-stat-label">Média / mês</span>
+      <span class="xonha-stat-label">Média de saída / mês</span>
       <span class="xonha-stat-value">
         {% if stats.media_saidas_por_mes is not none %}{{ stats.media_saidas_por_mes }}{% else %}—{% endif %}
       </span>
     </div>
-    <div class="xonha-stat" role="listitem">
-      <span class="xonha-stat-label">Média / dia desde o início</span>
-      <span class="xonha-stat-value">
-        {% if stats.media_saidas_por_dia is not none %}{{ stats.media_saidas_por_dia }}{% else %}—{% endif %}
+    <div class="xonha-stat xonha-stat--recorde" role="listitem">
+      <span class="xonha-stat-label">Recorde de permanência</span>
+      <span class="xonha-stat-value xonha-stat-value--tempo">
+        {% if stats.recorde_permanencia_texto %}{{ stats.recorde_permanencia_texto }}{% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat" role="listitem">
@@ -119,20 +119,14 @@
     </div>
     <div class="xonha-stat" role="listitem">
       <span class="xonha-stat-label">Tempo médio fora</span>
-      <span class="xonha-stat-value">
-        {% if stats.tempo_medio_fora_dias is not none %}
-        {{ stats.tempo_medio_fora_dias }}
-        <small>dias</small>
-        {% else %}—{% endif %}
+      <span class="xonha-stat-value xonha-stat-value--tempo">
+        {% if stats.tempo_medio_fora_texto %}{{ stats.tempo_medio_fora_texto }}{% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat xonha-stat--recorde" role="listitem">
       <span class="xonha-stat-label">Maior sumiço</span>
-      <span class="xonha-stat-value">
-        {% if stats.maior_tempo_fora_dias is not none %}
-        {{ stats.maior_tempo_fora_dias }}
-        <small>dias fora</small>
-        {% else %}—{% endif %}
+      <span class="xonha-stat-value xonha-stat-value--tempo">
+        {% if stats.maior_tempo_fora_texto %}{{ stats.maior_tempo_fora_texto }}{% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat" role="listitem">

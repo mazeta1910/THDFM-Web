@@ -16,8 +16,8 @@
     <span><strong>{{ stats.total_saidas }}</strong> saídas</span>
     <span><strong>{{ stats.total_voltas }}</strong> voltas</span>
     <span><strong>{{ stats.total_banimentos }}</strong> banimentos</span>
-    {% if stats.media_saidas_por_dia is not none %}
-    <span>média/dia: <strong>{{ stats.media_saidas_por_dia }}</strong></span>
+    {% if stats.recorde_permanencia_texto %}
+    <span>recorde de permanência: <strong>{{ stats.recorde_permanencia_texto }}</strong></span>
     {% endif %}
     {% if stats.recorde_mes %}
     <span>mês pico: <strong>{{ stats.recorde_mes.label }}</strong> ({{ stats.recorde_mes.quantidade }}×)</span>
