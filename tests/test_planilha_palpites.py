@@ -107,12 +107,18 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "data-planilha-grupo-toggle" in r.text
     assert "btn-planilha-grupo-toggle" in r.text
     assert "data-planilha-grupo-item" in r.text
-    assert "planilha-scoreboard" in r.text
+    assert "planilha-match-title" in r.text
     assert "planilha-metricas" in r.text
     assert "planilha-head-top-spacer" in r.text
     assert "Ranking dos apostadores" in r.text
-    assert "Mais empates" in r.text
+    assert "Métricas dos jogos" in r.text
+    assert "Palpites por jogo" in r.text
+    assert "Mais gols casa" in r.text
+    assert "Mais gols fora" in r.text
+    assert "— Ida" not in r.text
     assert "Foto User" in r.text
+    assert "data-planilha-export" in r.text
+    assert "/static/planilha-export.js" in r.text
 
 
 def test_metricas_palpites_conta_lados_medias_e_extremos():
@@ -169,6 +175,8 @@ def test_ranking_apostadores_por_fase():
     assert r["menos_gols"]["nome"] == "Baixo"
     assert r["mais_empates"]["nome"] == "Empateiro"
     assert r["mais_empates"]["n"] == 2
+    assert r["mais_empates"]["pct"] == 100.0
+    assert r["mais_casa"]["pct"] is not None
     assert r["placar_mais_alto"]["nome"] == "Alto"
     assert r["placar_mais_alto"]["placar"] == "4 x 1"
 

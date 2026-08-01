@@ -295,6 +295,16 @@ def ranking_apostadores(tabelas: list[dict]) -> dict[str, Any] | None:
     mais_fora = _max("fora")
     placar_mais_alto = _max("max_gols")
 
+    def _lado(u: dict[str, Any], key: str) -> dict[str, Any]:
+        n = int(u[key])
+        jogos = int(u["n"])
+        return {
+            "nome": u["nome"],
+            "n": n,
+            "jogos": jogos,
+            "pct": round(100.0 * n / jogos, 1) if jogos else None,
+        }
+
     return {
         "mais_gols": {
             "nome": mais_gols["nome"],
@@ -308,21 +318,9 @@ def ranking_apostadores(tabelas: list[dict]) -> dict[str, Any] | None:
             "total": menos_gols["gols"],
             "n": menos_gols["n"],
         },
-        "mais_empates": {
-            "nome": mais_empates["nome"],
-            "n": mais_empates["empates"],
-            "jogos": mais_empates["n"],
-        },
-        "mais_casa": {
-            "nome": mais_casa["nome"],
-            "n": mais_casa["casa"],
-            "jogos": mais_casa["n"],
-        },
-        "mais_fora": {
-            "nome": mais_fora["nome"],
-            "n": mais_fora["fora"],
-            "jogos": mais_fora["n"],
-        },
+        "mais_empates": _lado(mais_empates, "empates"),
+        "mais_casa": _lado(mais_casa, "casa"),
+        "mais_fora": _lado(mais_fora, "fora"),
         "placar_mais_alto": {
             "nome": placar_mais_alto["nome"],
             "placar": placar_mais_alto["max_placar"],

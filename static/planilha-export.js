@@ -46,6 +46,13 @@
     return parts.join("-") + ".png";
   }
 
+  function cardDoBotao(btn) {
+    return (
+      btn.closest(".planilha-card[data-planilha-collapse]") ||
+      btn.closest("[data-planilha-collapse]")
+    );
+  }
+
   function baixarPng(canvas, filename) {
     return new Promise(function (resolve, reject) {
       if (canvas.toBlob) {
@@ -153,7 +160,7 @@
       btn.addEventListener("click", function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        var card = btn.closest("[data-planilha-collapse]");
+        var card = cardDoBotao(btn);
         if (!card) return;
         exportarCard(card, btn).catch(function (err) {
           try {
