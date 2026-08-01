@@ -365,3 +365,53 @@ def test_texto_whatsapp_formatado():
     assert "1. 📺 ODIEI RIBEIRO" in com_destaque
     assert "PEDIDURA" not in com_destaque
     assert "EXCELENTE" not in com_destaque
+
+
+def test_reembolsos_itens_separados_no_seed(client: TestClient):
+    from src import db
+
+    textos = [f["texto"] for f in db.list_listra_frases(2026)]
+    assert "lista dos reembilos" in textos
+    assert "blodo de notas" in textos
+    assert any("REEMBOLSOS DO BOLÃO ROLANDO" in t for t in textos)
+    assert not any(
+        "lista dos reembilos" in t and "blodo de notas" in t for t in textos
+    )
+    pub = client.get("/grupo/listra")
+    assert "lista dos reembilos" in pub.text
+    assert "blodo de notas" in pub.text
+
+
+def test_migra_reembolsos_combinados(client: TestClient):
+    from src import db
+
+    combinado = (
+        "@\u200etodos REEMBOLSOS DO BOLÃO ROLANDO\n"
+        "INTERESSADOS MANDAREM MENSAGEM NO PRIMAVERA\n"
+        "- lista dos reembilos\n"
+        "- blodo de notas"
+    )
+    with db.get_db() as conn:
+        conn.execute("DELETE FROM listra_frases WHERE ano = 2026")
+        conn.execute(
+            "INSERT INTO listra_frases "
+            "(texto, responsavel, ordem, ano, criado_em, emoji, destaque) "
+            "VALUES (?, '', 10, 2026, datetime('now', 'localtime'), '', '')",
+            (combinado,),
+        )
+        db._migrar_listra_reembolsos_itens(conn)
+
+    textos = [f["texto"] for f in db.list_listra_frases(2026)]
+    assert "lista dos reembilos" in textos
+    assert "blodo de notas" in textos
+    assert any(
+        "REEMBOLSOS DO BOLÃO ROLANDO" in t and "PRIMAVERA" in t for t in textos
+    )
+    assert not any(
+        "lista dos reembilos" in t and "blodo de notas" in t for t in textos
+    )
+    with db.get_db() as conn:
+        db._migrar_listra_reembolsos_itens(conn)
+    assert [f["texto"] for f in db.list_listra_frases(2026)].count(
+        "lista dos reembilos"
+    ) == 1
