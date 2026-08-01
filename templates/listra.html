@@ -118,9 +118,6 @@
   var hint = document.getElementById("listra-wa-hint");
   if (!btn) return;
 
-  // Limite seguro: links maiores são cortados e as frases NOVAS (no fim) somem.
-  var MAX_WA_URL = 3500;
-
   function showHint(msg, ok) {
     if (!hint) return;
     hint.hidden = false;
@@ -178,6 +175,18 @@
     }
   }
 
+  function abrirWhatsAppComTexto(texto) {
+    var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
+    // <a> costuma preservar URLs longas melhor que window.open
+    var a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   btn.addEventListener("click", async function () {
     btn.disabled = true;
     try {
@@ -187,29 +196,27 @@
         return;
       }
       var copiou = await copiar(texto);
-      var prefix = "https://api.whatsapp.com/send?text=";
-      var url = prefix + encodeURIComponent(texto);
-      if (url.length > MAX_WA_URL) {
-        // Não abrir URL truncada: perderia as frases novas do fim.
-        window.open(
-          prefix + encodeURIComponent("*LISTRA THDFM 2026*\n\n"),
-          "_blank",
-          "noopener"
-        );
-        showHint(
-          copiou
-            ? "WhatsApp aberto. Cole a Listra completa com Ctrl+V (já copiada, com as frases novas) e envie no grupo THDFM."
-            : "A Listra é longa demais para o link. Copie o texto da página, cole no WhatsApp e envie.",
-          !!copiou
-        );
-      } else {
-        window.open(url, "_blank", "noopener");
-        showHint(
-          "WhatsApp aberto com a Listra na mensagem — escolha o grupo THDFM e toque em Enviar." +
-            (copiou ? " (também ficou copiada)" : ""),
-          true
-        );
+
+      // No celular, o share nativo leva o texto inteiro (sem limite de URL).
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: texto });
+          showHint("Escolha o WhatsApp e o grupo THDFM para enviar.", true);
+          return;
+        } catch (e) {
+          if (e && e.name === "AbortError") return;
+        }
       }
+
+      // Sempre a Listra completa — nunca só o título.
+      abrirWhatsAppComTexto(texto);
+      showHint(
+        "WhatsApp aberto com a Listra completa na mensagem — escolha o grupo THDFM e toque em Enviar." +
+          (copiou
+            ? " Se algo faltar, cole com Ctrl+V (já está copiada)."
+            : ""),
+        true
+      );
     } finally {
       btn.disabled = false;
     }
