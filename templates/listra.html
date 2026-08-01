@@ -424,7 +424,6 @@
   var reduceMotion =
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var scrollOpts = reduceMotion ? true : { behavior: "smooth" };
   var ticking = false;
 
   function cards() {
