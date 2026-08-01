@@ -55,3 +55,5 @@ def test_classificacao_tem_coluna_pos_e_ordenacao(client: TestClient):
     assert "Alesson Evangelista Longo" in r.text
     assert "th-sort" in r.text
     assert "is-sortable" in r.text
+    assert "/static/style.css?v=201" in r.text
+    assert "zona-meio" in r.text or "zona-" in r.text

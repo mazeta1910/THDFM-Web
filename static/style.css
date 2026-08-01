@@ -4660,43 +4660,194 @@ tr.planilha-sem-palpite .planilha-num {
 }
 .classificacao-table .pos-mov.up { color: var(--accent); }
 .classificacao-table .pos-mov.down { color: #e74c3c; }
-.classificacao-table tbody tr.zona-campeao td { background: var(--zona-campeao); }
-.classificacao-table tbody tr.zona-podio td { background: var(--zona-podio); }
-.classificacao-table tbody tr.zona-alta td { background: var(--zona-alta); }
-.classificacao-table tbody tr.zona-risco td { background: var(--zona-risco); }
-.classificacao-table tbody tr.zona-meio td { background: var(--card); }
-/* Fundos OPAQUES nas colunas sticky — evita número das outras colunas aparecerem por baixo */
-.classificacao-table tbody tr.zona-campeao td.col-pos,
-.classificacao-table tbody tr.zona-campeao td.col-player {
-  background-color: var(--zona-campeao-solid);
+
+/* Zebrado (como na planilha) + tinta da zona (regra de 3 / Brasileirão) */
+.classificacao-table tbody tr.zona-meio:nth-child(odd) td {
+  background: #0d0d0d;
 }
+.classificacao-table tbody tr.zona-meio:nth-child(even) td {
+  background: #1a1a1a;
+}
+.classificacao-table tbody tr.zona-campeao:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 20%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-campeao:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 30%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-podio:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 16%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-podio:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 26%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-alta:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-alta-bar) 18%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-alta:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-alta-bar) 28%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-risco:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 18%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-risco:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 28%, #1a1a1a);
+}
+
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(odd) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(odd) td {
+  background: #ffffff;
+}
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(even) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(even) td {
+  background: #ececec;
+}
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(odd) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 28%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(even) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 38%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(odd) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 14%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(even) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 22%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(odd) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-alta-bar) 16%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(even) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-alta-bar) 24%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(odd) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 14%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(even) td,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 22%, #ececec);
+}
+
+/* Sticky: mesmos fundos zebrados (opacos) para não vazar scroll */
+.classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-pos,
+.classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-player {
+  background-color: #0d0d0d;
+}
+.classificacao-table tbody tr.zona-meio:nth-child(even) td.col-pos,
+.classificacao-table tbody tr.zona-meio:nth-child(even) td.col-player {
+  background-color: #1a1a1a;
+}
+.classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-pos,
+.classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-campeao-bar) 20%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-pos,
+.classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-campeao-bar) 30%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-pos,
+.classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-podio-bar) 16%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-podio:nth-child(even) td.col-pos,
+.classificacao-table tbody tr.zona-podio:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-podio-bar) 26%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-pos,
+.classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-alta-bar) 18%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-alta:nth-child(even) td.col-pos,
+.classificacao-table tbody tr.zona-alta:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-alta-bar) 28%, #1a1a1a);
+}
+.classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-pos,
+.classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-risco-bar) 18%, #0d0d0d);
+}
+.classificacao-table tbody tr.zona-risco:nth-child(even) td.col-pos,
+.classificacao-table tbody tr.zona-risco:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-risco-bar) 28%, #1a1a1a);
+}
+
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(odd) td.col-player {
+  background-color: #ffffff;
+}
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(even) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-meio:nth-child(even) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(even) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-meio:nth-child(even) td.col-player {
+  background-color: #ececec;
+}
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-campeao-bar) 28%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-campeao:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-campeao-bar) 38%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-podio-bar) 14%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(even) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-podio:nth-child(even) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(even) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-podio:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-podio-bar) 22%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-alta-bar) 16%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(even) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-alta:nth-child(even) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(even) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-alta:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-alta-bar) 24%, #ececec);
+}
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(odd) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-risco-bar) 14%, #ffffff);
+}
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(even) td.col-pos,
+html.theme-light .classificacao-table tbody tr.zona-risco:nth-child(even) td.col-player,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even) td.col-pos,
+html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even) td.col-player {
+  background-color: color-mix(in srgb, var(--zona-risco-bar) 22%, #ececec);
+}
+
 .classificacao-table tbody tr.zona-campeao td.col-pos {
   border-left: 3px solid var(--zona-campeao-bar);
-}
-.classificacao-table tbody tr.zona-podio td.col-pos,
-.classificacao-table tbody tr.zona-podio td.col-player {
-  background-color: var(--zona-podio-solid);
 }
 .classificacao-table tbody tr.zona-podio td.col-pos {
   border-left: 3px solid var(--zona-podio-bar);
 }
-.classificacao-table tbody tr.zona-alta td.col-pos,
-.classificacao-table tbody tr.zona-alta td.col-player {
-  background-color: var(--zona-alta-solid);
-}
 .classificacao-table tbody tr.zona-alta td.col-pos {
   border-left: 3px solid var(--zona-alta-bar);
 }
-.classificacao-table tbody tr.zona-risco td.col-pos,
-.classificacao-table tbody tr.zona-risco td.col-player {
-  background-color: var(--zona-risco-solid);
-}
 .classificacao-table tbody tr.zona-risco td.col-pos {
   border-left: 3px solid var(--zona-risco-bar);
-}
-.classificacao-table tbody tr.zona-meio td.col-pos,
-.classificacao-table tbody tr.zona-meio td.col-player {
-  background-color: var(--zona-meio-solid);
 }
 .classificacao-table tbody tr.zona-meio td.col-pos {
   border-left: 3px solid var(--zona-meio-bar);
