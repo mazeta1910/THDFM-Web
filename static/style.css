@@ -4921,7 +4921,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
+  gap: 0.28rem;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -4938,44 +4938,46 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   outline: none;
 }
 .classificacao-table .th-sort-icon {
-  display: inline-block;
-  width: 0.55rem;
-  height: 0.7rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  width: 0.7rem;
+  height: 0.95rem;
   flex: 0 0 auto;
-  opacity: 0.35;
-  background:
-    linear-gradient(currentColor, currentColor) center 0.05rem / 0.45rem 0.1rem no-repeat,
-    linear-gradient(currentColor, currentColor) center 0.55rem / 0.45rem 0.1rem no-repeat;
-  position: relative;
+  color: inherit;
+  opacity: 0.45;
 }
-.classificacao-table .th-sort-icon::before,
-.classificacao-table .th-sort-icon::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-left: 0.22rem solid transparent;
-  border-right: 0.22rem solid transparent;
-  transform: translateX(-50%);
+.classificacao-table .th-sort-icon svg {
+  display: block;
+  width: 0.62rem;
+  height: 0.85rem;
 }
-.classificacao-table .th-sort-icon::before {
-  top: -0.05rem;
-  border-bottom: 0.22rem solid currentColor;
-  opacity: 0.35;
+.classificacao-table .th-sort-icon .th-sort-up,
+.classificacao-table .th-sort-icon .th-sort-down {
+  fill: currentColor;
+  opacity: 0.4;
 }
-.classificacao-table .th-sort-icon::after {
-  bottom: -0.05rem;
-  border-top: 0.22rem solid currentColor;
-  opacity: 0.35;
-}
-.classificacao-table th[aria-sort="ascending"] .th-sort-icon::before { opacity: 1; }
-.classificacao-table th[aria-sort="ascending"] .th-sort-icon::after { opacity: 0.2; }
-.classificacao-table th[aria-sort="descending"] .th-sort-icon::before { opacity: 0.2; }
-.classificacao-table th[aria-sort="descending"] .th-sort-icon::after { opacity: 1; }
 .classificacao-table th[aria-sort="ascending"] .th-sort-icon,
 .classificacao-table th[aria-sort="descending"] .th-sort-icon {
   opacity: 1;
+}
+.classificacao-table th[aria-sort="ascending"] .th-sort-icon .th-sort-up {
+  opacity: 1;
+}
+.classificacao-table th[aria-sort="ascending"] .th-sort-icon .th-sort-down {
+  opacity: 0.25;
+}
+.classificacao-table th[aria-sort="descending"] .th-sort-icon .th-sort-up {
+  opacity: 0.25;
+}
+.classificacao-table th[aria-sort="descending"] .th-sort-icon .th-sort-down {
+  opacity: 1;
+}
+.classificacao-table th.is-sortable .col-tip {
+  cursor: pointer;
+  border-bottom-color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 .classificacao-rod.positivo { color: var(--accent); font-weight: 700; }
 .classificacao-rod.negativo { color: #e74c3c; font-weight: 700; }

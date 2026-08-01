@@ -38,7 +38,12 @@
                 <span class="th-full">Pos.</span><span class="th-short">#</span>
                 <span class="col-tip-bubble" role="tooltip">Colocação oficial. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada. Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-player is-sortable" data-sort-key="nome" data-sort-type="string" aria-sort="none">
@@ -47,7 +52,12 @@
                 <span class="th-full">Participante</span><span class="th-short">Jogador</span>
                 <span class="col-tip-bubble" role="tooltip">Foto e nome do participante. Clique para ordenar A–Z ou Z–A.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num col-pts is-sortable" data-sort-key="soma" data-sort-type="number" aria-sort="none">
@@ -56,7 +66,12 @@
                 <span class="th-full">Pontos</span><span class="th-short">Pts</span>
                 <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="rod" data-sort-type="number" aria-sort="none">
@@ -65,7 +80,12 @@
                 <span class="th-full">Rodada</span><span class="th-short">Rod</span>
                 <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="placar" data-sort-type="number" aria-sort="none">
@@ -74,7 +94,12 @@
                 <span class="th-full">Placar</span><span class="th-short">Plc</span>
                 <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato. Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="vencedor" data-sort-type="number" aria-sort="none">
@@ -83,7 +108,12 @@
                 <span class="th-full">Vencedor</span><span class="th-short">Ven</span>
                 <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate). Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="gols_casa" data-sort-type="number" aria-sort="none">
@@ -92,7 +122,12 @@
                 <span class="th-full">Gols casa</span><span class="th-short">GC</span>
                 <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante. Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="gols_fora" data-sort-type="number" aria-sort="none">
@@ -101,7 +136,12 @@
                 <span class="th-full">Gols fora</span><span class="th-short">GF</span>
                 <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante. Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
           <th class="col-num is-sortable" data-sort-key="fidelidade" data-sort-type="number" aria-sort="none">
@@ -110,7 +150,12 @@
                 <span class="th-full">Bônus</span><span class="th-short">Bôn</span>
                 <span class="col-tip-bubble" role="tooltip">Bônus de fidelidade dos palpites (detalhes em Regras). Clique para ordenar.</span>
               </span>
-              <span class="th-sort-icon" aria-hidden="true"></span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
             </button>
           </th>
         </tr>
