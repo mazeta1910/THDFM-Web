@@ -1870,27 +1870,55 @@ def admin_credenciais(request: Request):
 def admin_credenciais_redefinir(
     request: Request,
     participante_id: int = Form(...),
+    acao: str = Form("senha"),
     username: str = Form(""),
-    senha_nova: str = Form(...),
+    senha_nova: str = Form(""),
 ):
     negado = require_dono(request)
     if negado:
         return negado
+    acao_ok = (acao or "").strip().lower()
     try:
-        updated = db.admin_redefinir_credenciais(
-            participante_id,
-            senha_nova=senha_nova,
-            username=username.strip() or None,
-        )
+        if acao_ok == "username":
+            updated = db.admin_redefinir_credenciais(
+                participante_id,
+                username=username.strip() or None,
+                senha_nova=None,
+            )
+            nome = updated.get("nome") or "participante"
+            user = updated.get("username") or "(sem username)"
+            msg = f"Username de {nome} atualizado para {user}."
+        elif acao_ok == "senha":
+            updated = db.admin_redefinir_credenciais(
+                participante_id,
+                senha_nova=senha_nova,
+                username=None,
+            )
+            nome = updated.get("nome") or "participante"
+            user = updated.get("username") or "(sem username)"
+            msg = (
+                f"Senha de {nome} ({user}) redefinida. "
+                "Passe a senha nova no Zap."
+            )
+        else:
+            updated = db.admin_redefinir_credenciais(
+                participante_id,
+                senha_nova=senha_nova or None,
+                username=username.strip() or None,
+            )
+            nome = updated.get("nome") or "participante"
+            user = updated.get("username") or "(sem username)"
+            msg = (
+                f"Credenciais de {nome} ({user}) redefinidas. "
+                "Passe a senha nova no Zap."
+            )
     except ValueError as e:
         return RedirectResponse(
             f"/admin/credenciais?erro={quote(str(e))}",
             status_code=303,
         )
-    nome = updated.get("nome") or "participante"
-    user = updated.get("username") or "(sem username)"
     return RedirectResponse(
-        f"/admin/credenciais?msg={quote(f'Credenciais de {nome} ({user}) redefinidas. Passe a senha nova no Zap.')}",
+        f"/admin/credenciais?msg={quote(msg)}",
         status_code=303,
     )
 
