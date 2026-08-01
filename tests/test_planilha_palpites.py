@@ -104,3 +104,6 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "data-planilha-export" in r.text
     assert "/static/planilha-export.js" in r.text
     assert "Exportar card em PNG" in r.text
+    assert "data-planilha-grupo-toggle" in r.text
+    assert "btn-planilha-grupo-toggle" in r.text
+    assert "data-planilha-grupo-item" in r.text

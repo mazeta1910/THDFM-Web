@@ -83,24 +83,38 @@
   }
 
   function expandirSePreciso(card) {
-    if (!card.classList.contains("is-collapsed")) {
-      return function () {};
-    }
-    var btn = card.querySelector("[data-planilha-toggle]");
-    var label = btn && btn.querySelector(".btn-toggle-planilha-label");
-    card.classList.remove("is-collapsed");
-    if (btn) {
-      btn.setAttribute("aria-expanded", "true");
-      btn.title = "Minimizar palpites";
-    }
-    if (label) label.textContent = "Minimizar";
-    return function () {
-      card.classList.add("is-collapsed");
+    var restoreFns = [];
+
+    if (card.classList.contains("is-collapsed")) {
+      var btn = card.querySelector("[data-planilha-toggle]");
+      var label = btn && btn.querySelector(".btn-toggle-planilha-label");
+      card.classList.remove("is-collapsed");
       if (btn) {
-        btn.setAttribute("aria-expanded", "false");
-        btn.title = "Expandir palpites";
+        btn.setAttribute("aria-expanded", "true");
+        btn.title = "Minimizar palpites";
       }
-      if (label) label.textContent = "Expandir";
+      if (label) label.textContent = "Minimizar";
+      restoreFns.push(function () {
+        card.classList.add("is-collapsed");
+        if (btn) {
+          btn.setAttribute("aria-expanded", "false");
+          btn.title = "Expandir palpites";
+        }
+        if (label) label.textContent = "Expandir";
+      });
+    }
+
+    // Expande subgrupos recolhidos só durante a captura.
+    card.querySelectorAll("tr.planilha-grupo.is-collapsed").forEach(function (grupoRow) {
+      var gBtn = grupoRow.querySelector("[data-planilha-grupo-toggle]");
+      if (gBtn) gBtn.click();
+      restoreFns.push(function () {
+        if (!grupoRow.classList.contains("is-collapsed") && gBtn) gBtn.click();
+      });
+    });
+
+    return function () {
+      for (var i = restoreFns.length - 1; i >= 0; i--) restoreFns[i]();
     };
   }
 
