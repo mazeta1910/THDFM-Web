@@ -3281,6 +3281,19 @@ html[data-theme="light"] .admin-main {
   transform: translateY(12px);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
+.toast-title,
+.admin-toast .toast-title {
+  display: block;
+}
+.toast-detail {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  word-break: break-word;
+}
 .toast.is-show,
 .admin-toast.is-show {
   opacity: 1;
