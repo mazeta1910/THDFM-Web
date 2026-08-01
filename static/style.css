@@ -4616,6 +4616,19 @@ tr.planilha-sem-palpite .planilha-num {
 .classificacao-card.is-exporting .th-sort {
   pointer-events: none;
 }
+/* html2canvas preenche a célula inteira com inset box-shadow (linha "você").
+   No export, troca o destaque por bordas sólidas. */
+.classificacao-card.is-exporting .classificacao-table tbody tr.is-eu td {
+  box-shadow: none !important;
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+.classificacao-card.is-exporting .classificacao-table tbody tr.is-eu td.col-pos {
+  border-left: 3px solid var(--accent);
+}
+.classificacao-card.is-exporting .classificacao-table tbody tr.is-eu td:last-child {
+  border-right: 2px solid var(--accent);
+}
 .classificacao-scroll {
   width: 100%;
   overflow-x: auto;
