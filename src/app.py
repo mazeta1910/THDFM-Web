@@ -927,6 +927,7 @@ def admin_listra(request: Request):
         participantes=db.list_listra_permissoes_com_participantes(),
         meliantes=db.list_listra_meliantes_detalhe(),
         candidatos_meliante=db.list_participantes_candidatos_meliante(),
+        candidatos_vincular=db.list_participantes_para_vincular_meliante(),
         total_frases=len(db.list_listra_frases()),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
@@ -955,6 +956,50 @@ def admin_listra_meliante_criar(
         )
     return RedirectResponse(
         f"/admin/listra?msg={quote(f'Meliante {criado} adicionado')}#meliantes",
+        status_code=303,
+    )
+
+
+@app.post("/admin/listra/meliantes/vincular")
+def admin_listra_meliante_vincular(
+    request: Request,
+    nome: str = Form(...),
+    participante_id: str = Form(""),
+):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    pid_raw = (participante_id or "").strip()
+    if not pid_raw.isdigit() or int(pid_raw) <= 0:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote('Selecione um usuário para vincular')}#meliantes",
+            status_code=303,
+        )
+    try:
+        vinculado = db.vincular_listra_meliante(nome, int(pid_raw))
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote(str(exc))}#meliantes",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote(f'{vinculado} vinculado ao usuário')}#meliantes",
+        status_code=303,
+    )
+
+
+@app.post("/admin/listra/meliantes/desvincular")
+def admin_listra_meliante_desvincular(request: Request, nome: str = Form(...)):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        livre = db.desvincular_listra_meliante(nome)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote(str(exc))}#meliantes",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote(f'{livre} agora é nome livre')}#meliantes",
         status_code=303,
     )
 

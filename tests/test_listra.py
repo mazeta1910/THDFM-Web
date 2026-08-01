@@ -351,6 +351,32 @@ def test_admin_gestor_meliantes(client: TestClient):
     assert "livre" in painel.text
     assert "Usuário cadastrado" in painel.text
     assert "Nome livre" in painel.text
+    assert "/admin/listra/meliantes/vincular" in painel.text
+
+    # Vínculo manual: meliante livre → usuário liberado
+    part2 = _criar_liberado(
+        nome="Link User", username="linkuser", celular="11999990088"
+    )
+    link = client.post(
+        "/admin/listra/meliantes/vincular",
+        data={"nome": "Odiei Ribeiro", "participante_id": str(part2["id"])},
+        follow_redirects=False,
+    )
+    assert link.status_code == 303
+    assert "vinculado" in unquote(link.headers.get("location") or "").lower()
+    detalhe = {m["nome"]: m for m in db.list_listra_meliantes_detalhe()}
+    assert detalhe["Odiei Ribeiro"]["vinculado"] is True
+    assert detalhe["Odiei Ribeiro"]["participante_id"] == part2["id"]
+
+    desv = client.post(
+        "/admin/listra/meliantes/desvincular",
+        data={"nome": "Odiei Ribeiro"},
+        follow_redirects=False,
+    )
+    assert desv.status_code == 303
+    assert "livre" in unquote(desv.headers.get("location") or "").lower()
+    detalhe = {m["nome"]: m for m in db.list_listra_meliantes_detalhe()}
+    assert detalhe["Odiei Ribeiro"]["vinculado"] is False
 
     pub = client.get("/grupo/listra")
     assert "Odiei Ribeiro" in pub.text
