@@ -5245,22 +5245,28 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   box-sizing: border-box;
   margin-bottom: 0;
 }
+/* Arqui-inimigos: linha inteira sozinho (não estica os cards do lado). */
+.classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card.hall-card-fullrow {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+}
 @media (max-width: 1400px) {
-  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card:not(.hall-card-fullrow) {
     flex-basis: calc((100% - 2 * 0.75rem) / 3);
     width: calc((100% - 2 * 0.75rem) / 3);
     max-width: calc((100% - 2 * 0.75rem) / 3);
   }
 }
 @media (max-width: 1100px) {
-  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card:not(.hall-card-fullrow) {
     flex-basis: calc((100% - 0.75rem) / 2);
     width: calc((100% - 0.75rem) / 2);
     max-width: calc((100% - 0.75rem) / 2);
   }
 }
 @media (max-width: 700px) {
-  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card:not(.hall-card-fullrow) {
     flex-basis: 100%;
     width: 100%;
     max-width: 100%;
@@ -5323,14 +5329,22 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   width: 100%;
   text-align: center;
 }
-.classificacao-hall-card .hall-entry + .hall-entry {
-  margin-top: 0.55rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-}
 .classificacao-hall-card .hall-entry .planilha-metrica {
   align-items: center;
   width: 100%;
+}
+/* Duplas do Arqui em grade na linha cheia */
+.classificacao-hall-card .hall-arqui-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem 1rem;
+  width: 100%;
+  justify-content: center;
+}
+.classificacao-hall-card .hall-arqui-grid .hall-entry {
+  margin: 0;
+  padding: 0.35rem 0.25rem;
+  border: none;
 }
 /* Fotos sempre abaixo de Quem, em fila, centradas no card */
 .classificacao-hall-card .hall-avatars {
@@ -5343,7 +5357,8 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   margin: 0.05rem 0 0.2rem;
 }
 .classificacao-hall-card .hall-avatar,
-.classificacao-hall-card .hall-avatar-fallback {
+.classificacao-hall-card .hall-avatar-fallback,
+.classificacao-hall-card .hall-avatar-more {
   width: 2.35rem;
   height: 2.35rem;
   border-radius: 50%;
@@ -5351,7 +5366,8 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   flex: 0 0 auto;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-.classificacao-hall-card .hall-avatar-fallback {
+.classificacao-hall-card .hall-avatar-fallback,
+.classificacao-hall-card .hall-avatar-more {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5360,6 +5376,11 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+}
+.classificacao-hall-card .hall-avatar-more {
+  background: color-mix(in srgb, var(--accent) 18%, var(--card));
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 .classificacao-hall-card .hall-avatars[data-count="1"] .hall-avatar,
 .classificacao-hall-card .hall-avatars[data-count="1"] .hall-avatar-fallback {

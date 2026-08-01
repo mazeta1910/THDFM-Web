@@ -88,6 +88,10 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert ids["placar_visto"]["nomes_label"] in {"2×0", "0×3"} or "×" in ids["placar_visto"]["nomes_label"]
     assert "×" in ids["placar_visto"]["valor_label"]
     assert "(" not in ids["placar_visto"]["valor_label"]
+    # Arqui (se houver) fica por último e em linha cheia
+    if "arqui_inimigos" in ids:
+        assert hall["cards"][-1]["id"] == "arqui_inimigos"
+        assert ids["arqui_inimigos"]["linha_cheia"] is True
 
     # Classificação renderiza Hall da Desgraça em cards exportáveis
     r = client.get("/classificacao")
@@ -106,7 +110,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "iguais/par" not in r.text
     assert ">Qual<" in r.text or "planilha-metrica-label\">Qual<" in r.text
     assert "Quantidade" in r.text
-    assert "Marca" not in r.text or "planilha-metrica-label\">Marca<" not in r.text
+    assert "planilha-metrica-label\">Marca<" not in r.text
     assert "hall-avatar" in r.text
     assert "data-abrir-ficha" in r.text
     assert "ficha-estilo-card" in r.text
@@ -127,7 +131,15 @@ def test_empate_muitos_nomes_resume_lista(client):
     assert "boquinha" in ids
     assert len(ids["boquinha"]["nomes"]) == 5
     assert "e mais 1" in ids["boquinha"]["nomes_label"]
-    assert ids["boquinha"]["mostrar_fotos"] is False
+    assert ids["boquinha"]["mostrar_fotos"] is True
+    assert len(ids["boquinha"]["pessoas_foto"]) == 4
+    assert ids["boquinha"]["fotos_extra"] == 1
+
+    r = client.get("/classificacao")
+    assert r.status_code == 200
+    assert "hall-avatar-more" in r.text
+    assert ">+1<" in r.text or "+1" in r.text
+    assert "hall-card-fullrow" in r.text or "arqui_inimigos" not in ids
 
 
 def test_triangulo_e_quarteto(client):

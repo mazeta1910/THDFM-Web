@@ -489,8 +489,8 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
         ("casalzinho", casal[0] if casal else None),
         ("triangulo", triangulo[0] if triangulo else None),
         ("quarteto", quarteto[0] if quarteto else None),
-        ("arqui_inimigos", None),  # multi
         ("placar_visto", placar_visto),
+        ("arqui_inimigos", None),  # multi — sempre por último, linha própria
     ]
 
     by_id = {int(p["participante_id"]): p for p in perfis}
@@ -504,12 +504,15 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
             grupos = []
             for g in arqui:
                 pessoas = _pessoas_de(g.get("ids") or [], g.get("nomes") or [], by_id)
+                n_p = len(pessoas)
                 grupos.append(
                     {
                         **g,
                         "pessoas": pessoas,
+                        "pessoas_foto": pessoas[:_MAX_FOTOS],
+                        "fotos_extra": max(0, n_p - _MAX_FOTOS),
                         "nomes_label": _rotulo_nomes(g.get("nomes") or [], truncar=False),
-                        "mostrar_fotos": 0 < len(pessoas) <= _MAX_FOTOS,
+                        "mostrar_fotos": n_p > 0,
                     }
                 )
                 for pid in g["ids"]:
@@ -521,6 +524,7 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
                     "explicacao": expl,
                     "grupos": grupos,
                     "multi": True,
+                    "linha_cheia": True,
                 }
             )
             continue
@@ -539,11 +543,15 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
                 "nomes": nomes_w,
                 "ids": ids_w,
                 "pessoas": pessoas,
+                "pessoas_foto": pessoas[:_MAX_FOTOS],
+                "fotos_extra": max(0, n_pessoas - _MAX_FOTOS),
                 "nomes_label": _rotulo_nomes(nomes_w, truncar=truncar),
                 "quem_label": winner.get("quem_label") or "Quem",
                 "valor_label": winner.get("valor_label") or "",
-                "mostrar_fotos": bool(pessoas) and 0 < n_pessoas <= _MAX_FOTOS,
+                # Todo card com gente mostra foto (até 4) + “+N” se passar.
+                "mostrar_fotos": bool(pessoas) and n_pessoas > 0,
                 "multi": False,
+                "linha_cheia": False,
             }
         )
         for pid in ids_w:

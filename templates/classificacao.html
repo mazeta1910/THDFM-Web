@@ -158,7 +158,10 @@
     </p>
     {% call metricas_bloco("Troféus", "Troféus do Hall da Desgraça", grid_class="classificacao-hall-grid") %}
       {% for card in hall %}
-      <div class="card planilha-card planilha-metrica-card" data-hall-id="{{ card.id }}">
+      <div
+        class="card planilha-card planilha-metrica-card{% if card.linha_cheia %} hall-card-fullrow{% endif %}"
+        data-hall-id="{{ card.id }}"
+      >
         <div class="planilha-head">
           <span class="planilha-jogo-tag">{{ card.titulo }}</span>
           <div class="hall-card-tip-row" data-classificacao-export-ignore>
@@ -170,16 +173,19 @@
           </div>
         </div>
         <div class="planilha-body">
-          <div class="planilha-metricas" aria-label="{{ card.titulo }}">
+          <div class="planilha-metricas{% if card.multi %} hall-arqui-grid{% endif %}" aria-label="{{ card.titulo }}">
             {% if card.multi and card.grupos %}
               {% for g in card.grupos %}
               <div class="hall-entry">
                 {{ metrica("Quem", g.nomes_label or (g.nomes|join(" · ")), wide=true) }}
-                {% if g.mostrar_fotos and g.pessoas %}
-                <div class="hall-avatars" data-count="{{ g.pessoas|length }}" aria-hidden="true">
-                  {% for p in g.pessoas[:4] %}
+                {% if g.mostrar_fotos and g.pessoas_foto %}
+                <div class="hall-avatars" data-count="{{ g.pessoas_foto|length }}" aria-hidden="true">
+                  {% for p in g.pessoas_foto %}
                   {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
                   {% endfor %}
+                  {% if g.fotos_extra %}
+                  <span class="hall-avatar-more">+{{ g.fotos_extra }}</span>
+                  {% endif %}
                 </div>
                 {% endif %}
                 {% if g.valor_label %}
@@ -190,11 +196,14 @@
             {% else %}
               <div class="hall-entry">
                 {{ metrica(card.quem_label or "Quem", card.nomes_label or (card.nomes|join(" · ")), wide=true) }}
-                {% if card.mostrar_fotos and card.pessoas %}
-                <div class="hall-avatars" data-count="{{ card.pessoas|length }}" aria-hidden="true">
-                  {% for p in card.pessoas[:4] %}
+                {% if card.mostrar_fotos and card.pessoas_foto %}
+                <div class="hall-avatars" data-count="{{ card.pessoas_foto|length }}" aria-hidden="true">
+                  {% for p in card.pessoas_foto %}
                   {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
                   {% endfor %}
+                  {% if card.fotos_extra %}
+                  <span class="hall-avatar-more">+{{ card.fotos_extra }}</span>
+                  {% endif %}
                 </div>
                 {% endif %}
                 {% if card.valor_label %}
