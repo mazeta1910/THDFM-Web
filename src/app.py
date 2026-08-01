@@ -123,8 +123,35 @@ TEMPLATES.env.globals["nome_clube_curto"] = nome_clube_curto
 TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
 TEMPLATES.env.globals["avatar_url"] = avatar_url
 TEMPLATES.env.globals["avatar_padrao_url"] = avatar_padrao_url
+TEMPLATES.env.globals["listra_emoji_efetivo"] = db.listra_emoji_efetivo
+TEMPLATES.env.globals["listra_texto_contexto"] = db.listra_texto_contexto
+TEMPLATES.env.globals["listra_linha_compartilhar"] = db.listra_linha_compartilhar
 TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
 TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
+
+
+def _listra_marcar_destaque(texto: str, destaque: str) -> str:
+    """Marca o trecho compartilhável dentro do texto (HTML escapado)."""
+    from markupsafe import Markup, escape
+
+    base = texto or ""
+    dest = (destaque or "").strip()
+    if not dest or dest not in base:
+        return Markup(str(escape(base)))
+    out: list[str] = []
+    cursor = 0
+    while True:
+        idx = base.find(dest, cursor)
+        if idx < 0:
+            out.append(str(escape(base[cursor:])))
+            break
+        out.append(str(escape(base[cursor:idx])))
+        out.append(f'<mark class="listra-destaque">{escape(dest)}</mark>')
+        cursor = idx + len(dest)
+    return Markup("".join(out))
+
+
+TEMPLATES.env.filters["listra_marcar_destaque"] = _listra_marcar_destaque
 
 
 @app.on_event("startup")
@@ -769,6 +796,7 @@ def grupo_listra(request: Request):
         pode_adicionar=caps["pode_adicionar"],
         pode_enviar=caps["pode_enviar"],
         participante_listra=caps["participante"],
+        listra_emoji_opcoes=db.LISTRA_EMOJI_OPCOES,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
@@ -799,6 +827,8 @@ def grupo_listra_criar(
     texto: str = Form(...),
     responsavel: str = Form(...),
     ano: int | None = Form(None),
+    emoji: str = Form(""),
+    destaque: str = Form(""),
 ):
     from src.listra_seed import LISTRA_ANO_ATUAL
 
@@ -816,6 +846,8 @@ def grupo_listra_criar(
             responsavel,
             criado_por_id=part["id"] if part else None,
             ano=ano if ano is not None else LISTRA_ANO_ATUAL,
+            emoji=emoji,
+            destaque=destaque,
         )
     except ValueError as exc:
         return RedirectResponse(
@@ -835,6 +867,8 @@ def grupo_listra_atualizar(
     frase_id: int = Form(...),
     texto: str = Form(...),
     responsavel: str = Form(""),
+    emoji: str = Form(""),
+    destaque: str = Form(""),
 ):
     if not admin_ok(request):
         return RedirectResponse(
@@ -843,7 +877,13 @@ def grupo_listra_atualizar(
             status_code=303,
         )
     try:
-        db.atualizar_listra_frase(frase_id, texto=texto, responsavel=responsavel)
+        db.atualizar_listra_frase(
+            frase_id,
+            texto=texto,
+            responsavel=responsavel,
+            emoji=emoji,
+            destaque=destaque,
+        )
     except ValueError as exc:
         return RedirectResponse(
             f"/grupo/listra?erro={quote(str(exc))}#listra-frase-{int(frase_id)}",

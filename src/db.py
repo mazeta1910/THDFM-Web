@@ -327,6 +327,7 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_listra_frases_ano_ordem "
         "ON listra_frases(ano DESC, ordem ASC, id ASC)"
     )
+    _migrar_listra_emoji_destaque(conn)
     for ano in LISTRA_ANOS:
         _seed_listra_ano_se_faltando(conn, int(ano), listra_seed_por_ano(int(ano)))
 
@@ -340,11 +341,13 @@ def _seed_listra_ano_se_faltando(
         "SELECT 1 FROM listra_frases WHERE ano = ? LIMIT 1", (ano,)
     ).fetchone():
         return
-    for i, texto in enumerate(frases, start=1):
+    for i, raw in enumerate(frases, start=1):
+        emoji, texto = split_leading_emoji(raw)
         conn.execute(
-            "INSERT INTO listra_frases (texto, responsavel, ordem, ano, criado_em) "
-            "VALUES (?, '', ?, ?, datetime('now', 'localtime'))",
-            (texto, i, ano),
+            "INSERT INTO listra_frases "
+            "(texto, responsavel, ordem, ano, criado_em, emoji, destaque) "
+            "VALUES (?, '', ?, ?, datetime('now', 'localtime'), ?, '')",
+            (texto or raw, i, ano, emoji),
         )
 
 
@@ -1802,8 +1805,98 @@ def xonha_stats() -> dict[str, Any]:
 # --- Listra THDFM -----------------------------------------------------------
 
 _LISTRA_FRASE_COLS = (
-    "id, texto, responsavel, criado_por_id, criado_em, ordem, ano"
+    "id, texto, responsavel, criado_por_id, criado_em, ordem, ano, emoji, destaque"
 )
+
+# Emojis frequentes na Listra (atalhos no formulário).
+LISTRA_EMOJI_OPCOES = (
+    "📺", "⚽", "🏆", "🎤", "🎶", "🎮", "💊", "🥊", "🤝", "🤔",
+    "🥸", "🤡", "😎", "🤧", "🧙‍♂️", "👴", "🎸", "🇧🇷", "🇦🇷", "🇩🇪",
+    "🇯🇵", "🇯🇲", "🏳️‍🌈", "🚫", "❌", "💡", "🔒", "📆", "🍲", "🌀",
+)
+
+
+def split_leading_emoji(texto: str) -> tuple[str, str]:
+    """Separa emoji inicial (estilo Listra 2025) do restante do texto."""
+    t = (texto or "").strip()
+    if not t:
+        return "", ""
+    parts = t.split(None, 1)
+    head = parts[0]
+    rest = parts[1] if len(parts) > 1 else ""
+    # Token sem letra/dígito ASCII e com caractere não-ASCII → trata como emoji.
+    if any(c.isascii() and c.isalnum() for c in head):
+        return "", t
+    if all(ord(c) < 128 for c in head):
+        return "", t
+    return head, rest
+
+
+def listra_emoji_efetivo(frase: dict[str, Any]) -> str:
+    emoji = (frase.get("emoji") or "").strip()
+    if emoji:
+        return emoji
+    legado, _ = split_leading_emoji(frase.get("texto") or "")
+    return legado
+
+
+def listra_texto_contexto(frase: dict[str, Any]) -> str:
+    """Texto completo exibido na Listra (sem o emoji da coluna)."""
+    texto = (frase.get("texto") or "").strip()
+    emoji = (frase.get("emoji") or "").strip()
+    if emoji:
+        return texto
+    _, resto = split_leading_emoji(texto)
+    return resto or texto
+
+
+def listra_trecho_compartilhar(frase: dict[str, Any]) -> str:
+    """Trecho que vai no WhatsApp: destaque se houver, senão o texto de contexto."""
+    destaque = (frase.get("destaque") or "").strip()
+    if destaque:
+        return destaque
+    return listra_texto_contexto(frase)
+
+
+def listra_linha_compartilhar(frase: dict[str, Any]) -> str:
+    """Uma linha pronta para o export (sem o prefixo '* ')."""
+    emoji = listra_emoji_efetivo(frase)
+    trecho = listra_trecho_compartilhar(frase)
+    if not trecho and not emoji:
+        return ""
+    if emoji and trecho:
+        # Evita duplicar se o trecho já começa com o mesmo emoji.
+        if trecho.startswith(emoji):
+            return trecho
+        return f"{emoji} {trecho}"
+    return emoji or trecho
+
+
+def _migrar_listra_emoji_destaque(conn: sqlite3.Connection) -> None:
+    cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(listra_frases)").fetchall()
+    }
+    if "emoji" not in cols:
+        conn.execute(
+            "ALTER TABLE listra_frases ADD COLUMN emoji TEXT NOT NULL DEFAULT ''"
+        )
+    if "destaque" not in cols:
+        conn.execute(
+            "ALTER TABLE listra_frases ADD COLUMN destaque TEXT NOT NULL DEFAULT ''"
+        )
+    # Separa emoji embutido no texto (acervo 2025) para a coluna dedicada.
+    rows = conn.execute(
+        "SELECT id, texto, emoji FROM listra_frases "
+        "WHERE (emoji IS NULL OR emoji = '') AND texto IS NOT NULL AND texto != ''"
+    ).fetchall()
+    for row in rows:
+        emoji, resto = split_leading_emoji(row["texto"] or "")
+        if not emoji:
+            continue
+        conn.execute(
+            "UPDATE listra_frases SET emoji = ?, texto = ? WHERE id = ?",
+            (emoji, resto or row["texto"], row["id"]),
+        )
 
 
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
@@ -1860,18 +1953,46 @@ def listra_texto_whatsapp(
         titulo = listra_titulo(ano_ok)
     linhas = [f"*{titulo}*", ""]
     for f in itens:
-        texto = (f.get("texto") or "").strip()
-        if not texto:
+        linha = listra_linha_compartilhar(f)
+        if not linha:
             continue
-        for i, parte in enumerate(texto.splitlines()):
+        for i, parte in enumerate(linha.splitlines()):
+            parte = parte.strip()
+            if not parte:
+                continue
             prefixo = "* " if i == 0 else "  "
             linhas.append(f"{prefixo}{parte}")
     return "\n".join(linhas).rstrip() + "\n"
 
 
+def _normalizar_listra_emoji(emoji: str) -> str:
+    emoji_ok = re.sub(r"\s+", "", (emoji or "").strip())
+    if len(emoji_ok) > 16:
+        raise ValueError("Emoji com no máximo 16 caracteres.")
+    return emoji_ok
+
+
+def _normalizar_listra_destaque(destaque: str, texto: str) -> str:
+    dest_ok = re.sub(r"\s+\n", "\n", (destaque or "").strip())
+    dest_ok = re.sub(r"[ \t]+", " ", dest_ok)
+    if not dest_ok:
+        return ""
+    if len(dest_ok) > 500:
+        raise ValueError("Trecho compartilhável com no máximo 500 caracteres.")
+    # Aceita trecho mesmo fora do texto (usuário pode enxugar), mas recomenda
+    # estar contido — só valida tamanho.
+    _ = texto
+    return dest_ok
+
+
 def _normalizar_listra_frase_campos(
-    texto: str, responsavel: str, *, exigir_responsavel: bool = True
-) -> tuple[str, str]:
+    texto: str,
+    responsavel: str,
+    *,
+    emoji: str = "",
+    destaque: str = "",
+    exigir_responsavel: bool = True,
+) -> tuple[str, str, str, str]:
     texto_ok = re.sub(r"\s+\n", "\n", (texto or "").strip())
     texto_ok = re.sub(r"[ \t]+", " ", texto_ok)
     if not texto_ok:
@@ -1883,7 +2004,14 @@ def _normalizar_listra_frase_campos(
         raise ValueError("Informe o responsável.")
     if len(resp_ok) > NOME_MAX_LEN:
         raise ValueError(f"Responsável com no máximo {NOME_MAX_LEN} caracteres.")
-    return texto_ok, resp_ok
+    emoji_ok = _normalizar_listra_emoji(emoji)
+    # Se colaram emoji no começo do texto e o campo emoji está vazio, separa.
+    if not emoji_ok:
+        emoji_ok, resto = split_leading_emoji(texto_ok)
+        if emoji_ok:
+            texto_ok = resto or texto_ok
+    dest_ok = _normalizar_listra_destaque(destaque, texto_ok)
+    return texto_ok, resp_ok, emoji_ok, dest_ok
 
 
 def criar_listra_frase(
@@ -1892,10 +2020,14 @@ def criar_listra_frase(
     *,
     criado_por_id: int | None = None,
     ano: int | None = None,
+    emoji: str = "",
+    destaque: str = "",
 ) -> dict[str, Any]:
     from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS
 
-    texto_ok, resp_ok = _normalizar_listra_frase_campos(texto, responsavel)
+    texto_ok, resp_ok, emoji_ok, dest_ok = _normalizar_listra_frase_campos(
+        texto, responsavel, emoji=emoji, destaque=destaque
+    )
     ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
     if ano_ok not in LISTRA_ANOS:
         raise ValueError("Ano inválido para a Listra.")
@@ -1906,9 +2038,9 @@ def criar_listra_frase(
         ).fetchone()[0]
         cur = conn.execute(
             "INSERT INTO listra_frases "
-            "(texto, responsavel, criado_por_id, ordem, ano, criado_em) "
-            "VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))",
-            (texto_ok, resp_ok, criado_por_id, ordem, ano_ok),
+            "(texto, responsavel, criado_por_id, ordem, ano, criado_em, emoji, destaque) "
+            "VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?)",
+            (texto_ok, resp_ok, criado_por_id, ordem, ano_ok, emoji_ok, dest_ok),
         )
         row = conn.execute(
             f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
@@ -1931,17 +2063,24 @@ def atualizar_listra_frase(
     *,
     texto: str,
     responsavel: str,
+    emoji: str = "",
+    destaque: str = "",
 ) -> dict[str, Any]:
     if not get_listra_frase(frase_id):
         raise ValueError("Frase não encontrada.")
     # Responsável pode ficar vazio (volta a aparecer como Acervo do ano).
-    texto_ok, resp_ok = _normalizar_listra_frase_campos(
-        texto, responsavel, exigir_responsavel=False
+    texto_ok, resp_ok, emoji_ok, dest_ok = _normalizar_listra_frase_campos(
+        texto,
+        responsavel,
+        emoji=emoji,
+        destaque=destaque,
+        exigir_responsavel=False,
     )
     with get_db() as conn:
         conn.execute(
-            "UPDATE listra_frases SET texto = ?, responsavel = ? WHERE id = ?",
-            (texto_ok, resp_ok, frase_id),
+            "UPDATE listra_frases SET texto = ?, responsavel = ?, emoji = ?, destaque = ? "
+            "WHERE id = ?",
+            (texto_ok, resp_ok, emoji_ok, dest_ok, frase_id),
         )
         row = conn.execute(
             f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
