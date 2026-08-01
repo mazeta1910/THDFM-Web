@@ -100,3 +100,4 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-avatar" in r.text
     assert "Foto User" in r.text
     assert "/avatars/foto.jpg" in r.text
+    assert "planilha-zebra" in r.text

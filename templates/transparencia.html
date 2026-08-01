@@ -110,7 +110,7 @@
           </td>
         </tr>
         {% else %}
-        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}{% if row.grupo %} planilha-lado--{{ row.grupo }}{% endif %}">
+        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}{% if row.grupo %} planilha-lado--{{ row.grupo }}{% endif %}{% if row.zebra %} planilha-zebra{% endif %}">
           <td class="planilha-nome">
             {% if row.tipo == 'palpite' %}
             <span class="planilha-nome-com-foto">

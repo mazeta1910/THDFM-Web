@@ -273,6 +273,14 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                 )
             )
 
+            # Zebrado nas linhas de palpite (ignora placar e cabeçalhos de grupo).
+            zebra_i = 0
+            for row in linhas:
+                if row.get("tipo") != "palpite":
+                    continue
+                row["zebra"] = zebra_i % 2 == 1
+                zebra_i += 1
+
             tabelas.append(
                 {
                     "jogo_id": jogo["id"],
