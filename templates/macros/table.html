@@ -1,0 +1,17 @@
+{# Cabeçalho ordenável da classificação #}
+{% macro th_sort(key, type, label_full, label_short, tip, th_class="col-num", tip_end=false, aria_sort="none") -%}
+<th class="{{ th_class }} is-sortable" data-sort-key="{{ key }}" data-sort-type="{{ type }}" aria-sort="{{ aria_sort }}">
+  <button type="button" class="th-sort" data-sort>
+    <span class="col-tip{% if tip_end %} col-tip-end{% endif %}" tabindex="0">
+      <span class="th-full">{{ label_full }}</span><span class="th-short">{{ label_short }}</span>
+      <span class="col-tip-bubble" role="tooltip">{{ tip }}</span>
+    </span>
+    <span class="th-sort-icon" aria-hidden="true">
+      <svg viewBox="0 0 12 16" focusable="false">
+        <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+        <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+      </svg>
+    </span>
+  </button>
+</th>
+{%- endmacro %}

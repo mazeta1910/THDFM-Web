@@ -3,43 +3,19 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from urllib.parse import unquote
 
 import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
+from tests.conftest import login_admin as _login_admin
 from src.config import ROOT_DIR
 
 
 @pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(ROOT_DIR)
-    monkeypatch.setenv(
-        "ADMIN_USERS",
-        "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador|joaojec=senha-jec=João JEC:adminzinho",
-    )
-    # Recarrega parse de admins (módulo já importado lê env na chamada)
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
-
-
-def _login_admin(client: TestClient, login: str, senha: str):
-    r = client.post(
-        "/admin/login",
-        data={"login": login, "password": senha},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
-    assert r.headers["location"] == "/admin"
+def admin_users():
+    return "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador|joaojec=senha-jec=João JEC:adminzinho"
 
 
 def test_papeis_parseados(monkeypatch: pytest.MonkeyPatch):
@@ -56,7 +32,6 @@ def test_papeis_parseados(monkeypatch: pytest.MonkeyPatch):
     assert by_login["joaojec"].papel == "moderador"
     assert by_login["joaojec"].papel_label == "Moderador"
 
-
 def test_admin_users_aceita_espacos_no_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(
         "ADMIN_USERS",
@@ -69,7 +44,6 @@ def test_admin_users_aceita_espacos_no_env(monkeypatch: pytest.MonkeyPatch):
     assert by_login["ramos"].senha == "outra"
     assert adm.autenticar_admin("mazeta", "senha-com-espaco")
     assert adm.autenticar_admin("mazeta", " senha-com-espaco ") is None
-
 
 def test_toggle_aparece_apos_login_admin(client: TestClient):
     r0 = client.get("/")
@@ -92,7 +66,6 @@ def test_toggle_aparece_apos_login_admin(client: TestClient):
     assert "Painel (Dono)" not in r.text
     assert "site-side-admin-switch" not in r.text
 
-
 def test_moderador_nao_tem_chrome_toggle(client: TestClient):
     _login_admin(client, "ramos", "senha-mod")
     r = client.get("/admin")
@@ -100,7 +73,6 @@ def test_moderador_nao_tem_chrome_toggle(client: TestClient):
     assert "admin-shell" in r.text
     assert 'id="chrome-mode-toggle"' not in r.text
     assert 'id="ui-mode-toggle"' not in r.text
-
 
 def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
     """Credenciais não pode deixar Resultados ativo ao mesmo tempo."""
@@ -129,7 +101,6 @@ def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
     r4 = client.get("/admin/palpites")
     assert active_admin_items(r4.text) == ["Palpites"]
 
-
 def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
     """Depois de usar o painel, Classificação continua no menu admin."""
     _login_admin(client, "mazeta", "senha-dono")
@@ -144,7 +115,6 @@ def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
     assert "site-shell" not in r.text
     assert "Painel de Admin" in r.text
     assert "Classificação" in r.text
-
 
 def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: TestClient):
     """Entrar no bolão antes não pode impedir o login admin via Entrar."""
@@ -171,7 +141,6 @@ def test_admin_login_persiste_mesmo_com_outro_participante_na_sessao(client: Tes
     assert mazeta["id"] != part["id"]
     assert (mazeta.get("admin_login") or "") == "mazeta"
 
-
 def test_admin_login_page_redireciona_para_entrar(client: TestClient):
     r = client.get("/admin/login", follow_redirects=False)
     assert r.status_code == 303
@@ -180,7 +149,6 @@ def test_admin_login_page_redireciona_para_entrar(client: TestClient):
     r2 = client.get("/admin", follow_redirects=False)
     assert r2.status_code == 303
     assert "acesso=entrar" in r2.headers["location"]
-
 
 def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
     """mazeta + senha do .env no Entrar deve ir ao /admin (não só ao bolão)."""
@@ -197,7 +165,6 @@ def test_entrar_com_credenciais_admin_abre_painel(client: TestClient):
     assert r2.status_code == 200
     assert "Painel de Admin" in r2.text
     assert 'id="chrome-mode-toggle"' in r2.text
-
 
 def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
     """Entrar no bolão com a conta do admin já libera /admin — sem digitar de novo."""
@@ -226,7 +193,6 @@ def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
     assert "admin-shell" in home.text
     assert 'id="chrome-mode-toggle"' in home.text
     assert "Painel de Admin" in home.text
-
 
 @pytest.mark.parametrize(
     "login,senha,username_bolao,celular",
@@ -262,7 +228,6 @@ def test_moderador_um_login_basta(
     assert vinculado is not None
     assert vinculado["id"] == part["id"]
 
-
 @pytest.mark.parametrize("login,senha", [("ramos", "senha-mod"), ("joaojec", "senha-jec")])
 def test_entrar_credenciais_env_moderador_abre_painel(
     client: TestClient, login: str, senha: str
@@ -280,7 +245,6 @@ def test_entrar_credenciais_env_moderador_abre_painel(
     assert "is-moderador" in r2.text
     assert 'id="chrome-mode-toggle"' not in r2.text
 
-
 def test_admin_sidebar_sem_item_listra_permissoes(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/admin")
@@ -292,7 +256,6 @@ def test_admin_sidebar_sem_item_listra_permissoes(client: TestClient):
     r2 = client.get("/grupo/listra")
     assert "/admin/listra" in r2.text
     assert "Gestor de meliantes" in r2.text
-
 
 def test_sair_do_admin_limpa_tudo_e_pede_entrar(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
@@ -312,7 +275,6 @@ def test_sair_do_admin_limpa_tudo_e_pede_entrar(client: TestClient):
     assert 'id="ui-mode-toggle"' not in home.text
     assert 'action="/conta/sair"' not in home.text
 
-
 def test_admin_mantem_menu_na_transparencia(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/transparencia")
@@ -324,7 +286,6 @@ def test_admin_mantem_menu_na_transparencia(client: TestClient):
     # Item ativo no menu admin
     assert "admin-side-link" in r.text
     assert "/transparencia" in r.text
-
 
 def test_admin_modo_user_usa_menu_do_site(client: TestClient):
     """Só o Dono pode pré-visualizar o site; cookie user + página fora do /admin."""
@@ -348,7 +309,6 @@ def test_admin_modo_user_usa_menu_do_site(client: TestClient):
     r2 = client.get("/classificacao")
     assert "admin-shell" in r2.text
     assert "site-shell" not in r2.text
-
 
 def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11990001122")
@@ -397,7 +357,6 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     assert db.get_participante(part["id"])["username"] == "fulano.novo"
     # Senha permanece ao mudar só o username
     assert db.autenticar_por_username("fulano.ok", "nova45678") is None
-
 
 def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
     part = db.criar_participante("Alvo", status="liberado", celular="11991112233")

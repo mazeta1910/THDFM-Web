@@ -7,35 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.conftest import login_admin as _login_admin
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
-
-
-@pytest.fixture()
-def client(tmp_path, monkeypatch):
-    monkeypatch.chdir(ROOT_DIR)
-    monkeypatch.setenv(
-        "ADMIN_USERS",
-        "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador",
-    )
-    from src import db
-
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
-
-
-def _login_admin(client: TestClient, login="mazeta", senha="senha-dono"):
-    r = client.post(
-        "/admin/login",
-        data={"login": login, "password": senha},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
 
 
 def _criar_liberado(
@@ -54,6 +28,11 @@ def _criar_liberado(
 def _login_participante(client: TestClient, part: dict):
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
     assert r.status_code in (200, 303, 302)
+
+
+@pytest.fixture()
+def admin_users():
+    return "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador"
 
 
 def test_listra_publica_com_anos(client: TestClient):
