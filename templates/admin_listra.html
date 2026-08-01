@@ -29,6 +29,7 @@
             id="meliante-participante"
             name="participante_id"
             class="listra-input"
+            data-listra-custom-select
             {% if not candidatos_meliante %}disabled{% endif %}
           >
             <option value="">
@@ -106,6 +107,7 @@
                 <select
                   name="participante_id"
                   class="listra-input listra-meliante-vinculo-select"
+                  data-listra-custom-select
                   required
                   aria-label="Vincular {{ m.nome }} a um usuário"
                   {% if not candidatos_vincular %}disabled{% endif %}
@@ -200,4 +202,5 @@
     </form>
   </section>
 </div>
+<script src="/static/listra-custom-select.js?v=185"></script>
 {% endblock %}
