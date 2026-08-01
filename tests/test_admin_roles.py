@@ -363,6 +363,9 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     assert "data-cred-ir" in r.text
     assert "cred-dono-save" in r.text
     assert "Redefinir e anotar no Zap" not in r.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "grid-template-columns: repeat(auto-fill" in css
+    assert ".cred-dono-page {\n  max-width: 1100px;" in css or "max-width: 1100px" in css
 
     r2 = client.post(
         "/admin/credenciais/redefinir",
