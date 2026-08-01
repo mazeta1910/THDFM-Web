@@ -274,9 +274,9 @@ def _overlap(a: dict[int, str], b: dict[int, str]) -> tuple[int, int]:
     return iguais, len(comuns)
 
 
-# Empates com mais de 3 nomes: lista só os primeiros + “e mais N”.
-_LIMITE_NOMES_LISTA = 3
-# Fotos só quando há poucos participantes (1–4).
+# Empates com mais de 4 nomes: lista só os primeiros + “e mais N”.
+_LIMITE_NOMES_LISTA = 4
+# Fotos no máx. 4 (Quarteto Fantástico); só aparecem se couberem.
 _MAX_FOTOS = 4
 _GRUPOS_FIXOS = frozenset({"casalzinho", "triangulo", "quarteto", "arqui_inimigos"})
 
