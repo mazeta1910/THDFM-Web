@@ -236,7 +236,7 @@ def _metricas_palpites(
 
 
 def ranking_apostadores(tabelas: list[dict]) -> dict[str, Any] | None:
-    """Ranking entre participantes na fase/perna exibida."""
+    """Ranking geral entre participantes a partir das tabelas informadas."""
     users: dict[str, dict[str, Any]] = {}
     for t in tabelas:
         for row in t.get("linhas") or []:

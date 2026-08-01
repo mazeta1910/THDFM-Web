@@ -112,6 +112,9 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-head-top-spacer" in r.text
     assert "Ranking dos apostadores" in r.text
     assert "Métricas dos jogos" in r.text
+    assert "planilha-metricas-wrap" in r.text
+    assert "planilha-section-card" in r.text
+    assert "Nesta fase/perna" not in r.text
     assert "Palpites por jogo" in r.text
     assert "Mais gols casa" in r.text
     assert "Mais gols fora" in r.text
