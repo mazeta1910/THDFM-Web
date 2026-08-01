@@ -39,7 +39,16 @@
       {% else %}
       <p class="xonha-status">Ainda sem eventos — o placar começa no zero.</p>
       {% endif %}
-      {% if stats.dias_no_status_atual is not none and stats.status in ('fora', 'dentro', 'banido') %}
+      {% if stats.status_desde and stats.status in ('fora', 'dentro', 'banido') %}
+      <p
+        class="xonha-status-meta"
+        id="xonha-status-relogio"
+        data-xonha-status-desde="{{ stats.status_desde }}"
+        aria-live="polite"
+      >
+        {{ stats.status_duracao_texto or 'Há 0 segundos nesse status.' }}
+      </p>
+      {% elif stats.dias_no_status_atual is not none and stats.status in ('fora', 'dentro', 'banido') %}
       <p class="xonha-status-meta">
         {% if stats.dias_no_status_atual == 0 %}
         Nesse status desde hoje.
@@ -238,6 +247,57 @@
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
-  </details>
+    </details>
 </section>
+<script>
+(function () {
+  var el = document.getElementById("xonha-status-relogio");
+  if (!el) return;
+  var iso = el.getAttribute("data-xonha-status-desde") || "";
+  var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/);
+  if (!m) return;
+  var desde = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  if (isNaN(desde.getTime())) return;
+
+  function plural(n, um, varios) {
+    return n === 1 ? um : varios;
+  }
+
+  function formatar(segundos) {
+    var total = Math.max(Math.floor(segundos), 0);
+    var n;
+    var unidade;
+    if (total < 60) {
+      n = total;
+      unidade = plural(n, "segundo", "segundos");
+    } else if (total < 3600) {
+      n = Math.floor(total / 60);
+      unidade = plural(n, "minuto", "minutos");
+    } else if (total < 86400) {
+      n = Math.floor(total / 3600);
+      unidade = plural(n, "hora", "horas");
+    } else if (total < 604800) {
+      n = Math.floor(total / 86400);
+      unidade = plural(n, "dia", "dias");
+    } else if (total < 2592000) {
+      n = Math.floor(total / 604800);
+      unidade = plural(n, "semana", "semanas");
+    } else if (total < 31536000) {
+      n = Math.floor(total / 2592000);
+      unidade = plural(n, "mês", "meses");
+    } else {
+      n = Math.floor(total / 31536000);
+      unidade = plural(n, "ano", "anos");
+    }
+    return "Há " + n + " " + unidade + " nesse status.";
+  }
+
+  function tick() {
+    el.textContent = formatar((Date.now() - desde.getTime()) / 1000);
+  }
+
+  tick();
+  window.setInterval(tick, 1000);
+})();
+</script>
 {% endblock %}
