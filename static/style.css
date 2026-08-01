@@ -7079,7 +7079,7 @@ mark.listra-destaque {
 }
 
 .listra-admin {
-  max-width: 40rem;
+  max-width: 52rem;
   display: grid;
   gap: 1.5rem;
 }
