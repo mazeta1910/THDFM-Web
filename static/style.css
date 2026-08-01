@@ -4281,6 +4281,20 @@ tr.planilha-placar {
   background: var(--planilha-placar-bg);
   font-weight: 700;
 }
+tr.planilha-zebra > td:not([class*="cell-"]) {
+  background: #1a1a1a;
+}
+html.theme-light tr.planilha-zebra > td:not([class*="cell-"]),
+html[data-theme="light"] tr.planilha-zebra > td:not([class*="cell-"]) {
+  background: #ececec;
+}
+table.planilha tbody tr:not(.planilha-grupo):not(.planilha-placar):not(.planilha-zebra) > td:not([class*="cell-"]) {
+  background: #0d0d0d;
+}
+html.theme-light table.planilha tbody tr:not(.planilha-grupo):not(.planilha-placar):not(.planilha-zebra) > td:not([class*="cell-"]),
+html[data-theme="light"] table.planilha tbody tr:not(.planilha-grupo):not(.planilha-placar):not(.planilha-zebra) > td:not([class*="cell-"]) {
+  background: #ffffff;
+}
 tr.planilha-placar .planilha-nome {
   letter-spacing: 0.04em;
 }
