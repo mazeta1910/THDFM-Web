@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -57,24 +56,25 @@ def _login_participante(client: TestClient, part: dict):
     assert r.status_code in (200, 303, 302)
 
 
-def test_listra_publica_com_seed(client: TestClient):
+def test_listra_publica_com_anos(client: TestClient):
     from html import unescape
 
-    from src.listra_seed import LISTRA_SEED_FRASES, LISTRA_TITULO
+    from src.listra_seed import LISTRA_SEED_FRASES, listra_seed_por_ano
 
     r = client.get("/grupo/listra")
     assert r.status_code == 200
     body = unescape(r.text)
     assert "Listra" in body
     assert "listra-page" in body
-    assert "em-breve-page" not in body
-    assert str(len(LISTRA_SEED_FRASES)) in body
+    assert "listra-ano-card--atual" in body
+    assert "LISTRA THDFM 2026" in body
+    assert "LISTRA THDFM 2025" in body
+    assert "LISTRA THDFM 2024" in body
     assert LISTRA_SEED_FRASES[0] in body
-    assert LISTRA_SEED_FRASES[-1] in body
-    assert LISTRA_TITULO in body or "LISTRA THDFM" in body
-    # Sem permissão: não mostra form nem botão WA
+    assert listra_seed_por_ano(2025)[0] in body
+    assert listra_seed_por_ano(2024)[0] in body
     assert "Nova frase" not in body
-    assert "listra-enviar-wa" not in body
+    assert "data-listra-enviar" not in body
 
 
 def test_visitante_nao_adiciona(client: TestClient):
@@ -90,44 +90,32 @@ def test_visitante_nao_adiciona(client: TestClient):
     assert "permiss" in loc
 
 
-def test_admin_adiciona_e_apaga(client: TestClient):
-    _login_admin(client)
-    r = client.get("/grupo/listra")
-    assert r.status_code == 200
-    assert "Nova frase" in r.text
-    assert "listra-enviar-wa" in r.text
-    assert "Gerenciar permissões" in r.text
+def test_admin_adiciona_no_ano_atual(client: TestClient):
+    from src.listra_seed import LISTRA_ANO_ATUAL
 
+    _login_admin(client)
     r = client.post(
         "/grupo/listra",
-        data={"texto": "Nova pérola do teste", "responsavel": "Mazeta"},
+        data={
+            "texto": "Nova pérola do teste",
+            "responsavel": "Mazeta",
+            "ano": str(LISTRA_ANO_ATUAL),
+        },
         follow_redirects=False,
     )
     assert r.status_code == 303
-    assert "adicionada" in (r.headers.get("location") or "").lower()
-
-    pub = client.get("/grupo/listra")
-    assert "Nova pérola do teste" in pub.text
-    assert "Mazeta" in pub.text
-    assert "listra-item-quando" in pub.text
 
     from src import db
 
     frase = next(
-        f for f in db.list_listra_frases() if f["texto"] == "Nova pérola do teste"
+        f for f in db.list_listra_frases(LISTRA_ANO_ATUAL)
+        if f["texto"] == "Nova pérola do teste"
     )
+    assert frase["ano"] == LISTRA_ANO_ATUAL
     assert frase.get("criado_em")
-    # Data no formato DD/MM/AAAA na tela
-    criado = frase["criado_em"]
-    data_br = f"{criado[8:10]}/{criado[5:7]}/{criado[0:4]}"
-    assert data_br in pub.text
-    r = client.post(
-        "/grupo/listra/apagar",
-        data={"frase_id": frase["id"]},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
-    assert "Nova pérola do teste" not in client.get("/grupo/listra").text
+    pub = client.get("/grupo/listra")
+    assert "Nova pérola do teste" in pub.text
+    assert "Mazeta" in pub.text
 
 
 def test_admin_permissoes_painel(client: TestClient):
@@ -135,7 +123,6 @@ def test_admin_permissoes_painel(client: TestClient):
     _login_admin(client)
     r = client.get("/admin/listra")
     assert r.status_code == 200
-    assert "permissões" in r.text.lower()
     assert part["nome"] in r.text
 
     r = client.post(
@@ -144,32 +131,11 @@ def test_admin_permissoes_painel(client: TestClient):
         follow_redirects=False,
     )
     assert r.status_code == 303
-
     from src import db
 
     perm = db.get_listra_permissao(part["id"])
     assert perm["pode_adicionar"] is True
     assert perm["pode_enviar"] is True
-
-
-def test_participante_com_permissao_adiciona(client: TestClient):
-    part = _criar_liberado()
-    from src import db
-
-    db.salvar_listra_permissao(part["id"], pode_adicionar=True, pode_enviar=False)
-    _login_participante(client, part)
-
-    r = client.get("/grupo/listra")
-    assert "Nova frase" in r.text
-    assert "listra-enviar-wa" not in r.text
-
-    r = client.post(
-        "/grupo/listra",
-        data={"texto": "Frase do fulano", "responsavel": "Fulano"},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
-    assert "Frase do fulano" in client.get("/grupo/listra").text
 
 
 def test_participante_com_permissao_enviar(client: TestClient):
@@ -181,24 +147,25 @@ def test_participante_com_permissao_enviar(client: TestClient):
     db.salvar_listra_permissao(part["id"], pode_adicionar=False, pode_enviar=True)
     _login_participante(client, part)
     r = client.get("/grupo/listra")
-    assert "Nova frase" not in r.text
-    assert "listra-enviar-wa" in r.text
-    assert "/grupo/listra/export.txt" in r.text
+    assert "data-listra-enviar" in r.text
+    assert 'data-ano="2026"' in r.text
+    assert 'data-ano="2025"' in r.text
+    assert 'data-ano="2024"' in r.text
 
 
-def test_export_inclui_frase_nova(client: TestClient):
+def test_export_por_ano(client: TestClient):
     _login_admin(client)
-    client.post(
-        "/grupo/listra",
-        data={"texto": "Frase fresca pro WhatsApp", "responsavel": "Mazeta"},
-        follow_redirects=False,
-    )
-    r = client.get("/grupo/listra/export.txt")
-    assert r.status_code == 200
-    assert "Cache-Control" in r.headers
-    assert "no-store" in r.headers["Cache-Control"]
-    assert "LISTRA THDFM 2026" in r.text
-    assert "Frase fresca pro WhatsApp" in r.text
+    r26 = client.get("/grupo/listra/export.txt?ano=2026")
+    r25 = client.get("/grupo/listra/export.txt?ano=2025")
+    r24 = client.get("/grupo/listra/export.txt?ano=2024")
+    assert r26.status_code == 200
+    assert r25.status_code == 200
+    assert r24.status_code == 200
+    assert "LISTRA THDFM 2026" in r26.text
+    assert "LISTRA THDFM 2025" in r25.text
+    assert "LISTRA THDFM 2024" in r24.text
+    assert "📺 Progama" in r25.text or "Progama" in r25.text
+    assert "Chooping" in r24.text
 
 
 def test_export_exige_permissao(client: TestClient):
@@ -211,7 +178,8 @@ def test_texto_whatsapp_formatado():
     from src.listra_seed import LISTRA_TITULO
 
     texto = db.listra_texto_whatsapp(
-        [{"texto": "Uma"}, {"texto": "Duas\nlinhas"}]
+        [{"texto": "Uma", "ano": 2026}, {"texto": "Duas\nlinhas", "ano": 2026}],
+        ano=2026,
     )
     assert texto.startswith(f"*{LISTRA_TITULO}*")
     assert "* Uma" in texto

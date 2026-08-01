@@ -286,6 +286,8 @@ def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_listra(conn: sqlite3.Connection) -> None:
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS, listra_seed_por_ano
+
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS listra_frases (
@@ -294,10 +296,23 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
             responsavel TEXT NOT NULL DEFAULT '',
             criado_por_id INTEGER REFERENCES participantes(id),
             criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
-            ordem INTEGER NOT NULL DEFAULT 0
+            ordem INTEGER NOT NULL DEFAULT 0,
+            ano INTEGER NOT NULL DEFAULT 2026
         )
         """
     )
+    cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(listra_frases)").fetchall()
+    }
+    if "ano" not in cols:
+        conn.execute(
+            f"ALTER TABLE listra_frases ADD COLUMN ano INTEGER NOT NULL DEFAULT {int(LISTRA_ANO_ATUAL)}"
+        )
+        conn.execute(
+            "UPDATE listra_frases SET ano = ? WHERE ano IS NULL OR ano = 0",
+            (int(LISTRA_ANO_ATUAL),),
+        )
+
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS listra_permissoes (
@@ -309,22 +324,27 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
         """
     )
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_listra_frases_ordem "
-        "ON listra_frases(ordem ASC, id ASC)"
+        "CREATE INDEX IF NOT EXISTS idx_listra_frases_ano_ordem "
+        "ON listra_frases(ano DESC, ordem ASC, id ASC)"
     )
-    _seed_listra_se_vazio(conn)
+    for ano in LISTRA_ANOS:
+        _seed_listra_ano_se_faltando(conn, int(ano), listra_seed_por_ano(int(ano)))
 
 
-def _seed_listra_se_vazio(conn: sqlite3.Connection) -> None:
-    from src.listra_seed import LISTRA_SEED_FRASES
-
-    if conn.execute("SELECT 1 FROM listra_frases LIMIT 1").fetchone():
+def _seed_listra_ano_se_faltando(
+    conn: sqlite3.Connection, ano: int, frases: tuple[str, ...]
+) -> None:
+    if not frases:
         return
-    for i, texto in enumerate(LISTRA_SEED_FRASES, start=1):
+    if conn.execute(
+        "SELECT 1 FROM listra_frases WHERE ano = ? LIMIT 1", (ano,)
+    ).fetchone():
+        return
+    for i, texto in enumerate(frases, start=1):
         conn.execute(
-            "INSERT INTO listra_frases (texto, responsavel, ordem, criado_em) "
-            "VALUES (?, '', ?, datetime('now', 'localtime'))",
-            (texto, i),
+            "INSERT INTO listra_frases (texto, responsavel, ordem, ano, criado_em) "
+            "VALUES (?, '', ?, ?, datetime('now', 'localtime'))",
+            (texto, i, ano),
         )
 
 
@@ -1776,24 +1796,63 @@ def xonha_stats() -> dict[str, Any]:
 # --- Listra THDFM -----------------------------------------------------------
 
 _LISTRA_FRASE_COLS = (
-    "id, texto, responsavel, criado_por_id, criado_em, ordem"
+    "id, texto, responsavel, criado_por_id, criado_em, ordem, ano"
 )
 
 
-def list_listra_frases() -> list[dict[str, Any]]:
+def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
     with get_db() as conn:
-        rows = conn.execute(
-            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
-            "ORDER BY ordem ASC, id ASC"
-        ).fetchall()
+        if ano is None:
+            rows = conn.execute(
+                f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
+                "ORDER BY ano DESC, ordem ASC, id ASC"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
+                "WHERE ano = ? ORDER BY ordem ASC, id ASC",
+                (int(ano),),
+            ).fetchall()
         return [dict(r) for r in rows]
 
 
-def listra_texto_whatsapp(frases: list[dict[str, Any]] | None = None) -> str:
-    from src.listra_seed import LISTRA_TITULO
+def list_listra_por_anos() -> list[dict[str, Any]]:
+    """Cards por ano: atual primeiro, depois os anteriores."""
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS, listra_titulo
 
-    itens = frases if frases is not None else list_listra_frases()
-    linhas = [f"*{LISTRA_TITULO}*", ""]
+    out: list[dict[str, Any]] = []
+    for ano in LISTRA_ANOS:
+        frases = list_listra_frases(ano)
+        out.append(
+            {
+                "ano": ano,
+                "titulo": listra_titulo(ano),
+                "frases": frases,
+                "total": len(frases),
+                "atual": ano == LISTRA_ANO_ATUAL,
+            }
+        )
+    return out
+
+
+def listra_texto_whatsapp(
+    frases: list[dict[str, Any]] | None = None,
+    *,
+    ano: int | None = None,
+) -> str:
+    from src.listra_seed import LISTRA_ANO_ATUAL, listra_titulo
+
+    if frases is None:
+        ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
+        itens = list_listra_frases(ano_ok)
+        titulo = listra_titulo(ano_ok)
+    else:
+        ano_ok = int(ano) if ano is not None else (
+            int(frases[0]["ano"]) if frases and frases[0].get("ano") else LISTRA_ANO_ATUAL
+        )
+        itens = frases
+        titulo = listra_titulo(ano_ok)
+    linhas = [f"*{titulo}*", ""]
     for f in itens:
         texto = (f.get("texto") or "").strip()
         if not texto:
@@ -1809,7 +1868,10 @@ def criar_listra_frase(
     responsavel: str,
     *,
     criado_por_id: int | None = None,
+    ano: int | None = None,
 ) -> dict[str, Any]:
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS
+
     texto_ok = re.sub(r"\s+\n", "\n", (texto or "").strip())
     texto_ok = re.sub(r"[ \t]+", " ", texto_ok)
     if not texto_ok:
@@ -1821,15 +1883,19 @@ def criar_listra_frase(
         raise ValueError("Informe o responsável.")
     if len(resp_ok) > NOME_MAX_LEN:
         raise ValueError(f"Responsável com no máximo {NOME_MAX_LEN} caracteres.")
+    ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
+    if ano_ok not in LISTRA_ANOS:
+        raise ValueError("Ano inválido para a Listra.")
     with get_db() as conn:
         ordem = conn.execute(
-            "SELECT COALESCE(MAX(ordem), 0) + 1 FROM listra_frases"
+            "SELECT COALESCE(MAX(ordem), 0) + 1 FROM listra_frases WHERE ano = ?",
+            (ano_ok,),
         ).fetchone()[0]
         cur = conn.execute(
             "INSERT INTO listra_frases "
-            "(texto, responsavel, criado_por_id, ordem, criado_em) "
-            "VALUES (?, ?, ?, ?, datetime('now', 'localtime'))",
-            (texto_ok, resp_ok, criado_por_id, ordem),
+            "(texto, responsavel, criado_por_id, ordem, ano, criado_em) "
+            "VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))",
+            (texto_ok, resp_ok, criado_por_id, ordem, ano_ok),
         )
         row = conn.execute(
             f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
