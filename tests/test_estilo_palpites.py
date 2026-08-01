@@ -80,6 +80,14 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert set(ids["casalzinho"]["nomes"]) == {"Alpha", "Beta"}
     assert "palpites iguais" in ids["casalzinho"]["valor_label"]
     assert "iguais/par" not in ids["casalzinho"]["valor_label"]
+    assert ids["donelli"]["mostrar_fotos"] is True
+    assert ids["donelli"]["pessoas"][0]["nome"] == "Gama"
+    assert ids["casalzinho"]["mostrar_fotos"] is True
+    assert "placar_visto" in ids
+    assert ids["placar_visto"]["quem_label"] == "Qual"
+    assert ids["placar_visto"]["nomes_label"] in {"2×0", "0×3"} or "×" in ids["placar_visto"]["nomes_label"]
+    assert "×" in ids["placar_visto"]["valor_label"]
+    assert "(" not in ids["placar_visto"]["valor_label"]
 
     # Classificação renderiza Hall da Desgraça em cards exportáveis
     r = client.get("/classificacao")
@@ -96,9 +104,30 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Triângulo Amoroso" in r.text or "Casalzinho" in r.text
     assert "palpites iguais" in r.text
     assert "iguais/par" not in r.text
+    assert ">Qual<" in r.text or "planilha-metrica-label\">Qual<" in r.text
+    assert "Quantidade" in r.text
+    assert "Marca" not in r.text or "planilha-metrica-label\">Marca<" not in r.text
+    assert "hall-avatar" in r.text
     assert "data-abrir-ficha" in r.text
     assert "ficha-estilo-card" in r.text
     assert "Exportar ficha em PNG" in r.text
+
+
+def test_empate_muitos_nomes_resume_lista(client):
+    login_admin(client)
+    nomes = [f"P{i}" for i in range(5)]
+    parts = [db.criar_participante(n, status="liberado") for n in nomes]
+    _cinfo, jogo = _jogo_oitavas()
+    for p in parts:
+        db.salvar_palpite_jogo(p["id"], jogo["id"], 2, 0)
+    db.set_resultado_jogo(jogo["id"], 0, 1)
+
+    hall = trofeus_hall("oitavas")
+    ids = {card["id"]: card for card in hall["cards"]}
+    assert "boquinha" in ids
+    assert len(ids["boquinha"]["nomes"]) == 5
+    assert "e mais 2" in ids["boquinha"]["nomes_label"]
+    assert ids["boquinha"]["mostrar_fotos"] is False
 
 
 def test_triangulo_e_quarteto(client):

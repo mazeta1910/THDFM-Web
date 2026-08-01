@@ -5315,6 +5315,51 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   max-width: 100%;
   width: 100%;
 }
+.classificacao-hall-card .hall-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+.classificacao-hall-card .hall-entry + .hall-entry {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.classificacao-hall-card .hall-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.1rem 0 0.15rem;
+}
+.classificacao-hall-card .hall-avatar,
+.classificacao-hall-card .hall-avatar-fallback {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.classificacao-hall-card .hall-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--card) 70%, var(--bg));
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.classificacao-hall-card .hall-avatars[data-count="1"] .hall-avatar,
+.classificacao-hall-card .hall-avatars[data-count="1"] .hall-avatar-fallback {
+  width: 2.85rem;
+  height: 2.85rem;
+  font-size: 0.78rem;
+}
 
 .ficha-dialog {
   border: 0;
