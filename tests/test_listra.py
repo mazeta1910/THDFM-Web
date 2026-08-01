@@ -40,6 +40,8 @@ def test_listra_publica_com_anos(client: TestClient):
 
     from src.listra_seed import LISTRA_SEED_FRASES, listra_seed_por_ano
 
+    part = _criar_liberado(nome="Leitor Listra", username="leitor.listra", celular="11990001111")
+    _login_participante(client, part)
     r = client.get("/grupo/listra")
     assert r.status_code == 200
     body = unescape(r.text)
@@ -70,7 +72,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=207" in body
+    assert "/static/style.css?v=208" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
 
@@ -164,7 +166,8 @@ def test_visitante_nao_adiciona(client: TestClient):
     )
     assert r.status_code == 303
     loc = unquote(r.headers.get("location") or "").lower()
-    assert "permiss" in loc
+    # Anônimo é barrado no gate de login.
+    assert "acesso=entrar" in loc or "permiss" in loc
 
 
 def test_admin_adiciona_no_ano_atual(client: TestClient):
@@ -266,7 +269,7 @@ def test_visitante_nao_edita(client: TestClient):
     )
     assert r.status_code == 303
     loc = unquote(r.headers.get("location") or "").lower()
-    assert "administração" in loc or "editar" in loc
+    assert "acesso=entrar" in loc or "administração" in loc or "editar" in loc
     assert db.get_listra_frase(frase["id"])["texto"] != "Hack"
 
 
@@ -425,6 +428,8 @@ def test_export_por_ano(client: TestClient):
 
 
 def test_export_exige_permissao(client: TestClient):
+    part = _criar_liberado(nome="Export Sem Perm", username="export.nop", celular="11990002222")
+    _login_participante(client, part)
     r = client.get("/grupo/listra/export.txt")
     assert r.status_code == 403
 
@@ -470,6 +475,8 @@ def test_reembolsos_itens_separados_no_seed(client: TestClient):
     assert not any(
         "lista dos reembilos" in t and "blodo de notas" in t for t in textos
     )
+    part = _criar_liberado(nome="Leitor Reembolso", username="leitor.reemb", celular="11990003333")
+    _login_participante(client, part)
     pub = client.get("/grupo/listra")
     assert "lista dos reembilos" in pub.text
     assert "blodo de notas" in pub.text
@@ -491,6 +498,10 @@ def test_seed_2026_emojis_a_partir_do_38(client: TestClient):
     for raw in seed[37:]:
         assert db.split_leading_emoji(raw)[0]
 
+    part = _criar_liberado(nome="Leitor Emoji", username="leitor.emoji", celular="11990004444")
+    _login_participante(client, part)
+    pub = client.get("/grupo/listra")
+    assert "🧬" in pub.text
     frases = db.list_listra_frases(2026)
     por_ordem = {int(f["ordem"]): f for f in frases}
     assert por_ordem[37]["texto"] == "Ronovava"

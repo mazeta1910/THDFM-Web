@@ -99,11 +99,15 @@ def _linhas_agrupadas_por_time(
         "fora": clube_fora,
         "sem": "Sem palpite",
     }
+    # % só entre quem palpitou (casa/empate/fora); "sem" não entra no denominador.
+    n_com = sum(len(buckets.get(k) or []) for k in ("casa", "empate", "fora"))
     out: list[dict] = []
     for key in ("casa", "empate", "fora", "sem"):
         items = buckets.get(key) or []
         if not items:
             continue
+        n = len(items)
+        pct = round(100.0 * n / n_com, 1) if key != "sem" and n_com else None
         out.append(
             {
                 "tipo": "grupo",
@@ -119,7 +123,8 @@ def _linhas_agrupadas_por_time(
                 **_PTS_VAZIOS,
                 "sem_palpite": False,
                 "avatar_path": None,
-                "n": len(items),
+                "n": n,
+                "pct": pct,
             }
         )
         out.extend(items)
@@ -240,6 +245,8 @@ def _metricas_palpites(
         "placar_mais_comum": placar_mais_comum,
         "favorito": favorito,
         "favorito_label": favorito_label,
+        "consenso": favorito,
+        "consenso_label": favorito_label,
         "consenso_pct": consenso_pct,
     }
 

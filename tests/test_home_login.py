@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
+from tests.conftest import login_admin
 
 
 def test_raiz_mostra_home_para_visitante(client: TestClient):
@@ -18,13 +19,13 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "Técnicos Horríveis do Futebol Mundial" in text
     assert "Site em desenvolvimento" in text
     assert "tá diva" in text.casefold()
-    assert "Fazer inscrição" in text
+    assert "Fazer inscrição" not in text
     assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
     bolao = text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
-    assert "Fazer inscrição" in bolao
     assert "Entrar" in bolao
+    assert "Recuperar link" in bolao
     assert "Meus Palpites" not in bolao
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
     assert "Entrar no grupo" in text
@@ -222,6 +223,7 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     part = db.criar_participante("Zap", status="liberado", celular="11955443322")
     pedido_id = db.criar_pedido_recuperacao(part["id"], "11955443322", ip="1.2.3.4")
 
+    login_admin(client)
     monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
 
     r = client.get(f"/admin/recuperacao/{pedido_id}/atender", follow_redirects=False)
@@ -277,7 +279,7 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert 'href="/?acesso=recuperar"' in acesso_block or 'data-acesso-open="recuperar"' in acesso_block
     bolao_block = r_home.text.split('data-group="bolao"', 1)[1].split("data-group=", 1)[0]
     assert 'data-acesso-open="entrar"' not in bolao_block
-    assert 'href="/inscricao"' in bolao_block
+    assert 'href="/inscricao"' not in bolao_block
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},

@@ -15,6 +15,9 @@ def admin_users():
 
 
 def test_xonhometro_publico_vazio(client: TestClient):
+    part = db.criar_participante("Xonha Leitor", status="liberado", celular="11990005555")
+    db.definir_credenciais(part["id"], "xonha.leitor", "senha12345")
+    client.get(f"/p/{part['token']}")
     r = client.get("/xonhometro")
     assert r.status_code == 200
     assert "Xonhômetro" in r.text
@@ -218,6 +221,9 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     assert db.get_xonha_evento(ev["id"]) is None
 
 def test_menu_tem_xonhometro(client: TestClient):
+    part = db.criar_participante("Menu Xonha", status="liberado", celular="11990006666")
+    db.definir_credenciais(part["id"], "menu.xonha", "senha12345")
+    client.get(f"/p/{part['token']}")
     r = client.get("/")
     assert r.status_code == 200
     assert "Grupo do WhatsApp" in r.text
@@ -246,6 +252,9 @@ def test_admin_xonhometro_nao_duplica_no_menu(client: TestClient):
     assert r.text.count(">Xonhômetro<") == 1
 
 def test_paginas_grupo_placeholder(client: TestClient):
+    part = db.criar_participante("Grupo Leitor", status="liberado", celular="11990007777")
+    db.definir_credenciais(part["id"], "grupo.leitor", "senha12345")
+    client.get(f"/p/{part['token']}")
     for path, title in (
         ("/grupo/bans", "Contador de Bans"),
         ("/grupo/copypastas", "Copypastas"),

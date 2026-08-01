@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
+
+# Encerramento das inscrições do bolão (America/Sao_Paulo).
+_TZ_SP = ZoneInfo("America/Sao_Paulo")
+INSCRICAO_FECHA_EM = datetime(2026, 8, 1, 13, 30, tzinfo=_TZ_SP)
 
 DATA_DIR = ROOT_DIR / "data"
 DB_PATH = DATA_DIR / "bolao.db"
@@ -67,4 +73,12 @@ AVATAR_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 AVATAR_MAX_BYTES = 3 * 1024 * 1024
 AVATAR_PADRAO_STEM = "avatar-padrao"
 NOME_MAX_LEN = 30
+
+
+def inscricao_aberta(*, agora: datetime | None = None) -> bool:
+    """True enquanto ainda dá para se inscrever no bolão."""
+    now = agora or datetime.now(_TZ_SP)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=_TZ_SP)
+    return now < INSCRICAO_FECHA_EM
 

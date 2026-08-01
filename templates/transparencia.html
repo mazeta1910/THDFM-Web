@@ -124,7 +124,7 @@
                 {{ emblema(t.clube_fora) }}
                 {% endif %}
                 <strong>{{ row.nome }}</strong>
-                <span class="planilha-grupo-n">{{ row.n }}</span>
+                <span class="planilha-grupo-n">{{ row.n }}{% if row.pct is not none %} <small>({{ row.pct }}%)</small>{% endif %}</span>
               </span>
               <button
                 type="button"
