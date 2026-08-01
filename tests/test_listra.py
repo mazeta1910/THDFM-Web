@@ -80,6 +80,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "data-listra-enviar" not in body
     assert "data-listra-ordenar" in body
     assert "Nome do meliante:" in body
+    assert 'id="listra-toast-host"' in body
 
 
 def test_visitante_nao_adiciona(client: TestClient):
@@ -134,6 +135,8 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
 
 
 def test_admin_edita_frase(client: TestClient):
+    from urllib.parse import unquote
+
     from src.listra_seed import LISTRA_ANO_ATUAL
     from src import db
 
@@ -151,15 +154,22 @@ def test_admin_edita_frase(client: TestClient):
         follow_redirects=False,
     )
     assert r.status_code == 303
-    assert "atualizada" in (r.headers.get("location") or "").lower()
-    assert f"#listra-frase-{criada['id']}" in (r.headers.get("location") or "")
+    loc = unquote(r.headers.get("location") or "")
+    assert "edição feita com sucesso" in loc.lower()
+    assert f"#listra-frase-{criada['id']}" in loc
     atualizada = db.get_listra_frase(criada["id"])
     assert atualizada["texto"] == "Texto editado"
     assert atualizada["responsavel"] == "Ciclano"
-    pub = client.get("/grupo/listra")
+    pub = client.get(
+        f"/grupo/listra?msg=Edi%C3%A7%C3%A3o+feita+com+sucesso#listra-frase-{criada['id']}"
+    )
     assert "Texto editado" in pub.text
     assert "Ciclano" in pub.text
     assert f'id="listra-frase-{criada["id"]}"' in pub.text
+    assert 'id="listra-toast-host"' in pub.text
+    assert "feita com sucesso" in pub.text
+    assert "showToast(" in pub.text
+    assert 'class="msg"' not in pub.text
 
 
 def test_visitante_nao_edita(client: TestClient):
