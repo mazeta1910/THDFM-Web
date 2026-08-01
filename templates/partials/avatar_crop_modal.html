@@ -12,20 +12,36 @@
       <canvas id="avatar-crop-canvas" width="280" height="280" aria-label="Área de corte"></canvas>
       <div class="avatar-crop-mask" aria-hidden="true"></div>
     </div>
-    <label class="avatar-crop-zoom-label" for="avatar-crop-zoom">
-      <span class="avatar-crop-zoom-title">Zoom</span>
-      <span class="avatar-crop-zoom-track">
-        <input
-          id="avatar-crop-zoom"
-          class="avatar-crop-zoom"
-          type="range"
-          min="1"
-          max="3"
-          step="0.01"
-          value="1"
-        />
-      </span>
-    </label>
+    <div class="avatar-crop-zoom-label">
+      <span class="avatar-crop-zoom-title" id="avatar-crop-zoom-label">Zoom</span>
+      <div class="avatar-crop-zoom-row" role="group" aria-labelledby="avatar-crop-zoom-label">
+        <button
+          type="button"
+          class="avatar-crop-zoom-btn"
+          id="avatar-crop-zoom-out"
+          aria-label="Diminuir zoom"
+          title="Diminuir zoom"
+        >−</button>
+        <span class="avatar-crop-zoom-track">
+          <input
+            id="avatar-crop-zoom"
+            class="avatar-crop-zoom"
+            type="range"
+            min="1"
+            max="3"
+            step="0.01"
+            value="1"
+          />
+        </span>
+        <button
+          type="button"
+          class="avatar-crop-zoom-btn"
+          id="avatar-crop-zoom-in"
+          aria-label="Aumentar zoom"
+          title="Aumentar zoom"
+        >+</button>
+      </div>
+    </div>
     <div class="modal-actions">
       <button type="button" class="secondary" id="avatar-crop-cancel">Cancelar</button>
       <button type="button" id="avatar-crop-apply">Usar foto</button>

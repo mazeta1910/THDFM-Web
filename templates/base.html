@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=170" />
+  <link rel="stylesheet" href="/static/style.css?v=171" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -646,6 +646,8 @@
     const zoomEl = document.getElementById("avatar-crop-zoom");
     const btnApply = document.getElementById("avatar-crop-apply");
     const btnCancel = document.getElementById("avatar-crop-cancel");
+    const zoomOutBtn = document.getElementById("avatar-crop-zoom-out");
+    const zoomInBtn = document.getElementById("avatar-crop-zoom-in");
     if (!modal || !canvas || !zoomEl || !btnApply || !btnCancel) return;
 
     const ctx = canvas.getContext("2d");
@@ -667,6 +669,17 @@
       const val = Number(zoomEl.value) || min;
       const pct = ((val - min) / (max - min)) * 100;
       zoomEl.style.setProperty("--zoom-pct", pct + "%");
+      if (zoomOutBtn) zoomOutBtn.disabled = val <= min + 0.001;
+      if (zoomInBtn) zoomInBtn.disabled = val >= max - 0.001;
+    };
+
+    const setZoom = (next) => {
+      const min = Number(zoomEl.min) || 1;
+      const max = Number(zoomEl.max) || 3;
+      scale = Math.max(min, Math.min(max, next));
+      zoomEl.value = String(scale);
+      syncZoomFill();
+      draw();
     };
 
     const cropSize = () => {
@@ -729,10 +742,20 @@
     };
 
     zoomEl.addEventListener("input", () => {
-      scale = Math.max(1, Math.min(3, Number(zoomEl.value) || 1));
-      syncZoomFill();
-      draw();
+      setZoom(Number(zoomEl.value) || 1);
     });
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        setZoom((Number(zoomEl.value) || 1) - 0.15);
+      });
+    }
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        setZoom((Number(zoomEl.value) || 1) + 0.15);
+      });
+    }
     syncZoomFill();
 
     const pointerDown = (e) => {
