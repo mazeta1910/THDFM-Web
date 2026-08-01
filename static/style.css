@@ -7907,6 +7907,10 @@ mark.listra-destaque {
 }
 .listra-scroll-fab-icon {
   display: block;
+  transition: transform 0.18s ease;
+}
+.listra-scroll-fab[data-mode="up"] .listra-scroll-fab-icon {
+  transform: rotate(180deg);
 }
 .listra-scroll-fab.has-toast {
   bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
