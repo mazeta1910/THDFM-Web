@@ -252,6 +252,15 @@
       });
     });
 
+    // Inset box-shadow da linha "você" vira bloco sólido no html2canvas.
+    card.querySelectorAll("tr.is-eu td").forEach(function (el) {
+      var prev = el.style.boxShadow;
+      el.style.boxShadow = "none";
+      restoreFns.push(function () {
+        el.style.boxShadow = prev;
+      });
+    });
+
     return function () {
       for (var i = restoreFns.length - 1; i >= 0; i--) restoreFns[i]();
     };
