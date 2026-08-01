@@ -78,6 +78,33 @@
             <p class="listra-ano-badge listra-ano-badge--silent">{{ l.ano }}</p>
             {% endif %}
             <div class="listra-ano-actions">
+              <div class="listra-ordenar" data-listra-ordenar-wrap>
+                <button
+                  type="button"
+                  class="listra-icon-btn listra-ordenar-btn"
+                  data-listra-ordenar-toggle
+                  title="Ordenar frases"
+                  aria-label="Ordenar frases"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 6h10"/>
+                    <path d="M4 12h7"/>
+                    <path d="M4 18h4"/>
+                    <path d="M15 9l3-3 3 3"/>
+                    <path d="M18 6v12"/>
+                  </svg>
+                </button>
+                <div class="listra-ordenar-menu" role="menu" hidden>
+                  <button type="button" role="menuitem" data-listra-ordenar="data-desc">Data (mais recente)</button>
+                  <button type="button" role="menuitem" data-listra-ordenar="data-asc">Data (mais antiga)</button>
+                  <button type="button" role="menuitem" data-listra-ordenar="meliante-asc">Meliante A–Z</button>
+                  <button type="button" role="menuitem" data-listra-ordenar="meliante-desc">Meliante Z–A</button>
+                  <button type="button" role="menuitem" data-listra-ordenar="texto-asc">Alfabética A–Z</button>
+                  <button type="button" role="menuitem" data-listra-ordenar="texto-desc">Alfabética Z–A</button>
+                </div>
+              </div>
               {% if pode_enviar %}
               <div class="listra-send-actions">
                 <button
@@ -110,33 +137,6 @@
                 {% endif %}
               </div>
               {% endif %}
-              <div class="listra-ordenar" data-listra-ordenar-wrap>
-                <button
-                  type="button"
-                  class="listra-icon-btn listra-ordenar-btn"
-                  data-listra-ordenar-toggle
-                  title="Ordenar frases"
-                  aria-label="Ordenar frases"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 6h10"/>
-                    <path d="M4 12h7"/>
-                    <path d="M4 18h4"/>
-                    <path d="M15 9l3-3 3 3"/>
-                    <path d="M18 6v12"/>
-                  </svg>
-                </button>
-                <div class="listra-ordenar-menu" role="menu" hidden>
-                  <button type="button" role="menuitem" data-listra-ordenar="data-desc">Data (mais recente)</button>
-                  <button type="button" role="menuitem" data-listra-ordenar="data-asc">Data (mais antiga)</button>
-                  <button type="button" role="menuitem" data-listra-ordenar="meliante-asc">Meliante A–Z</button>
-                  <button type="button" role="menuitem" data-listra-ordenar="meliante-desc">Meliante Z–A</button>
-                  <button type="button" role="menuitem" data-listra-ordenar="texto-asc">Alfabética A–Z</button>
-                  <button type="button" role="menuitem" data-listra-ordenar="texto-desc">Alfabética Z–A</button>
-                </div>
-              </div>
               <span class="listra-ano-toggle" title="Minimizar ou expandir a Listra {{ l.ano }}" aria-hidden="true">
                 <svg class="listra-ano-toggle-icon listra-ano-toggle-icon--abrir" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="6 9 12 15 18 9"/>
