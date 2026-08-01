@@ -6482,11 +6482,18 @@ textarea.xonha-input {
   gap: 0.45rem;
   flex-shrink: 0;
 }
+.listra-item-meta-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.12rem;
+  min-width: 0;
+}
 .listra-item-resp {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
-  max-width: 10rem;
+  max-width: 12rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6495,6 +6502,14 @@ textarea.xonha-input {
   font-weight: 600;
   font-style: italic;
   opacity: 0.85;
+}
+.listra-item-quando {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+  white-space: nowrap;
 }
 .listra-apagar-btn {
   display: inline-flex;
