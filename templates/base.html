@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=168" />
+  <link rel="stylesheet" href="/static/style.css?v=169" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -661,6 +661,14 @@
     let onCancel = null;
     let objectUrl = null;
 
+    const syncZoomFill = () => {
+      const min = Number(zoomEl.min) || 1;
+      const max = Number(zoomEl.max) || 3;
+      const val = Number(zoomEl.value) || min;
+      const pct = ((val - min) / (max - min)) * 100;
+      zoomEl.style.setProperty("--zoom-pct", pct + "%");
+    };
+
     const cropSize = () => {
       if (!img) return 1;
       return Math.min(img.naturalWidth, img.naturalHeight) / scale;
@@ -709,6 +717,7 @@
         img = next;
         scale = 1;
         zoomEl.value = "1";
+        syncZoomFill();
         ox = img.naturalWidth / 2;
         oy = img.naturalHeight / 2;
         draw();
@@ -721,8 +730,10 @@
 
     zoomEl.addEventListener("input", () => {
       scale = Math.max(1, Math.min(3, Number(zoomEl.value) || 1));
+      syncZoomFill();
       draw();
     });
+    syncZoomFill();
 
     const pointerDown = (e) => {
       if (!img) return;

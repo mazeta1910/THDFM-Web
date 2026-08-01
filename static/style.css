@@ -6294,15 +6294,92 @@ textarea.xonha-input {
 }
 .avatar-crop-zoom-label {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
   margin: 0 0 1rem;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--muted);
 }
+.avatar-crop-zoom-title {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.avatar-crop-zoom-track {
+  display: block;
+  padding: 0.35rem 0.15rem;
+}
+.avatar-crop-zoom,
 .avatar-crop-zoom-label input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
+  height: 0.45rem;
+  margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent) var(--zoom-pct, 0%),
+    color-mix(in srgb, var(--border) 70%, var(--bg)) var(--zoom-pct, 0%)
+  );
+  outline: none;
+  cursor: pointer;
   accent-color: var(--accent);
+}
+.avatar-crop-zoom::-webkit-slider-runnable-track,
+.avatar-crop-zoom-label input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+}
+.avatar-crop-zoom::-webkit-slider-thumb,
+.avatar-crop-zoom-label input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: calc((0.45rem - 1.15rem) / 2);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+.avatar-crop-zoom:active::-webkit-slider-thumb,
+.avatar-crop-zoom-label input[type="range"]:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.06);
+}
+.avatar-crop-zoom::-moz-range-track,
+.avatar-crop-zoom-label input[type="range"]::-moz-range-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, var(--bg));
+  border: none;
+}
+.avatar-crop-zoom::-moz-range-progress,
+.avatar-crop-zoom-label input[type="range"]::-moz-range-progress {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.avatar-crop-zoom::-moz-range-thumb,
+.avatar-crop-zoom-label input[type="range"]::-moz-range-thumb {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+.avatar-crop-zoom:focus-visible,
+.avatar-crop-zoom-label input[type="range"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 3px;
 }
 
 /* ========== Listra THDFM ========== */

@@ -172,8 +172,12 @@
                   {% if f.responsavel %}{{ f.responsavel }}{% else %}—{% endif %}
                 </span>
                 {% if f.criado_em %}
-                <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}" title="Registrado em {{ f.criado_em }}">
-                  {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
+                <time
+                  class="listra-item-quando"
+                  datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length >= 16 %}T{{ f.criado_em[11:16] }}{% endif %}"
+                  title="Registrado em {{ f.criado_em }}"
+                >
+                  {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}{% if f.criado_em|length >= 16 %} · {{ f.criado_em[11:16] }}{% endif %}
                 </time>
                 {% endif %}
               </div>

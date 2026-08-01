@@ -835,6 +835,12 @@ def garantir_participante_admin(
             # Não "assalta" o participante de outro usuário logado no mesmo browser.
             if atual == login:
                 return _garantir_liberado(part)
+            username = (part.get("username") or "").strip().lower()
+            # Conta da sessão com username = login do .env (ex.: ramos) → vincula.
+            if not atual and username == login:
+                vincular_admin_login(part["id"], login)
+                part = get_participante(part["id"]) or part
+                return _garantir_liberado(part)
 
     part = get_participante_por_nome(nome)
     if part:

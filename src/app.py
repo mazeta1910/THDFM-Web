@@ -150,6 +150,16 @@ def _promover_admin_da_conta(request: Request) -> bool:
     if not part:
         return False
     login = (part.get("admin_login") or "").strip().lower()
+    if not login:
+        # Username igual ao login do .env (ramos, joaojec, mazeta) também vale.
+        username = (part.get("username") or "").strip().lower()
+        if username and get_admin(username):
+            try:
+                db.vincular_admin_login(part["id"], username)
+            except Exception:
+                pass
+            login = username
+            part = db.get_participante(part["id"]) or part
     admin = get_admin(login) if login else None
     if not admin:
         return False

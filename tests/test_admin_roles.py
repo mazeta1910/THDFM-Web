@@ -228,6 +228,72 @@ def test_conta_vinculada_abre_painel_sem_segundo_login(client: TestClient):
     assert "Painel de Admin" in home.text
 
 
+@pytest.mark.parametrize(
+    "login,senha,username_bolao,celular",
+    [
+        ("ramos", "senha-mod", "ramos", "11998887701"),
+        ("joaojec", "senha-jec", "joaojec", "11998887702"),
+    ],
+)
+def test_moderador_um_login_basta(
+    client: TestClient, login: str, senha: str, username_bolao: str, celular: str
+):
+    """Ramos/JV: Entrar com a conta do bolão (mesmo username do .env) abre o painel."""
+    # Conta de bolão com username = login do .env, senha diferente
+    part = db.criar_participante(
+        f"Conta {login}", status="liberado", celular=celular
+    )
+    db.definir_credenciais(part["id"], username_bolao, "senha-bolao-mod")
+
+    r = client.post(
+        "/entrar",
+        data={"usuario": username_bolao, "senha": "senha-bolao-mod"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin"
+
+    r2 = client.get("/admin", follow_redirects=False)
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert "admin-shell" in r2.text
+
+    vinculado = db.get_participante_por_admin_login(login)
+    assert vinculado is not None
+    assert vinculado["id"] == part["id"]
+
+
+@pytest.mark.parametrize("login,senha", [("ramos", "senha-mod"), ("joaojec", "senha-jec")])
+def test_entrar_credenciais_env_moderador_abre_painel(
+    client: TestClient, login: str, senha: str
+):
+    r = client.post(
+        "/entrar",
+        data={"usuario": login, "senha": senha},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin"
+    r2 = client.get("/admin")
+    assert r2.status_code == 200
+    assert "Painel de Admin" in r2.text
+    assert "is-moderador" in r2.text
+    assert 'id="chrome-mode-toggle"' not in r2.text
+
+
+def test_admin_sidebar_sem_item_listra_permissoes(client: TestClient):
+    _login_admin(client, "mazeta", "senha-dono")
+    r = client.get("/admin")
+    assert r.status_code == 200
+    assert "Listra · Permissões" not in r.text
+    assert 'href="/admin/listra"' not in r.text
+    assert 'href="/grupo/listra"' in r.text
+    # Permissões continuam acessíveis pela página da Listra
+    r2 = client.get("/grupo/listra")
+    assert 'href="/admin/listra"' in r2.text
+    assert "Gerenciar permissões" in r2.text
+
+
 def test_sair_do_admin_limpa_tudo_e_pede_entrar(client: TestClient):
     _login_admin(client, "mazeta", "senha-dono")
     r = client.get("/admin/logout", follow_redirects=False)

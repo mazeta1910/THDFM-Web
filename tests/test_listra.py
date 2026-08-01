@@ -118,9 +118,17 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     )
     assert frase["ano"] == LISTRA_ANO_ATUAL
     assert frase.get("criado_em")
+    # Novo item guarda data e hora (YYYY-MM-DD HH:MM:…)
+    assert len(frase["criado_em"]) >= 16
+    assert frase["criado_em"][10] == " "
     pub = client.get("/grupo/listra")
     assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text
+    assert "Nome do meliante:" in pub.text
+    # Exibe data · hora no card
+    import re
+
+    assert re.search(r"\d{2}/\d{2}/\d{4}\s*·\s*\d{2}:\d{2}", pub.text)
     assert "listra-editar-btn" in pub.text
     assert "/grupo/listra/atualizar" in pub.text
 
