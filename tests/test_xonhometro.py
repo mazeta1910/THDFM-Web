@@ -240,7 +240,6 @@ def test_admin_xonhometro_nao_duplica_no_menu(client: TestClient):
 def test_paginas_grupo_placeholder(client: TestClient):
     for path, title in (
         ("/grupo/bans", "Contador de Bans"),
-        ("/grupo/listra", "Listra"),
         ("/grupo/copypastas", "Copypastas"),
         ("/grupo/cardapio", "Cardápio"),
     ):

@@ -6304,3 +6304,291 @@ textarea.xonha-input {
   width: 100%;
   accent-color: var(--accent);
 }
+
+/* ========== Listra THDFM ========== */
+.listra-page {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.listra-hero {
+  margin-bottom: 1.25rem;
+}
+.listra-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.listra-title {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.listra-lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+.listra-admin-link {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.listra-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+}
+.listra-count {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+.listra-count strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.listra-wa-btn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+.listra-wa-hint {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.listra-wa-hint--ok {
+  background: var(--msg-bg);
+  color: var(--accent);
+  border: 1px solid var(--msg-border);
+}
+.listra-wa-hint--erro {
+  background: var(--erro-bg);
+  color: var(--danger);
+  border: 1px solid var(--erro-border);
+}
+.listra-wa-texto {
+  width: 100%;
+  min-height: 8rem;
+  margin: 0 0 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+.listra-add-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+}
+.listra-add-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+.listra-add-form {
+  display: grid;
+  gap: 0.75rem;
+}
+.listra-field {
+  display: grid;
+  gap: 0.3rem;
+}
+.listra-field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.listra-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  resize: vertical;
+}
+.listra-input:focus {
+  outline: 2px solid rgba(232, 93, 4, 0.35);
+  border-color: var(--accent);
+}
+.listra-submit {
+  justify-self: start;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 1.1rem;
+  cursor: pointer;
+}
+.listra-submit:hover {
+  filter: brightness(1.05);
+}
+.listra-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.listra-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.listra-item-main {
+  display: flex;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+.listra-item-bullet {
+  flex-shrink: 0;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1.45;
+}
+.listra-item-texto {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+  font-size: 0.95rem;
+}
+.listra-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+.listra-item-resp {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.listra-item-resp--vazio {
+  font-weight: 600;
+  font-style: italic;
+  opacity: 0.85;
+}
+.listra-apagar-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.listra-apagar-btn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.listra-empty {
+  padding: 1rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.listra-admin {
+  max-width: 40rem;
+}
+.listra-perm-form {
+  display: grid;
+  gap: 1rem;
+}
+.listra-perm-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.listra-perm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.listra-perm-table th,
+.listra-perm-table td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.listra-perm-table tr:last-child td {
+  border-bottom: none;
+}
+.listra-perm-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+html.theme-light .listra-perm-table th,
+html[data-theme="light"] .listra-perm-table th {
+  background: rgba(0, 0, 0, 0.03);
+}
+.listra-perm-check {
+  text-align: center;
+  width: 7.5rem;
+}
+.listra-perm-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.listra-perm-nome {
+  font-weight: 700;
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+.listra-perm-user {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.listra-perm-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid rgba(232, 93, 4, 0.35);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+}
+.listra-perm-empty {
+  color: var(--muted);
+  text-align: center;
+}

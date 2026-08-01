@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=157" />
+  <link rel="stylesheet" href="/static/style.css?v=158" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -40,7 +40,8 @@
 {% set on_regras = path.startswith('/regras') %}
 {% set on_xonhometro = path.startswith('/xonhometro') or path.startswith('/admin/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
-{% set on_grupo_listra = path.startswith('/grupo/listra') %}
+{% set on_grupo_listra = path.startswith('/grupo/listra') or path.startswith('/admin/listra') %}
+{% set on_admin_listra = path.startswith('/admin/listra') %}
 {% set on_grupo_copypastas = path.startswith('/grupo/copypastas') %}
 {% set on_grupo_cardapio = path.startswith('/grupo/cardapio') %}
 {% set on_acervo_xonha = on_xonhometro or on_grupo_cardapio %}

@@ -76,7 +76,8 @@
         <summary class="admin-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grupo_bans %}active{% endif %}" href="/grupo/bans">{{ ico('bans') }}<span>Contador de Bans</span></a>
-          <a class="admin-side-link {% if on_grupo_listra %}active{% endif %}" href="/grupo/listra">{{ ico('listra') }}<span>Listra</span></a>
+          <a class="admin-side-link {% if on_grupo_listra and not on_admin_listra %}active{% endif %}" href="/grupo/listra">{{ ico('listra') }}<span>Listra</span></a>
+          <a class="admin-side-link {% if on_admin_listra %}active{% endif %}" href="/admin/listra">{{ ico('listra') }}<span>Listra · Permissões</span></a>
           <a class="admin-side-link {% if on_grupo_copypastas %}active{% endif %}" href="/grupo/copypastas">{{ ico('copypastas') }}<span>Copypastas</span></a>
           <details class="admin-menu-subgroup" data-group="acervo-xonha" open>
             <summary class="admin-menu-subsummary">{{ ico('xonha', 13) }}<span>Acervo Xonha</span></summary>

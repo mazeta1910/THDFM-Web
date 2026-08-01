@@ -285,6 +285,49 @@ def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_listra(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS listra_frases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            texto TEXT NOT NULL,
+            responsavel TEXT NOT NULL DEFAULT '',
+            criado_por_id INTEGER REFERENCES participantes(id),
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            ordem INTEGER NOT NULL DEFAULT 0
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS listra_permissoes (
+            participante_id INTEGER PRIMARY KEY REFERENCES participantes(id) ON DELETE CASCADE,
+            pode_adicionar INTEGER NOT NULL DEFAULT 0,
+            pode_enviar INTEGER NOT NULL DEFAULT 0,
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_listra_frases_ordem "
+        "ON listra_frases(ordem ASC, id ASC)"
+    )
+    _seed_listra_se_vazio(conn)
+
+
+def _seed_listra_se_vazio(conn: sqlite3.Connection) -> None:
+    from src.listra_seed import LISTRA_SEED_FRASES
+
+    if conn.execute("SELECT 1 FROM listra_frases LIMIT 1").fetchone():
+        return
+    for i, texto in enumerate(LISTRA_SEED_FRASES, start=1):
+        conn.execute(
+            "INSERT INTO listra_frases (texto, responsavel, ordem, criado_em) "
+            "VALUES (?, '', ?, datetime('now', 'localtime'))",
+            (texto, i),
+        )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -293,6 +336,7 @@ def init_db() -> None:
         _migrar_celulares_br(conn)
         _migrate_recuperacao(conn)
         _migrate_xonhometro(conn)
+        _migrate_listra(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -1727,3 +1771,166 @@ def xonha_stats() -> dict[str, Any]:
         "taxa_retorno": taxa_retorno,
         "recorde_paz_dias": recorde_paz_dias,
     }
+
+
+# --- Listra THDFM -----------------------------------------------------------
+
+_LISTRA_FRASE_COLS = (
+    "id, texto, responsavel, criado_por_id, criado_em, ordem"
+)
+
+
+def list_listra_frases() -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
+            "ORDER BY ordem ASC, id ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def listra_texto_whatsapp(frases: list[dict[str, Any]] | None = None) -> str:
+    from src.listra_seed import LISTRA_TITULO
+
+    itens = frases if frases is not None else list_listra_frases()
+    linhas = [f"*{LISTRA_TITULO}*", ""]
+    for f in itens:
+        texto = (f.get("texto") or "").strip()
+        if not texto:
+            continue
+        for i, parte in enumerate(texto.splitlines()):
+            prefixo = "* " if i == 0 else "  "
+            linhas.append(f"{prefixo}{parte}")
+    return "\n".join(linhas).rstrip() + "\n"
+
+
+def criar_listra_frase(
+    texto: str,
+    responsavel: str,
+    *,
+    criado_por_id: int | None = None,
+) -> dict[str, Any]:
+    texto_ok = re.sub(r"\s+\n", "\n", (texto or "").strip())
+    texto_ok = re.sub(r"[ \t]+", " ", texto_ok)
+    if not texto_ok:
+        raise ValueError("Informe a frase.")
+    if len(texto_ok) > 2000:
+        raise ValueError("Frase com no máximo 2000 caracteres.")
+    resp_ok = re.sub(r"\s+", " ", (responsavel or "").strip())
+    if not resp_ok:
+        raise ValueError("Informe o responsável.")
+    if len(resp_ok) > NOME_MAX_LEN:
+        raise ValueError(f"Responsável com no máximo {NOME_MAX_LEN} caracteres.")
+    with get_db() as conn:
+        ordem = conn.execute(
+            "SELECT COALESCE(MAX(ordem), 0) + 1 FROM listra_frases"
+        ).fetchone()[0]
+        cur = conn.execute(
+            "INSERT INTO listra_frases "
+            "(texto, responsavel, criado_por_id, ordem, criado_em) "
+            "VALUES (?, ?, ?, ?, datetime('now', 'localtime'))",
+            (texto_ok, resp_ok, criado_por_id, ordem),
+        )
+        row = conn.execute(
+            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
+            (cur.lastrowid,),
+        ).fetchone()
+        return dict(row)
+
+
+def apagar_listra_frase(frase_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM listra_frases WHERE id = ?", (frase_id,))
+        return cur.rowcount > 0
+
+
+def get_listra_permissao(participante_id: int) -> dict[str, Any]:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT participante_id, pode_adicionar, pode_enviar, atualizado_em "
+            "FROM listra_permissoes WHERE participante_id = ?",
+            (participante_id,),
+        ).fetchone()
+        if not row:
+            return {
+                "participante_id": participante_id,
+                "pode_adicionar": False,
+                "pode_enviar": False,
+                "atualizado_em": None,
+            }
+        return {
+            "participante_id": row["participante_id"],
+            "pode_adicionar": bool(row["pode_adicionar"]),
+            "pode_enviar": bool(row["pode_enviar"]),
+            "atualizado_em": row["atualizado_em"],
+        }
+
+
+def list_listra_permissoes_com_participantes() -> list[dict[str, Any]]:
+    """Participantes liberados + flags da Listra (para o painel admin)."""
+    cols_p = ", ".join(f"p.{c.strip()}" for c in _PARTICIPANTE_COLS.split(","))
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT {cols_p},
+                   COALESCE(lp.pode_adicionar, 0) AS pode_adicionar,
+                   COALESCE(lp.pode_enviar, 0) AS pode_enviar
+            FROM participantes p
+            LEFT JOIN listra_permissoes lp ON lp.participante_id = p.id
+            WHERE p.status = 'liberado'
+            ORDER BY
+              CASE WHEN p.admin_login IS NOT NULL AND p.admin_login != '' THEN 0 ELSE 1 END,
+              p.nome COLLATE NOCASE
+            """
+        ).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["pode_adicionar"] = bool(d.get("pode_adicionar"))
+            d["pode_enviar"] = bool(d.get("pode_enviar"))
+            out.append(d)
+        return out
+
+
+def salvar_listra_permissao(
+    participante_id: int,
+    *,
+    pode_adicionar: bool,
+    pode_enviar: bool,
+) -> None:
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado.")
+    if part.get("status") != "liberado":
+        raise ValueError("Só participantes liberados recebem permissão da Listra.")
+    with get_db() as conn:
+        if not pode_adicionar and not pode_enviar:
+            conn.execute(
+                "DELETE FROM listra_permissoes WHERE participante_id = ?",
+                (participante_id,),
+            )
+            return
+        conn.execute(
+            """
+            INSERT INTO listra_permissoes
+              (participante_id, pode_adicionar, pode_enviar, atualizado_em)
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(participante_id) DO UPDATE SET
+              pode_adicionar = excluded.pode_adicionar,
+              pode_enviar = excluded.pode_enviar,
+              atualizado_em = datetime('now', 'localtime')
+            """,
+            (
+                participante_id,
+                1 if pode_adicionar else 0,
+                1 if pode_enviar else 0,
+            ),
+        )
+
+
+def salvar_listra_permissoes_lote(
+    itens: list[tuple[int, bool, bool]],
+) -> None:
+    for pid, add, env in itens:
+        salvar_listra_permissao(pid, pode_adicionar=add, pode_enviar=env)
+

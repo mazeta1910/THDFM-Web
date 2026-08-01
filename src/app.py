@@ -713,13 +713,136 @@ def grupo_bans(request: Request):
     )
 
 
+def _participante_sessao(request: Request) -> dict | None:
+    token = request.session.get("participante_token")
+    if not token:
+        return None
+    return db.get_participante_por_token(token)
+
+
+def _listra_caps(request: Request) -> dict:
+    """Capacidades da Listra para o visitante atual."""
+    is_adm = admin_ok(request)
+    part = _participante_sessao(request)
+    perm = (
+        db.get_listra_permissao(part["id"])
+        if part and part.get("status") == "liberado"
+        else None
+    )
+    pode_add = is_adm or bool(perm and perm.get("pode_adicionar"))
+    pode_env = is_adm or bool(perm and perm.get("pode_enviar"))
+    return {
+        "is_admin": is_adm,
+        "participante": part,
+        "pode_adicionar": pode_add,
+        "pode_enviar": pode_env,
+    }
+
+
 @app.get("/grupo/listra", response_class=HTMLResponse)
 def grupo_listra(request: Request):
-    return _pagina_em_breve(
+    caps = _listra_caps(request)
+    frases = db.list_listra_frases()
+    return render(
         request,
-        titulo="Listra",
-        secao="Grupo do WhatsApp",
-        lead="A listra do grupo ainda está no forno.",
+        "listra.html",
+        frases=frases,
+        listra_wa_texto=db.listra_texto_whatsapp(frases),
+        pode_adicionar=caps["pode_adicionar"],
+        pode_enviar=caps["pode_enviar"],
+        participante_listra=caps["participante"],
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/grupo/listra")
+def grupo_listra_criar(
+    request: Request,
+    texto: str = Form(...),
+    responsavel: str = Form(...),
+):
+    caps = _listra_caps(request)
+    if not caps["pode_adicionar"]:
+        return RedirectResponse(
+            "/grupo/listra?erro="
+            + quote("Você não tem permissão para adicionar frases na Listra."),
+            status_code=303,
+        )
+    part = caps["participante"]
+    try:
+        db.criar_listra_frase(
+            texto,
+            responsavel,
+            criado_por_id=part["id"] if part else None,
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/grupo/listra?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/grupo/listra?msg={quote('Frase adicionada à Listra')}",
+        status_code=303,
+    )
+
+
+@app.post("/grupo/listra/apagar")
+def grupo_listra_apagar(request: Request, frase_id: int = Form(...)):
+    if not admin_ok(request):
+        return RedirectResponse(
+            "/grupo/listra?erro=" + quote("Só a administração pode apagar frases."),
+            status_code=303,
+        )
+    if not db.apagar_listra_frase(frase_id):
+        return RedirectResponse(
+            f"/grupo/listra?erro={quote('Frase não encontrada')}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/grupo/listra?msg={quote('Frase removida')}",
+        status_code=303,
+    )
+
+
+@app.get("/admin/listra", response_class=HTMLResponse)
+def admin_listra(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    return render(
+        request,
+        "admin_listra.html",
+        participantes=db.list_listra_permissoes_com_participantes(),
+        total_frases=len(db.list_listra_frases()),
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+        **_taxa_ctx(),
+    )
+
+
+@app.post("/admin/listra/permissoes")
+async def admin_listra_permissoes(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    form = await request.form()
+    participantes = db.list_listra_permissoes_com_participantes()
+    itens: list[tuple[int, bool, bool]] = []
+    for p in participantes:
+        pid = int(p["id"])
+        add = form.get(f"add_{pid}") == "1"
+        env = form.get(f"env_{pid}") == "1"
+        itens.append((pid, add, env))
+    try:
+        db.salvar_listra_permissoes_lote(itens)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote('Permissões da Listra atualizadas')}",
+        status_code=303,
     )
 
 
