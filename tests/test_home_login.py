@@ -2,28 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from urllib.parse import unquote
 
 import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
-from src.config import ROOT_DIR
-
-
-@pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(ROOT_DIR)
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
 
 
 def test_raiz_mostra_home_para_visitante(client: TestClient):
@@ -49,7 +33,6 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert 'aria-label="Mostrar senha"' in text
     assert "loguin-drawer-root" in text
 
-
 def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
     part = db.criar_participante("CtaLogado", status="liberado", celular="11990004455")
     db.definir_credenciais(part["id"], "cta.logado", "senha1234")
@@ -64,7 +47,6 @@ def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
     assert 'data-acesso-open="entrar"' not in bolao
     assert ">Entrar<" not in bolao
     assert "Fazer inscrição" not in bolao
-
 
 def test_home_alias_tambem_renderiza(client: TestClient):
     r = client.get("/home", follow_redirects=False)
@@ -91,7 +73,6 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert 'id="conta-drawer-root"' in r2.text
     assert "data-conta-open" in r2.text
     assert "Minha conta" in r2.text
-
 
 def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
     """Usuário logado vê a mesma estrutura de menu na home e em Meus Palpites."""
@@ -125,7 +106,6 @@ def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
         assert "site-side-admin-login" not in html
         assert 'href="/admin/login"' not in html
 
-
 def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
     part = db.criar_participante("ContaBox", status="liberado", celular="11990005566")
     db.definir_credenciais(part["id"], "conta.box", "senha1234")
@@ -149,7 +129,6 @@ def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
     assert "Quero mudar o meu username" not in r2.text
     assert 'id="modal-mudar-username"' not in r2.text
     assert "Vai ficar querendo." not in r2.text
-
 
 def test_conta_sair_limpa_sessao(client: TestClient):
     part = db.criar_participante("SaiFora", status="liberado", celular="11991234567")
@@ -193,7 +172,6 @@ def test_raiz_mostra_home_mesmo_com_admin_logado(
     assert "Usuário" in r.text or "Admin" in r.text
     assert "Ver site" not in r.text
 
-
 def test_token_sem_senha_abre_setup(client: TestClient):
     part = db.criar_participante("SemCred", status="liberado", celular="11999776655")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
@@ -214,7 +192,6 @@ def test_login_cria_pedido_para_liberado(client: TestClient):
     assert pedidos[0]["participante_id"] == part["id"]
     assert pedidos[0]["nome"] == "Beltrano"
 
-
 def test_login_celular_inexistente_nao_cria_pedido(client: TestClient):
     r = client.post("/login", data={"celular": "11911112222"}, follow_redirects=False)
     assert r.status_code == 303
@@ -222,13 +199,11 @@ def test_login_celular_inexistente_nao_cria_pedido(client: TestClient):
     assert "acesso=recuperar" in r.headers["location"]
     assert db.list_pedidos_recuperacao_pendentes() == []
 
-
 def test_login_pendente_nao_cria_pedido(client: TestClient):
     db.criar_participante("Pendente", status="pendente", celular="11977665544")
     r = client.post("/login", data={"celular": "11977665544"}, follow_redirects=False)
     assert r.status_code == 303
     assert db.list_pedidos_recuperacao_pendentes() == []
-
 
 def test_login_rate_limit(client: TestClient):
     db.criar_participante("Rate", status="liberado", celular="11966554433")
@@ -240,7 +215,6 @@ def test_login_rate_limit(client: TestClient):
     assert r.status_code == 303
     assert "enviado=1" in r.headers["location"]
     assert len(db.list_pedidos_recuperacao_pendentes()) == 3
-
 
 def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     import src.app as app_mod
@@ -259,7 +233,6 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     updated = db.get_participante(part["id"])
     assert updated and updated.get("link_enviado_em")
 
-
 def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     part = db.criar_participante("LogadoX", status="liberado", celular="11990003344")
     db.definir_credenciais(part["id"], "logado.x", "senha1234")
@@ -277,7 +250,6 @@ def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     assert 'data-group="marlon"' not in r2.text
     assert 'id="loguin-drawer-root"' not in r2.text
     assert ">Loguin<" not in r2.text
-
 
 def test_loguin_so_aceita_marlon(client: TestClient):
     r = client.get("/loguin", follow_redirects=False)
@@ -329,7 +301,6 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "LOGUIN efetuado" in r4.text
     assert "É florida" in r4.text
 
-
 def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
     part = db.criar_participante(
         "Marlon Wietzikowski", status="liberado", celular="11990001122"
@@ -377,7 +348,6 @@ def test_marlon_nao_entra_pela_porta_certa(client: TestClient):
     assert "erro=" in r4.headers["location"]
     assert "acesso=loguin" in r4.headers["location"]
     assert "erro" in unquote(r4.headers["location"]).casefold()
-
 
 def test_loguin_recusa_usuario_normal_mesmo_com_senha_valida(client: TestClient):
     part = db.criar_participante("Fulano Normal", status="liberado", celular="11991112233")

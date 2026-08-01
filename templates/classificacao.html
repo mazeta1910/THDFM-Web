@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "macros/table.html" import th_sort %}
+{% from "macros/avatar.html" import avatar %}
 {% block title %}Classificação — Bolão THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block content %}
@@ -60,135 +62,19 @@
     </div>
   </div>
   <div class="classificacao-scroll">
+    {% set tip_rod %}{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.{% endset %}
     <table class="classificacao-table" id="classificacao-table" data-classificacao-sort>
       <thead>
         <tr>
-          <th class="col-pos is-sortable" data-sort-key="pos" data-sort-type="number" aria-sort="ascending">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Pos.</span><span class="th-short">#</span>
-                <span class="col-tip-bubble" role="tooltip">Colocação oficial. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada. Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-player is-sortable" data-sort-key="nome" data-sort-type="string" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Participante</span><span class="th-short">Jogador</span>
-                <span class="col-tip-bubble" role="tooltip">Foto e nome do participante. Clique para ordenar A–Z ou Z–A.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num col-pts is-sortable" data-sort-key="soma" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip col-tip-end" tabindex="0">
-                <span class="th-full">Pontos</span><span class="th-short">Pts</span>
-                <span class="col-tip-bubble" role="tooltip">Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="placar" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Placar</span><span class="th-short">Plc</span>
-                <span class="col-tip-bubble" role="tooltip">Pontos por acertar o placar exato. Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="vencedor" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Vencedor</span><span class="th-short">Ven</span>
-                <span class="col-tip-bubble" role="tooltip">Pontos por acertar o vencedor (ou empate). Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="gols_casa" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Gols casa</span><span class="th-short">GC</span>
-                <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do mandante. Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="gols_fora" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Gols fora</span><span class="th-short">GF</span>
-                <span class="col-tip-bubble" role="tooltip">Pontos por acertar os gols do visitante. Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="fidelidade" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip" tabindex="0">
-                <span class="th-full">Bônus</span><span class="th-short">Bôn</span>
-                <span class="col-tip-bubble" role="tooltip">Bônus de fidelidade dos palpites (detalhes em Regras). Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
-          <th class="col-num is-sortable" data-sort-key="rod" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip col-tip-end" tabindex="0">
-                <span class="th-full">Rodada</span><span class="th-short">Rod</span>
-                <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
+          {{ th_sort("pos", "number", "Pos.", "#", "Colocação oficial. As setas ▲/▼ mostram o movimento desde a rodada anterior confirmada. Clique para ordenar.", th_class="col-pos", aria_sort="ascending") }}
+          {{ th_sort("nome", "string", "Participante", "Jogador", "Foto e nome do participante. Clique para ordenar A–Z ou Z–A.", th_class="col-player") }}
+          {{ th_sort("soma", "number", "Pontos", "Pts", "Soma total: Placar + Vencedor + Gols casa + Gols fora + Bônus. Clique para ordenar.", th_class="col-num col-pts", tip_end=true) }}
+          {{ th_sort("placar", "number", "Placar", "Plc", "Pontos por acertar o placar exato. Clique para ordenar.") }}
+          {{ th_sort("vencedor", "number", "Vencedor", "Ven", "Pontos por acertar o vencedor (ou empate). Clique para ordenar.") }}
+          {{ th_sort("gols_casa", "number", "Gols casa", "GC", "Pontos por acertar os gols do mandante. Clique para ordenar.") }}
+          {{ th_sort("gols_fora", "number", "Gols fora", "GF", "Pontos por acertar os gols do visitante. Clique para ordenar.") }}
+          {{ th_sort("fidelidade", "number", "Bônus", "Bôn", "Bônus de fidelidade dos palpites (detalhes em Regras). Clique para ordenar.") }}
+          {{ th_sort("rod", "number", "Rodada", "Rod", tip_rod, tip_end=true) }}
         </tr>
       </thead>
       <tbody>
@@ -210,12 +96,7 @@
           </td>
           <td class="col-player" data-value="{{ r.participante }}">
             <div class="classificacao-player">
-              {% set row_av = avatar_url(r.avatar_path) %}
-              {% if row_av %}
-              <img class="classificacao-avatar" src="{{ row_av }}" alt="" />
-              {% else %}
-              <span class="classificacao-avatar classificacao-avatar-fallback">{{ r.participante[:2]|upper }}</span>
-              {% endif %}
+              {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
               <span class="classificacao-nome">{{ r.participante }}</span>
               {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
             </div>

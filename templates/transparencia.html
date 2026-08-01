@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "macros/emblema.html" import emblema %}
+{% from "macros/avatar.html" import avatar %}
 {% block title %}Portal da Transparência — Bolão THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block content %}
@@ -60,12 +62,12 @@
   <div class="planilha-head">
     <div class="planilha-head-top">
       <div class="planilha-head-identity">
-        <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+        {{ emblema(t.clube_casa) }}
         <div>
           <strong>{{ t.titulo }}</strong>
           <span>{{ t.clube_casa }} × {{ t.clube_fora }}</span>
         </div>
-        <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+        {{ emblema(t.clube_fora) }}
       </div>
       <div class="planilha-head-actions" data-planilha-export-ignore>
         <button
@@ -95,12 +97,12 @@
         <tr>
           <th>Nome</th>
           <th class="planilha-th-emblema" title="{{ t.clube_casa }}">
-            <img src="{{ emblema_url(t.clube_casa) }}" alt="{{ t.clube_casa }}" />
+            {{ emblema(t.clube_casa, alt=t.clube_casa) }}
             <span class="sr-only">{{ t.clube_casa }}</span>
           </th>
           <th></th>
           <th class="planilha-th-emblema" title="{{ t.clube_fora }}">
-            <img src="{{ emblema_url(t.clube_fora) }}" alt="{{ t.clube_fora }}" />
+            {{ emblema(t.clube_fora, alt=t.clube_fora) }}
             <span class="sr-only">{{ t.clube_fora }}</span>
           </th>
           <th>Pênaltis</th>
@@ -117,9 +119,9 @@
             <div class="planilha-grupo-row">
               <span class="planilha-grupo-label">
                 {% if row.grupo == 'casa' %}
-                <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+                {{ emblema(t.clube_casa) }}
                 {% elif row.grupo == 'fora' %}
-                <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+                {{ emblema(t.clube_fora) }}
                 {% endif %}
                 <strong>{{ row.nome }}</strong>
                 <span class="planilha-grupo-n">{{ row.n }}</span>
@@ -145,12 +147,7 @@
           <td class="planilha-nome">
             {% if row.tipo == 'palpite' %}
             <span class="planilha-nome-com-foto">
-              {% set row_av = avatar_url(row.avatar_path) %}
-              {% if row_av %}
-              <img class="planilha-avatar" src="{{ row_av }}" alt="" />
-              {% else %}
-              <span class="planilha-avatar planilha-avatar-fallback">{{ (row.nome or '??')[:2]|upper }}</span>
-              {% endif %}
+              {{ avatar(row.avatar_path, row.nome) }}
               <span class="planilha-nome-texto">{{ row.nome }}</span>
             </span>
             {% else %}

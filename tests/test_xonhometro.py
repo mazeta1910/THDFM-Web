@@ -2,41 +2,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
-from src.config import ROOT_DIR
+from tests.conftest import login_admin as _login_admin
 
 
 @pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(ROOT_DIR)
-    monkeypatch.setenv(
-        "ADMIN_USERS",
-        "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador",
-    )
-    db.DB_PATH = tmp_path / "test.db"
-    (tmp_path / "avatars").mkdir(exist_ok=True)
-    (tmp_path / "comprovantes").mkdir(exist_ok=True)
-    db.init_db()
-
-    from src.app import app
-
-    with TestClient(app) as c:
-        yield c
-
-
-def _login_admin(client: TestClient, login: str = "mazeta", senha: str = "senha-dono"):
-    r = client.post(
-        "/admin/login",
-        data={"login": login, "password": senha},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
-    assert r.headers["location"] == "/admin"
+def admin_users():
+    return "mazeta=senha-dono=Mazeta:dono|ramos=senha-mod=Ramos:moderador"
 
 
 def test_xonhometro_publico_vazio(client: TestClient):
@@ -54,7 +29,6 @@ def test_xonhometro_publico_vazio(client: TestClient):
     assert "xonha-timeline-track" in r.text or "xonha-empty" in r.text
     assert 'action="/admin/xonhometro"' not in r.text
 
-
 def test_visitante_nao_cria_evento(client: TestClient):
     r = client.post(
         "/admin/xonhometro",
@@ -64,7 +38,6 @@ def test_visitante_nao_cria_evento(client: TestClient):
     assert r.status_code == 303
     assert "acesso=entrar" in r.headers["location"]
     assert db.xonha_stats()["total_saidas"] == 0
-
 
 def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     _login_admin(client)
@@ -185,7 +158,6 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "12 horas, 25 minutos e 0 segundos" in pub.text
     assert "19 horas, 20 minutos e 0 segundos" in pub.text
 
-
 def test_formatar_duracao_status_unidades():
     f = db.formatar_duracao_status
     assert f(0) == "Há 0 segundos nesse status."
@@ -199,12 +171,10 @@ def test_formatar_duracao_status_unidades():
     assert f(2592000) == "Há 1 mês, 0 horas, 0 minutos e 0 segundos nesse status."
     assert f(31536000) == "Há 1 ano, 0 horas, 0 minutos e 0 segundos nesse status."
 
-
 def test_formatar_duracao_sem_sufixo_de_status():
     assert db.formatar_duracao(3725, prefixo="", sufixo="") == (
         "1 hora, 2 minutos e 5 segundos"
     )
-
 
 def test_admin_atualiza_e_apaga(client: TestClient):
     _login_admin(client)
@@ -247,7 +217,6 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     assert r2.status_code == 303
     assert db.get_xonha_evento(ev["id"]) is None
 
-
 def test_menu_tem_xonhometro(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
@@ -267,7 +236,6 @@ def test_menu_tem_xonhometro(client: TestClient):
     portal = r.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert "Xonhômetro" not in portal
 
-
 def test_admin_xonhometro_nao_duplica_no_menu(client: TestClient):
     _login_admin(client)
     r = client.get("/admin")
@@ -276,7 +244,6 @@ def test_admin_xonhometro_nao_duplica_no_menu(client: TestClient):
     assert "Xonhômetro" not in admin_block
     assert "Acervo Xonha" in r.text
     assert r.text.count(">Xonhômetro<") == 1
-
 
 def test_paginas_grupo_placeholder(client: TestClient):
     for path, title in (
@@ -289,7 +256,6 @@ def test_paginas_grupo_placeholder(client: TestClient):
         assert title in r.text
         assert "em-breve-page" in r.text
         assert "Grupo do WhatsApp" in r.text or "Acervo Xonha" in r.text
-
 
 def test_moderador_tambem_gerencia(client: TestClient):
     _login_admin(client, "ramos", "senha-mod")
@@ -310,7 +276,6 @@ def test_moderador_tambem_gerencia(client: TestClient):
     )
     assert r2.status_code == 303
     assert db.xonha_stats()["total_saidas"] == 1
-
 
 def test_admin_registra_banimento(client: TestClient):
     _login_admin(client)
