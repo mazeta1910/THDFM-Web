@@ -65,6 +65,7 @@
     {% for l in listras %}
     <details
       class="listra-ano-card {% if l.atual %}listra-ano-card--atual{% endif %}"
+      id="listra-ano-{{ l.ano }}"
       data-ano="{{ l.ano }}"
       {% if l.atual %}open{% endif %}
     >
@@ -156,6 +157,7 @@
         {% for f in l.frases %}
         <li
           class="listra-item"
+          id="listra-frase-{{ f.id }}"
           data-listra-item="{{ f.id }}"
           data-meliante="{{ f.responsavel or '' }}"
           data-criado="{{ f.criado_em or '' }}"
@@ -251,6 +253,27 @@
     {% endfor %}
   </div>
 </section>
+
+<script>
+(function () {
+  var hash = location.hash || "";
+  if (!hash || hash.indexOf("#listra-") !== 0) return;
+  var el = document.getElementById(hash.slice(1));
+  if (!el) return;
+  var card = el.closest("details.listra-ano-card");
+  if (card) card.open = true;
+  // Garante o acervo aberto antes de rolar (details fechado some o alvo).
+  requestAnimationFrame(function () {
+    el.scrollIntoView({ block: "center", behavior: "auto" });
+    if (el.classList.contains("listra-item")) {
+      el.classList.add("listra-item--flash");
+      window.setTimeout(function () {
+        el.classList.remove("listra-item--flash");
+      }, 1600);
+    }
+  });
+})();
+</script>
 
 <script>
 (function () {
@@ -476,7 +499,13 @@
         form.hidden = false;
         item.classList.add("listra-item--editing");
         var ta = form.querySelector("textarea[name='texto']");
-        if (ta) ta.focus();
+        if (ta) {
+          try {
+            ta.focus({ preventScroll: true });
+          } catch (e) {
+            ta.focus();
+          }
+        }
       }
     });
   });

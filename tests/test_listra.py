@@ -152,12 +152,14 @@ def test_admin_edita_frase(client: TestClient):
     )
     assert r.status_code == 303
     assert "atualizada" in (r.headers.get("location") or "").lower()
+    assert f"#listra-frase-{criada['id']}" in (r.headers.get("location") or "")
     atualizada = db.get_listra_frase(criada["id"])
     assert atualizada["texto"] == "Texto editado"
     assert atualizada["responsavel"] == "Ciclano"
     pub = client.get("/grupo/listra")
     assert "Texto editado" in pub.text
     assert "Ciclano" in pub.text
+    assert f'id="listra-frase-{criada["id"]}"' in pub.text
 
 
 def test_visitante_nao_edita(client: TestClient):

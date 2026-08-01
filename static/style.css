@@ -6441,6 +6441,7 @@ textarea.xonha-input {
   border-radius: 14px;
   background: var(--card);
   padding: 1rem 1.05rem 1.1rem;
+  scroll-margin-top: 5.5rem;
 }
 .listra-ano-card--atual {
   border-color: rgba(232, 93, 4, 0.45);
@@ -6719,6 +6720,12 @@ textarea.xonha-input {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
+  scroll-margin-top: 5.5rem;
+  transition: border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.listra-item--flash {
+  border-color: rgba(232, 93, 4, 0.55);
+  box-shadow: 0 0 0 1px rgba(232, 93, 4, 0.25);
 }
 .listra-item-view {
   display: flex;

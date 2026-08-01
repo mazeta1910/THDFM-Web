@@ -811,7 +811,7 @@ def grupo_listra_criar(
         )
     part = caps["participante"]
     try:
-        db.criar_listra_frase(
+        frase = db.criar_listra_frase(
             texto,
             responsavel,
             criado_por_id=part["id"] if part else None,
@@ -823,7 +823,8 @@ def grupo_listra_criar(
             status_code=303,
         )
     return RedirectResponse(
-        f"/grupo/listra?msg={quote('Frase adicionada à Listra')}",
+        f"/grupo/listra?msg={quote('Frase adicionada à Listra')}"
+        f"#listra-frase-{frase['id']}",
         status_code=303,
     )
 
@@ -845,11 +846,11 @@ def grupo_listra_atualizar(
         db.atualizar_listra_frase(frase_id, texto=texto, responsavel=responsavel)
     except ValueError as exc:
         return RedirectResponse(
-            f"/grupo/listra?erro={quote(str(exc))}",
+            f"/grupo/listra?erro={quote(str(exc))}#listra-frase-{int(frase_id)}",
             status_code=303,
         )
     return RedirectResponse(
-        f"/grupo/listra?msg={quote('Frase atualizada')}",
+        f"/grupo/listra?msg={quote('Frase atualizada')}#listra-frase-{int(frase_id)}",
         status_code=303,
     )
 
@@ -861,13 +862,16 @@ def grupo_listra_apagar(request: Request, frase_id: int = Form(...)):
             "/grupo/listra?erro=" + quote("Só a administração pode apagar frases."),
             status_code=303,
         )
-    if not db.apagar_listra_frase(frase_id):
+    frase = db.get_listra_frase(frase_id)
+    if not frase or not db.apagar_listra_frase(frase_id):
         return RedirectResponse(
             f"/grupo/listra?erro={quote('Frase não encontrada')}",
             status_code=303,
         )
+    ano = frase.get("ano")
+    ancora = f"#listra-ano-{ano}" if ano else ""
     return RedirectResponse(
-        f"/grupo/listra?msg={quote('Frase removida')}",
+        f"/grupo/listra?msg={quote('Frase removida')}{ancora}",
         status_code=303,
     )
 
