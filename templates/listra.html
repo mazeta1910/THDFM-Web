@@ -6,6 +6,7 @@
   <header class="listra-hero">
     <p class="listra-kicker">THDFM · Grupo do WhatsApp</p>
     <h1 class="listra-title">Listra</h1>
+    <p class="listra-subtitle">LISTRA THDFM 2026</p>
     <p class="listra-lead">
       O acervo oficial das pérolas tipográficas do grupo.
       {% if is_admin %}
@@ -39,7 +40,6 @@
     {% endif %}
   </div>
 
-  <textarea id="listra-wa-texto" class="listra-wa-texto" readonly hidden aria-hidden="true">{{ listra_wa_texto }}</textarea>
   <p class="listra-wa-hint" id="listra-wa-hint" hidden role="status"></p>
 
   {% if pode_adicionar %}
@@ -115,13 +115,12 @@
 <script>
 (function () {
   var btn = document.getElementById("listra-enviar-wa");
-  var ta = document.getElementById("listra-wa-texto");
   var hint = document.getElementById("listra-wa-hint");
-  if (!btn || !ta) return;
+  if (!btn) return;
 
-  // chat.whatsapp.com (convite) NÃO aceita mensagem pronta.
-  // api.whatsapp.com/send?text= abre o app com o texto no campo —
-  // basta escolher o grupo THDFM e tocar em Enviar.
+  // Limite seguro: links maiores são cortados e as frases NOVAS (no fim) somem.
+  var MAX_WA_URL = 3500;
+
   function showHint(msg, ok) {
     if (!hint) return;
     hint.hidden = false;
@@ -130,17 +129,49 @@
     hint.classList.toggle("listra-wa-hint--erro", !ok);
   }
 
+  function textoDaLista() {
+    var linhas = ["*LISTRA THDFM 2026*", ""];
+    document.querySelectorAll(".listra-item .listra-item-texto").forEach(function (el) {
+      var t = (el.textContent || "").replace(/\s+\n/g, "\n").trim();
+      if (!t) return;
+      t.split(/\r?\n/).forEach(function (parte, i) {
+        parte = parte.replace(/\s+/g, " ").trim();
+        if (!parte) return;
+        linhas.push((i === 0 ? "* " : "  ") + parte);
+      });
+    });
+    return linhas.join("\n") + "\n";
+  }
+
+  async function textoAtual() {
+    try {
+      var r = await fetch("/grupo/listra/export.txt", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (r.ok) {
+        var t = await r.text();
+        if (t && t.trim()) return t;
+      }
+    } catch (e) {}
+    return textoDaLista();
+  }
+
   async function copiar(texto) {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(texto);
         return true;
       }
-      ta.hidden = false;
-      ta.focus();
+      var ta = document.createElement("textarea");
+      ta.value = texto;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
       ta.select();
       var ok = document.execCommand("copy");
-      ta.hidden = true;
+      document.body.removeChild(ta);
       return ok;
     } catch (e) {
       return false;
@@ -148,21 +179,40 @@
   }
 
   btn.addEventListener("click", async function () {
-    var texto = ta.value || "";
-    if (!texto.trim()) {
-      showHint("A Listra está vazia.", false);
-      return;
+    btn.disabled = true;
+    try {
+      var texto = await textoAtual();
+      if (!texto.trim()) {
+        showHint("A Listra está vazia.", false);
+        return;
+      }
+      var copiou = await copiar(texto);
+      var prefix = "https://api.whatsapp.com/send?text=";
+      var url = prefix + encodeURIComponent(texto);
+      if (url.length > MAX_WA_URL) {
+        // Não abrir URL truncada: perderia as frases novas do fim.
+        window.open(
+          prefix + encodeURIComponent("*LISTRA THDFM 2026*\n\n"),
+          "_blank",
+          "noopener"
+        );
+        showHint(
+          copiou
+            ? "WhatsApp aberto. Cole a Listra completa com Ctrl+V (já copiada, com as frases novas) e envie no grupo THDFM."
+            : "A Listra é longa demais para o link. Copie o texto da página, cole no WhatsApp e envie.",
+          !!copiou
+        );
+      } else {
+        window.open(url, "_blank", "noopener");
+        showHint(
+          "WhatsApp aberto com a Listra na mensagem — escolha o grupo THDFM e toque em Enviar." +
+            (copiou ? " (também ficou copiada)" : ""),
+          true
+        );
+      }
+    } finally {
+      btn.disabled = false;
     }
-    var copiou = await copiar(texto);
-    var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
-    window.open(url, "_blank", "noopener");
-    showHint(
-      "WhatsApp aberto com a Listra na mensagem — escolha o grupo THDFM e toque em Enviar." +
-        (copiou
-          ? " Se vier cortada, cole com Ctrl+V (já está na área de transferência)."
-          : ""),
-      true
-    );
   });
 })();
 </script>
