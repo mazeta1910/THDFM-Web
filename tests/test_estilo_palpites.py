@@ -78,6 +78,8 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Gama" in ids["donelli"]["nomes"]
     assert "casalzinho" in ids
     assert set(ids["casalzinho"]["nomes"]) == {"Alpha", "Beta"}
+    assert "palpites iguais" in ids["casalzinho"]["valor_label"]
+    assert "iguais/par" not in ids["casalzinho"]["valor_label"]
 
     # Classificação renderiza Hall da Desgraça em cards exportáveis
     r = client.get("/classificacao")
@@ -92,6 +94,8 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Boquinha de Cemitério" in r.text
     assert "Acha que todo goleiro é o Matheus Donelli" in r.text
     assert "Triângulo Amoroso" in r.text or "Casalzinho" in r.text
+    assert "palpites iguais" in r.text
+    assert "iguais/par" not in r.text
     assert "data-abrir-ficha" in r.text
     assert "ficha-estilo-card" in r.text
     assert "Exportar ficha em PNG" in r.text

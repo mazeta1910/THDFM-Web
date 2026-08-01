@@ -316,7 +316,7 @@ def _melhor_grupo(
                 "nomes": [p["nome"] for p in combo],
                 "ids": [p["participante_id"] for p in combo],
                 "valor": round(melhores[0][0], 1),
-                "valor_label": f"{int(round(melhores[0][0]))} iguais/par",
+                "valor_label": f"{int(round(melhores[0][0]))} palpites iguais",
             }
         ]
 
@@ -331,7 +331,7 @@ def _melhor_grupo(
                 "nomes": [p["nome"] for p in combo],
                 "ids": [p["participante_id"] for p in combo],
                 "valor": round(score, 1),
-                "valor_label": f"{int(round(score))} iguais",
+                "valor_label": f"{int(round(score))} palpites iguais",
             }
         )
     return out
