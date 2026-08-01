@@ -460,27 +460,29 @@
     return r.bottom <= window.innerHeight + 96;
   }
 
-  function pertoDoTopoPagina() {
-    return (window.pageYOffset || document.documentElement.scrollTop || 0) < 160;
+  function listraLonga(card) {
+    return card.getBoundingClientRect().height > window.innerHeight * 1.15;
   }
 
   function setMode(mode, ano) {
     fab.setAttribute("data-mode", mode);
-    var label =
-      mode === "up"
-        ? "Ir para o topo da página"
-        : ano
-          ? "Ir para o fim da Listra " + ano
-          : "Ir para o fim da Listra";
+    var label;
+    if (mode === "up") {
+      label = ano
+        ? "Ir para o topo da Listra " + ano
+        : "Ir para o topo da Listra";
+    } else {
+      label = ano
+        ? "Ir para o fim da Listra " + ano
+        : "Ir para o fim da Listra";
+    }
     fab.setAttribute("aria-label", label);
     fab.title = label;
   }
 
   function atualizar() {
     var card = cardAtivo();
-    var pageLong =
-      document.documentElement.scrollHeight > window.innerHeight * 1.4;
-    if (!card || !pageLong || pertoDoTopoPagina()) {
+    if (!card || !card.open || !listraLonga(card)) {
       fab.hidden = true;
       return;
     }
@@ -505,19 +507,30 @@
     });
   }
 
+  function scrollParaTopoDaListra(card) {
+    var alvo =
+      card.querySelector(".listra-ano-summary") ||
+      card.querySelector("summary") ||
+      card;
+    try {
+      alvo.scrollIntoView({
+        block: "start",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    } catch (e) {
+      alvo.scrollIntoView(true);
+    }
+  }
+
   fab.addEventListener("click", function () {
     var mode = fab.getAttribute("data-mode") || "down";
-    if (mode === "up") {
-      try {
-        window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
-      } catch (e) {
-        window.scrollTo(0, 0);
-      }
-      return;
-    }
     var card = cardAtivo();
     if (!card) return;
     if (!card.open) card.open = true;
+    if (mode === "up") {
+      scrollParaTopoDaListra(card);
+      return;
+    }
     var last =
       card.querySelector(".listra-item:last-of-type") ||
       card.querySelector(".listra-list") ||
