@@ -6308,38 +6308,48 @@ textarea.xonha-input {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .avatar-crop-zoom-btn {
-  flex-shrink: 0;
+  flex: 0 0 1.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.1rem;
-  padding: 0.15rem 0.1rem;
-  border: none;
-  border-radius: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
   user-select: none;
+  box-sizing: border-box;
 }
 .avatar-crop-zoom-btn:hover {
   color: var(--accent);
+  border-color: transparent;
+  background: transparent;
 }
 .avatar-crop-zoom-btn:disabled {
   opacity: 0.35;
   cursor: default;
   color: var(--muted);
+  border-color: transparent;
 }
 .avatar-crop-zoom-track {
   display: block;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 0.35rem 0.05rem;
+  max-width: 100%;
+  padding: 0.35rem 0.15rem;
+  box-sizing: border-box;
 }
 .avatar-crop-zoom,
 .avatar-crop-zoom-label input[type="range"] {
