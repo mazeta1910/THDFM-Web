@@ -79,9 +79,15 @@
       <thead>
         <tr>
           <th>Nome</th>
-          <th>{{ t.clube_casa }}</th>
+          <th class="planilha-th-emblema" title="{{ t.clube_casa }}">
+            <img src="{{ emblema_url(t.clube_casa) }}" alt="{{ t.clube_casa }}" />
+            <span class="sr-only">{{ t.clube_casa }}</span>
+          </th>
           <th></th>
-          <th>{{ t.clube_fora }}</th>
+          <th class="planilha-th-emblema" title="{{ t.clube_fora }}">
+            <img src="{{ emblema_url(t.clube_fora) }}" alt="{{ t.clube_fora }}" />
+            <span class="sr-only">{{ t.clube_fora }}</span>
+          </th>
           <th>Pênaltis</th>
           <th>Acertou</th>
           <th>Vencedor</th>
@@ -89,8 +95,37 @@
       </thead>
       <tbody>
         {% for row in t.linhas %}
-        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}">
-          <td class="planilha-nome">{{ row.nome }}</td>
+        {% if row.tipo == 'grupo' %}
+        <tr class="planilha-grupo planilha-grupo--{{ row.grupo }}">
+          <td colspan="7">
+            <span class="planilha-grupo-label">
+              {% if row.grupo == 'casa' %}
+              <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+              {% elif row.grupo == 'fora' %}
+              <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+              {% endif %}
+              <strong>{{ row.nome }}</strong>
+              <span class="planilha-grupo-n">{{ row.n }}</span>
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="{% if row.tipo == 'placar' %}planilha-placar{% endif %}{% if row.grupo %} planilha-lado--{{ row.grupo }}{% endif %}">
+          <td class="planilha-nome">
+            {% if row.tipo == 'palpite' %}
+            <span class="planilha-nome-com-foto">
+              {% set row_av = avatar_url(row.avatar_path) %}
+              {% if row_av %}
+              <img class="planilha-avatar" src="{{ row_av }}" alt="" />
+              {% else %}
+              <span class="planilha-avatar planilha-avatar-fallback">{{ (row.nome or '??')[:2]|upper }}</span>
+              {% endif %}
+              <span class="planilha-nome-texto">{{ row.nome }}</span>
+            </span>
+            {% else %}
+            {{ row.nome }}
+            {% endif %}
+          </td>
           <td class="planilha-num">{{ row.gols_m }}</td>
           <td class="planilha-x">x</td>
           <td class="planilha-num">{{ row.gols_v }}</td>
@@ -98,6 +133,7 @@
           <td class="{{ row.acertou_class }}">{{ row.acertou }}</td>
           <td class="{{ row.vencedor_class }}">{{ row.vencedor }}</td>
         </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>

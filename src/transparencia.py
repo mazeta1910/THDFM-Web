@@ -6,6 +6,9 @@ from src.db import list_confrontos_completos, list_participantes, palpites_do_pa
 from src.scoring import classificar_palpite, lado_por_clube
 from src.seed_data import formatar_inicio_jogo
 
+_GRUPO_ORDEM = {"casa": 0, "empate": 1, "fora": 2, "sem": 3}
+_ACERTOU_ORDEM = {"Placar": 0, "Gols Casa": 1, "Gols fora": 2, "Nada": 3, "": 4}
+
 
 def _clube_nome(confronto: dict, clube_id: str) -> str:
     return confronto["clube_a"] if clube_id == "a" else confronto["clube_b"]
@@ -35,6 +38,83 @@ def _vencedor_oficial_label(
     if lado in ("a", "b"):
         return _clube_nome(confronto, lado)
     return "—"
+
+
+def _grupo_lado_palpite(
+    gols_m: int,
+    gols_v: int,
+    *,
+    mandante_clube_id: str,
+    visitante_clube_id: str,
+    penaltis_clube_id: str | None,
+) -> str:
+    """Agrupa pelo time que o participante palpitou como vencedor do jogo."""
+    if gols_m > gols_v:
+        return "casa"
+    if gols_m < gols_v:
+        return "fora"
+    if penaltis_clube_id == mandante_clube_id:
+        return "casa"
+    if penaltis_clube_id == visitante_clube_id:
+        return "fora"
+    return "empate"
+
+
+def _linhas_agrupadas_por_time(
+    palpites: list[dict],
+    *,
+    clube_casa: str,
+    clube_fora: str,
+) -> list[dict]:
+    """Insere cabeçalhos de grupo (casa / empate / fora / sem) e ordena dentro de cada um."""
+    buckets: dict[str, list[dict]] = {
+        "casa": [],
+        "empate": [],
+        "fora": [],
+        "sem": [],
+    }
+    for row in palpites:
+        buckets.setdefault(row.get("grupo") or "sem", []).append(row)
+
+    for key, items in buckets.items():
+        items.sort(
+            key=lambda r: (
+                _ACERTOU_ORDEM.get(r.get("acertou") or "", 4),
+                0 if r.get("vencedor") == "Acertou" else 1,
+                (r.get("nome") or "").casefold(),
+            )
+        )
+
+    labels = {
+        "casa": clube_casa,
+        "empate": "Empate",
+        "fora": clube_fora,
+        "sem": "Sem palpite",
+    }
+    out: list[dict] = []
+    for key in ("casa", "empate", "fora", "sem"):
+        items = buckets.get(key) or []
+        if not items:
+            continue
+        out.append(
+            {
+                "tipo": "grupo",
+                "grupo": key,
+                "nome": labels[key],
+                "gols_m": "",
+                "gols_v": "",
+                "penaltis": "",
+                "acertou": "",
+                "vencedor": "",
+                "acertou_class": "",
+                "vencedor_class": "",
+                "sem_palpite": False,
+                "avatar_path": None,
+                "n": len(items),
+            }
+        )
+        out.extend(items)
+    return out
 
 
 def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
@@ -76,6 +156,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                 linhas.append(
                     {
                         "tipo": "placar",
+                        "grupo": "",
                         "nome": "PLACAR",
                         "gols_m": real_m,
                         "gols_v": real_v,
@@ -91,19 +172,26 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         "acertou_class": "",
                         "vencedor_class": "cell-venc-oficial",
                         "sem_palpite": False,
+                        "avatar_path": None,
                     }
                 )
 
+            palpites_rows: list[dict] = []
             for p in liberados:
                 palp = cache_palpites[p["id"]]
                 pj = palp["jogos"].get(jogo["id"])
+                base = {
+                    "tipo": "palpite",
+                    "nome": p["nome"],
+                    "avatar_path": p.get("avatar_path"),
+                }
                 if not pj:
                     if exigir_resultado:
                         continue
-                    linhas.append(
+                    palpites_rows.append(
                         {
-                            "tipo": "palpite",
-                            "nome": p["nome"],
+                            **base,
+                            "grupo": "sem",
                             "gols_m": "—",
                             "gols_v": "—",
                             "penaltis": "",
@@ -122,6 +210,14 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                 if pj["gols_mandante"] == pj["gols_visitante"] and palpite_pen in ("a", "b"):
                     pen_label = _clube_nome(c, palpite_pen)
 
+                grupo = _grupo_lado_palpite(
+                    int(pj["gols_mandante"]),
+                    int(pj["gols_visitante"]),
+                    mandante_clube_id=mandante_id,
+                    visitante_clube_id=visitante_id,
+                    penaltis_clube_id=palpite_pen,
+                )
+
                 if tem_resultado:
                     categoria, acertou_venc = classificar_palpite(
                         int(pj["gols_mandante"]),
@@ -139,10 +235,10 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         "Gols fora": "gols-fora",
                         "Nada": "nada",
                     }.get(categoria, "nada")
-                    linhas.append(
+                    palpites_rows.append(
                         {
-                            "tipo": "palpite",
-                            "nome": p["nome"],
+                            **base,
+                            "grupo": grupo,
                             "gols_m": pj["gols_mandante"],
                             "gols_v": pj["gols_visitante"],
                             "penaltis": pen_label,
@@ -154,10 +250,10 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         }
                     )
                 else:
-                    linhas.append(
+                    palpites_rows.append(
                         {
-                            "tipo": "palpite",
-                            "nome": p["nome"],
+                            **base,
+                            "grupo": grupo,
                             "gols_m": pj["gols_mandante"],
                             "gols_v": pj["gols_visitante"],
                             "penaltis": pen_label,
@@ -168,6 +264,14 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                             "sem_palpite": False,
                         }
                     )
+
+            linhas.extend(
+                _linhas_agrupadas_por_time(
+                    palpites_rows,
+                    clube_casa=clube_casa,
+                    clube_fora=clube_fora,
+                )
+            )
 
             tabelas.append(
                 {
