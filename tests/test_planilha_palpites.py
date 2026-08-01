@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 import src.db as db
 from src.config import ROOT_DIR
-from src.transparencia import montar_portal
+from src.transparencia import _metricas_palpites, montar_portal, ranking_apostadores
 
 
 @pytest.fixture()
@@ -107,3 +107,88 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "data-planilha-grupo-toggle" in r.text
     assert "btn-planilha-grupo-toggle" in r.text
     assert "data-planilha-grupo-item" in r.text
+    assert "planilha-scoreboard" in r.text
+    assert "planilha-metricas" in r.text
+    assert "planilha-head-top-spacer" in r.text
+    assert "Ranking dos apostadores" in r.text
+    assert "Mais empates" in r.text
+    assert "Foto User" in r.text
+
+
+def test_metricas_palpites_conta_lados_medias_e_extremos():
+    rows = [
+        {"nome": "A", "grupo": "casa", "gols_m": 3, "gols_v": 0, "sem_palpite": False},
+        {"nome": "B", "grupo": "casa", "gols_m": 2, "gols_v": 1, "sem_palpite": False},
+        {"nome": "C", "grupo": "empate", "gols_m": 1, "gols_v": 1, "sem_palpite": False},
+        {"nome": "D", "grupo": "fora", "gols_m": 0, "gols_v": 2, "sem_palpite": False},
+        {"nome": "E", "grupo": "casa", "gols_m": None, "gols_v": None, "sem_palpite": True},
+    ]
+    m = _metricas_palpites(rows, clube_casa="Mirassol", clube_fora="Grêmio")
+    assert m["total"] == 4
+    assert m["n_casa"] == 2
+    assert m["n_empate"] == 1
+    assert m["n_fora"] == 1
+    assert m["n_sem"] == 1
+    assert m["pct_casa"] == 50.0
+    assert m["media_gols_partida"] == 2.5
+    assert m["media_gols_casa"] == 1.5
+    assert m["media_gols_fora"] == 1.0
+    assert m["maior_diferenca"]["diff"] == 3
+    assert m["maior_diferenca"]["placar"] == "3 x 0"
+    assert m["maior_diferenca"]["nome"] == "A"
+    assert m["placar_mais_comum"]["n"] >= 1
+    assert m["favorito"] == "casa"
+    assert m["favorito_label"] == "Mirassol"
+    assert m["consenso_pct"] == 50.0
+    assert m["mais_gols"]["nome"] == "A"
+    assert m["mais_gols"]["total"] == 3
+    assert m["menos_gols"]["nome"] == "C"
+    assert m["menos_gols"]["total"] == 2
+
+
+def test_ranking_apostadores_por_fase():
+    tabelas = [
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "Alto", "grupo": "casa", "gols_m": 4, "gols_v": 1, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Baixo", "grupo": "empate", "gols_m": 0, "gols_v": 0, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Empateiro", "grupo": "empate", "gols_m": 1, "gols_v": 1, "sem_palpite": False},
+            ]
+        },
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "Alto", "grupo": "fora", "gols_m": 1, "gols_v": 3, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Baixo", "grupo": "casa", "gols_m": 1, "gols_v": 0, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Empateiro", "grupo": "empate", "gols_m": 2, "gols_v": 2, "sem_palpite": False},
+            ]
+        },
+    ]
+    r = ranking_apostadores(tabelas)
+    assert r is not None
+    assert r["mais_gols"]["nome"] == "Alto"
+    assert r["menos_gols"]["nome"] == "Baixo"
+    assert r["mais_empates"]["nome"] == "Empateiro"
+    assert r["mais_empates"]["n"] == 2
+    assert r["placar_mais_alto"]["nome"] == "Alto"
+    assert r["placar_mais_alto"]["placar"] == "4 x 1"
+
+
+def test_montar_portal_inclui_metricas(client: TestClient):
+    a = db.criar_participante("Met A", status="liberado", celular="11990000011")
+    b = db.criar_participante("Met B", status="liberado", celular="11990000012")
+    confrontos = db.list_confrontos_completos("oitavas")
+    jogo = next(j for j in confrontos[0]["jogos"] if j.get("perna") == "ida")
+    db.salvar_palpite_jogo(a["id"], jogo["id"], 4, 0)
+    db.salvar_palpite_jogo(b["id"], jogo["id"], 1, 1)
+
+    tabelas = [
+        t
+        for t in montar_portal("oitavas", exigir_resultado=False)
+        if t["jogo_id"] == jogo["id"]
+    ]
+    assert len(tabelas) == 1
+    m = tabelas[0]["metricas"]
+    assert m["n_casa"] >= 1
+    assert m["n_empate"] >= 1
+    assert m["media_gols_partida"] is not None
+    assert m["maior_diferenca"]["diff"] == 4
