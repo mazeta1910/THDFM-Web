@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/table.html" import th_sort %}
 {% from "macros/avatar.html" import avatar %}
+{% from "macros/metrica.html" import metrica, metricas_bloco, btn_export_png %}
 {% block title %}Classificação — Bolão THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block content %}
@@ -46,19 +47,7 @@
       </span>
     </div>
     <div class="classificacao-card-actions" data-classificacao-export-ignore>
-      <button
-        type="button"
-        class="btn-classificacao-export secondary"
-        data-classificacao-export
-        title="Exportar classificação em PNG"
-        aria-label="Exportar classificação em PNG"
-      >
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </button>
+      {{ btn_export_png("classificacao", "Exportar classificação em PNG") }}
     </div>
   </div>
   <div class="classificacao-scroll">
@@ -142,48 +131,83 @@
 {% endif %}
 
 {% if hall %}
-<section class="classificacao-hall" aria-label="Hall de estilo">
-  <div class="classificacao-hall-head">
-    <h2>Hall de estilo</h2>
-    <p>Troféus de personalidade do bolão. Passe o mouse (ou foque) no ? para ler o que cada nick significa.</p>
+<div
+  class="card planilha-card planilha-section-card classificacao-hall-card"
+  data-planilha-collapse
+  data-classificacao-export-target
+  data-export-prefix="desgraca"
+  data-export-slug="hall"
+  aria-label="Hall da Desgraça"
+>
+  <div class="planilha-head">
+    <div class="planilha-head-top">
+      <span class="planilha-head-top-spacer" aria-hidden="true"></span>
+      <span class="planilha-jogo-tag">Hall da Desgraça</span>
+      <div class="planilha-head-actions" data-classificacao-export-ignore data-planilha-export-ignore>
+        {{ btn_export_png("classificacao", "Exportar Hall da Desgraça em PNG") }}
+        <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="true" title="Minimizar Hall da Desgraça">
+          <span class="toggle-chevron" aria-hidden="true">▾</span>
+          <span class="btn-toggle-planilha-label">Minimizar</span>
+        </button>
+      </div>
+    </div>
   </div>
-  <div class="classificacao-hall-grid">
-    {% for card in hall %}
-    <article class="hall-card" data-hall-id="{{ card.id }}">
-      <header class="hall-card-head">
-        <h3 class="hall-card-title">{{ card.titulo }}</h3>
-        <span class="col-tip hall-tip" tabindex="0">
-          <span class="col-tip-mark" aria-hidden="true">?</span>
-          <span class="col-tip-bubble" hidden>{{ card.explicacao }}</span>
-          <span class="visually-hidden">{{ card.explicacao }}</span>
-        </span>
-      </header>
-      {% if card.multi and card.grupos %}
-      <ul class="hall-card-grupos">
-        {% for g in card.grupos %}
-        <li>
-          <strong>{{ g.nomes|join(" · ") }}</strong>
-          {% if g.valor_label %}<span class="hall-card-valor">{{ g.valor_label }}</span>{% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="hall-card-nomes"><strong>{{ card.nomes|join(" · ") }}</strong></p>
-      {% if card.valor_label %}<p class="hall-card-valor">{{ card.valor_label }}</p>{% endif %}
-      {% endif %}
-    </article>
-    {% endfor %}
+  <div class="planilha-body">
+    <p class="classificacao-hall-lead">
+      Troféus de personalidade do bolão. Passe o mouse (ou foque) no ? para ler o que cada nick significa.
+    </p>
+    {% call metricas_bloco("Troféus", "Troféus do Hall da Desgraça", grid_class="planilha-grid planilha-metricas-grid classificacao-hall-grid") %}
+      {% for card in hall %}
+      <div class="card planilha-card planilha-metrica-card" data-hall-id="{{ card.id }}">
+        <div class="planilha-head">
+          <span class="planilha-jogo-tag">{{ card.titulo }}</span>
+          <div class="planilha-head-main hall-card-tip-row" data-classificacao-export-ignore>
+            <span class="col-tip hall-tip" tabindex="0">
+              <span class="col-tip-mark" aria-hidden="true">?</span>
+              <span class="col-tip-bubble" hidden>{{ card.explicacao }}</span>
+              <span class="visually-hidden">{{ card.explicacao }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="planilha-body">
+          <div class="planilha-metricas" aria-label="{{ card.titulo }}">
+            {% if card.multi and card.grupos %}
+              {% for g in card.grupos %}
+              {{ metrica(g.nomes|join(" · "), g.valor_label or "—", wide=true) }}
+              {% endfor %}
+            {% else %}
+              {{ metrica("Quem", card.nomes|join(" · "), wide=true) }}
+              {% if card.valor_label %}
+              {{ metrica("Marca", card.valor_label) }}
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% endcall %}
   </div>
-</section>
+</div>
 {% endif %}
 
 <dialog class="ficha-dialog" id="ficha-estilo" aria-labelledby="ficha-estilo-title">
-  <div class="ficha-dialog-inner">
-    <header class="ficha-dialog-head">
-      <h2 id="ficha-estilo-title">Estilo de palpites</h2>
-      <button type="button" class="ficha-dialog-close" data-fechar-ficha aria-label="Fechar">×</button>
-    </header>
-    <div class="ficha-dialog-body" id="ficha-estilo-body"></div>
+  <div
+    class="card classificacao-card ficha-estilo-card"
+    data-classificacao-export-target
+    data-export-prefix="estilo"
+    data-export-slug="ficha"
+  >
+    <div class="classificacao-card-head">
+      <div class="classificacao-card-identity">
+        <strong id="ficha-estilo-title">Estilo de palpites</strong>
+        <span class="classificacao-card-sub" id="ficha-estilo-sub">Ficha individual</span>
+      </div>
+      <div class="classificacao-card-actions" data-classificacao-export-ignore>
+        {{ btn_export_png("classificacao", "Exportar ficha em PNG") }}
+        <button type="button" class="ficha-dialog-close" data-fechar-ficha aria-label="Fechar">×</button>
+      </div>
+    </div>
+    <div class="planilha-body ficha-estilo-body" id="ficha-estilo-body"></div>
   </div>
 </dialog>
 <script type="application/json" id="perfis-estilo-json">{{ perfis|default({})|tojson }}</script>
@@ -328,44 +352,63 @@
   const raw = document.getElementById("perfis-estilo-json");
   const dialog = document.getElementById("ficha-estilo");
   const body = document.getElementById("ficha-estilo-body");
+  const sub = document.getElementById("ficha-estilo-sub");
+  const card = dialog && dialog.querySelector("[data-classificacao-export-target]");
   if (!raw || !dialog || !body) return;
   let perfis = {};
   try { perfis = JSON.parse(raw.textContent || "{}"); } catch (e) { perfis = {}; }
 
   const pct = (v) => (v == null ? "—" : `${v}%`);
+  const tile = (label, value, wide) =>
+    `<div class="planilha-metrica${wide ? " planilha-metrica-wide" : ""}">` +
+    `<span class="planilha-metrica-label">${label}</span>` +
+    `<span class="planilha-metrica-value">${value}</span></div>`;
+
   const render = (p) => {
     if (!p) return "<p>Sem dados de palpites ainda.</p>";
     const badges = (p.badges || [])
-      .map((b) => `<span class="ficha-badge" title="${b.explicacao || ""}">${b.titulo}</span>`)
+      .map((b) => `<span class="ficha-badge" title="${(b.explicacao || "").replace(/"/g, "&quot;")}">${b.titulo}</span>`)
       .join(" ");
     const assinatura = p.placar_assinatura
-      ? `${p.placar_assinatura.placar} (${p.placar_assinatura.n}×)`
+      ? `${p.placar_assinatura.placar} <small>(${p.placar_assinatura.n}×)</small>`
       : "—";
     return `
-      <p class="ficha-nome"><strong>${p.nome}</strong></p>
       ${badges ? `<div class="ficha-badges">${badges}</div>` : ""}
-      <dl class="ficha-grid">
-        <div><dt>Vitórias casa</dt><dd>${p.n_casa} (${pct(p.pct_casa)})</dd></div>
-        <div><dt>Empates</dt><dd>${p.n_empate} (${pct(p.pct_empate)})</dd></div>
-        <div><dt>Vitórias fora</dt><dd>${p.n_fora} (${pct(p.pct_fora)})</dd></div>
-        <div><dt>Placar assinatura</dt><dd>${assinatura}</dd></div>
-        <div><dt>Média de gols</dt><dd>${p.media_gols == null ? "—" : p.media_gols}</dd></div>
-        <div><dt>Média do placar</dt><dd>${p.media_placar || "—"}</dd></div>
-        <div><dt>No favorito do grupo</dt><dd>${pct(p.pct_favorito)}</dd></div>
-        <div><dt>Goleadas (diff ≥ 3)</dt><dd>${p.goleadas}</dd></div>
-        <div><dt>Placares baixos</dt><dd>${p.placares_baixos}</dd></div>
-        <div><dt>Jogos com palpite</dt><dd>${p.n} / ${p.n_jogos_fase}</dd></div>
-        <div><dt>Boquinhas</dt><dd>${p.boquinhas}</dd></div>
-        <div><dt>Zebras que pagaram</dt><dd>${p.zebra_ok}</dd></div>
-        <div><dt>Acertos vencedor</dt><dd>${p.acertos_vencedor}</dd></div>
-        <div><dt>Acertos placar</dt><dd>${p.acertos_placar}</dd></div>
-      </dl>
+      <section class="planilha-metricas-bloco" aria-label="Métricas do participante">
+        <h3 class="planilha-metricas-bloco-title">Perfil</h3>
+        <div class="planilha-metricas">
+          ${tile("Vitórias casa", `${p.n_casa} <small>(${pct(p.pct_casa)})</small>`)}
+          ${tile("Empates", `${p.n_empate} <small>(${pct(p.pct_empate)})</small>`)}
+          ${tile("Vitórias fora", `${p.n_fora} <small>(${pct(p.pct_fora)})</small>`)}
+          ${tile("Placar assinatura", assinatura, true)}
+          ${tile("Média de gols", p.media_gols == null ? "—" : p.media_gols)}
+          ${tile("Média do placar", p.media_placar || "—")}
+          ${tile("No favorito do grupo", pct(p.pct_favorito))}
+          ${tile("Goleadas (diff ≥ 3)", p.goleadas)}
+          ${tile("Placares baixos", p.placares_baixos)}
+          ${tile("Jogos com palpite", `${p.n} / ${p.n_jogos_fase}`)}
+          ${tile("Boquinhas", p.boquinhas)}
+          ${tile("Zebras que pagaram", p.zebra_ok)}
+          ${tile("Acertos vencedor", p.acertos_vencedor)}
+          ${tile("Acertos placar", p.acertos_placar)}
+        </div>
+      </section>
     `;
   };
+
+  const slugify = (texto) => String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 
   const open = (id) => {
     const p = perfis[String(id)] || perfis[id];
     body.innerHTML = render(p);
+    if (sub) sub.textContent = p && p.nome ? p.nome : "Ficha individual";
+    if (card) card.setAttribute("data-export-slug", p && p.nome ? "ficha-" + slugify(p.nome) : "ficha");
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
   };
@@ -389,5 +432,5 @@
   });
 })();
 </script>
-<script src="/static/classificacao-export.js?v=205"></script>
+<script src="/static/classificacao-export.js?v=207"></script>
 {% endblock %}

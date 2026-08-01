@@ -34,12 +34,15 @@
   }
 
   function nomeArquivo(card) {
+    var prefix = slugify(card.getAttribute("data-export-prefix") || "classificacao") || "classificacao";
     var custom = card.getAttribute("data-export-slug");
-    if (custom) return "classificacao-" + slugify(custom) + ".png";
+    if (custom) return prefix + "-" + slugify(custom) + ".png";
     var sub =
-      (card.querySelector(".classificacao-card-sub") || {}).textContent || "";
+      (card.querySelector(".classificacao-card-sub") || {}).textContent ||
+      (card.querySelector(".planilha-jogo-tag") || {}).textContent ||
+      "";
     var slug = slugify(sub) || "ao-vivo";
-    return "classificacao-" + slug + ".png";
+    return prefix + "-" + slug + ".png";
   }
 
   function cardDoBotao(btn) {
@@ -199,6 +202,22 @@
     restoreFns.push(function () {
       card.classList.remove("is-exporting");
     });
+
+    // Hall (e outros cards com minimize) precisam estar abertos no PNG.
+    if (card.classList.contains("is-collapsed")) {
+      var toggle = card.querySelector("[data-planilha-toggle]");
+      if (toggle) {
+        toggle.click();
+        restoreFns.push(function () {
+          toggle.click();
+        });
+      } else {
+        card.classList.remove("is-collapsed");
+        restoreFns.push(function () {
+          card.classList.add("is-collapsed");
+        });
+      }
+    }
 
     // Expande o scroll horizontal para a tabela inteira entrar no PNG.
     if (scroll && table) {

@@ -5217,90 +5217,105 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   text-underline-offset: 2px;
 }
 
-.classificacao-hall {
+.classificacao-hall-card {
   margin-top: 1.75rem;
 }
-.classificacao-hall-head h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.25rem;
-}
-.classificacao-hall-head p {
+.classificacao-hall-lead {
   margin: 0 0 1rem;
   color: var(--muted);
   font-size: 0.92rem;
   max-width: 42rem;
 }
-.classificacao-hall-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+/* Última linha incompleta fica centralizada (meio do card do meio = centro da grade). */
+.classificacao-hall-card .classificacao-hall-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: start;
   gap: 0.75rem;
 }
-.hall-card {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card) 92%, var(--bg));
-  padding: 0.85rem 0.95rem;
+.classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+  flex: 0 0 calc((100% - 3 * 0.75rem) / 4);
+  width: calc((100% - 3 * 0.75rem) / 4);
+  max-width: calc((100% - 3 * 0.75rem) / 4);
+  box-sizing: border-box;
 }
-.hall-card-head {
+@media (max-width: 1400px) {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+    flex-basis: calc((100% - 2 * 0.75rem) / 3);
+    width: calc((100% - 2 * 0.75rem) / 3);
+    max-width: calc((100% - 2 * 0.75rem) / 3);
+  }
+}
+@media (max-width: 1100px) {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+    flex-basis: calc((100% - 0.75rem) / 2);
+    width: calc((100% - 0.75rem) / 2);
+    max-width: calc((100% - 0.75rem) / 2);
+  }
+}
+@media (max-width: 700px) {
+  .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
+    flex-basis: 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+.classificacao-hall-card .planilha-metrica-card > .planilha-head {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.45rem;
+  text-align: left;
 }
-.hall-card-title {
+.hall-card-tip-row {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.25;
-}
-.hall-card-nomes {
-  margin: 0;
-  font-size: 0.92rem;
-}
-.hall-card-valor {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.hall-card-grupos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.9rem;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  width: auto;
 }
 .hall-tip .col-tip-mark {
   width: 1.15rem;
   height: 1.15rem;
   font-size: 0.7rem;
 }
+.classificacao-hall-card .planilha-metrica-card .planilha-jogo-tag {
+  color: var(--accent);
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: calc(100% - 1.75rem);
+}
 
 .ficha-dialog {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--card);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
   padding: 0;
-  max-width: min(32rem, calc(100vw - 2rem));
+  max-width: min(36rem, calc(100vw - 2rem));
   width: 100%;
 }
 .ficha-dialog::backdrop {
   background: rgba(0, 0, 0, 0.55);
 }
-.ficha-dialog-inner {
-  padding: 1rem 1.1rem 1.15rem;
-}
-.ficha-dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-.ficha-dialog-head h2 {
+.ficha-estilo-card {
   margin: 0;
-  font-size: 1.1rem;
+  width: 100%;
+}
+.ficha-estilo-body {
+  padding: 0.85rem 1rem 1.1rem;
 }
 .ficha-dialog-close {
   appearance: none;
@@ -5312,7 +5327,6 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   cursor: pointer;
   padding: 0.1rem 0.35rem;
 }
-.ficha-nome { margin: 0 0 0.5rem; font-size: 1.05rem; }
 .ficha-badges {
   display: flex;
   flex-wrap: wrap;
@@ -5330,24 +5344,6 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-}
-.ficha-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem 0.75rem;
-  margin: 0;
-}
-.ficha-grid dt {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.ficha-grid dd {
-  margin: 0.1rem 0 0;
-  font-size: 0.95rem;
-  font-weight: 600;
 }
 .visually-hidden {
   position: absolute;
