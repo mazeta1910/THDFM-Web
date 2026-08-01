@@ -35,6 +35,9 @@
 
   function nomeArquivo(card) {
     var tag = (card.querySelector(".planilha-jogo-tag") || {}).textContent || "";
+    if (/m[eé]tricas/i.test(tag)) {
+      return "palpites-metricas.png";
+    }
     var title =
       (card.querySelector(".planilha-match-title") || {}).textContent ||
       (card.querySelector(".planilha-head-identity strong") || {}).textContent ||
@@ -94,21 +97,17 @@
 
     if (card.classList.contains("is-collapsed")) {
       var btn = card.querySelector("[data-planilha-toggle]");
-      var label = btn && btn.querySelector(".btn-toggle-planilha-label");
-      card.classList.remove("is-collapsed");
       if (btn) {
-        btn.setAttribute("aria-expanded", "true");
-        btn.title = "Minimizar palpites";
+        btn.click();
+        restoreFns.push(function () {
+          btn.click();
+        });
+      } else {
+        card.classList.remove("is-collapsed");
+        restoreFns.push(function () {
+          card.classList.add("is-collapsed");
+        });
       }
-      if (label) label.textContent = "Minimizar";
-      restoreFns.push(function () {
-        card.classList.add("is-collapsed");
-        if (btn) {
-          btn.setAttribute("aria-expanded", "false");
-          btn.title = "Expandir palpites";
-        }
-        if (label) label.textContent = "Expandir";
-      });
     }
 
     // Expande subgrupos recolhidos só durante a captura.

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/metrica.html" import metrica, metricas_bloco %}
+{% from "macros/metrica.html" import metrica, metricas_bloco, btn_export_png %}
 {% from "macros/emblema.html" import emblema %}
 {% from "macros/avatar.html" import avatar %}
 {% block title %}Palpites dos participantes — Admin THDFM{% endblock %}
@@ -59,6 +59,7 @@
       <span class="planilha-head-top-spacer" aria-hidden="true"></span>
       <span class="planilha-jogo-tag">Métricas</span>
       <div class="planilha-head-actions" data-planilha-export-ignore>
+        {{ btn_export_png("planilha", "Exportar métricas em PNG") }}
         <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="true" title="Minimizar métricas">
           <span class="toggle-chevron" aria-hidden="true">▾</span>
           <span class="btn-toggle-planilha-label">Minimizar</span>
@@ -168,19 +169,7 @@
       <span class="planilha-head-top-spacer" aria-hidden="true"></span>
       <span class="planilha-jogo-tag">JOGO ({{ t.jogo_num or t.confronto_id }}){% if t.inicio_label %} · {{ t.inicio_label }}{% endif %}</span>
       <div class="planilha-head-actions" data-planilha-export-ignore>
-        <button
-          type="button"
-          class="btn-planilha-export secondary"
-          data-planilha-export
-          title="Exportar card em PNG"
-          aria-label="Exportar card em PNG"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </button>
+        {{ btn_export_png("planilha", "Exportar card em PNG") }}
         <button type="button" class="btn-toggle-planilha secondary" data-planilha-toggle aria-expanded="true" title="Minimizar palpites">
           <span class="toggle-chevron" aria-hidden="true">▾</span>
           <span class="btn-toggle-planilha-label">Minimizar</span>
@@ -291,5 +280,5 @@
 {% endfor %}
 </div>
 {% endif %}
-<script src="/static/planilha-export.js?v=196"></script>
+<script src="/static/planilha-export.js?v=197"></script>
 {% endblock %}

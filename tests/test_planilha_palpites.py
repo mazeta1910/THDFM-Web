@@ -91,6 +91,7 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-metricas-wrap" in r.text
     assert "planilha-section-card" in r.text
     assert "planilha-metricas-bloco-title" in r.text
+    assert "Exportar métricas em PNG" in r.text
     assert "Nesta fase/perna" not in r.text
     assert "Palpites por jogo" in r.text
     assert "Mais vitórias casa" in r.text
@@ -99,7 +100,7 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "— Ida" not in r.text
     assert "Foto User" in r.text
     assert "data-planilha-export" in r.text
-    assert "/static/planilha-export.js" in r.text
+    assert "/static/planilha-export.js?v=197" in r.text
 
 def test_metricas_palpites_conta_lados_medias_e_extremos():
     rows = [
@@ -264,4 +265,4 @@ def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
     assert "Acertou +7" in r.text
     assert "Gols Casa +5" in r.text
     assert "planilha-pts-total" in r.text
-    assert "/static/style.css?v=208" in r.text
+    assert "/static/style.css?v=209" in r.text
