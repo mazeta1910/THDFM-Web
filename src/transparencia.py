@@ -117,6 +117,103 @@ def _linhas_agrupadas_por_time(
     return out
 
 
+def _metricas_palpites(
+    palpites_rows: list[dict],
+    *,
+    clube_casa: str = "",
+    clube_fora: str = "",
+) -> dict[str, Any]:
+    """Resumo do bolão para um jogo: lados, médias e extremos."""
+    com = [r for r in palpites_rows if not r.get("sem_palpite")]
+    n_casa = sum(1 for r in com if r.get("grupo") == "casa")
+    n_empate = sum(1 for r in com if r.get("grupo") == "empate")
+    n_fora = sum(1 for r in com if r.get("grupo") == "fora")
+    n_sem = sum(1 for r in palpites_rows if r.get("sem_palpite"))
+    n_com = len(com)
+
+    gols_casa: list[int] = []
+    gols_fora: list[int] = []
+    totais: list[int] = []
+    diffs: list[int] = []
+    placares: dict[str, int] = {}
+    maior: dict[str, Any] | None = None
+
+    for r in com:
+        try:
+            gm = int(r["gols_m"])
+            gv = int(r["gols_v"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        gols_casa.append(gm)
+        gols_fora.append(gv)
+        totais.append(gm + gv)
+        d = abs(gm - gv)
+        diffs.append(d)
+        key = f"{gm} x {gv}"
+        placares[key] = placares.get(key, 0) + 1
+        if maior is None or d > int(maior["diff"]):
+            maior = {
+                "diff": d,
+                "placar": key,
+                "gols_m": gm,
+                "gols_v": gv,
+                "nome": r.get("nome") or "",
+            }
+
+    placar_mais_comum: dict[str, Any] | None = None
+    if placares:
+        best_key, best_n = max(placares.items(), key=lambda kv: (kv[1], kv[0]))
+        placar_mais_comum = {"placar": best_key, "n": best_n}
+
+    def _media(vals: list[int]) -> float | None:
+        if not vals:
+            return None
+        return round(sum(vals) / len(vals), 2)
+
+    favorito = None
+    favorito_label = None
+    consenso_pct = None
+    if n_com:
+        ranking = [
+            ("casa", n_casa, clube_casa or "Casa"),
+            ("empate", n_empate, "Empate"),
+            ("fora", n_fora, clube_fora or "Fora"),
+        ]
+        ranking.sort(key=lambda kv: (-kv[1], kv[0]))
+        if ranking[0][1] > 0:
+            favorito = ranking[0][0]
+            favorito_label = ranking[0][2]
+            consenso_pct = round(100.0 * ranking[0][1] / n_com, 1)
+
+    media_gc = _media(gols_casa)
+    media_gf = _media(gols_fora)
+    gap_medias = None
+    if media_gc is not None and media_gf is not None:
+        gap_medias = round(abs(media_gc - media_gf), 2)
+
+    return {
+        "total": n_com,
+        "n_casa": n_casa,
+        "n_empate": n_empate,
+        "n_fora": n_fora,
+        "n_sem": n_sem,
+        "n_com_palpite": n_com,
+        "pct_casa": round(100.0 * n_casa / n_com, 1) if n_com else None,
+        "pct_empate": round(100.0 * n_empate / n_com, 1) if n_com else None,
+        "pct_fora": round(100.0 * n_fora / n_com, 1) if n_com else None,
+        "media_gols_casa": media_gc,
+        "media_gols_fora": media_gf,
+        "media_gols_partida": _media(totais),
+        "media_diferenca": _media(diffs),
+        "gap_medias": gap_medias,
+        "maior_diferenca": maior,
+        "placar_mais_comum": placar_mais_comum,
+        "favorito": favorito,
+        "favorito_label": favorito_label,
+        "consenso_pct": consenso_pct,
+    }
+
+
 def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
     """Tabelas por jogo com palpites dos liberados, para a fase pedida.
 
@@ -265,6 +362,11 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         }
                     )
 
+            metricas = _metricas_palpites(
+                palpites_rows,
+                clube_casa=clube_casa,
+                clube_fora=clube_fora,
+            )
             linhas.extend(
                 _linhas_agrupadas_por_time(
                     palpites_rows,
@@ -296,6 +398,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                     "titulo": f"Jogo {idx} · {clube_casa} x {clube_fora} · {perna_label}",
                     "tem_resultado": tem_resultado,
                     "linhas": linhas,
+                    "metricas": metricas,
                 }
             )
 

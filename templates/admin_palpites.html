@@ -53,6 +53,7 @@
 <div class="card planilha-card" data-planilha-collapse>
   <div class="planilha-head">
     <div class="planilha-head-top">
+      <span class="planilha-head-top-spacer" aria-hidden="true"></span>
       <span class="planilha-jogo-tag">JOGO ({{ t.jogo_num or t.confronto_id }}){% if t.inicio_label %} · {{ t.inicio_label }}{% endif %}</span>
       <div class="planilha-head-actions" data-planilha-export-ignore>
         <button
@@ -74,14 +75,71 @@
         </button>
       </div>
     </div>
-    <div class="planilha-head-main">
-      <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
-      <strong class="planilha-match-title">{{ t.clube_casa }} x {{ t.clube_fora }}</strong>
-      <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+    <div class="planilha-scoreboard">
+      <div class="planilha-scoreboard-row">
+        <strong class="planilha-team-name planilha-team-home">{{ t.clube_casa }}</strong>
+        <img src="{{ emblema_url(t.clube_casa) }}" alt="" />
+        <span class="planilha-vs">x</span>
+        <img src="{{ emblema_url(t.clube_fora) }}" alt="" />
+        <strong class="planilha-team-name planilha-team-away">{{ t.clube_fora }}</strong>
+      </div>
       <span class="planilha-perna">— {{ t.perna_label }}</span>
     </div>
     {% if not t.tem_resultado %}
     <span class="planilha-head-sub">aguardando placar oficial</span>
+    {% endif %}
+    {% if t.metricas and t.metricas.total %}
+    {% set m = t.metricas %}
+    <div class="planilha-metricas" aria-label="Métricas dos palpites">
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Casa</span>
+        <span class="planilha-metrica-value">{{ m.n_casa }}{% if m.pct_casa is not none %} <small>({{ m.pct_casa }}%)</small>{% endif %}</span>
+      </div>
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Empate</span>
+        <span class="planilha-metrica-value">{{ m.n_empate }}{% if m.pct_empate is not none %} <small>({{ m.pct_empate }}%)</small>{% endif %}</span>
+      </div>
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Fora</span>
+        <span class="planilha-metrica-value">{{ m.n_fora }}{% if m.pct_fora is not none %} <small>({{ m.pct_fora }}%)</small>{% endif %}</span>
+      </div>
+      {% if m.media_gols_partida is not none %}
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Média gols</span>
+        <span class="planilha-metrica-value">{{ '%.2f'|format(m.media_gols_partida) }}</span>
+      </div>
+      {% endif %}
+      {% if m.media_gols_casa is not none and m.media_gols_fora is not none %}
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Média placar</span>
+        <span class="planilha-metrica-value">{{ '%.1f'|format(m.media_gols_casa) }}–{{ '%.1f'|format(m.media_gols_fora) }}</span>
+      </div>
+      {% endif %}
+      {% if m.maior_diferenca %}
+      <div class="planilha-metrica planilha-metrica-wide">
+        <span class="planilha-metrica-label">Maior diferença</span>
+        <span class="planilha-metrica-value">{{ m.maior_diferenca.placar }} <small>({{ m.maior_diferenca.nome }} · {{ m.maior_diferenca.diff }} gols)</small></span>
+      </div>
+      {% endif %}
+      {% if m.placar_mais_comum %}
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Mais comum</span>
+        <span class="planilha-metrica-value">{{ m.placar_mais_comum.placar }} <small>({{ m.placar_mais_comum.n }}×)</small></span>
+      </div>
+      {% endif %}
+      {% if m.favorito_label %}
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Favorito</span>
+        <span class="planilha-metrica-value">{{ m.favorito_label }}{% if m.consenso_pct is not none %} <small>({{ m.consenso_pct }}%)</small>{% endif %}</span>
+      </div>
+      {% endif %}
+      {% if m.n_sem %}
+      <div class="planilha-metrica">
+        <span class="planilha-metrica-label">Sem palpite</span>
+        <span class="planilha-metrica-value">{{ m.n_sem }}</span>
+      </div>
+      {% endif %}
+    </div>
     {% endif %}
   </div>
   <div class="planilha-body">
