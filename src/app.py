@@ -54,7 +54,7 @@ from src.config import (
 from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado
 from src.seed_data import emblema_url, formatar_inicio_jogo, nome_clube_curto
-from src.transparencia import montar_portal
+from src.transparencia import montar_portal, ranking_apostadores
 
 load_dotenv(ROOT_DIR / ".env")
 
@@ -1252,6 +1252,7 @@ def admin_palpites(request: Request):
         janela=janela,
         volta_liberada=volta_liberada,
         tabelas=tabelas,
+        ranking=ranking_apostadores(tabelas),
     )
 
 
