@@ -274,6 +274,50 @@ def _overlap(a: dict[int, str], b: dict[int, str]) -> tuple[int, int]:
     return iguais, len(comuns)
 
 
+# Empates com mais de 3 nomes: lista só os primeiros + “e mais N”.
+_LIMITE_NOMES_LISTA = 3
+# Fotos só quando há poucos participantes (1–4).
+_MAX_FOTOS = 4
+_GRUPOS_FIXOS = frozenset({"casalzinho", "triangulo", "quarteto", "arqui_inimigos"})
+
+
+def _rotulo_nomes(nomes: list[str], *, truncar: bool = True) -> str:
+    limpos = [n for n in nomes if n]
+    if not limpos:
+        return "—"
+    if not truncar or len(limpos) <= _LIMITE_NOMES_LISTA:
+        return " · ".join(limpos)
+    head = " · ".join(limpos[:_LIMITE_NOMES_LISTA])
+    return f"{head} e mais {len(limpos) - _LIMITE_NOMES_LISTA}"
+
+
+def _pessoas_de(
+    ids: list[int],
+    nomes: list[str],
+    by_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for i, pid in enumerate(ids or []):
+        p = by_id.get(int(pid))
+        if p:
+            out.append(
+                {
+                    "id": int(pid),
+                    "nome": p.get("nome") or (nomes[i] if i < len(nomes) else ""),
+                    "avatar_path": p.get("avatar_path"),
+                }
+            )
+        else:
+            out.append(
+                {
+                    "id": int(pid),
+                    "nome": nomes[i] if i < len(nomes) else "",
+                    "avatar_path": None,
+                }
+            )
+    return out
+
+
 def _melhor_grupo(
     perfis: list[dict[str, Any]],
     tamanho: int,
@@ -421,7 +465,8 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
             "nomes": [pk],
             "ids": [],
             "valor": pn,
-            "valor_label": f"{pk} ({pn}×)",
+            "valor_label": f"{pn}×",
+            "quem_label": "Qual",
         }
 
     casal = _melhor_grupo(com_palpite, 2, maximizar=True)
@@ -448,6 +493,7 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
         ("placar_visto", placar_visto),
     ]
 
+    by_id = {int(p["participante_id"]): p for p in perfis}
     badges_por_id: dict[int, list[str]] = defaultdict(list)
     cards: list[dict[str, Any]] = []
     for nick_id, winner in cards_spec:
@@ -455,33 +501,52 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
         if nick_id == "arqui_inimigos":
             if not arqui:
                 continue
+            grupos = []
+            for g in arqui:
+                pessoas = _pessoas_de(g.get("ids") or [], g.get("nomes") or [], by_id)
+                grupos.append(
+                    {
+                        **g,
+                        "pessoas": pessoas,
+                        "nomes_label": _rotulo_nomes(g.get("nomes") or [], truncar=False),
+                        "mostrar_fotos": 0 < len(pessoas) <= _MAX_FOTOS,
+                    }
+                )
+                for pid in g["ids"]:
+                    badges_por_id[pid].append(nick_id)
             cards.append(
                 {
                     "id": nick_id,
                     "titulo": label,
                     "explicacao": expl,
-                    "grupos": arqui,  # várias duplas
+                    "grupos": grupos,
                     "multi": True,
                 }
             )
-            for g in arqui:
-                for pid in g["ids"]:
-                    badges_por_id[pid].append(nick_id)
             continue
         if not winner:
             continue
+        ids_w = list(winner.get("ids") or [])
+        nomes_w = list(winner.get("nomes") or [])
+        pessoas = _pessoas_de(ids_w, nomes_w, by_id)
+        truncar = nick_id not in _GRUPOS_FIXOS and nick_id != "placar_visto"
+        n_pessoas = len(pessoas) if pessoas else len(nomes_w)
         cards.append(
             {
                 "id": nick_id,
                 "titulo": label,
                 "explicacao": expl,
-                "nomes": winner["nomes"],
-                "ids": winner.get("ids") or [],
+                "nomes": nomes_w,
+                "ids": ids_w,
+                "pessoas": pessoas,
+                "nomes_label": _rotulo_nomes(nomes_w, truncar=truncar),
+                "quem_label": winner.get("quem_label") or "Quem",
                 "valor_label": winner.get("valor_label") or "",
+                "mostrar_fotos": bool(pessoas) and 0 < n_pessoas <= _MAX_FOTOS,
                 "multi": False,
             }
         )
-        for pid in winner.get("ids") or []:
+        for pid in ids_w:
             badges_por_id[pid].append(nick_id)
 
     for p in perfis:
