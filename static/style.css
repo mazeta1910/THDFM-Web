@@ -6370,12 +6370,18 @@ textarea.xonha-input {
   box-shadow: 0 0 0 1px rgba(232, 93, 4, 0.12);
   padding: 1.15rem 1.15rem 1.25rem;
 }
-.listra-ano-head {
+.listra-ano-summary {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.listra-ano-summary::-webkit-details-marker { display: none; }
+.listra-ano-card[open] > .listra-ano-summary {
   margin-bottom: 0.85rem;
 }
 .listra-ano-badge {
@@ -6404,31 +6410,39 @@ textarea.xonha-input {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.listra-ano-details {
-  margin: 0;
+.listra-ano-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: auto;
 }
-.listra-ano-summary {
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.9rem;
+.listra-ano-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
   color: var(--muted);
-  list-style: none;
-  user-select: none;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
-.listra-ano-summary::-webkit-details-marker { display: none; }
 .listra-ano-summary-label--fechar { display: none; }
-.listra-ano-details[open] > .listra-ano-summary {
-  margin-bottom: 0.75rem;
-  color: var(--text);
-}
-.listra-ano-details[open] > .listra-ano-summary .listra-ano-summary-label--abrir {
+.listra-ano-card[open] > .listra-ano-summary .listra-ano-summary-label--abrir {
   display: none;
 }
-.listra-ano-details[open] > .listra-ano-summary .listra-ano-summary-label--fechar {
+.listra-ano-card[open] > .listra-ano-summary .listra-ano-summary-label--fechar {
   display: inline;
 }
-.listra-ano-details .listra-list {
-  margin-top: 0.25rem;
+.listra-ano-card[open] > .listra-ano-summary .listra-ano-toggle {
+  color: var(--text);
+  border-color: rgba(232, 93, 4, 0.35);
+}
+.listra-ano-card > .listra-list {
+  margin-top: 0;
 }
 .listra-wa-btn {
   border: none;
