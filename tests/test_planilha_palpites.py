@@ -9,7 +9,12 @@ from fastapi.testclient import TestClient
 
 import src.db as db
 from src.config import ROOT_DIR
-from src.transparencia import _metricas_palpites, montar_portal, ranking_apostadores
+from src.transparencia import (
+    _metricas_palpites,
+    metricas_gerais,
+    montar_portal,
+    ranking_apostadores,
+)
 
 
 @pytest.fixture()
@@ -110,10 +115,13 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-match-title" in r.text
     assert "planilha-metricas" in r.text
     assert "planilha-head-top-spacer" in r.text
-    assert "Ranking dos apostadores" in r.text
-    assert "Métricas dos jogos" in r.text
+    assert "planilha-jogo-tag\">Métricas<" in r.text
+    assert "Gerais" in r.text
+    assert "Dos jogos" in r.text
+    assert "Dos participantes" in r.text
     assert "planilha-metricas-wrap" in r.text
     assert "planilha-section-card" in r.text
+    assert "planilha-metricas-bloco-title" in r.text
     assert "Nesta fase/perna" not in r.text
     assert "Palpites por jogo" in r.text
     assert "Mais gols casa" in r.text
@@ -182,6 +190,30 @@ def test_ranking_apostadores_por_fase():
     assert r["mais_casa"]["pct"] is not None
     assert r["placar_mais_alto"]["nome"] == "Alto"
     assert r["placar_mais_alto"]["placar"] == "4 x 1"
+
+
+def test_metricas_gerais_agrega_fase():
+    tabelas = [
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "A", "grupo": "casa", "gols_m": 2, "gols_v": 0, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "B", "grupo": "empate", "gols_m": 1, "gols_v": 1, "sem_palpite": False},
+            ]
+        },
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "A", "grupo": "fora", "gols_m": 0, "gols_v": 2, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "B", "grupo": "fora", "gols_m": 1, "gols_v": 3, "sem_palpite": False},
+            ]
+        },
+    ]
+    g = metricas_gerais(tabelas)
+    assert g is not None
+    assert g["n_casa"] == 1
+    assert g["n_empate"] == 1
+    assert g["n_fora"] == 2
+    assert g["total"] == 4
+    assert g["favorito"] == "fora"
 
 
 def test_montar_portal_inclui_metricas(client: TestClient):
