@@ -65,11 +65,6 @@
             <label class="conta-label" for="conta-drawer-username">Username (login)</label>
             <input id="conta-drawer-username" class="conta-input" type="text" value="{{ p.username }}" readonly disabled />
             <p class="conta-hint">Username fixo. Use-o em Entrar.</p>
-            <p class="login-forgot-wrap conta-username-change-wrap">
-              <button type="button" class="login-forgot-btn" id="btn-mudar-username" data-mudar-username-open>
-                Quero mudar o meu username
-              </button>
-            </p>
             {% endif %}
 
             <p class="conta-hint conta-hint--foto">Clique na foto para alterar · JPG, PNG ou WebP — máx. 3 MB</p>
@@ -122,28 +117,5 @@
       </div>
     </div>
   </aside>
-</div>
-
-<div class="modal-backdrop" id="modal-mudar-username" hidden>
-  <div
-    class="inscricao-modal modal-esqueci modal-mudar-username"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-mudar-username-title"
-  >
-    <button type="button" class="modal-close-x" id="modal-mudar-username-fechar" title="Fechar" aria-label="Fechar">×</button>
-    <h3 id="modal-mudar-username-title">Quero mudar o meu username</h3>
-    <p class="modal-esqueci-lead">Vai ficar querendo.</p>
-    <figure class="modal-esqueci-gif">
-      <img
-        src="/static/img/macaco-rindo.gif"
-        alt="Macaco rindo"
-        width="165"
-        height="206"
-        decoding="async"
-      />
-    </figure>
-    <button type="button" class="modal-ok" id="modal-mudar-username-ok">Ok</button>
-  </div>
 </div>
 {% endif %}

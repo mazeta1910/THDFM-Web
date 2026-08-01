@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=187" />
+  <link rel="stylesheet" href="/static/style.css?v=188" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -950,10 +950,7 @@
     closeBtn?.addEventListener("click", fechar);
     backdrop?.addEventListener("click", fechar);
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape" || !root.classList.contains("is-open")) return;
-      const modalUser = document.getElementById("modal-mudar-username");
-      if (modalUser && modalUser.classList.contains("is-open")) return;
-      fechar();
+      if (e.key === "Escape" && root.classList.contains("is-open")) fechar();
     });
 
     if (new URLSearchParams(location.search).get("conta") === "1") {
@@ -979,38 +976,6 @@
         input.click();
       });
     });
-
-    // Modal "Quero mudar o meu username"
-    const modalUser = document.getElementById("modal-mudar-username");
-    if (modalUser) {
-      document.body.appendChild(modalUser);
-      const abrirUser = () => {
-        modalUser.removeAttribute("hidden");
-        modalUser.classList.add("is-open");
-      };
-      const fecharUser = () => {
-        modalUser.classList.remove("is-open");
-        modalUser.setAttribute("hidden", "");
-      };
-      document.querySelectorAll("[data-mudar-username-open]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          abrirUser();
-        });
-      });
-      document.getElementById("modal-mudar-username-ok")?.addEventListener("click", fecharUser);
-      document.getElementById("modal-mudar-username-fechar")?.addEventListener("click", fecharUser);
-      modalUser.addEventListener("click", (e) => {
-        if (e.target === modalUser) fecharUser();
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modalUser.classList.contains("is-open")) {
-          fecharUser();
-          e.stopPropagation();
-        }
-      });
-    }
   })();
   </script>
   <script>

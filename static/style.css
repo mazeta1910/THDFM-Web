@@ -5565,11 +5565,7 @@ a.btn.loguin-entry-btn:hover {
 .login-forgot-btn:hover {
   opacity: 0.85;
 }
-.conta-username-change-wrap {
-  margin: 0.15rem 0 0.35rem;
-}
-.modal-esqueci #modal-esqueci-title,
-.modal-mudar-username #modal-mudar-username-title {
+.modal-esqueci #modal-esqueci-title {
   margin: 0 0 0.55rem;
   color: var(--accent);
   font-size: 1.2rem;
