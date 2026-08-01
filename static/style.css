@@ -3252,6 +3252,7 @@ html[data-theme="light"] .admin-main {
   margin: 0;
   flex: 1 1 100%;
 }
+.toast-host,
 .admin-toast-host {
   position: fixed;
   right: 1rem;
@@ -3264,6 +3265,7 @@ html[data-theme="light"] .admin-main {
   pointer-events: none;
   max-width: min(360px, calc(100vw - 2rem));
 }
+.toast,
 .admin-toast {
   pointer-events: auto;
   width: 100%;
@@ -3279,10 +3281,12 @@ html[data-theme="light"] .admin-main {
   transform: translateY(12px);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
+.toast.is-show,
 .admin-toast.is-show {
   opacity: 1;
   transform: translateY(0);
 }
+.toast-erro,
 .admin-toast-erro {
   border-color: var(--erro-border);
   background: var(--erro-bg);

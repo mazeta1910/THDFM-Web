@@ -890,7 +890,8 @@ def grupo_listra_atualizar(
             status_code=303,
         )
     return RedirectResponse(
-        f"/grupo/listra?msg={quote('Frase atualizada')}#listra-frase-{int(frase_id)}",
+        f"/grupo/listra?msg={quote('Edição feita com sucesso')}"
+        f"#listra-frase-{int(frase_id)}",
         status_code=303,
     )
 

@@ -16,14 +16,13 @@
     </p>
   </header>
 
-  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
-  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
-
   <p class="listra-count-global">
     <strong>{{ total_frases }}</strong> frases no acervo
   </p>
 
   <p class="listra-wa-hint" id="listra-wa-hint" hidden role="status"></p>
+
+  <div class="toast-host" id="listra-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
   {% if pode_adicionar %}
   <section class="card listra-add-card">
@@ -348,21 +347,71 @@
 
 <script>
 (function () {
+  var toastHost = document.getElementById("listra-toast-host");
+  function showToast(text, type) {
+    if (!toastHost || !text) return;
+    var el = document.createElement("div");
+    el.className = "toast toast-" + (type || "ok");
+    el.setAttribute("role", "status");
+    el.textContent = text;
+    toastHost.appendChild(el);
+    requestAnimationFrame(function () {
+      el.classList.add("is-show");
+    });
+    window.setTimeout(function () {
+      el.classList.remove("is-show");
+      window.setTimeout(function () {
+        el.remove();
+      }, 280);
+    }, 3800);
+  }
+
+  {% if msg %}showToast({{ msg.replace('+', ' ') | tojson }}, "ok");{% endif %}
+  {% if erro %}showToast({{ erro.replace('+', ' ') | tojson }}, "erro");{% endif %}
+
   var hash = location.hash || "";
   if (!hash || hash.indexOf("#listra-") !== 0) return;
-  var el = document.getElementById(hash.slice(1));
+  var id = hash.slice(1);
+  var el = document.getElementById(id);
   if (!el) return;
+
+  // Evita o salto nativo do #hash (topo do item) antes de centralizar.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  var baseUrl = location.pathname + location.search;
+  try {
+    history.replaceState(null, "", baseUrl);
+  } catch (e) {}
+
   var card = el.closest("details.listra-ano-card");
   if (card) card.open = true;
-  // Garante o acervo aberto antes de rolar (details fechado some o alvo).
-  requestAnimationFrame(function () {
-    el.scrollIntoView({ block: "center", behavior: "auto" });
+
+  function centralizarItem() {
+    var rect = el.getBoundingClientRect();
+    var absTop = rect.top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+    var alvo = absTop - window.innerHeight / 2 + rect.height / 2;
+    if (alvo < 0) alvo = 0;
+    window.scrollTo(0, Math.round(alvo));
+  }
+
+  function destacar() {
+    centralizarItem();
     if (el.classList.contains("listra-item")) {
       el.classList.add("listra-item--flash");
       window.setTimeout(function () {
         el.classList.remove("listra-item--flash");
       }, 1600);
     }
+    try {
+      history.replaceState(null, "", baseUrl + "#" + id);
+    } catch (e2) {}
+  }
+
+  // Abre o <details> e espera o layout estabilizar antes de centralizar.
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      destacar();
+      window.setTimeout(centralizarItem, 50);
+    });
   });
 })();
 </script>
