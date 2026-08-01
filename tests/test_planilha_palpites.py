@@ -101,3 +101,6 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "Foto User" in r.text
     assert "/avatars/foto.jpg" in r.text
     assert "planilha-zebra" in r.text
+    assert "data-planilha-export" in r.text
+    assert "/static/planilha-export.js" in r.text
+    assert "Exportar card em PNG" in r.text
