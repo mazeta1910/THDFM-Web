@@ -1863,6 +1863,23 @@ def listra_texto_whatsapp(
     return "\n".join(linhas).rstrip() + "\n"
 
 
+def _normalizar_listra_frase_campos(
+    texto: str, responsavel: str, *, exigir_responsavel: bool = True
+) -> tuple[str, str]:
+    texto_ok = re.sub(r"\s+\n", "\n", (texto or "").strip())
+    texto_ok = re.sub(r"[ \t]+", " ", texto_ok)
+    if not texto_ok:
+        raise ValueError("Informe a frase.")
+    if len(texto_ok) > 2000:
+        raise ValueError("Frase com no máximo 2000 caracteres.")
+    resp_ok = re.sub(r"\s+", " ", (responsavel or "").strip())
+    if exigir_responsavel and not resp_ok:
+        raise ValueError("Informe o responsável.")
+    if len(resp_ok) > NOME_MAX_LEN:
+        raise ValueError(f"Responsável com no máximo {NOME_MAX_LEN} caracteres.")
+    return texto_ok, resp_ok
+
+
 def criar_listra_frase(
     texto: str,
     responsavel: str,
@@ -1872,17 +1889,7 @@ def criar_listra_frase(
 ) -> dict[str, Any]:
     from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS
 
-    texto_ok = re.sub(r"\s+\n", "\n", (texto or "").strip())
-    texto_ok = re.sub(r"[ \t]+", " ", texto_ok)
-    if not texto_ok:
-        raise ValueError("Informe a frase.")
-    if len(texto_ok) > 2000:
-        raise ValueError("Frase com no máximo 2000 caracteres.")
-    resp_ok = re.sub(r"\s+", " ", (responsavel or "").strip())
-    if not resp_ok:
-        raise ValueError("Informe o responsável.")
-    if len(resp_ok) > NOME_MAX_LEN:
-        raise ValueError(f"Responsável com no máximo {NOME_MAX_LEN} caracteres.")
+    texto_ok, resp_ok = _normalizar_listra_frase_campos(texto, responsavel)
     ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
     if ano_ok not in LISTRA_ANOS:
         raise ValueError("Ano inválido para a Listra.")
@@ -1900,6 +1907,39 @@ def criar_listra_frase(
         row = conn.execute(
             f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
             (cur.lastrowid,),
+        ).fetchone()
+        return dict(row)
+
+
+def get_listra_frase(frase_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
+            (frase_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def atualizar_listra_frase(
+    frase_id: int,
+    *,
+    texto: str,
+    responsavel: str,
+) -> dict[str, Any]:
+    if not get_listra_frase(frase_id):
+        raise ValueError("Frase não encontrada.")
+    # Responsável pode ficar vazio (volta a aparecer como Acervo do ano).
+    texto_ok, resp_ok = _normalizar_listra_frase_campos(
+        texto, responsavel, exigir_responsavel=False
+    )
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE listra_frases SET texto = ?, responsavel = ? WHERE id = ?",
+            (texto_ok, resp_ok, frase_id),
+        )
+        row = conn.execute(
+            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases WHERE id = ?",
+            (frase_id,),
         ).fetchone()
         return dict(row)
 

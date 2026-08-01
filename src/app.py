@@ -818,6 +818,32 @@ def grupo_listra_criar(
     )
 
 
+@app.post("/grupo/listra/atualizar")
+def grupo_listra_atualizar(
+    request: Request,
+    frase_id: int = Form(...),
+    texto: str = Form(...),
+    responsavel: str = Form(""),
+):
+    if not admin_ok(request):
+        return RedirectResponse(
+            "/grupo/listra?erro="
+            + quote("Só a administração pode editar frases."),
+            status_code=303,
+        )
+    try:
+        db.atualizar_listra_frase(frase_id, texto=texto, responsavel=responsavel)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/grupo/listra?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/grupo/listra?msg={quote('Frase atualizada')}",
+        status_code=303,
+    )
+
+
 @app.post("/grupo/listra/apagar")
 def grupo_listra_apagar(request: Request, frase_id: int = Form(...)):
     if not admin_ok(request):
