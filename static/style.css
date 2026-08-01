@@ -5803,7 +5803,39 @@ html.theme-light .xonha-hero {
 }
 .xonha-weekdays h2,
 .xonha-timeline h2 {
-  margin-top: 0;
+  margin: 0;
+}
+.xonha-timeline-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.xonha-timeline-summary::-webkit-details-marker { display: none; }
+.xonha-timeline-summary::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: auto;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-135deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+.xonha-timeline:not([open]) > .xonha-timeline-summary::after {
+  transform: rotate(45deg);
+}
+.xonha-timeline-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.xonha-timeline[open] > .xonha-list,
+.xonha-timeline[open] > .xonha-empty {
+  margin-top: 0.85rem;
 }
 .xonha-weekday-list {
   list-style: none;

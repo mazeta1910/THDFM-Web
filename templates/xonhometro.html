@@ -176,8 +176,13 @@
   </section>
   {% endif %}
 
-  <section class="xonha-timeline card">
-    <h2>Linha do tempo</h2>
+  <details class="xonha-timeline card" open>
+    <summary class="xonha-timeline-summary">
+      <h2>Linha do tempo</h2>
+      {% if eventos %}
+      <span class="xonha-timeline-count">{{ eventos|length }} registro{{ 's' if eventos|length != 1 else '' }}</span>
+      {% endif %}
+    </summary>
     {% if eventos %}
     <ol class="xonha-list">
       {% for e in eventos %}
@@ -200,6 +205,6 @@
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
-  </section>
+  </details>
 </section>
 {% endblock %}
