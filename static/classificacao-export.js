@@ -86,6 +86,110 @@
     });
   }
 
+  // html2canvas 1.4.1 não parseia color(srgb…)/lab/oklch que o Chrome
+  // devolve via getComputedStyle quando o CSS usa color-mix().
+  var COLOR_STYLE_PROPS = [
+    "color",
+    "backgroundColor",
+    "borderTopColor",
+    "borderRightColor",
+    "borderBottomColor",
+    "borderLeftColor",
+    "outlineColor",
+    "textDecorationColor",
+    "columnRuleColor",
+    "caretColor",
+  ];
+
+  function needsModernColorFix(value) {
+    return !!(
+      value &&
+      /color\s*\(|lab\s*\(|lch\s*\(|oklab\s*\(|oklch\s*\(|color-mix\s*\(/i.test(
+        value
+      )
+    );
+  }
+
+  function srgbChannelTo255(ch) {
+    ch = String(ch).trim();
+    if (ch.charAt(ch.length - 1) === "%") {
+      return Math.round(parseFloat(ch) * 2.55);
+    }
+    var n = parseFloat(ch);
+    if (!isFinite(n)) return 0;
+    // Chrome normalmente devolve canais 0–1 em color(srgb …).
+    if (n >= 0 && n <= 1) return Math.round(n * 255);
+    return Math.max(0, Math.min(255, Math.round(n)));
+  }
+
+  function alphaChannel(ch) {
+    ch = String(ch).trim();
+    if (ch.charAt(ch.length - 1) === "%") return parseFloat(ch) / 100;
+    var n = parseFloat(ch);
+    return isFinite(n) ? n : 1;
+  }
+
+  function modernColorToRgb(value) {
+    if (!value || !needsModernColorFix(value)) return value;
+    var m = String(value)
+      .trim()
+      .match(
+        /^color\(\s*srgb\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s\/]+)(?:\s*\/\s*([^\s\)]+))?\s*\)$/i
+      );
+    if (!m) return value;
+    var r = srgbChannelTo255(m[1]);
+    var g = srgbChannelTo255(m[2]);
+    var b = srgbChannelTo255(m[3]);
+    if (m[4] !== undefined) {
+      return "rgba(" + r + ", " + g + ", " + b + ", " + alphaChannel(m[4]) + ")";
+    }
+    return "rgb(" + r + ", " + g + ", " + b + ")";
+  }
+
+  function fixModernColorsInValue(value) {
+    if (!needsModernColorFix(value)) return value;
+    return String(value).replace(/color\(\s*srgb\s+[^)]+\)/gi, function (match) {
+      var fixed = modernColorToRgb(match);
+      return fixed || match;
+    });
+  }
+
+  function flattenColorsForHtml2Canvas(clonedRoot) {
+    if (!clonedRoot || !clonedRoot.querySelectorAll) return;
+    var view =
+      (clonedRoot.ownerDocument && clonedRoot.ownerDocument.defaultView) ||
+      window;
+    var nodes = [clonedRoot].concat(
+      Array.prototype.slice.call(clonedRoot.querySelectorAll("*"))
+    );
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!el || el.nodeType !== 1 || !el.style) continue;
+      var cs;
+      try {
+        cs = view.getComputedStyle(el);
+      } catch (e) {
+        continue;
+      }
+      if (!cs) continue;
+      for (var p = 0; p < COLOR_STYLE_PROPS.length; p++) {
+        var prop = COLOR_STYLE_PROPS[p];
+        var raw = cs[prop];
+        if (!needsModernColorFix(raw)) continue;
+        var fixed = modernColorToRgb(raw);
+        if (fixed && fixed !== raw) el.style[prop] = fixed;
+      }
+      var shadow = cs.boxShadow;
+      if (needsModernColorFix(shadow)) {
+        el.style.boxShadow = fixModernColorsInValue(shadow);
+      }
+      var bgImage = cs.backgroundImage;
+      if (needsModernColorFix(bgImage)) {
+        el.style.backgroundImage = fixModernColorsInValue(bgImage);
+      }
+    }
+  }
+
   function prepararCaptura(card) {
     var restoreFns = [];
     var scroll = card.querySelector(".classificacao-scroll");
@@ -176,6 +280,9 @@
             el.hasAttribute &&
             el.hasAttribute("data-classificacao-export-ignore")
           );
+        },
+        onclone: function (_clonedDoc, clonedEl) {
+          flattenColorsForHtml2Canvas(clonedEl || _clonedDoc.body);
         },
       });
       await baixarPng(canvas, nomeArquivo(card));
