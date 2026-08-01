@@ -83,7 +83,6 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "data-listra-ordenar" in body
     assert "Nome do meliante:" in body
     assert 'id="listra-toast-host"' in body
-    assert 'id="listra-meliantes-list"' in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
 
@@ -210,7 +209,9 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     pub = client.get("/grupo/listra")
     assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text
-    assert 'list="listra-meliantes-list"' in pub.text
+    assert 'data-listra-meliante-select' in pub.text
+    assert "listra-save-btn" in pub.text
+    assert "Selecione o meliante" in pub.text
     assert "Usar seleção" not in pub.text
     assert "Nome do meliante:" in pub.text
     # Exibe data · hora no card
