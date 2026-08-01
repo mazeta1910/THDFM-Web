@@ -61,5 +61,5 @@ def test_forms_tem_maxlength_30(client: TestClient):
 
     r2 = client.get("/inscricao")
     assert r2.status_code == 200
-    assert 'maxlength="30"' in r2.text
-    assert "Máximo 30 caracteres" in r2.text
+    # Inscrições encerradas após 01/08 13:30 — formulário some.
+    assert "Inscrições encerradas" in r2.text

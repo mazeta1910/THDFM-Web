@@ -71,9 +71,6 @@
     {% if metricas_gerais %}
     {% set g = metricas_gerais %}
     {% call metricas_bloco("Gerais", "Métricas gerais") %}
-      {{ metrica("Casa", g.n_casa ~ ((' <small>(' ~ g.pct_casa ~ '%)</small>') if g.pct_casa is not none else '')) }}
-      {{ metrica("Empate", g.n_empate ~ ((' <small>(' ~ g.pct_empate ~ '%)</small>') if g.pct_empate is not none else '')) }}
-      {{ metrica("Fora", g.n_fora ~ ((' <small>(' ~ g.pct_fora ~ '%)</small>') if g.pct_fora is not none else '')) }}
       {% if g.media_gols_partida is not none %}
       {{ metrica("Média gols", '%.2f'|format(g.media_gols_partida)) }}
       {% endif %}
@@ -83,8 +80,8 @@
       {% if g.placar_mais_comum %}
       {{ metrica("Mais comum", g.placar_mais_comum.placar ~ ' <small>(' ~ g.placar_mais_comum.n ~ '×)</small>') }}
       {% endif %}
-      {% if g.favorito_label %}
-      {{ metrica("Favorito", g.favorito_label ~ ((' <small>(' ~ g.consenso_pct ~ '%)</small>') if g.consenso_pct is not none else '')) }}
+      {% if g.consenso_label or g.favorito_label %}
+      {{ metrica("Consenso", (g.consenso_label or g.favorito_label) ~ ((' <small>(' ~ g.consenso_pct ~ '%)</small>') if g.consenso_pct is not none else '')) }}
       {% endif %}
       {% if g.n_sem %}
       {{ metrica("Sem palpite", g.n_sem) }}
@@ -109,9 +106,6 @@
         </div>
         <div class="planilha-body">
           <div class="planilha-metricas" aria-label="Métricas do jogo {{ t.jogo_num or t.confronto_id }}">
-            {{ metrica("Casa", m.n_casa ~ ((' <small>(' ~ m.pct_casa ~ '%)</small>') if m.pct_casa is not none else '')) }}
-            {{ metrica("Empate", m.n_empate ~ ((' <small>(' ~ m.pct_empate ~ '%)</small>') if m.pct_empate is not none else '')) }}
-            {{ metrica("Fora", m.n_fora ~ ((' <small>(' ~ m.pct_fora ~ '%)</small>') if m.pct_fora is not none else '')) }}
             {% if m.media_gols_partida is not none %}
             {{ metrica("Média gols", '%.2f'|format(m.media_gols_partida)) }}
             {% endif %}
@@ -130,8 +124,8 @@
             {% if m.placar_mais_comum %}
             {{ metrica("Mais comum", m.placar_mais_comum.placar ~ ' <small>(' ~ m.placar_mais_comum.n ~ '×)</small>') }}
             {% endif %}
-            {% if m.favorito_label %}
-            {{ metrica("Favorito", m.favorito_label ~ ((' <small>(' ~ m.consenso_pct ~ '%)</small>') if m.consenso_pct is not none else '')) }}
+            {% if m.consenso_label or m.favorito_label %}
+            {{ metrica("Consenso", (m.consenso_label or m.favorito_label) ~ ((' <small>(' ~ m.consenso_pct ~ '%)</small>') if m.consenso_pct is not none else '')) }}
             {% endif %}
             {% if m.n_sem %}
             {{ metrica("Sem palpite", m.n_sem) }}
@@ -239,7 +233,7 @@
                 {{ emblema(t.clube_fora) }}
                 {% endif %}
                 <strong>{{ row.nome }}</strong>
-                <span class="planilha-grupo-n">{{ row.n }}</span>
+                <span class="planilha-grupo-n">{{ row.n }}{% if row.pct is not none %} <small>({{ row.pct }}%)</small>{% endif %}</span>
               </span>
               <button
                 type="button"

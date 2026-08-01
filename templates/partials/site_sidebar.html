@@ -81,17 +81,16 @@
           <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('acesso') }}<span>Criar senha</span></a>
           {% elif participante_nav %}
           <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Status da inscrição</span></a>
-          {% else %}
-          <a class="site-side-link {% if on_inscricao %}active{% endif %}" href="/inscricao">{{ ico('inscricao') }}<span>Fazer inscrição</span></a>
           {% endif %}
           {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
           <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
-          {% endif %}
           <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
           <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Transparência</span></a>
+          {% endif %}
         </div>
       </details>
 
+      {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
       <details class="site-menu-group" data-group="grupo-whatsapp" open>
         <summary class="site-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
         <div class="site-menu-items">
@@ -108,6 +107,7 @@
           </details>
         </div>
       </details>
+      {% endif %}
 
       {% if guest %}
       <details class="site-menu-group site-menu-group--marlon" data-group="marlon" open>

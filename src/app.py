@@ -36,6 +36,7 @@ from src.config import (
     EMBLEMAS_DIR,
     FASES,
     FASE_IDS,
+    INSCRICAO_FECHA_EM,
     JANELAS,
     NOME_MAX_LEN,
     PUBLIC_BASE_URL,
@@ -50,7 +51,9 @@ from src.config import (
     TAXA_PIX,
     TAXA_VALOR_LABEL,
     WHATSAPP_GROUP_URL,
+    inscricao_aberta,
 )
+from src.estilo_palpites import trofeus_hall
 from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado
 from src.seed_data import emblema_url, formatar_inicio_jogo, nome_clube_curto
@@ -59,6 +62,45 @@ from src.transparencia import metricas_gerais, montar_portal, ranking_apostadore
 load_dotenv(ROOT_DIR / ".env")
 
 app = FastAPI(title="Bolão THDFM — Copa do Brasil")
+
+
+def _path_publico(path: str) -> bool:
+    """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
+    if path in ("/", "/home", "/favicon.ico"):
+        return True
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/"):
+        return True
+    # Link mágico do participante
+    if path.startswith("/p/"):
+        return True
+    # Auth / logout
+    if path in (
+        "/entrar",
+        "/login",
+        "/loguin",
+        "/admin/login",
+        "/admin/logout",
+        "/conta/sair",
+    ):
+        return True
+    # Inscrição: página só mostra “encerrada”; POST também precisa chegar no handler
+    if path == "/inscricao":
+        return True
+    return False
+
+
+@app.middleware("http")
+async def gate_login_middleware(request: Request, call_next):
+    path = request.url.path
+    if _path_publico(path):
+        return await call_next(request)
+    # Sessão de participante ou admin (SessionMiddleware roda por fora).
+    if request.session.get("participante_token") or request.session.get("admin_login"):
+        return await call_next(request)
+    return RedirectResponse("/?acesso=entrar", status_code=303)
+
+
+# Session por fora do gate (último add_middleware = mais externo).
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ.get("SECRET_KEY", SECRET_KEY),
@@ -1263,7 +1305,7 @@ def admin_palpites(request: Request):
 @app.get("/classificacao", response_class=HTMLResponse)
 def classificacao(request: Request):
     if not admin_ok(request) and not request.session.get("participante_token"):
-        return RedirectResponse("/inscricao", status_code=303)
+        return RedirectResponse("/?acesso=entrar", status_code=303)
 
     historico = db.list_rodadas_historico()
     rodada_param = (request.query_params.get("rodada") or "atual").strip()
@@ -1288,6 +1330,7 @@ def classificacao(request: Request):
         fase = db.get_meta("fase_atual", "oitavas")
         janela = db.get_janela()
 
+    hall_data = trofeus_hall(fase if not modo_historico else fase)
     return render(
         request,
         "classificacao.html",
@@ -1299,15 +1342,26 @@ def classificacao(request: Request):
         modo_historico=modo_historico,
         rodada_atual_id=rodada_sel["id"] if rodada_sel else None,
         rodada_sel=rodada_sel,
+        hall=hall_data.get("cards") or [],
+        perfis=hall_data.get("perfis") or {},
     )
 
 
 @app.get("/inscricao", response_class=HTMLResponse)
 def inscricao_get(request: Request):
+    if not inscricao_aberta():
+        return render(
+            request,
+            "inscricao.html",
+            inscricao_encerrada=True,
+            inscricao_fecha_em=INSCRICAO_FECHA_EM.strftime("%d/%m/%Y às %H:%M"),
+            **_taxa_ctx(),
+        )
     draft = request.session.pop("inscricao_draft", None) or {}
     return render(
         request,
         "inscricao.html",
+        inscricao_encerrada=False,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         sucesso=request.query_params.get("sucesso") == "1",
@@ -1334,6 +1388,11 @@ async def inscricao_post(
     celular: str = Form(...),
     comprovante: UploadFile = File(...),
 ):
+    if not inscricao_aberta():
+        return RedirectResponse(
+            "/inscricao?erro=" + quote("Inscrições encerradas."),
+            status_code=303,
+        )
     nome = nome.strip()
     celular_raw = (celular or "").strip()
     if not nome:

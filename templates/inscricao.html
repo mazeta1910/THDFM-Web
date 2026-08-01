@@ -4,6 +4,22 @@
 {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
 {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
+{% if inscricao_encerrada %}
+<div class="card welcome-card">
+  <h1 class="welcome-title">Inscrições encerradas</h1>
+  <p class="welcome-lead">
+    O prazo era <strong>{{ inscricao_fecha_em or "01/08/2026 às 13:30" }}</strong>.
+    Novas inscrições não são mais aceitas.
+  </p>
+  <p class="inscricao-ja-link">
+    Já tem conta?
+    <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
+    · <a href="/?acesso=recuperar" data-acesso-open="recuperar">Recuperar link</a>
+    · <a href="/">Voltar ao início</a>
+  </p>
+</div>
+{% else %}
+
 <div class="card welcome-card">
   <h1 class="welcome-title">BEM-VINDOS AO SEGUNDO BOLÃO DA THDFM</h1>
   <p class="welcome-edition" aria-label="Copa do Brasil Edition">
@@ -130,9 +146,11 @@
     {% endif %}
   </div>
 </div>
-{% endif %}
+{% endif %}{# sucesso #}
+{% endif %}{# inscricao_encerrada #}
 {% endblock %}
 {% block scripts %}
+{% if not inscricao_encerrada %}
 <script>
 document.getElementById("btn-copy")?.addEventListener("click", async () => {
   const key = document.getElementById("pix-key")?.textContent?.trim();
@@ -203,4 +221,5 @@ if (modalSucesso) {
   });
 }
 </script>
+{% endif %}{# not inscricao_encerrada #}
 {% endblock %}
