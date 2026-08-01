@@ -4200,6 +4200,83 @@ table.planilha .planilha-nome {
   font-weight: 600;
   white-space: nowrap;
 }
+table.planilha th.planilha-th-emblema {
+  width: 2.6rem;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+  vertical-align: middle;
+}
+table.planilha th.planilha-th-emblema img {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.planilha-nome-com-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+}
+.planilha-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.planilha-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.planilha-nome-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+tr.planilha-grupo td {
+  padding: 0.4rem 0.55rem;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+html.theme-light tr.planilha-grupo td,
+html[data-theme="light"] tr.planilha-grupo td {
+  background: rgba(0, 0, 0, 0.04);
+}
+.planilha-grupo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.planilha-grupo-label img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.planilha-grupo-label strong {
+  font-weight: 800;
+}
+.planilha-grupo-n {
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.planilha-grupo-n::before {
+  content: "· ";
+}
+tr.planilha-lado--casa td.planilha-num:first-of-type,
+tr.planilha-lado--fora td.planilha-num:last-of-type {
+  color: var(--accent);
+}
 tr.planilha-placar {
   background: var(--planilha-placar-bg);
   font-weight: 700;
