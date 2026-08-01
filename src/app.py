@@ -926,6 +926,7 @@ def admin_listra(request: Request):
         "admin_listra.html",
         participantes=db.list_listra_permissoes_com_participantes(),
         meliantes=db.list_listra_meliantes_detalhe(),
+        candidatos_meliante=db.list_participantes_candidatos_meliante(),
         total_frases=len(db.list_listra_frases()),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
@@ -934,11 +935,19 @@ def admin_listra(request: Request):
 
 
 @app.post("/admin/listra/meliantes")
-def admin_listra_meliante_criar(request: Request, nome: str = Form(...)):
+def admin_listra_meliante_criar(
+    request: Request,
+    nome: str = Form(""),
+    participante_id: str = Form(""),
+):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     try:
-        criado = db.criar_listra_meliante(nome)
+        pid_raw = (participante_id or "").strip()
+        if pid_raw.isdigit() and int(pid_raw) > 0:
+            criado = db.criar_listra_meliante(participante_id=int(pid_raw))
+        else:
+            criado = db.criar_listra_meliante(nome)
     except ValueError as exc:
         return RedirectResponse(
             f"/admin/listra?erro={quote(str(exc))}#meliantes",

@@ -1955,10 +1955,19 @@ def _migrar_listra_meliantes(conn: sqlite3.Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS listra_meliantes (
             nome TEXT PRIMARY KEY,
-            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            participante_id INTEGER REFERENCES participantes(id)
         )
         """
     )
+    cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(listra_meliantes)").fetchall()
+    }
+    if "participante_id" not in cols:
+        conn.execute(
+            "ALTER TABLE listra_meliantes ADD COLUMN participante_id INTEGER "
+            "REFERENCES participantes(id)"
+        )
     rows = conn.execute(
         "SELECT DISTINCT TRIM(responsavel) AS nome FROM listra_frases "
         "WHERE responsavel IS NOT NULL AND TRIM(responsavel) != ''"
@@ -1972,6 +1981,20 @@ def _migrar_listra_meliantes(conn: sqlite3.Connection) -> None:
             "VALUES (?, datetime('now', 'localtime'))",
             (nome,),
         )
+    # Vincula meliantes livres a participantes liberados com o mesmo nome.
+    conn.execute(
+        """
+        UPDATE listra_meliantes
+        SET participante_id = (
+          SELECT p.id FROM participantes p
+          WHERE p.status = 'liberado'
+            AND TRIM(p.nome) = listra_meliantes.nome COLLATE NOCASE
+          ORDER BY p.id ASC
+          LIMIT 1
+        )
+        WHERE participante_id IS NULL
+        """
+    )
 
 
 def list_listra_meliantes() -> list[str]:
@@ -1983,17 +2006,22 @@ def list_listra_meliantes() -> list[str]:
 
 
 def list_listra_meliantes_detalhe() -> list[dict[str, Any]]:
-    """Meliantes com contagem de frases vinculadas."""
+    """Meliantes com contagem de frases e vínculo de participante."""
     with get_db() as conn:
         rows = conn.execute(
             """
             SELECT m.nome,
                    m.criado_em,
+                   m.participante_id,
+                   p.nome AS participante_nome,
+                   p.username AS participante_username,
                    COALESCE(COUNT(f.id), 0) AS usos
             FROM listra_meliantes m
+            LEFT JOIN participantes p ON p.id = m.participante_id
             LEFT JOIN listra_frases f
               ON TRIM(f.responsavel) = m.nome
-            GROUP BY m.nome, m.criado_em
+            GROUP BY m.nome, m.criado_em, m.participante_id,
+                     p.nome, p.username
             ORDER BY m.nome COLLATE NOCASE
             """
         ).fetchall()
@@ -2001,8 +2029,29 @@ def list_listra_meliantes_detalhe() -> list[dict[str, Any]]:
         for r in rows:
             d = dict(r)
             d["usos"] = int(d.get("usos") or 0)
+            d["vinculado"] = bool(d.get("participante_id"))
             out.append(d)
         return out
+
+
+def list_participantes_candidatos_meliante() -> list[dict[str, Any]]:
+    """Liberados que ainda não estão no gestor de meliantes."""
+    cols_p = ", ".join(f"p.{c.strip()}" for c in _PARTICIPANTE_COLS.split(","))
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT {cols_p}
+            FROM participantes p
+            WHERE p.status = 'liberado'
+              AND NOT EXISTS (
+                SELECT 1 FROM listra_meliantes m
+                WHERE m.participante_id = p.id
+                   OR m.nome = p.nome COLLATE NOCASE
+              )
+            ORDER BY p.nome COLLATE NOCASE
+            """
+        ).fetchall()
+        return [dict(r) for r in rows]
 
 
 def ensure_listra_meliante(nome: str) -> str:
@@ -2018,11 +2067,54 @@ def ensure_listra_meliante(nome: str) -> str:
             "VALUES (?, datetime('now', 'localtime'))",
             (nome_ok,),
         )
+        # Se já existe participante liberado com esse nome, vincula.
+        conn.execute(
+            """
+            UPDATE listra_meliantes
+            SET participante_id = (
+              SELECT p.id FROM participantes p
+              WHERE p.status = 'liberado'
+                AND TRIM(p.nome) = listra_meliantes.nome COLLATE NOCASE
+              ORDER BY p.id ASC
+              LIMIT 1
+            )
+            WHERE nome = ? COLLATE NOCASE
+              AND participante_id IS NULL
+            """,
+            (nome_ok,),
+        )
     return nome_ok
 
 
-def criar_listra_meliante(nome: str) -> str:
-    """Cadastra um meliante novo (erro se já existir)."""
+def criar_listra_meliante(
+    nome: str = "",
+    *,
+    participante_id: int | None = None,
+) -> str:
+    """Cadastra meliante livre ou a partir de um participante liberado."""
+    if participante_id is not None:
+        part = get_participante(int(participante_id))
+        if not part or part.get("status") != "liberado":
+            raise ValueError("Participante inválido para meliante.")
+        nome_ok = re.sub(r"\s+", " ", (part.get("nome") or "").strip())
+        if not nome_ok:
+            raise ValueError("Participante sem nome.")
+        with get_db() as conn:
+            existe = conn.execute(
+                "SELECT 1 FROM listra_meliantes "
+                "WHERE participante_id = ? OR nome = ? COLLATE NOCASE "
+                "LIMIT 1",
+                (int(participante_id), nome_ok),
+            ).fetchone()
+            if existe:
+                raise ValueError("Esse meliante já está cadastrado.")
+            conn.execute(
+                "INSERT INTO listra_meliantes (nome, criado_em, participante_id) "
+                "VALUES (?, datetime('now', 'localtime'), ?)",
+                (nome_ok, int(participante_id)),
+            )
+        return nome_ok
+
     nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
     if not nome_ok:
         raise ValueError("Informe o nome do meliante.")
@@ -2035,10 +2127,18 @@ def criar_listra_meliante(nome: str) -> str:
         ).fetchone()
         if existe:
             raise ValueError("Esse meliante já está cadastrado.")
-        conn.execute(
-            "INSERT INTO listra_meliantes (nome, criado_em) "
-            "VALUES (?, datetime('now', 'localtime'))",
+        # Se houver usuário liberado com o mesmo nome, vincula automaticamente.
+        part = conn.execute(
+            "SELECT id FROM participantes "
+            "WHERE status = 'liberado' AND nome = ? COLLATE NOCASE "
+            "ORDER BY id ASC LIMIT 1",
             (nome_ok,),
+        ).fetchone()
+        pid = int(part["id"]) if part else None
+        conn.execute(
+            "INSERT INTO listra_meliantes (nome, criado_em, participante_id) "
+            "VALUES (?, datetime('now', 'localtime'), ?)",
+            (nome_ok, pid),
         )
     return nome_ok
 

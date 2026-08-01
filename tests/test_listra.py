@@ -319,6 +319,8 @@ def test_admin_gestor_meliantes(client: TestClient):
     loc = unquote(r.headers.get("location") or "")
     assert "adicionado" in loc.lower()
     assert "Odiei Ribeiro" in db.list_listra_meliantes()
+    detalhe = {m["nome"]: m for m in db.list_listra_meliantes_detalhe()}
+    assert detalhe["Odiei Ribeiro"]["vinculado"] is False
 
     dup = client.post(
         "/admin/listra/meliantes",
@@ -328,14 +330,32 @@ def test_admin_gestor_meliantes(client: TestClient):
     assert dup.status_code == 303
     assert "já está cadastrado" in unquote(dup.headers.get("location") or "").lower()
 
+    part = _criar_liberado(
+        nome="Meliante User", username="meluser", celular="11999990077"
+    )
+    r_user = client.post(
+        "/admin/listra/meliantes",
+        data={"participante_id": str(part["id"])},
+        follow_redirects=False,
+    )
+    assert r_user.status_code == 303
+    assert "Meliante User" in db.list_listra_meliantes()
+    detalhe = {m["nome"]: m for m in db.list_listra_meliantes_detalhe()}
+    assert detalhe["Meliante User"]["vinculado"] is True
+    assert detalhe["Meliante User"]["participante_id"] == part["id"]
+
     painel = client.get("/admin/listra")
     assert "Odiei Ribeiro" in painel.text
-    assert 'href="/grupo/listra"' in painel.text
+    assert "Meliante User" in painel.text
+    assert "usuário" in painel.text
+    assert "livre" in painel.text
+    assert "Usuário cadastrado" in painel.text
+    assert "Nome livre" in painel.text
 
-    # Aparece nas sugestões da Listra.
     pub = client.get("/grupo/listra")
     assert "Odiei Ribeiro" in pub.text
     assert "Gestor de meliantes" in pub.text
+    assert "limparUrlListra" in pub.text
 
     apaga = client.post(
         "/admin/listra/meliantes/apagar",

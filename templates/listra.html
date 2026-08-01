@@ -361,18 +361,32 @@
   {% if msg %}showToast({{ msg.replace('+', ' ') | tojson }}, "ok");{% endif %}
   {% if erro %}showToast({{ erro.replace('+', ' ') | tojson }}, "erro");{% endif %}
 
+  function limparUrlListra() {
+    // Tira ?msg= / #listra-frase-… pra F5 não repetir toast nem rolar de novo.
+    try {
+      if (location.search || location.hash) {
+        history.replaceState(null, "", location.pathname);
+      }
+    } catch (e) {}
+  }
+
   var hash = location.hash || "";
+  var temToast = {% if msg or erro %}true{% else %}false{% endif %};
+  if (temToast && (!hash || hash.indexOf("#listra-") !== 0)) {
+    limparUrlListra();
+  }
+
   if (!hash || hash.indexOf("#listra-") !== 0) return;
   var id = hash.slice(1);
   var el = document.getElementById(id);
-  if (!el) return;
+  if (!el) {
+    limparUrlListra();
+    return;
+  }
 
   // Evita o salto nativo do #hash (topo do item) antes de centralizar.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  var baseUrl = location.pathname + location.search;
-  try {
-    history.replaceState(null, "", baseUrl);
-  } catch (e) {}
+  limparUrlListra();
 
   var card = el.closest("details.listra-ano-card");
   if (card) card.open = true;
@@ -393,9 +407,6 @@
         el.classList.remove("listra-item--flash");
       }, 1600);
     }
-    try {
-      history.replaceState(null, "", baseUrl + "#" + id);
-    } catch (e2) {}
   }
 
   // Abre o <details> e espera o layout estabilizar antes de centralizar.
