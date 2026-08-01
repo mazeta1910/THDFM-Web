@@ -1557,6 +1557,33 @@ def apagar_xonha_evento(evento_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def formatar_duracao_status(segundos: float | int) -> str:
+    """Texto do relógio do status: s → min → h → dias → semanas → meses → anos."""
+    total = max(int(segundos), 0)
+    if total < 60:
+        n = total
+        unidade = "segundo" if n == 1 else "segundos"
+    elif total < 3600:
+        n = total // 60
+        unidade = "minuto" if n == 1 else "minutos"
+    elif total < 86400:
+        n = total // 3600
+        unidade = "hora" if n == 1 else "horas"
+    elif total < 604800:
+        n = total // 86400
+        unidade = "dia" if n == 1 else "dias"
+    elif total < 2592000:  # < 30 dias
+        n = total // 604800
+        unidade = "semana" if n == 1 else "semanas"
+    elif total < 31536000:  # < 365 dias
+        n = total // 2592000
+        unidade = "mês" if n == 1 else "meses"
+    else:
+        n = total // 31536000
+        unidade = "ano" if n == 1 else "anos"
+    return f"Há {n} {unidade} nesse status."
+
+
 def xonha_stats() -> dict[str, Any]:
     """Totais, médias, recorde do dia/mês e dias da semana mais frequentes."""
     from datetime import date as date_cls
@@ -1724,12 +1751,28 @@ def xonha_stats() -> dict[str, Any]:
         dias_desde_ultima_saida = max((hoje - d_ult).days, 0)
 
     dias_no_status_atual: int | None = None
+    status_desde: str | None = None
     if ultimo and ultimo.get("data"):
         try:
             d_ult_ev = datetime.strptime(ultimo["data"][:10], "%Y-%m-%d").date()
             dias_no_status_atual = max((hoje - d_ult_ev).days, 0)
+            hora = (ultimo.get("hora") or "00:00").strip()[:5]
+            if len(hora) < 5:
+                hora = "00:00"
+            status_desde = f"{ultimo['data'][:10]}T{hora}:00"
         except ValueError:
             dias_no_status_atual = None
+            status_desde = None
+
+    status_duracao_texto: str | None = None
+    if status_desde:
+        try:
+            t0 = datetime.strptime(status_desde, "%Y-%m-%dT%H:%M:%S")
+            status_duracao_texto = formatar_duracao_status(
+                (datetime.now() - t0).total_seconds()
+            )
+        except ValueError:
+            status_duracao_texto = None
 
     # Pares saída/banimento → próxima volta (tempo fora)
     ordenados = sorted(eventos, key=_xonha_sort_key)
@@ -1812,6 +1855,8 @@ def xonha_stats() -> dict[str, Any]:
         "saidas_ultimos_30_dias": saidas_ultimos_30_dias,
         "dias_desde_ultima_saida": dias_desde_ultima_saida,
         "dias_no_status_atual": dias_no_status_atual,
+        "status_desde": status_desde,
+        "status_duracao_texto": status_duracao_texto,
         "tempo_medio_fora_dias": tempo_medio_fora_dias,
         "maior_tempo_fora_dias": maior_tempo_fora_dias,
         "horario_mais_comum": horario_mais_comum,

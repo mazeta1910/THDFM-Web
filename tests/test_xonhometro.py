@@ -134,6 +134,9 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["saidas_ultimos_30_dias"] >= 0
     assert stats["dias_desde_ultima_saida"] is not None
     assert stats["dias_no_status_atual"] is not None
+    assert stats["status_desde"] == "2026-07-02T18:00:00"
+    assert stats["status_duracao_texto"]
+    assert "nesse status." in stats["status_duracao_texto"]
     assert stats["tempo_medio_fora_dias"] is not None
     assert stats["maior_tempo_fora_dias"] is not None
     assert stats["horario_mais_comum"] is not None
@@ -163,6 +166,29 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "Horário campeão" in pub.text
     assert "xonha-status-block--dentro" in pub.text
     assert "Gerenciar registros" in pub.text
+    assert 'id="xonha-status-relogio"' in pub.text
+    assert 'data-xonha-status-desde="2026-07-02T18:00:00"' in pub.text
+    assert "nesse status." in pub.text
+    assert "setInterval" in pub.text
+
+
+def test_formatar_duracao_status_unidades():
+    f = db.formatar_duracao_status
+    assert f(0) == "Há 0 segundos nesse status."
+    assert f(1) == "Há 1 segundo nesse status."
+    assert f(59) == "Há 59 segundos nesse status."
+    assert f(60) == "Há 1 minuto nesse status."
+    assert f(120) == "Há 2 minutos nesse status."
+    assert f(3600) == "Há 1 hora nesse status."
+    assert f(7200) == "Há 2 horas nesse status."
+    assert f(86400) == "Há 1 dia nesse status."
+    assert f(172800) == "Há 2 dias nesse status."
+    assert f(604800) == "Há 1 semana nesse status."
+    assert f(1209600) == "Há 2 semanas nesse status."
+    assert f(2592000) == "Há 1 mês nesse status."
+    assert f(5184000) == "Há 2 meses nesse status."
+    assert f(31536000) == "Há 1 ano nesse status."
+    assert f(63072000) == "Há 2 anos nesse status."
 
 
 def test_admin_atualiza_e_apaga(client: TestClient):
