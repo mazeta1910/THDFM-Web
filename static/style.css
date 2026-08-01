@@ -1125,36 +1125,43 @@ nav.site-nav-desktop {
   background: transparent;
   cursor: pointer;
   overflow: hidden;
+  border-radius: 50%;
+  isolation: isolate;
 }
 .avatar-edit-trigger.avatar-preview {
   flex: 0 0 auto;
-  border-radius: 50%;
 }
 .avatar-edit-camera {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.52);
   color: #fff;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transform: scale(0.96);
+  transition: opacity 0.16s ease, transform 0.16s ease;
   pointer-events: none;
+}
+.avatar-edit-camera svg {
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 .avatar-edit-trigger:hover .avatar-edit-camera,
 .avatar-edit-trigger:focus-visible .avatar-edit-camera {
   opacity: 1;
+  transform: scale(1);
 }
 .avatar-edit-trigger:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 2px;
 }
-.site-brand-avatar-fallback,
-.admin-brand-avatar-fallback {
-  width: 100%;
-  height: 100%;
+.site-brand-avatar-wrap,
+.admin-brand-avatar-wrap {
+  overflow: hidden;
 }
 .conta-hint--foto {
   margin-top: 0.15rem !important;
