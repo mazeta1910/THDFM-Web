@@ -6497,13 +6497,18 @@ textarea.xonha-input {
   opacity: 0.85;
 }
 .listra-apagar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1.6rem;
   height: 1.6rem;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
   line-height: 1;
   cursor: pointer;
 }
