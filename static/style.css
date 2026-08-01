@@ -6875,6 +6875,33 @@ textarea.xonha-input {
   outline: 2px solid rgba(232, 93, 4, 0.35);
   border-color: var(--accent);
 }
+.listra-add-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.listra-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.listra-save-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.listra-save-btn svg {
+  display: block;
+}
+.listra-meliante-novo[hidden] {
+  display: none !important;
+}
 .listra-submit {
   justify-self: start;
   border: none;
@@ -6888,6 +6915,10 @@ textarea.xonha-input {
 }
 .listra-submit:hover {
   filter: brightness(1.05);
+}
+.listra-submit--small {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
 }
 .listra-list {
   list-style: none;
@@ -7049,10 +7080,6 @@ mark.listra-destaque {
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-}
-.listra-submit--small {
-  padding: 0.5rem 0.9rem;
-  font-size: 0.88rem;
 }
 .listra-edit-cancel {
   border: 1px solid var(--border);

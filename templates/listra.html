@@ -26,12 +26,6 @@
 
   <div class="toast-host" id="listra-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
-  <datalist id="listra-meliantes-list">
-    {% for nome in listra_meliantes|default([]) %}
-    <option value="{{ nome }}"></option>
-    {% endfor %}
-  </datalist>
-
   {% if pode_adicionar %}
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
@@ -81,24 +75,52 @@
         />
         <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
       </div>
-      <div class="listra-field">
-        <label for="listra-responsavel">Nome do meliante</label>
+      <div class="listra-field" data-listra-meliante-field>
+        <label for="listra-meliante-select">Nome do meliante</label>
         {% set meliante_padrao = participante_listra.nome if participante_listra and participante_listra.nome else '' %}
+        {% set meliante_na_lista = meliante_padrao and meliante_padrao in (listra_meliantes|default([])) %}
+        <select
+          id="listra-meliante-select"
+          class="listra-input"
+          data-listra-meliante-select
+          required
+          aria-label="Selecionar meliante"
+        >
+          <option value="">Selecione o meliante…</option>
+          {% for nome in listra_meliantes|default([]) %}
+          <option value="{{ nome }}"{% if nome == meliante_padrao %} selected{% endif %}>{{ nome }}</option>
+          {% endfor %}
+          <option value="__novo__"{% if meliante_padrao and not meliante_na_lista %} selected{% endif %}>＋ Outro nome…</option>
+        </select>
         <input
           id="listra-responsavel"
           name="responsavel"
-          class="listra-input"
+          class="listra-input listra-meliante-novo"
           type="text"
-          list="listra-meliantes-list"
           maxlength="30"
           required
           value="{{ meliante_padrao }}"
-          placeholder="Selecione ou digite o meliante"
+          placeholder="Digite o nome do meliante"
           autocomplete="off"
+          data-listra-meliante-input
+          {% if not meliante_padrao or meliante_na_lista %}hidden{% endif %}
         />
-        <p class="listra-field-hint">Sugestões dos meliantes já usados. Nomes novos entram na lista ao salvar.</p>
+        <p class="listra-field-hint">Lista do gestor de meliantes. “Outro nome” cadastra um livre ao salvar.</p>
       </div>
-      <button type="submit" class="listra-submit">Adicionar à Listra {{ ano_atual }}</button>
+      <div class="listra-add-actions">
+        <button
+          type="submit"
+          class="listra-save-btn"
+          title="Salvar na Listra {{ ano_atual }}"
+          aria-label="Salvar na Listra {{ ano_atual }}"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </div>
     </form>
   </section>
   {% endif %}
@@ -307,22 +329,48 @@
               />
               <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
             </div>
-            <div class="listra-field">
-              <label for="listra-edit-resp-{{ f.id }}">Nome do meliante</label>
+            <div class="listra-field" data-listra-meliante-field>
+              <label for="listra-edit-meliante-{{ f.id }}">Nome do meliante</label>
+              {% set meliante_atual = f.responsavel or '' %}
+              {% set meliante_edit_na_lista = meliante_atual and meliante_atual in (listra_meliantes|default([])) %}
+              <select
+                id="listra-edit-meliante-{{ f.id }}"
+                class="listra-input"
+                data-listra-meliante-select
+                aria-label="Selecionar meliante"
+              >
+                <option value="">Selecione o meliante…</option>
+                {% for nome in listra_meliantes|default([]) %}
+                <option value="{{ nome }}"{% if nome == meliante_atual %} selected{% endif %}>{{ nome }}</option>
+                {% endfor %}
+                <option value="__novo__"{% if meliante_atual and not meliante_edit_na_lista %} selected{% endif %}>＋ Outro nome…</option>
+              </select>
               <input
                 id="listra-edit-resp-{{ f.id }}"
                 name="responsavel"
-                class="listra-input"
+                class="listra-input listra-meliante-novo"
                 type="text"
-                list="listra-meliantes-list"
                 maxlength="30"
-                value="{{ f.responsavel or '' }}"
-                placeholder="Selecione ou digite o meliante"
+                value="{{ meliante_atual }}"
+                placeholder="Digite o nome do meliante"
                 autocomplete="off"
+                data-listra-meliante-input
+                {% if not meliante_atual or meliante_edit_na_lista %}hidden{% endif %}
               />
             </div>
             <div class="listra-edit-actions">
-              <button type="submit" class="listra-submit listra-submit--small">Salvar</button>
+              <button
+                type="submit"
+                class="listra-save-btn"
+                title="Salvar"
+                aria-label="Salvar frase"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+              </button>
               <button type="button" class="listra-edit-cancel" data-listra-edit-cancel>Cancelar</button>
             </div>
           </form>
@@ -432,6 +480,37 @@
 
   document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
     var emojiInput = form.querySelector("[data-listra-emoji]");
+    var melianteSelect = form.querySelector("[data-listra-meliante-select]");
+    var melianteInput = form.querySelector("[data-listra-meliante-input]");
+
+    function syncMeliante() {
+      if (!melianteSelect || !melianteInput) return;
+      var v = melianteSelect.value || "";
+      if (v === "__novo__") {
+        melianteInput.hidden = false;
+        melianteInput.required = true;
+        if (!melianteInput.value) {
+          try {
+            melianteInput.focus({ preventScroll: true });
+          } catch (e) {
+            melianteInput.focus();
+          }
+        }
+      } else if (v) {
+        melianteInput.value = v;
+        melianteInput.hidden = true;
+        melianteInput.required = false;
+      } else {
+        melianteInput.value = "";
+        melianteInput.hidden = true;
+        melianteInput.required = false;
+      }
+    }
+
+    if (melianteSelect) {
+      melianteSelect.addEventListener("change", syncMeliante);
+      syncMeliante();
+    }
 
     if (emojiInput) {
       emojiInput.addEventListener("input", function () {
