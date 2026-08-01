@@ -44,8 +44,10 @@ def test_xonhometro_publico_vazio(client: TestClient):
     r = client.get("/xonhometro")
     assert r.status_code == 200
     assert "Xonhômetro" in r.text
-    assert "R$1,00 por cada vez que o Xonha saiu" in r.text
+    assert "saiu ou foi banido" in r.text
     assert "R$0,00" in r.text
+    assert "Taxa de retorno" in r.text
+    assert ">Saídas<" in r.text or "Saídas</span>" in r.text
     assert "xonha-counter-value" in r.text
     assert "/static/img/xonha.png" in r.text
     assert "xonha-status-foto" in r.text
@@ -103,6 +105,9 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     stats = db.xonha_stats()
     assert stats["total_saidas"] == 2
     assert stats["total_voltas"] == 1
+    assert stats["total_banimentos"] == 0
+    assert stats["total_placar"] == 2
+    assert stats["taxa_retorno"] == 50.0
     assert stats["recorde_dia"]["data"] == "2026-07-01"
     assert stats["recorde_dia"]["quantidade"] == 2
     assert stats["media_saidas_por_mes"] == 2.0
@@ -131,6 +136,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "10:15" in pub.text
     assert "22:40" in pub.text
     assert "R$2,00" in pub.text
+    assert "Taxa de retorno" in pub.text
     assert "Média / dia desde o início" in pub.text
     assert "Mês que mais saiu" in pub.text
     assert "Dias da semana" in pub.text
@@ -262,6 +268,7 @@ def test_admin_registra_banimento(client: TestClient):
     assert r.status_code == 303
     stats = db.xonha_stats()
     assert stats["total_banimentos"] == 1
+    assert stats["total_placar"] == 1
     assert stats["status"] == "banido"
 
     pub = client.get("/xonhometro")
@@ -270,3 +277,4 @@ def test_admin_registra_banimento(client: TestClient):
     assert "banido do grupo" in pub.text
     assert "xonha-status-block--banido" in pub.text
     assert "Passou do limite" in pub.text
+    assert "R$1,00" in pub.text
