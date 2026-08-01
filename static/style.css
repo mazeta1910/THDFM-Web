@@ -5237,6 +5237,8 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
 }
 .classificacao-hall-card .classificacao-hall-grid > .planilha-metrica-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 calc((100% - 3 * 0.75rem) / 4);
   width: calc((100% - 3 * 0.75rem) / 4);
   max-width: calc((100% - 3 * 0.75rem) / 4);
@@ -5267,8 +5269,17 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
 .classificacao-hall-card .planilha-metrica-card > .planilha-head {
   display: block;
   position: relative;
-  padding: 0.55rem 1.85rem 0.45rem 0.7rem;
-  text-align: left;
+  flex: 0 0 auto;
+  /* padding simétrico p/ o título ficar no centro visual (o ? é absoluto) */
+  padding: 0.55rem 1.85rem 0.45rem;
+  text-align: center;
+}
+.classificacao-hall-card .planilha-metrica-card > .planilha-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
 }
 /* ? sobreposto no canto — não compete com a largura do título */
 .hall-card-tip-row {
@@ -5297,7 +5308,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   letter-spacing: 0;
   line-height: 1.3;
   text-transform: none;
-  text-align: left;
+  text-align: center;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
