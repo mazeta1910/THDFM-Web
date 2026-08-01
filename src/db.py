@@ -333,6 +333,7 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
     _migrar_listra_meliantes(conn)
     for ano in LISTRA_ANOS:
         _seed_listra_ano_se_faltando(conn, int(ano), listra_seed_por_ano(int(ano)))
+    _migrar_listra_emojis_do_seed(conn)
 
 
 def _seed_listra_ano_se_faltando(
@@ -1893,6 +1894,45 @@ def _migrar_listra_emoji_destaque(conn: sqlite3.Connection) -> None:
             "UPDATE listra_frases SET emoji = ?, texto = ? WHERE id = ?",
             (emoji, resto or row["texto"], row["id"]),
         )
+
+
+def _migrar_listra_emojis_do_seed(conn: sqlite3.Connection) -> None:
+    """Preenche emoji vazio com o prefixo do seed (não sobrescreve o que já tem)."""
+    from src.listra_seed import LISTRA_ANOS, listra_seed_por_ano
+
+    for ano in LISTRA_ANOS:
+        seed = listra_seed_por_ano(int(ano))
+        for ordem, raw in enumerate(seed, start=1):
+            emoji, texto_seed = split_leading_emoji(raw)
+            if not emoji:
+                continue
+            texto_alvo = (texto_seed or raw).strip()
+            row = conn.execute(
+                "SELECT id, texto, emoji FROM listra_frases "
+                "WHERE ano = ? AND (emoji IS NULL OR emoji = '') AND texto = ? "
+                "LIMIT 1",
+                (int(ano), texto_alvo),
+            ).fetchone()
+            if not row:
+                row = conn.execute(
+                    "SELECT id, texto, emoji FROM listra_frases "
+                    "WHERE ano = ? AND ordem = ? LIMIT 1",
+                    (int(ano), int(ordem)),
+                ).fetchone()
+            if not row or (row["emoji"] or "").strip():
+                continue
+            texto = row["texto"] or ""
+            if texto.startswith(emoji + " ") or texto.startswith(emoji + "\n"):
+                resto = texto[len(emoji) :].lstrip()
+                conn.execute(
+                    "UPDATE listra_frases SET emoji = ?, texto = ? WHERE id = ?",
+                    (emoji, resto or texto, row["id"]),
+                )
+            else:
+                conn.execute(
+                    "UPDATE listra_frases SET emoji = ? WHERE id = ?",
+                    (emoji, row["id"]),
+                )
 
 
 def _migrar_listra_reembolsos_itens(conn: sqlite3.Connection) -> None:

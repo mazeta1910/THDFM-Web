@@ -487,6 +487,55 @@ def test_reembolsos_itens_separados_no_seed(client: TestClient):
     assert "blodo de notas" in pub.text
 
 
+def test_seed_2026_emojis_a_partir_do_38(client: TestClient):
+    from src import db
+    from src.listra_seed import listra_seed_por_ano
+
+    seed = listra_seed_por_ano(2026)
+    assert seed[36] == "Ronovava"
+    emoji38, texto38 = db.split_leading_emoji(seed[37])
+    assert emoji38 == "🧬"
+    assert texto38 == "Nem evoluir os pijemin evolui po"
+    # Itens 1–37 do seed ficam sem emoji (já feitos na mão).
+    for raw in seed[:37]:
+        assert db.split_leading_emoji(raw)[0] == ""
+    # A partir do 38, todos têm emoji no seed.
+    for raw in seed[37:]:
+        assert db.split_leading_emoji(raw)[0]
+
+    frases = db.list_listra_frases(2026)
+    por_ordem = {int(f["ordem"]): f for f in frases}
+    assert por_ordem[37]["texto"] == "Ronovava"
+    assert por_ordem[38]["emoji"] == "🧬"
+    assert por_ordem[38]["texto"] == "Nem evoluir os pijemin evolui po"
+    assert por_ordem[286]["emoji"]
+    assert "roca" in por_ordem[286]["texto"].lower()
+
+    pub = client.get("/grupo/listra")
+    assert "🧬" in pub.text
+    assert "Nem evoluir os pijemin evolui po" in pub.text
+
+
+def test_migrar_emojis_do_seed_nao_sobrescreve(client: TestClient):
+    from src import db
+
+    with db.get_db() as conn:
+        conn.execute(
+            "UPDATE listra_frases SET emoji = '' "
+            "WHERE ano = 2026 AND ordem >= 38"
+        )
+        conn.execute(
+            "UPDATE listra_frases SET emoji = '💧' "
+            "WHERE ano = 2026 AND ordem = 37"
+        )
+        db._migrar_listra_emojis_do_seed(conn)
+
+    frases = {int(f["ordem"]): f for f in db.list_listra_frases(2026)}
+    assert frases[37]["emoji"] == "💧"
+    assert frases[38]["emoji"] == "🧬"
+    assert frases[38]["texto"] == "Nem evoluir os pijemin evolui po"
+
+
 def test_migra_reembolsos_combinados(client: TestClient):
     from src import db
 
