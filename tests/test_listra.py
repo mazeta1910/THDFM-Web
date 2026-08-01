@@ -65,6 +65,8 @@ def test_listra_publica_com_anos(client: TestClient):
     assert 'id="listra-scroll-fab"' in body
     assert "listra-scroll-fab" in body
     assert "Ir para o fim da Listra" in body
+    assert "Ir para o topo da Listra" in body  # label no JS do modo up
+    assert "Ir para o topo da página" not in body
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
