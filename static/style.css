@@ -6444,10 +6444,46 @@ textarea.xonha-input {
 .listra-ano-card > .listra-list {
   margin-top: 0;
 }
+.listra-send-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+.listra-copiar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.listra-copiar-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .listra-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   border: none;
   cursor: pointer;
   font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.listra-wa-btn:hover {
+  text-decoration: none;
 }
 .listra-wa-hint {
   margin: 0 0 1rem;

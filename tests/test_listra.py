@@ -200,7 +200,9 @@ def test_participante_com_permissao_enviar(client: TestClient):
     db.salvar_listra_permissao(part["id"], pode_adicionar=False, pode_enviar=True)
     _login_participante(client, part)
     r = client.get("/grupo/listra")
-    assert "data-listra-enviar" in r.text
+    assert "data-listra-copiar" in r.text
+    assert "data-listra-abrir-grupo" in r.text or "Abrir grupo" in r.text
+    assert "Copiar 2026" in r.text
     assert 'data-ano="2026"' in r.text
     assert 'data-ano="2025"' in r.text
     assert 'data-ano="2024"' in r.text
