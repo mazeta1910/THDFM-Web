@@ -55,7 +55,7 @@ def test_classificacao_tem_coluna_pos_e_ordenacao(client: TestClient):
     assert "Alesson Evangelista Longo" in r.text
     assert "th-sort" in r.text
     assert "is-sortable" in r.text
-    assert "/static/style.css?v=203" in r.text
+    assert "/static/style.css?v=204" in r.text
     assert "th-sort-up" in r.text
     assert "th-sort-down" in r.text
     assert 'viewBox="0 0 12 16"' in r.text
@@ -67,3 +67,7 @@ def test_classificacao_tem_coluna_pos_e_ordenacao(client: TestClient):
     assert "Exportar classificação em PNG" in r.text
     assert "classificacao-card-head" in r.text
     assert 'data-export-slug="ao-vivo"' in r.text
+    # Rodada é a última coluna (depois de Bônus / fidelidade).
+    assert r.text.find('data-sort-key="fidelidade"') < r.text.find('data-sort-key="rod"')
+    assert r.text.find('data-sort-key="soma"') < r.text.find('data-sort-key="placar"')
+    assert r.text.find('data-sort-key="placar"') < r.text.find('data-sort-key="rod"')

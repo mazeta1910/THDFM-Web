@@ -105,20 +105,6 @@
               </span>
             </button>
           </th>
-          <th class="col-num is-sortable" data-sort-key="rod" data-sort-type="number" aria-sort="none">
-            <button type="button" class="th-sort" data-sort>
-              <span class="col-tip col-tip-end" tabindex="0">
-                <span class="th-full">Rodada</span><span class="th-short">Rod</span>
-                <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.</span>
-              </span>
-              <span class="th-sort-icon" aria-hidden="true">
-                <svg viewBox="0 0 12 16" focusable="false">
-                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
-                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
-                </svg>
-              </span>
-            </button>
-          </th>
           <th class="col-num is-sortable" data-sort-key="placar" data-sort-type="number" aria-sort="none">
             <button type="button" class="th-sort" data-sort>
               <span class="col-tip" tabindex="0">
@@ -189,6 +175,20 @@
               </span>
             </button>
           </th>
+          <th class="col-num is-sortable" data-sort-key="rod" data-sort-type="number" aria-sort="none">
+            <button type="button" class="th-sort" data-sort>
+              <span class="col-tip col-tip-end" tabindex="0">
+                <span class="th-full">Rodada</span><span class="th-short">Rod</span>
+                <span class="col-tip-bubble" role="tooltip">{% if modo_historico %}Pontos ganhos nesta rodada no momento do fechamento.{% else %}Pontos ganhos desde a última confirmação de rodada.{% endif %} Clique para ordenar.</span>
+              </span>
+              <span class="th-sort-icon" aria-hidden="true">
+                <svg viewBox="0 0 12 16" focusable="false">
+                  <path class="th-sort-up" d="M6 1.5 L11 7.5 H1 Z"></path>
+                  <path class="th-sort-down" d="M6 14.5 L1 8.5 H11 Z"></path>
+                </svg>
+              </span>
+            </button>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -221,12 +221,12 @@
             </div>
           </td>
           <td class="col-num col-pts" data-value="{{ r.soma }}"><strong>{{ r.soma }}</strong></td>
-          <td class="col-num classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}" data-value="{{ r.rod }}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
           <td class="col-num" data-value="{{ r.placar }}">{{ r.placar }}</td>
           <td class="col-num" data-value="{{ r.vencedor }}">{{ r.vencedor }}</td>
           <td class="col-num" data-value="{{ r.gols_casa }}">{{ r.gols_casa }}</td>
           <td class="col-num" data-value="{{ r.gols_fora }}">{{ r.gols_fora }}</td>
           <td class="col-num" data-value="{{ r.fidelidade }}">{{ r.fidelidade }}</td>
+          <td class="col-num classificacao-rod {% if r.rod > 0 %}positivo{% elif r.rod < 0 %}negativo{% endif %}" data-value="{{ r.rod }}">{% if r.rod > 0 %}+{% endif %}{{ r.rod }}</td>
         </tr>
         {% else %}
         <tr><td colspan="9">Sem participantes ainda.</td></tr>
