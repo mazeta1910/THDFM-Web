@@ -79,6 +79,16 @@
           </p>
         </div>
         <div class="listra-ano-actions">
+          <span class="listra-ano-toggle" title="Minimizar ou expandir a Listra {{ l.ano }}" aria-hidden="true">
+            <!-- Expandir (card fechado) -->
+            <svg class="listra-ano-toggle-icon listra-ano-toggle-icon--abrir" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+            <!-- Minimizar (card aberto) -->
+            <svg class="listra-ano-toggle-icon listra-ano-toggle-icon--fechar" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+          </span>
           {% if pode_enviar %}
           <button
             type="button"
@@ -93,10 +103,6 @@
             Enviar {{ l.ano }}
           </button>
           {% endif %}
-          <span class="listra-ano-toggle" aria-hidden="true">
-            <span class="listra-ano-summary-label listra-ano-summary-label--abrir">Ver</span>
-            <span class="listra-ano-summary-label listra-ano-summary-label--fechar">Minimizar</span>
-          </span>
         </div>
       </summary>
       <ol class="listra-list" data-listra-lista="{{ l.ano }}">

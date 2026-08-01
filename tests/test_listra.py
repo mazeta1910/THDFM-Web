@@ -68,7 +68,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-page" in body
     assert "listra-ano-card--atual" in body
     assert "listra-ano-toggle" in body
-    assert "Minimizar" in body
+    assert "listra-ano-toggle-icon--fechar" in body
     assert "listra-ano-summary" in body
     assert "LISTRA THDFM 2026" in body
     assert "LISTRA THDFM 2025" in body
