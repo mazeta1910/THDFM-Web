@@ -55,8 +55,15 @@ def test_classificacao_tem_coluna_pos_e_ordenacao(client: TestClient):
     assert "Alesson Evangelista Longo" in r.text
     assert "th-sort" in r.text
     assert "is-sortable" in r.text
-    assert "/static/style.css?v=202" in r.text
+    assert "/static/style.css?v=203" in r.text
     assert "th-sort-up" in r.text
     assert "th-sort-down" in r.text
     assert 'viewBox="0 0 12 16"' in r.text
     assert "zona-meio" in r.text or "zona-" in r.text
+    assert "data-classificacao-export" in r.text
+    assert "data-classificacao-export-target" in r.text
+    assert "data-classificacao-export-ignore" in r.text
+    assert "/static/classificacao-export.js" in r.text
+    assert "Exportar classificação em PNG" in r.text
+    assert "classificacao-card-head" in r.text
+    assert 'data-export-slug="ao-vivo"' in r.text
