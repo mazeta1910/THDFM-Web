@@ -108,6 +108,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["total_banimentos"] == 0
     assert stats["total_placar"] == 2
     assert stats["taxa_retorno"] == 50.0
+    assert stats["inicio_contagem"] == "2026-07-01"
     assert stats["recorde_dia"]["data"] == "2026-07-01"
     assert stats["recorde_dia"]["quantidade"] == 2
     assert stats["media_saidas_por_mes"] == 2.0
@@ -136,9 +137,11 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "10:15" in pub.text
     assert "22:40" in pub.text
     assert "R$2,00" in pub.text
+    assert "Contagem desde" in pub.text
+    assert "01/07/2026" in pub.text
     assert "Taxa de retorno" in pub.text
     assert "Média / dia desde o início" in pub.text
-    assert "Mês que mais saiu" in pub.text
+    assert "Mês com mais sumiços" in pub.text
     assert "Dias da semana" in pub.text
     assert "Maior sumiço" in pub.text
     assert "Horário campeão" in pub.text
@@ -255,6 +258,16 @@ def test_moderador_tambem_gerencia(client: TestClient):
 
 def test_admin_registra_banimento(client: TestClient):
     _login_admin(client)
+    client.post(
+        "/admin/xonhometro",
+        data={
+            "tipo": "saida",
+            "data": "2026-07-20",
+            "hora": "10:00",
+            "motivo": "Saiu de manhã",
+        },
+        follow_redirects=False,
+    )
     r = client.post(
         "/admin/xonhometro",
         data={
@@ -268,8 +281,14 @@ def test_admin_registra_banimento(client: TestClient):
     assert r.status_code == 303
     stats = db.xonha_stats()
     assert stats["total_banimentos"] == 1
-    assert stats["total_placar"] == 1
+    assert stats["total_saidas"] == 1
+    assert stats["total_placar"] == 2
     assert stats["status"] == "banido"
+    assert stats["inicio_contagem"] == "2026-07-20"
+    # Recorde do dia soma saída + banimento no mesmo dia
+    assert stats["recorde_dia"] is not None
+    assert stats["recorde_dia"]["data"] == "2026-07-20"
+    assert stats["recorde_dia"]["quantidade"] == 2
 
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
@@ -277,4 +296,6 @@ def test_admin_registra_banimento(client: TestClient):
     assert "banido do grupo" in pub.text
     assert "xonha-status-block--banido" in pub.text
     assert "Passou do limite" in pub.text
-    assert "R$1,00" in pub.text
+    assert "R$2,00" in pub.text
+    assert "Contagem desde" in pub.text
+    assert "20/07/2026" in pub.text

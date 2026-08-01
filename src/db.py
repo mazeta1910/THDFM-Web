@@ -1505,10 +1505,11 @@ def xonha_stats() -> dict[str, Any]:
         dias = max((hoje - d_first).days + 1, 1)
         media_saidas_por_dia = round(total_saidas / dias, 3)
 
+    # Recordes / ranking: saídas + banimentos (mesmo critério do placar)
     by_day: dict[str, int] = {}
     by_month: dict[str, int] = {}
     by_weekday: dict[int, int] = {}
-    for e in saidas:
+    for e in fora_asc:
         day = (e.get("data") or "")[:10]
         if not day:
             continue
@@ -1537,6 +1538,10 @@ def xonha_stats() -> dict[str, Any]:
         {"dia": _XONHA_DIAS_SEMANA[wd], "quantidade": qtd, "weekday": wd}
         for wd, qtd in sorted(by_weekday.items(), key=lambda kv: (-kv[1], kv[0]))
     ]
+
+    inicio_contagem: str | None = None
+    if fora_asc:
+        inicio_contagem = (fora_asc[0].get("data") or "")[:10] or None
 
     ultimo = max(eventos, key=_xonha_sort_key) if eventos else None
     status = "desconhecido"
@@ -1645,6 +1650,7 @@ def xonha_stats() -> dict[str, Any]:
         "total_voltas": total_voltas,
         "total_banimentos": total_banimentos,
         "total_placar": total_placar,
+        "inicio_contagem": inicio_contagem,
         "media_saidas_por_mes": media_saidas_por_mes,
         "media_saidas_por_dia": media_saidas_por_dia,
         "media_dias_entre_saidas": media_dias_entre_saidas,
