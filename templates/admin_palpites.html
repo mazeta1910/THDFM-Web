@@ -48,6 +48,38 @@
   <p class="locked-msg" style="margin:0">Nenhum jogo nesta fase/perna.</p>
 </div>
 {% else %}
+{% if ranking %}
+<div class="card planilha-ranking-card">
+  <h2 class="planilha-ranking-title">Ranking dos apostadores</h2>
+  <p class="planilha-ranking-lead">Nesta fase/perna, com base nos palpites enviados.</p>
+  <div class="planilha-metricas planilha-ranking-metricas" aria-label="Ranking dos apostadores">
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Mais gols</span>
+      <span class="planilha-metrica-value">{{ ranking.mais_gols.nome }} <small>(média {{ ranking.mais_gols.media }} · {{ ranking.mais_gols.total }} no total)</small></span>
+    </div>
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Menos gols</span>
+      <span class="planilha-metrica-value">{{ ranking.menos_gols.nome }} <small>(média {{ ranking.menos_gols.media }} · {{ ranking.menos_gols.total }} no total)</small></span>
+    </div>
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Mais empates</span>
+      <span class="planilha-metrica-value">{{ ranking.mais_empates.nome }} <small>({{ ranking.mais_empates.n }}×)</small></span>
+    </div>
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Mais casa</span>
+      <span class="planilha-metrica-value">{{ ranking.mais_casa.nome }} <small>({{ ranking.mais_casa.n }}×)</small></span>
+    </div>
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Mais fora</span>
+      <span class="planilha-metrica-value">{{ ranking.mais_fora.nome }} <small>({{ ranking.mais_fora.n }}×)</small></span>
+    </div>
+    <div class="planilha-metrica planilha-metrica-wide">
+      <span class="planilha-metrica-label">Placar mais alto</span>
+      <span class="planilha-metrica-value">{{ ranking.placar_mais_alto.nome }} <small>({{ ranking.placar_mais_alto.placar }} · {{ ranking.placar_mais_alto.total }} gols)</small></span>
+    </div>
+  </div>
+</div>
+{% endif %}
 <div class="planilha-grid">
 {% for t in tabelas %}
 <div class="card planilha-card" data-planilha-collapse>
@@ -119,6 +151,18 @@
       <div class="planilha-metrica planilha-metrica-wide">
         <span class="planilha-metrica-label">Maior diferença</span>
         <span class="planilha-metrica-value">{{ m.maior_diferenca.placar }} <small>({{ m.maior_diferenca.nome }} · {{ m.maior_diferenca.diff }} gols)</small></span>
+      </div>
+      {% endif %}
+      {% if m.mais_gols %}
+      <div class="planilha-metrica planilha-metrica-wide">
+        <span class="planilha-metrica-label">Mais gols</span>
+        <span class="planilha-metrica-value">{{ m.mais_gols.nome }} <small>({{ m.mais_gols.placar }} · {{ m.mais_gols.total }})</small></span>
+      </div>
+      {% endif %}
+      {% if m.menos_gols %}
+      <div class="planilha-metrica planilha-metrica-wide">
+        <span class="planilha-metrica-label">Menos gols</span>
+        <span class="planilha-metrica-value">{{ m.menos_gols.nome }} <small>({{ m.menos_gols.placar }} · {{ m.menos_gols.total }})</small></span>
       </div>
       {% endif %}
       {% if m.placar_mais_comum %}

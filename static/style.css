@@ -4119,6 +4119,28 @@ html[data-theme="light"] .admin-main {
   font-size: 0.62rem;
   font-weight: 600;
 }
+.planilha-ranking-card {
+  margin-bottom: 1rem;
+  padding: 0.85rem 0.9rem 0.95rem;
+}
+.planilha-ranking-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+.planilha-ranking-lead {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: center;
+}
+.planilha-ranking-metricas {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+}
 .planilha-grid table.planilha {
   font-size: 0.75rem;
 }

@@ -191,6 +191,25 @@ def _metricas_palpites(
     if media_gc is not None and media_gf is not None:
         gap_medias = round(abs(media_gc - media_gf), 2)
 
+    mais_gols: dict[str, Any] | None = None
+    menos_gols: dict[str, Any] | None = None
+    for r in com:
+        try:
+            gm = int(r["gols_m"])
+            gv = int(r["gols_v"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        total = gm + gv
+        entry = {
+            "nome": r.get("nome") or "",
+            "total": total,
+            "placar": f"{gm} x {gv}",
+        }
+        if mais_gols is None or total > int(mais_gols["total"]):
+            mais_gols = entry
+        if menos_gols is None or total < int(menos_gols["total"]):
+            menos_gols = entry
+
     return {
         "total": n_com,
         "n_casa": n_casa,
@@ -207,10 +226,108 @@ def _metricas_palpites(
         "media_diferenca": _media(diffs),
         "gap_medias": gap_medias,
         "maior_diferenca": maior,
+        "mais_gols": mais_gols,
+        "menos_gols": menos_gols,
         "placar_mais_comum": placar_mais_comum,
         "favorito": favorito,
         "favorito_label": favorito_label,
         "consenso_pct": consenso_pct,
+    }
+
+
+def ranking_apostadores(tabelas: list[dict]) -> dict[str, Any] | None:
+    """Ranking entre participantes na fase/perna exibida."""
+    users: dict[str, dict[str, Any]] = {}
+    for t in tabelas:
+        for row in t.get("linhas") or []:
+            if row.get("tipo") != "palpite" or row.get("sem_palpite"):
+                continue
+            nome = (row.get("nome") or "").strip() or "?"
+            try:
+                gm = int(row["gols_m"])
+                gv = int(row["gols_v"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            total = gm + gv
+            u = users.setdefault(
+                nome,
+                {
+                    "nome": nome,
+                    "n": 0,
+                    "gols": 0,
+                    "empates": 0,
+                    "casa": 0,
+                    "fora": 0,
+                    "max_gols": -1,
+                    "max_placar": "",
+                },
+            )
+            u["n"] += 1
+            u["gols"] += total
+            grupo = row.get("grupo")
+            if grupo == "empate":
+                u["empates"] += 1
+            elif grupo == "casa":
+                u["casa"] += 1
+            elif grupo == "fora":
+                u["fora"] += 1
+            if total > int(u["max_gols"]):
+                u["max_gols"] = total
+                u["max_placar"] = f"{gm} x {gv}"
+
+    if not users:
+        return None
+
+    lista = list(users.values())
+    for u in lista:
+        u["media_gols"] = round(u["gols"] / u["n"], 2) if u["n"] else 0.0
+
+    def _max(key: str) -> dict[str, Any]:
+        return max(lista, key=lambda u: (u[key], u["nome"]))
+
+    def _min(key: str) -> dict[str, Any]:
+        return min(lista, key=lambda u: (u[key], u["nome"]))
+
+    mais_gols = _max("media_gols")
+    menos_gols = _min("media_gols")
+    mais_empates = _max("empates")
+    mais_casa = _max("casa")
+    mais_fora = _max("fora")
+    placar_mais_alto = _max("max_gols")
+
+    return {
+        "mais_gols": {
+            "nome": mais_gols["nome"],
+            "media": mais_gols["media_gols"],
+            "total": mais_gols["gols"],
+            "n": mais_gols["n"],
+        },
+        "menos_gols": {
+            "nome": menos_gols["nome"],
+            "media": menos_gols["media_gols"],
+            "total": menos_gols["gols"],
+            "n": menos_gols["n"],
+        },
+        "mais_empates": {
+            "nome": mais_empates["nome"],
+            "n": mais_empates["empates"],
+            "jogos": mais_empates["n"],
+        },
+        "mais_casa": {
+            "nome": mais_casa["nome"],
+            "n": mais_casa["casa"],
+            "jogos": mais_casa["n"],
+        },
+        "mais_fora": {
+            "nome": mais_fora["nome"],
+            "n": mais_fora["fora"],
+            "jogos": mais_fora["n"],
+        },
+        "placar_mais_alto": {
+            "nome": placar_mais_alto["nome"],
+            "placar": placar_mais_alto["max_placar"],
+            "total": placar_mais_alto["max_gols"],
+        },
     }
 
 

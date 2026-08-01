@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 import src.db as db
 from src.config import ROOT_DIR
-from src.transparencia import _metricas_palpites, montar_portal
+from src.transparencia import _metricas_palpites, montar_portal, ranking_apostadores
 
 
 @pytest.fixture()
@@ -110,6 +110,9 @@ def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     assert "planilha-scoreboard" in r.text
     assert "planilha-metricas" in r.text
     assert "planilha-head-top-spacer" in r.text
+    assert "Ranking dos apostadores" in r.text
+    assert "Mais empates" in r.text
+    assert "Foto User" in r.text
 
 
 def test_metricas_palpites_conta_lados_medias_e_extremos():
@@ -137,6 +140,37 @@ def test_metricas_palpites_conta_lados_medias_e_extremos():
     assert m["favorito"] == "casa"
     assert m["favorito_label"] == "Mirassol"
     assert m["consenso_pct"] == 50.0
+    assert m["mais_gols"]["nome"] == "A"
+    assert m["mais_gols"]["total"] == 3
+    assert m["menos_gols"]["nome"] == "C"
+    assert m["menos_gols"]["total"] == 2
+
+
+def test_ranking_apostadores_por_fase():
+    tabelas = [
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "Alto", "grupo": "casa", "gols_m": 4, "gols_v": 1, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Baixo", "grupo": "empate", "gols_m": 0, "gols_v": 0, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Empateiro", "grupo": "empate", "gols_m": 1, "gols_v": 1, "sem_palpite": False},
+            ]
+        },
+        {
+            "linhas": [
+                {"tipo": "palpite", "nome": "Alto", "grupo": "fora", "gols_m": 1, "gols_v": 3, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Baixo", "grupo": "casa", "gols_m": 1, "gols_v": 0, "sem_palpite": False},
+                {"tipo": "palpite", "nome": "Empateiro", "grupo": "empate", "gols_m": 2, "gols_v": 2, "sem_palpite": False},
+            ]
+        },
+    ]
+    r = ranking_apostadores(tabelas)
+    assert r is not None
+    assert r["mais_gols"]["nome"] == "Alto"
+    assert r["menos_gols"]["nome"] == "Baixo"
+    assert r["mais_empates"]["nome"] == "Empateiro"
+    assert r["mais_empates"]["n"] == 2
+    assert r["placar_mais_alto"]["nome"] == "Alto"
+    assert r["placar_mais_alto"]["placar"] == "4 x 1"
 
 
 def test_montar_portal_inclui_metricas(client: TestClient):
