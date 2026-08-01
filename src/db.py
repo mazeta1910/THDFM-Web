@@ -1477,8 +1477,11 @@ def xonha_stats() -> dict[str, Any]:
     total_saidas = len(saidas)
     total_voltas = len(voltas)
     total_banimentos = len(banimentos)
+    # Placar: saídas + banimentos (o que "tira" o Xonha do grupo)
+    total_placar = total_saidas + total_banimentos
 
     saidas_asc = sorted(saidas, key=_xonha_sort_key)
+    fora_asc = sorted(saidas + banimentos, key=_xonha_sort_key)
     media_dias_entre_saidas: float | None = None
     if len(saidas_asc) >= 2:
         gaps: list[int] = []
@@ -1618,10 +1621,30 @@ def xonha_stats() -> dict[str, Any]:
             "quantidade": best_h[1],
         }
 
+    # % das saídas/banimentos que tiveram volta depois
+    taxa_retorno: float | None = None
+    if total_placar > 0:
+        taxa_retorno = round(100.0 * total_voltas / total_placar, 1)
+
+    # Maior intervalo (dias) entre dois sumiços (saída ou banimento)
+    recorde_paz_dias: int | None = None
+    if len(fora_asc) >= 2:
+        gaps_paz: list[int] = []
+        for prev, cur in zip(fora_asc, fora_asc[1:]):
+            try:
+                d0 = datetime.strptime(prev["data"][:10], "%Y-%m-%d").date()
+                d1 = datetime.strptime(cur["data"][:10], "%Y-%m-%d").date()
+                gaps_paz.append(max((d1 - d0).days, 0))
+            except ValueError:
+                continue
+        if gaps_paz:
+            recorde_paz_dias = max(gaps_paz)
+
     return {
         "total_saidas": total_saidas,
         "total_voltas": total_voltas,
         "total_banimentos": total_banimentos,
+        "total_placar": total_placar,
         "media_saidas_por_mes": media_saidas_por_mes,
         "media_saidas_por_dia": media_saidas_por_dia,
         "media_dias_entre_saidas": media_dias_entre_saidas,
@@ -1637,4 +1660,6 @@ def xonha_stats() -> dict[str, Any]:
         "tempo_medio_fora_dias": tempo_medio_fora_dias,
         "maior_tempo_fora_dias": maior_tempo_fora_dias,
         "horario_mais_comum": horario_mais_comum,
+        "taxa_retorno": taxa_retorno,
+        "recorde_paz_dias": recorde_paz_dias,
     }
