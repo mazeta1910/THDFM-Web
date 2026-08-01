@@ -6,17 +6,46 @@
   <p class="credenciais-kicker">Só o Dono</p>
   <h1>Gestão de credenciais</h1>
   <p class="login-lead">
-    Aqui você vê o <strong>username</strong> de cada liberado e pode
-    <strong>redefinir a senha</strong> quando alguém perder o acesso.
-    A senha antiga não aparece (é hash) — você cria uma nova e manda no Zap.
+    Veja o <strong>username</strong> de cada liberado e altere
+    <strong>username</strong> ou <strong>senha</strong> separadamente.
+    A senha antiga não aparece (é hash) — crie uma nova e mande no Zap.
   </p>
 
   {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
   {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
 
-  <div class="cred-dono-list">
+  {% if participantes %}
+  <div class="cred-dono-toolbar">
+    <label class="sr-only" for="cred-dono-busca">Buscar usuário</label>
+    <input
+      id="cred-dono-busca"
+      class="input-compact cred-dono-busca"
+      type="search"
+      placeholder="Buscar por nome, username ou celular…"
+      autocomplete="off"
+      data-cred-busca
+    />
+    <label class="sr-only" for="cred-dono-ir">Ir para usuário</label>
+    <select id="cred-dono-ir" class="input-compact cred-dono-ir" data-cred-ir data-listra-custom-select>
+      <option value="">Ir para usuário…</option>
+      {% for p in participantes %}
+      <option value="cred-{{ p.id }}">
+        {{ p.nome }}{% if p.username %} (@{{ p.username }}){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+
+  <div class="cred-dono-list" data-cred-lista>
     {% for p in participantes %}
-    <article class="card cred-dono-card">
+    {% set busca = ((p.nome or '') ~ ' ' ~ (p.username or '') ~ ' ' ~ (p.celular or '') ~ ' ' ~ (p.admin_login or ''))|lower %}
+    <article
+      class="card cred-dono-card"
+      id="cred-{{ p.id }}"
+      data-cred-card
+      data-cred-busca-texto="{{ busca|e }}"
+    >
       <div class="cred-dono-head">
         {% set av = avatar_url(p.avatar_path) %}
         {% if av %}
@@ -28,54 +57,136 @@
           <strong>{{ p.nome }}</strong>
           <span class="cred-dono-user">
             {% if p.username %}
-            username: <code>{{ p.username }}</code>
+            <code>@{{ p.username }}</code>
             {% else %}
-            <em>sem username ainda</em>
+            <em>sem username</em>
             {% endif %}
           </span>
           <span class="cred-dono-hints">
-            {% if p.password_hash %}senha cadastrada{% else %}ainda sem senha{% endif %}
+            {% if p.password_hash %}senha ok{% else %}sem senha{% endif %}
             {% if p.celular %} · {{ p.celular|celular_fmt }}{% endif %}
             {% if p.admin_login %} · admin <code>{{ p.admin_login }}</code>{% endif %}
           </span>
         </div>
       </div>
-      <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-form" autocomplete="off">
-        <input type="hidden" name="participante_id" value="{{ p.id }}" />
-        <label for="user-{{ p.id }}">Username</label>
-        <input
-          id="user-{{ p.id }}"
-          class="input-compact"
-          type="text"
-          name="username"
-          value="{{ p.username or '' }}"
-          maxlength="24"
-          autocapitalize="off"
-          spellcheck="false"
-          placeholder="deixe igual ou ajuste"
-        />
-        <label for="senha-{{ p.id }}">Nova senha (mín. 8)</label>
-        <div class="password-field">
+
+      <div class="cred-dono-fields">
+        <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+          <input type="hidden" name="participante_id" value="{{ p.id }}" />
+          <input type="hidden" name="acao" value="username" />
+          <label class="sr-only" for="user-{{ p.id }}">Username</label>
           <input
-            id="senha-{{ p.id }}"
+            id="user-{{ p.id }}"
             class="input-compact"
-            type="password"
-            name="senha_nova"
+            type="text"
+            name="username"
+            value="{{ p.username or '' }}"
+            maxlength="24"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="username"
             required
-            minlength="8"
-            autocomplete="new-password"
-            placeholder="senha temporária pro Zap"
           />
-          <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <button
+            type="submit"
+            class="cred-dono-save"
+            title="Salvar username"
+            aria-label="Salvar username de {{ p.nome }}"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
           </button>
-        </div>
-        <button type="submit">Redefinir e anotar no Zap</button>
-      </form>
+        </form>
+
+        <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+          <input type="hidden" name="participante_id" value="{{ p.id }}" />
+          <input type="hidden" name="acao" value="senha" />
+          <label class="sr-only" for="senha-{{ p.id }}">Nova senha</label>
+          <div class="password-field cred-dono-pass">
+            <input
+              id="senha-{{ p.id }}"
+              class="input-compact"
+              type="password"
+              name="senha_nova"
+              minlength="8"
+              required
+              autocomplete="new-password"
+              placeholder="nova senha (mín. 8)"
+            />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <button
+            type="submit"
+            class="cred-dono-save"
+            title="Salvar senha"
+            aria-label="Salvar senha de {{ p.nome }}"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+          </button>
+        </form>
+      </div>
     </article>
     {% else %}
     <p class="login-lead">Nenhum liberado ainda.</p>
     {% endfor %}
+    <p class="cred-dono-vazio" data-cred-vazio hidden>Nenhum usuário encontrado nessa busca.</p>
   </div>
 </div>
+<script src="/static/listra-custom-select.js?v=189"></script>
+<script>
+(function () {
+  var busca = document.querySelector("[data-cred-busca]");
+  var ir = document.querySelector("[data-cred-ir]");
+  var cards = Array.prototype.slice.call(document.querySelectorAll("[data-cred-card]"));
+  var vazio = document.querySelector("[data-cred-vazio]");
+
+  function filtrar() {
+    var q = (busca && busca.value ? busca.value : "").toLowerCase().trim();
+    var n = 0;
+    cards.forEach(function (card) {
+      var texto = (card.getAttribute("data-cred-busca-texto") || "").toLowerCase();
+      var ok = !q || texto.indexOf(q) !== -1;
+      card.hidden = !ok;
+      if (ok) n += 1;
+    });
+    if (vazio) vazio.hidden = n > 0 || !cards.length;
+  }
+
+  if (busca) {
+    busca.addEventListener("input", filtrar);
+  }
+
+  if (ir) {
+    ir.addEventListener("change", function () {
+      var id = ir.value;
+      if (!id) return;
+      var alvo = document.getElementById(id);
+      if (!alvo) return;
+      alvo.hidden = false;
+      try {
+        alvo.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch (e) {
+        alvo.scrollIntoView();
+      }
+      alvo.classList.add("cred-dono-card--flash");
+      window.setTimeout(function () {
+        alvo.classList.remove("cred-dono-card--flash");
+      }, 1400);
+      ir.value = "";
+      try {
+        ir.dispatchEvent(new Event("change", { bubbles: true }));
+      } catch (e) {}
+    });
+  }
+})();
+</script>
 {% endblock %}

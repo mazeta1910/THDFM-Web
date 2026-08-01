@@ -741,31 +741,45 @@ def alterar_senha(
 def admin_redefinir_credenciais(
     participante_id: int,
     *,
-    senha_nova: str,
+    senha_nova: str | None = None,
     username: str | None = None,
 ) -> dict[str, Any]:
-    """Dono redefine senha (e opcionalmente username). Não devolve a senha em claro."""
+    """Dono atualiza username e/ou senha. Pelo menos um dos dois. Não devolve senha em claro."""
     part = get_participante(participante_id)
     if not part:
         raise ValueError("Participante não encontrado")
     if part.get("status") != "liberado":
         raise ValueError("Só dá para redefinir conta liberada")
 
-    senha_ok = validar_senha_nova(senha_nova)
-    ph = hash_senha(senha_ok)
+    senha_raw = (senha_nova or "").strip() if senha_nova is not None else ""
+    atualizar_senha = bool(senha_raw)
+    atualizar_user = username is not None and str(username).strip() != ""
+
+    if not atualizar_senha and not atualizar_user:
+        raise ValueError("Informe um username novo e/ou uma senha nova")
 
     u = None
-    if username is not None and str(username).strip():
+    ph = None
+    if atualizar_user:
         u = normalizar_username(username)
         if not username_disponivel(u, exceto_id=participante_id):
             raise ValueError("Username já está em uso")
+    if atualizar_senha:
+        senha_ok = validar_senha_nova(senha_raw)
+        ph = hash_senha(senha_ok)
 
     with get_db() as conn:
-        if u is not None:
+        if u is not None and ph is not None:
             conn.execute(
                 "UPDATE participantes SET username = ?, password_hash = ?, "
                 "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
                 (u, ph, participante_id),
+            )
+        elif u is not None:
+            conn.execute(
+                "UPDATE participantes SET username = ?, "
+                "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+                (u, participante_id),
             )
         else:
             conn.execute(

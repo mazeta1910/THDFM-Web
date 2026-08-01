@@ -359,20 +359,41 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     assert r.status_code == 200
     assert "fulano.ok" in r.text
     assert "Gestão de credenciais" in r.text
+    assert "data-cred-busca" in r.text
+    assert "data-cred-ir" in r.text
+    assert "cred-dono-save" in r.text
+    assert "Redefinir e anotar no Zap" not in r.text
 
     r2 = client.post(
         "/admin/credenciais/redefinir",
         data={
             "participante_id": part["id"],
-            "username": "fulano.ok",
+            "acao": "senha",
             "senha_nova": "nova45678",
         },
         follow_redirects=False,
     )
     assert r2.status_code == 303
     assert "credenciais" in r2.headers["location"].casefold()
+    assert "senha" in unquote(r2.headers["location"]).casefold()
     assert db.autenticar_por_username("fulano.ok", "nova45678")
     assert db.autenticar_por_username("fulano.ok", "antiga123") is None
+
+    r3 = client.post(
+        "/admin/credenciais/redefinir",
+        data={
+            "participante_id": part["id"],
+            "acao": "username",
+            "username": "fulano.novo",
+        },
+        follow_redirects=False,
+    )
+    assert r3.status_code == 303
+    assert "username" in unquote(r3.headers["location"]).casefold()
+    assert db.autenticar_por_username("fulano.novo", "nova45678")
+    assert db.get_participante(part["id"])["username"] == "fulano.novo"
+    # Senha permanece ao mudar só o username
+    assert db.autenticar_por_username("fulano.ok", "nova45678") is None
 
 
 def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
