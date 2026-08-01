@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=173" />
+  <link rel="stylesheet" href="/static/style.css?v=174" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -825,20 +825,39 @@
       const previewImgId = opts.previewImgId || "";
       const previewImgClass = opts.previewImgClass || "";
       const previewAttr = opts.previewAttr || "";
+      const autoSubmitForm = opts.autoSubmitForm || null;
+      const onApplied = typeof opts.onApplied === "function" ? opts.onApplied : null;
 
       const setPreview = (url) => {
         if (!preview) return;
         let el = preview.querySelector("img");
         if (!el) {
-          preview.innerHTML = "";
+          const cam = preview.querySelector(".avatar-edit-camera");
+          preview.querySelectorAll("img, .avatar-placeholder").forEach((n) => n.remove());
           el = document.createElement("img");
           el.alt = "Prévia da foto";
           if (previewAttr) el.setAttribute(previewAttr, "");
-          preview.appendChild(el);
+          if (cam) preview.insertBefore(el, cam);
+          else preview.appendChild(el);
         }
         if (previewImgId) el.id = previewImgId;
         if (previewImgClass) el.className = previewImgClass;
         el.src = url;
+      };
+
+      const syncLiveAvatars = (url) => {
+        document.querySelectorAll("[data-avatar-live]").forEach((node) => {
+          if (node.tagName === "IMG") {
+            node.src = url;
+            return;
+          }
+          const img = document.createElement("img");
+          img.className = node.className.replace(/\b\w+-fallback\b/g, "").trim();
+          img.alt = "";
+          img.setAttribute("data-avatar-live", "");
+          img.src = url;
+          node.replaceWith(img);
+        });
       };
 
       input.addEventListener("change", () => {
@@ -855,7 +874,15 @@
             dt.items.add(cropped);
             input.files = dt.files;
             if (nameEl) nameEl.textContent = cropped.name;
-            setPreview(URL.createObjectURL(cropped));
+            const url = URL.createObjectURL(cropped);
+            setPreview(url);
+            syncLiveAvatars(url);
+            if (onApplied) onApplied(cropped);
+            if (autoSubmitForm && typeof autoSubmitForm.requestSubmit === "function") {
+              autoSubmitForm.requestSubmit();
+            } else if (autoSubmitForm) {
+              autoSubmitForm.submit();
+            }
           },
           onCancel: () => {
             if (nameEl) nameEl.textContent = nameEmpty;
@@ -931,17 +958,24 @@
     }
 
     const input = document.getElementById("conta-drawer-avatar");
-    const nameEl = document.getElementById("conta-drawer-file-name");
     const preview = document.getElementById("conta-drawer-avatar-preview");
+    const form = document.getElementById("form-conta-drawer");
     if (input && window.thdfmBindAvatarCrop) {
       window.thdfmBindAvatarCrop(input, {
         preview,
-        nameEl,
-        nameEmpty: "Nenhuma foto escolhida",
         previewImgId: "conta-drawer-avatar-live",
         previewImgClass: "avatar-placeholder",
+        autoSubmitForm: form,
       });
     }
+    document.querySelectorAll("[data-avatar-edit]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!input) return;
+        input.click();
+      });
+    });
   })();
   </script>
   <script>

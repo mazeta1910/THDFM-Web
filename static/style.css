@@ -626,22 +626,47 @@ html[data-theme="light"] .theme-icon-moon {
 .site-sidebar-backdrop {
   display: none;
 }
+.site-brand-user-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+  padding: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+.site-brand-user-row.is-active,
+.site-brand-user-row:has(.site-brand-user.active),
+.site-brand-user-row:hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+}
 .site-brand-user {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.45rem 0.5rem;
-  margin: 0 -0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.2rem 0.25rem;
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  border: 1px solid transparent;
+  border: none;
 }
 .site-brand-user:hover,
 .site-brand-user.active {
-  background: var(--hover-bg);
-  border-color: var(--border);
   text-decoration: none;
+}
+.site-brand-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
 }
 .site-brand-avatar {
   width: 36px;
@@ -650,6 +675,8 @@ html[data-theme="light"] .theme-icon-moon {
   object-fit: cover;
   flex-shrink: 0;
   border: 1px solid var(--border);
+  display: block;
+  box-sizing: border-box;
 }
 .site-brand-avatar-fallback {
   display: inline-flex;
@@ -1076,6 +1103,8 @@ nav.site-nav-desktop {
   object-fit: cover;
   border: 2px solid var(--border);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  display: block;
+  box-sizing: border-box;
 }
 .avatar-placeholder {
   display: flex;
@@ -1085,6 +1114,50 @@ nav.site-nav-desktop {
   font-size: 1.4rem;
   font-weight: 800;
   color: var(--accent);
+}
+.avatar-edit-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+.avatar-edit-trigger.avatar-preview {
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+.avatar-edit-camera {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.avatar-edit-trigger:hover .avatar-edit-camera,
+.avatar-edit-trigger:focus-visible .avatar-edit-camera {
+  opacity: 1;
+}
+.avatar-edit-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+.site-brand-avatar-fallback,
+.admin-brand-avatar-fallback {
+  width: 100%;
+  height: 100%;
+}
+.conta-hint--foto {
+  margin-top: 0.15rem !important;
 }
 .conta-fields {
   flex: 1 1 auto;
@@ -2874,22 +2947,47 @@ body.admin-body .wrap.admin-wrap {
   color: var(--muted);
   font-size: 0.82rem;
 }
+.admin-brand-user-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem;
+  margin: 0 -0.15rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+.admin-brand-user-row.is-active,
+.admin-brand-user-row:has(.admin-brand-user.active),
+.admin-brand-user-row:hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+}
 .admin-brand-user {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.45rem 0.5rem;
-  margin: 0 -0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.2rem 0.25rem;
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  border: 1px solid transparent;
+  border: none;
 }
 .admin-brand-user:hover,
 .admin-brand-user.active {
-  background: var(--hover-bg);
-  border-color: var(--border);
   text-decoration: none;
+}
+.admin-brand-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
 }
 .admin-brand-avatar {
   width: 36px;
@@ -2898,6 +2996,8 @@ body.admin-body .wrap.admin-wrap {
   object-fit: cover;
   flex-shrink: 0;
   border: 1px solid var(--border);
+  display: block;
+  box-sizing: border-box;
 }
 .admin-brand-avatar-fallback {
   display: inline-flex;

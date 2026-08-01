@@ -20,18 +20,34 @@
       <button type="button" class="site-sidebar-close" id="site-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
-    <a href="/p/{{ participante_nav.token }}/conta" class="site-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
-      {% set brand_av = avatar_url(participante_nav.avatar_path) %}
-      {% if brand_av %}
-      <img class="site-brand-avatar" src="{{ brand_av }}" alt="" />
-      {% else %}
-      <span class="site-brand-avatar site-brand-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
-      {% endif %}
-      <span class="site-brand-user-text">
-        <span class="site-brand-name">{{ participante_nav.nome }}</span>
-        <span class="site-brand-hint">Minha conta</span>
-      </span>
-    </a>
+    <div class="site-brand-user-row {% if on_conta %}is-active{% endif %}">
+      <button
+        type="button"
+        class="avatar-edit-trigger site-brand-avatar-wrap"
+        data-avatar-edit
+        title="Alterar foto"
+        aria-label="Alterar foto de perfil"
+      >
+        {% set brand_av = avatar_url(participante_nav.avatar_path) %}
+        {% if brand_av %}
+        <img class="site-brand-avatar" src="{{ brand_av }}" alt="" data-avatar-live />
+        {% else %}
+        <span class="site-brand-avatar site-brand-avatar-fallback" data-avatar-live>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+        {% endif %}
+        <span class="avatar-edit-camera" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </span>
+      </button>
+      <a href="/p/{{ participante_nav.token }}/conta" class="site-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
+        <span class="site-brand-user-text">
+          <span class="site-brand-name">{{ participante_nav.nome }}</span>
+          <span class="site-brand-hint">Minha conta</span>
+        </span>
+      </a>
+    </div>
     {% endif %}
   </div>
 
