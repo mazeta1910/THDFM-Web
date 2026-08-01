@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Listra — Permissões — Admin THDFM{% endblock %}
+{% block content %}
+<div class="listra-admin">
+  <p class="credenciais-kicker">Admin</p>
+  <h1>Listra — permissões</h1>
+  <p class="login-lead">
+    Libere quem pode <strong>adicionar</strong> frases e quem pode
+    <strong>enviar no WhatsApp</strong>.
+    Acervo público em <a href="/grupo/listra">/grupo/listra</a>
+    ({{ total_frases }} frase{{ 's' if total_frases != 1 else '' }}).
+  </p>
+
+  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+  <form method="post" action="/admin/listra/permissoes" class="listra-perm-form">
+    <div class="listra-perm-table-wrap">
+      <table class="listra-perm-table">
+        <thead>
+          <tr>
+            <th scope="col">Participante</th>
+            <th scope="col">Adicionar</th>
+            <th scope="col">Enviar no WhatsApp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in participantes %}
+          <tr>
+            <td>
+              <span class="listra-perm-nome">{{ p.nome }}</span>
+              {% if p.username %}
+              <span class="listra-perm-user">@{{ p.username }}</span>
+              {% endif %}
+              {% if p.admin_login %}
+              <span class="listra-perm-badge">admin</span>
+              {% endif %}
+            </td>
+            <td class="listra-perm-check">
+              <label>
+                <input type="checkbox" name="add_{{ p.id }}" value="1" {% if p.pode_adicionar %}checked{% endif %} />
+                <span class="sr-only">Pode adicionar</span>
+              </label>
+            </td>
+            <td class="listra-perm-check">
+              <label>
+                <input type="checkbox" name="env_{{ p.id }}" value="1" {% if p.pode_enviar %}checked{% endif %} />
+                <span class="sr-only">Pode enviar</span>
+              </label>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="listra-perm-empty">Nenhum participante liberado ainda.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if participantes %}
+    <button type="submit" class="listra-submit">Salvar permissões</button>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
