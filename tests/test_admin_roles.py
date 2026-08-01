@@ -288,10 +288,10 @@ def test_admin_sidebar_sem_item_listra_permissoes(client: TestClient):
     assert "Listra · Permissões" not in r.text
     assert 'href="/admin/listra"' not in r.text
     assert 'href="/grupo/listra"' in r.text
-    # Permissões continuam acessíveis pela página da Listra
+    # Gestor/permissões continuam acessíveis pela página da Listra
     r2 = client.get("/grupo/listra")
-    assert 'href="/admin/listra"' in r2.text
-    assert "Gerenciar permissões" in r2.text
+    assert "/admin/listra" in r2.text
+    assert "Gestor de meliantes" in r2.text
 
 
 def test_sair_do_admin_limpa_tudo_e_pede_entrar(client: TestClient):

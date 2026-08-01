@@ -1982,6 +1982,29 @@ def list_listra_meliantes() -> list[str]:
         return [str(r["nome"]) for r in rows]
 
 
+def list_listra_meliantes_detalhe() -> list[dict[str, Any]]:
+    """Meliantes com contagem de frases vinculadas."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT m.nome,
+                   m.criado_em,
+                   COALESCE(COUNT(f.id), 0) AS usos
+            FROM listra_meliantes m
+            LEFT JOIN listra_frases f
+              ON TRIM(f.responsavel) = m.nome
+            GROUP BY m.nome, m.criado_em
+            ORDER BY m.nome COLLATE NOCASE
+            """
+        ).fetchall()
+        out: list[dict[str, Any]] = []
+        for r in rows:
+            d = dict(r)
+            d["usos"] = int(d.get("usos") or 0)
+            out.append(d)
+        return out
+
+
 def ensure_listra_meliante(nome: str) -> str:
     """Registra o meliante (se novo) e devolve o nome normalizado."""
     nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
@@ -1996,6 +2019,41 @@ def ensure_listra_meliante(nome: str) -> str:
             (nome_ok,),
         )
     return nome_ok
+
+
+def criar_listra_meliante(nome: str) -> str:
+    """Cadastra um meliante novo (erro se já existir)."""
+    nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome_ok:
+        raise ValueError("Informe o nome do meliante.")
+    if len(nome_ok) > NOME_MAX_LEN:
+        raise ValueError(f"Meliante com no máximo {NOME_MAX_LEN} caracteres.")
+    with get_db() as conn:
+        existe = conn.execute(
+            "SELECT 1 FROM listra_meliantes WHERE nome = ? COLLATE NOCASE LIMIT 1",
+            (nome_ok,),
+        ).fetchone()
+        if existe:
+            raise ValueError("Esse meliante já está cadastrado.")
+        conn.execute(
+            "INSERT INTO listra_meliantes (nome, criado_em) "
+            "VALUES (?, datetime('now', 'localtime'))",
+            (nome_ok,),
+        )
+    return nome_ok
+
+
+def apagar_listra_meliante(nome: str) -> bool:
+    """Remove o meliante da lista (frases existentes mantêm o nome)."""
+    nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome_ok:
+        return False
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM listra_meliantes WHERE nome = ? COLLATE NOCASE",
+            (nome_ok,),
+        )
+        return cur.rowcount > 0
 
 
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:

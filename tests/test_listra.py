@@ -287,6 +287,9 @@ def test_admin_permissoes_painel(client: TestClient):
     r = client.get("/admin/listra")
     assert r.status_code == 200
     assert part["nome"] in r.text
+    assert "Gestor de meliantes" in r.text
+    assert 'id="meliantes"' in r.text
+    assert "/admin/listra/meliantes" in r.text
 
     r = client.post(
         "/admin/listra/permissoes",
@@ -299,6 +302,48 @@ def test_admin_permissoes_painel(client: TestClient):
     perm = db.get_listra_permissao(part["id"])
     assert perm["pode_adicionar"] is True
     assert perm["pode_enviar"] is True
+
+
+def test_admin_gestor_meliantes(client: TestClient):
+    from urllib.parse import unquote
+
+    from src import db
+
+    _login_admin(client)
+    r = client.post(
+        "/admin/listra/meliantes",
+        data={"nome": "Odiei Ribeiro"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = unquote(r.headers.get("location") or "")
+    assert "adicionado" in loc.lower()
+    assert "Odiei Ribeiro" in db.list_listra_meliantes()
+
+    dup = client.post(
+        "/admin/listra/meliantes",
+        data={"nome": "odiei ribeiro"},
+        follow_redirects=False,
+    )
+    assert dup.status_code == 303
+    assert "já está cadastrado" in unquote(dup.headers.get("location") or "").lower()
+
+    painel = client.get("/admin/listra")
+    assert "Odiei Ribeiro" in painel.text
+    assert 'href="/grupo/listra"' in painel.text
+
+    # Aparece nas sugestões da Listra.
+    pub = client.get("/grupo/listra")
+    assert "Odiei Ribeiro" in pub.text
+    assert "Gestor de meliantes" in pub.text
+
+    apaga = client.post(
+        "/admin/listra/meliantes/apagar",
+        data={"nome": "Odiei Ribeiro"},
+        follow_redirects=False,
+    )
+    assert apaga.status_code == 303
+    assert "Odiei Ribeiro" not in db.list_listra_meliantes()
 
 
 def test_participante_com_permissao_enviar(client: TestClient):
