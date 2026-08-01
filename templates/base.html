@@ -311,6 +311,46 @@
         setCollapsed(!card.classList.contains("is-collapsed"));
       });
     });
+
+    document.querySelectorAll("[data-planilha-grupo-toggle]").forEach((btn) => {
+      const grupoRow = btn.closest("tr[data-planilha-grupo]");
+      if (!grupoRow) return;
+      const grupo = grupoRow.getAttribute("data-planilha-grupo") || "";
+      const nome =
+        (grupoRow.querySelector(".planilha-grupo-label strong") || {}).textContent ||
+        "grupo";
+
+      const itensDoGrupo = () => {
+        const out = [];
+        let el = grupoRow.nextElementSibling;
+        while (el) {
+          if (el.matches("tr[data-planilha-grupo]")) break;
+          if (el.getAttribute("data-planilha-grupo-item") === grupo) out.push(el);
+          el = el.nextElementSibling;
+        }
+        return out;
+      };
+
+      const setGrupoCollapsed = (collapsed) => {
+        grupoRow.classList.toggle("is-collapsed", collapsed);
+        btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        btn.title = (collapsed ? "Expandir " : "Minimizar ") + nome;
+        btn.setAttribute(
+          "aria-label",
+          (collapsed ? "Expandir grupo " : "Minimizar grupo ") + nome
+        );
+        itensDoGrupo().forEach((tr) => {
+          tr.hidden = collapsed;
+          tr.classList.toggle("is-grupo-collapsed", collapsed);
+        });
+      };
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setGrupoCollapsed(!grupoRow.classList.contains("is-collapsed"));
+      });
+    });
   })();
   </script>
   <script>

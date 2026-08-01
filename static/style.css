@@ -4281,12 +4281,50 @@ html.theme-light tr.planilha-grupo td,
 html[data-theme="light"] tr.planilha-grupo td {
   background: rgba(0, 0, 0, 0.04);
 }
+.planilha-grupo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
 .planilha-grupo-label {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.82rem;
   color: var(--text);
+  min-width: 0;
+}
+.btn-planilha-grupo-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.55rem;
+  height: 1.55rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.btn-planilha-grupo-toggle:hover {
+  color: var(--accent);
+  border-color: rgba(232, 93, 4, 0.45);
+}
+.planilha-grupo-chevron {
+  display: block;
+  transition: transform 0.15s ease;
+}
+tr.planilha-grupo.is-collapsed .planilha-grupo-chevron {
+  transform: rotate(-90deg);
+}
+tr.is-grupo-collapsed {
+  display: none;
 }
 .planilha-grupo-label img {
   width: 18px;
