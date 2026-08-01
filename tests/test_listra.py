@@ -119,6 +119,56 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     pub = client.get("/grupo/listra")
     assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text
+    assert "listra-editar-btn" in pub.text
+    assert "/grupo/listra/atualizar" in pub.text
+
+
+def test_admin_edita_frase(client: TestClient):
+    from src.listra_seed import LISTRA_ANO_ATUAL
+    from src import db
+
+    _login_admin(client)
+    criada = db.criar_listra_frase(
+        "Texto original", "Fulano", ano=LISTRA_ANO_ATUAL
+    )
+    r = client.post(
+        "/grupo/listra/atualizar",
+        data={
+            "frase_id": criada["id"],
+            "texto": "Texto editado",
+            "responsavel": "Ciclano",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert "atualizada" in (r.headers.get("location") or "").lower()
+    atualizada = db.get_listra_frase(criada["id"])
+    assert atualizada["texto"] == "Texto editado"
+    assert atualizada["responsavel"] == "Ciclano"
+    pub = client.get("/grupo/listra")
+    assert "Texto editado" in pub.text
+    assert "Ciclano" in pub.text
+
+
+def test_visitante_nao_edita(client: TestClient):
+    from src.listra_seed import LISTRA_ANO_ATUAL
+    from src import db
+    from urllib.parse import unquote
+
+    frase = db.list_listra_frases(LISTRA_ANO_ATUAL)[0]
+    r = client.post(
+        "/grupo/listra/atualizar",
+        data={
+            "frase_id": frase["id"],
+            "texto": "Hack",
+            "responsavel": "Ninguém",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = unquote(r.headers.get("location") or "").lower()
+    assert "administração" in loc or "editar" in loc
+    assert db.get_listra_frase(frase["id"])["texto"] != "Hack"
 
 
 def test_admin_permissoes_painel(client: TestClient):

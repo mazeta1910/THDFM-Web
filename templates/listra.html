@@ -107,32 +107,87 @@
       </summary>
       <ol class="listra-list" data-listra-lista="{{ l.ano }}">
         {% for f in l.frases %}
-        <li class="listra-item">
-          <div class="listra-item-main">
-            <span class="listra-item-bullet" aria-hidden="true">*</span>
-            <p class="listra-item-texto">{{ f.texto }}</p>
-          </div>
-          <div class="listra-item-meta">
-            <div class="listra-item-meta-text">
-              {% if f.responsavel %}
-              <span class="listra-item-resp">{{ f.responsavel }}</span>
-              {% else %}
-              <span class="listra-item-resp listra-item-resp--vazio">Acervo {{ l.ano }}</span>
-              {% endif %}
-              {% if f.criado_em %}
-              <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
-                {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
-                {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
-              </time>
+        <li class="listra-item" data-listra-item="{{ f.id }}">
+          <div class="listra-item-view">
+            <div class="listra-item-main">
+              <span class="listra-item-bullet" aria-hidden="true">*</span>
+              <p class="listra-item-texto">{{ f.texto }}</p>
+            </div>
+            <div class="listra-item-meta">
+              <div class="listra-item-meta-text">
+                {% if f.responsavel %}
+                <span class="listra-item-resp">{{ f.responsavel }}</span>
+                {% else %}
+                <span class="listra-item-resp listra-item-resp--vazio">Acervo {{ l.ano }}</span>
+                {% endif %}
+                {% if f.criado_em %}
+                <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
+                  {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
+                  {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
+                </time>
+                {% endif %}
+              </div>
+              {% if is_admin %}
+              <div class="listra-item-actions">
+                <button
+                  type="button"
+                  class="listra-editar-btn"
+                  data-listra-edit-open
+                  title="Editar"
+                  aria-label="Editar frase"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                  </svg>
+                </button>
+                <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
+                  <input type="hidden" name="frase_id" value="{{ f.id }}" />
+                  <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
+                </form>
+              </div>
               {% endif %}
             </div>
-            {% if is_admin %}
-            <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
-              <input type="hidden" name="frase_id" value="{{ f.id }}" />
-              <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
-            </form>
-            {% endif %}
           </div>
+          {% if is_admin %}
+          <form
+            method="post"
+            action="/grupo/listra/atualizar"
+            class="listra-edit-form"
+            data-listra-edit-form
+            hidden
+            autocomplete="off"
+          >
+            <input type="hidden" name="frase_id" value="{{ f.id }}" />
+            <div class="listra-field">
+              <label for="listra-edit-texto-{{ f.id }}">Frase</label>
+              <textarea
+                id="listra-edit-texto-{{ f.id }}"
+                name="texto"
+                class="listra-input"
+                rows="3"
+                maxlength="2000"
+                required
+              >{{ f.texto }}</textarea>
+            </div>
+            <div class="listra-field">
+              <label for="listra-edit-resp-{{ f.id }}">Responsável</label>
+              <input
+                id="listra-edit-resp-{{ f.id }}"
+                name="responsavel"
+                class="listra-input"
+                type="text"
+                maxlength="30"
+                value="{{ f.responsavel or '' }}"
+                placeholder="Quem soltou essa"
+              />
+            </div>
+            <div class="listra-edit-actions">
+              <button type="submit" class="listra-submit listra-submit--small">Salvar</button>
+              <button type="button" class="listra-edit-cancel" data-listra-edit-cancel>Cancelar</button>
+            </div>
+          </form>
+          {% endif %}
         </li>
         {% else %}
         <li class="listra-empty">A Listra {{ l.ano }} ainda está vazia.</li>
@@ -251,6 +306,55 @@
       } finally {
         btn.disabled = false;
       }
+    });
+  });
+})();
+</script>
+{% endif %}
+
+{% if is_admin %}
+<script>
+(function () {
+  function fecharTodos() {
+    document.querySelectorAll("[data-listra-item]").forEach(function (item) {
+      var view = item.querySelector(".listra-item-view");
+      var form = item.querySelector("[data-listra-edit-form]");
+      if (view) view.hidden = false;
+      if (form) form.hidden = true;
+      item.classList.remove("listra-item--editing");
+    });
+  }
+
+  document.querySelectorAll("[data-listra-edit-open]").forEach(function (btn) {
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var item = btn.closest("[data-listra-item]");
+      if (!item) return;
+      fecharTodos();
+      var view = item.querySelector(".listra-item-view");
+      var form = item.querySelector("[data-listra-edit-form]");
+      if (view) view.hidden = true;
+      if (form) {
+        form.hidden = false;
+        item.classList.add("listra-item--editing");
+        var ta = form.querySelector("textarea[name='texto']");
+        if (ta) ta.focus();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-listra-edit-cancel]").forEach(function (btn) {
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      fecharTodos();
+    });
+  });
+
+  document.querySelectorAll("[data-listra-edit-form]").forEach(function (form) {
+    form.addEventListener("click", function (ev) {
+      ev.stopPropagation();
     });
   });
 })();

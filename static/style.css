@@ -6535,14 +6535,20 @@ textarea.xonha-input {
 }
 .listra-item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.4rem 0.85rem;
+  flex-direction: column;
+  gap: 0.65rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
+}
+.listra-item-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 0.85rem;
+  width: 100%;
 }
 .listra-item-main {
   display: flex;
@@ -6598,6 +6604,12 @@ textarea.xonha-input {
   opacity: 0.9;
   white-space: nowrap;
 }
+.listra-item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.listra-editar-btn,
 .listra-apagar-btn {
   display: inline-flex;
   align-items: center;
@@ -6614,9 +6626,50 @@ textarea.xonha-input {
   line-height: 1;
   cursor: pointer;
 }
+.listra-editar-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .listra-apagar-btn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+.listra-edit-form {
+  display: grid;
+  gap: 0.65rem;
+  width: 100%;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--border);
+}
+.listra-edit-form[hidden] {
+  display: none !important;
+}
+.listra-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.listra-submit--small {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+}
+.listra-edit-cancel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+.listra-edit-cancel:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+.listra-item--editing {
+  border-color: rgba(232, 93, 4, 0.4);
 }
 .listra-empty {
   padding: 1rem;
