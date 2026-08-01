@@ -1243,6 +1243,9 @@ def admin_palpites(request: Request):
     tabelas = [
         t for t in montar_portal(fase, exigir_resultado=False) if t.get("perna") == perna
     ]
+    tabelas_geral: list = []
+    for fase_id in FASE_IDS:
+        tabelas_geral.extend(montar_portal(fase_id, exigir_resultado=False))
     return render(
         request,
         "admin_palpites.html",
@@ -1252,7 +1255,7 @@ def admin_palpites(request: Request):
         janela=janela,
         volta_liberada=volta_liberada,
         tabelas=tabelas,
-        ranking=ranking_apostadores(tabelas),
+        ranking=ranking_apostadores(tabelas_geral),
     )
 
 
