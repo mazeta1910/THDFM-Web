@@ -74,13 +74,72 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "LISTRA THDFM 2025" in body
     assert "LISTRA THDFM 2024" in body
     assert LISTRA_SEED_FRASES[0] in body
-    assert listra_seed_por_ano(2025)[0] in body
+    # 2025: emoji separado do texto na página (coluna dedicada).
+    assert "📺" in body
+    assert "Progama" in body
     assert listra_seed_por_ano(2024)[0] in body
     assert "Nova frase" not in body
     assert "data-listra-enviar" not in body
     assert "data-listra-ordenar" in body
     assert "Nome do meliante:" in body
 
+
+def test_admin_adiciona_com_emoji_e_destaque(client: TestClient):
+    from src.listra_seed import LISTRA_ANO_ATUAL
+    from src import db
+
+    _login_admin(client)
+    frase_longa = (
+        "TESTE FILTRO: o narrador XPTO SILVA (por todos os ângulos) "
+        "foi demitido do grupo de testes"
+    )
+    r = client.post(
+        "/grupo/listra",
+        data={
+            "texto": frase_longa,
+            "responsavel": "Mazeta",
+            "ano": str(LISTRA_ANO_ATUAL),
+            "emoji": "📺",
+            "destaque": "XPTO SILVA",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    frase = next(
+        f for f in db.list_listra_frases(LISTRA_ANO_ATUAL)
+        if f.get("destaque") == "XPTO SILVA"
+    )
+    assert frase["emoji"] == "📺"
+    assert frase["texto"] == frase_longa
+    assert "XPTO SILVA" in frase["texto"]
+
+    pub = client.get("/grupo/listra")
+    assert frase_longa in pub.text
+    assert 'class="listra-destaque"' in pub.text
+    assert "XPTO SILVA" in pub.text
+
+    export = client.get(f"/grupo/listra/export.txt?ano={LISTRA_ANO_ATUAL}")
+    assert export.status_code == 200
+    assert "* 📺 XPTO SILVA" in export.text
+    assert "* 📺 TESTE FILTRO" not in export.text
+    assert frase_longa not in export.text
+
+
+def test_linha_compartilhar_usa_destaque():
+    from src import db
+
+    linha = db.listra_linha_compartilhar(
+        {
+            "texto": "Frase longa com ODIEI RIBEIRO no meio",
+            "emoji": "🎤",
+            "destaque": "ODIEI RIBEIRO",
+        }
+    )
+    assert linha == "🎤 ODIEI RIBEIRO"
+    sem = db.listra_linha_compartilhar(
+        {"texto": "Progama", "emoji": "📺", "destaque": ""}
+    )
+    assert sem == "📺 Progama"
 
 def test_visitante_nao_adiciona(client: TestClient):
     from urllib.parse import unquote
@@ -233,7 +292,7 @@ def test_export_por_ano(client: TestClient):
     assert "LISTRA THDFM 2026" in r26.text
     assert "LISTRA THDFM 2025" in r25.text
     assert "LISTRA THDFM 2024" in r24.text
-    assert "📺 Progama" in r25.text or "Progama" in r25.text
+    assert "📺 Progama" in r25.text
     assert "Chooping" in r24.text
 
 
@@ -247,9 +306,27 @@ def test_texto_whatsapp_formatado():
     from src.listra_seed import LISTRA_TITULO
 
     texto = db.listra_texto_whatsapp(
-        [{"texto": "Uma", "ano": 2026}, {"texto": "Duas\nlinhas", "ano": 2026}],
+        [
+            {"texto": "Uma", "ano": 2026, "emoji": "", "destaque": ""},
+            {"texto": "Duas\nlinhas", "ano": 2026, "emoji": "", "destaque": ""},
+        ],
         ano=2026,
     )
     assert texto.startswith(f"*{LISTRA_TITULO}*")
     assert "* Uma" in texto
     assert "* Duas" in texto
+
+    com_destaque = db.listra_texto_whatsapp(
+        [
+            {
+                "texto": "EXCELENTE NARRADOR ODIEI RIBEIRO FOI DA PEDIDURA",
+                "ano": 2026,
+                "emoji": "📺",
+                "destaque": "ODIEI RIBEIRO",
+            }
+        ],
+        ano=2026,
+    )
+    assert "* 📺 ODIEI RIBEIRO" in com_destaque
+    assert "PEDIDURA" not in com_destaque
+    assert "EXCELENTE" not in com_destaque
