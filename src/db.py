@@ -1506,38 +1506,95 @@ def xonha_stats() -> dict[str, Any]:
         media_saidas_por_dia = round(total_saidas / dias, 3)
 
     # Recordes / ranking: saídas + banimentos (mesmo critério do placar)
-    by_day: dict[str, int] = {}
-    by_month: dict[str, int] = {}
-    by_weekday: dict[int, int] = {}
+    by_day: dict[str, dict[str, int]] = {}
+    by_month: dict[str, dict[str, int]] = {}
+    by_weekday: dict[int, dict[str, int]] = {
+        i: {"saidas": 0, "banimentos": 0, "total": 0} for i in range(7)
+    }
+    by_ban_day: dict[str, int] = {}
     for e in fora_asc:
         day = (e.get("data") or "")[:10]
         if not day:
             continue
-        by_day[day] = by_day.get(day, 0) + 1
+        tipo_e = e.get("tipo")
+        key = "saidas" if tipo_e == "saida" else "banimentos"
+        slot = by_day.setdefault(day, {"saidas": 0, "banimentos": 0, "total": 0})
+        slot[key] += 1
+        slot["total"] += 1
         ym = day[:7]
-        by_month[ym] = by_month.get(ym, 0) + 1
+        mslot = by_month.setdefault(ym, {"saidas": 0, "banimentos": 0, "total": 0})
+        mslot[key] += 1
+        mslot["total"] += 1
         wd = datetime.strptime(day, "%Y-%m-%d").weekday()  # seg=0
-        by_weekday[wd] = by_weekday.get(wd, 0) + 1
+        by_weekday[wd][key] += 1
+        by_weekday[wd]["total"] += 1
+        if tipo_e == "banimento":
+            by_ban_day[day] = by_ban_day.get(day, 0) + 1
+
+    def _pack_recorde_dia(day: str, slot: dict[str, int]) -> dict[str, Any]:
+        return {
+            "data": day,
+            "quantidade": slot["total"],
+            "saidas": slot["saidas"],
+            "banimentos": slot["banimentos"],
+        }
 
     recorde_dia: dict[str, Any] | None = None
     if by_day:
-        best_day = max(by_day.items(), key=lambda kv: (kv[1], kv[0]))
-        recorde_dia = {"data": best_day[0], "quantidade": best_day[1]}
+        best_day = max(
+            by_day.items(), key=lambda kv: (kv[1]["total"], kv[0])
+        )
+        recorde_dia = _pack_recorde_dia(best_day[0], best_day[1])
 
     recorde_mes: dict[str, Any] | None = None
     if by_month:
-        best_m = max(by_month.items(), key=lambda kv: (kv[1], kv[0]))
+        best_m = max(
+            by_month.items(), key=lambda kv: (kv[1]["total"], kv[0])
+        )
         y, m = best_m[0].split("-")
+        slot = best_m[1]
         recorde_mes = {
             "ano_mes": best_m[0],
             "label": f"{_XONHA_MESES[int(m)]}/{y}",
-            "quantidade": best_m[1],
+            "quantidade": slot["total"],
+            "saidas": slot["saidas"],
+            "banimentos": slot["banimentos"],
         }
 
-    dias_semana = [
-        {"dia": _XONHA_DIAS_SEMANA[wd], "quantidade": qtd, "weekday": wd}
-        for wd, qtd in sorted(by_weekday.items(), key=lambda kv: (-kv[1], kv[0]))
-    ]
+    recorde_banimento_dia: dict[str, Any] | None = None
+    if by_ban_day:
+        best_ban = max(by_ban_day.items(), key=lambda kv: (kv[1], kv[0]))
+        recorde_banimento_dia = {
+            "data": best_ban[0],
+            "quantidade": best_ban[1],
+        }
+
+    # Todos os dias da semana, do mais movimentado ao menos
+    max_wd = max((v["total"] for v in by_weekday.values()), default=0)
+    dias_semana = []
+    for wd, slot in sorted(
+        by_weekday.items(), key=lambda kv: (-kv[1]["total"], kv[0])
+    ):
+        total_wd = slot["total"]
+        bar_pct = round((total_wd / max_wd * 100), 1) if max_wd else 0.0
+        saida_pct = (
+            round(slot["saidas"] / total_wd * bar_pct, 1) if total_wd else 0.0
+        )
+        ban_pct = (
+            round(slot["banimentos"] / total_wd * bar_pct, 1) if total_wd else 0.0
+        )
+        dias_semana.append(
+            {
+                "dia": _XONHA_DIAS_SEMANA[wd],
+                "quantidade": total_wd,
+                "saidas": slot["saidas"],
+                "banimentos": slot["banimentos"],
+                "weekday": wd,
+                "bar_pct": bar_pct,
+                "saida_pct": saida_pct,
+                "ban_pct": ban_pct,
+            }
+        )
 
     inicio_contagem: str | None = None
     if fora_asc:
@@ -1656,6 +1713,7 @@ def xonha_stats() -> dict[str, Any]:
         "media_dias_entre_saidas": media_dias_entre_saidas,
         "recorde_dia": recorde_dia,
         "recorde_mes": recorde_mes,
+        "recorde_banimento_dia": recorde_banimento_dia,
         "dias_semana": dias_semana,
         "status": status,
         "ultimo_evento": ultimo,

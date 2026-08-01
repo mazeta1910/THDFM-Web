@@ -46,11 +46,13 @@ def test_xonhometro_publico_vazio(client: TestClient):
     assert "Xonhômetro" in r.text
     assert "saiu ou foi banido" in r.text
     assert "R$0,00" in r.text
-    assert "Taxa de retorno" in r.text
+    assert "Data com mais banimentos" in r.text
+    assert "Taxa de retorno" not in r.text
     assert ">Saídas<" in r.text or "Saídas</span>" in r.text
     assert "xonha-counter-value" in r.text
     assert "/static/img/xonha.png" in r.text
     assert "xonha-status-foto" in r.text
+    assert "xonha-timeline-track" in r.text or "xonha-empty" in r.text
     assert 'action="/admin/xonhometro"' not in r.text
 
 
@@ -107,16 +109,22 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["total_voltas"] == 1
     assert stats["total_banimentos"] == 0
     assert stats["total_placar"] == 2
-    assert stats["taxa_retorno"] == 50.0
     assert stats["inicio_contagem"] == "2026-07-01"
     assert stats["recorde_dia"]["data"] == "2026-07-01"
     assert stats["recorde_dia"]["quantidade"] == 2
+    assert stats["recorde_dia"]["saidas"] == 2
+    assert stats["recorde_dia"]["banimentos"] == 0
     assert stats["media_saidas_por_mes"] == 2.0
     assert stats["recorde_mes"] is not None
     assert stats["recorde_mes"]["ano_mes"] == "2026-07"
     assert stats["recorde_mes"]["quantidade"] == 2
+    assert stats["recorde_mes"]["saidas"] == 2
+    assert stats["recorde_mes"]["banimentos"] == 0
+    assert stats["recorde_banimento_dia"] is None
     assert stats["dias_semana"]
-    assert stats["dias_semana"][0]["quantidade"] >= 1
+    assert len(stats["dias_semana"]) == 7
+    assert sum(d["quantidade"] for d in stats["dias_semana"]) == 2
+    assert all("saida_pct" in d and "ban_pct" in d for d in stats["dias_semana"])
     # Desde 01/07 até hoje
     dias = max((date.today() - date(2026, 7, 1)).days + 1, 1)
     assert stats["media_saidas_por_dia"] == round(2 / dias, 3)
@@ -139,7 +147,13 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "R$2,00" in pub.text
     assert "Contagem desde" in pub.text
     assert "01/07/2026" in pub.text
-    assert "Taxa de retorno" in pub.text
+    assert "Data com mais banimentos" in pub.text
+    assert "Taxa de retorno" not in pub.text
+    assert "2 saídas" in pub.text
+    assert "0 ban" in pub.text
+    assert "xonha-weekday-seg--saida" in pub.text
+    assert "xonha-timeline-track" in pub.text
+    assert "xonha-timeline-event" in pub.text
     assert "Média / dia desde o início" in pub.text
     assert "Mês com mais sumiços" in pub.text
     assert "Dias da semana" in pub.text
@@ -289,6 +303,11 @@ def test_admin_registra_banimento(client: TestClient):
     assert stats["recorde_dia"] is not None
     assert stats["recorde_dia"]["data"] == "2026-07-20"
     assert stats["recorde_dia"]["quantidade"] == 2
+    assert stats["recorde_dia"]["saidas"] == 1
+    assert stats["recorde_dia"]["banimentos"] == 1
+    assert stats["recorde_banimento_dia"] is not None
+    assert stats["recorde_banimento_dia"]["data"] == "2026-07-20"
+    assert stats["recorde_banimento_dia"]["quantidade"] == 1
 
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
@@ -299,3 +318,7 @@ def test_admin_registra_banimento(client: TestClient):
     assert "R$2,00" in pub.text
     assert "Contagem desde" in pub.text
     assert "20/07/2026" in pub.text
+    assert "1 saída" in pub.text
+    assert "1 ban" in pub.text
+    assert "Data com mais banimentos" in pub.text
+    assert "xonha-weekday-seg--banimento" in pub.text

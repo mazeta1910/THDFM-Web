@@ -21,14 +21,6 @@
       Se você recebesse R$1,00 por cada vez que o Xonha saiu ou foi banido do grupo você teria
     </p>
     <p class="xonha-counter-value">R${{ stats.total_placar }},00</p>
-    {% if stats.inicio_contagem %}
-    <p class="xonha-counter-since">
-      Contagem desde
-      <time datetime="{{ stats.inicio_contagem }}">
-        {{ stats.inicio_contagem[8:10] }}/{{ stats.inicio_contagem[5:7] }}/{{ stats.inicio_contagem[0:4] }}
-      </time>
-    </p>
-    {% endif %}
 
     <div class="xonha-status-block xonha-status-block--{{ stats.status }}">
       <img
@@ -56,6 +48,14 @@
         {% else %}
         Há {{ stats.dias_no_status_atual }} dias nesse status.
         {% endif %}
+      </p>
+      {% endif %}
+      {% if stats.inicio_contagem %}
+      <p class="xonha-status-meta">
+        Contagem desde
+        <time datetime="{{ stats.inicio_contagem }}">
+          {{ stats.inicio_contagem[8:10] }}/{{ stats.inicio_contagem[5:7] }}/{{ stats.inicio_contagem[0:4] }}
+        </time>
       </p>
       {% endif %}
     </div>
@@ -141,6 +141,13 @@
         <small>· {{ stats.recorde_dia.quantidade }}×</small>
         {% else %}—{% endif %}
       </span>
+      {% if stats.recorde_dia %}
+      <span class="xonha-stat-detail">
+        {{ stats.recorde_dia.saidas }} saída{{ 's' if stats.recorde_dia.saidas != 1 else '' }}
+        ·
+        {{ stats.recorde_dia.banimentos }} ban{{ 's' if stats.recorde_dia.banimentos != 1 else '' }}
+      </span>
+      {% endif %}
     </div>
     <div class="xonha-stat xonha-stat--recorde" role="listitem">
       <span class="xonha-stat-label">Mês com mais sumiços</span>
@@ -150,12 +157,20 @@
         <small>· {{ stats.recorde_mes.quantidade }}×</small>
         {% else %}—{% endif %}
       </span>
+      {% if stats.recorde_mes %}
+      <span class="xonha-stat-detail">
+        {{ stats.recorde_mes.saidas }} saída{{ 's' if stats.recorde_mes.saidas != 1 else '' }}
+        ·
+        {{ stats.recorde_mes.banimentos }} ban{{ 's' if stats.recorde_mes.banimentos != 1 else '' }}
+      </span>
+      {% endif %}
     </div>
-    <div class="xonha-stat" role="listitem">
-      <span class="xonha-stat-label">Taxa de retorno</span>
+    <div class="xonha-stat xonha-stat--recorde" role="listitem">
+      <span class="xonha-stat-label">Data com mais banimentos</span>
       <span class="xonha-stat-value">
-        {% if stats.taxa_retorno is not none %}
-        {{ stats.taxa_retorno }}<small>%</small>
+        {% if stats.recorde_banimento_dia %}
+        {{ stats.recorde_banimento_dia.data[8:10] }}/{{ stats.recorde_banimento_dia.data[5:7] }}/{{ stats.recorde_banimento_dia.data[0:4] }}
+        <small>· {{ stats.recorde_banimento_dia.quantidade }}×</small>
         {% else %}—{% endif %}
       </span>
     </div>
@@ -164,42 +179,62 @@
   {% if stats.dias_semana %}
   <section class="xonha-weekdays card">
     <h2>Dias da semana em que mais sai / é banido</h2>
+    <p class="xonha-weekday-legend">
+      <span class="xonha-weekday-legend-item xonha-weekday-legend-item--saida">Saídas</span>
+      <span class="xonha-weekday-legend-item xonha-weekday-legend-item--banimento">Banimentos</span>
+    </p>
     <ol class="xonha-weekday-list">
       {% for d in stats.dias_semana %}
       <li>
         <span class="xonha-weekday-name">{{ d.dia }}</span>
-        <span class="xonha-weekday-bar" style="--pct: {{ (d.quantidade / stats.total_placar * 100)|round(1) if stats.total_placar else 0 }}%"></span>
-        <span class="xonha-weekday-qtd">{{ d.quantidade }}×</span>
+        <span class="xonha-weekday-bar" aria-hidden="true">
+          <span class="xonha-weekday-seg xonha-weekday-seg--saida" style="width: {{ d.saida_pct }}%"></span>
+          <span class="xonha-weekday-seg xonha-weekday-seg--banimento" style="width: {{ d.ban_pct }}%"></span>
+        </span>
+        <span class="xonha-weekday-qtd" title="{{ d.saidas }} saídas · {{ d.banimentos }} bans">{{ d.quantidade }}×</span>
       </li>
       {% endfor %}
     </ol>
   </section>
   {% endif %}
 
-  <section class="xonha-timeline card">
-    <h2>Linha do tempo</h2>
-    {% if eventos %}
-    <ol class="xonha-list">
-      {% for e in eventos %}
-      <li class="xonha-item xonha-item--{{ e.tipo }}">
-        <div class="xonha-item-top">
-          <span class="xonha-item-tipo">{% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}</span>
-          <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
-            {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
-            {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
-          </time>
-        </div>
-        {% if e.motivo %}
-        <p class="xonha-item-motivo">{{ e.motivo }}</p>
-        {% else %}
-        <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo anotado</p>
+  <details class="xonha-timeline card">
+    <summary class="xonha-timeline-summary">
+      <span class="xonha-timeline-summary-text">
+        <h2>Linha do tempo</h2>
+        {% if eventos %}
+        <span class="xonha-timeline-count">{{ eventos|length }} registro{{ 's' if eventos|length != 1 else '' }}</span>
         {% endif %}
+      </span>
+      <span class="xonha-timeline-toggle" aria-hidden="true"></span>
+    </summary>
+    {% if eventos %}
+    <ol class="xonha-timeline-track">
+      {% for e in eventos %}
+      <li class="xonha-timeline-event xonha-timeline-event--{{ e.tipo }}">
+        <span class="xonha-timeline-dot" aria-hidden="true"></span>
+        <div class="xonha-timeline-body">
+          <div class="xonha-timeline-top">
+            <span class="xonha-item-tipo">
+              {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
+            </span>
+            <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
+              {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
+              {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
+            </time>
+          </div>
+          {% if e.motivo %}
+          <p class="xonha-item-motivo">{{ e.motivo }}</p>
+          {% else %}
+          <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo anotado</p>
+          {% endif %}
+        </div>
       </li>
       {% endfor %}
     </ol>
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
-  </section>
+  </details>
 </section>
 {% endblock %}
