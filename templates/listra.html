@@ -28,11 +28,11 @@
   {% if pode_adicionar %}
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
-    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual.</p>
-    <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off">
+    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual. No WhatsApp vai o emoji + o trecho compartilhável (ou a frase inteira).</p>
+    <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off" data-listra-frase-form>
       <input type="hidden" name="ano" value="{{ ano_atual }}" />
       <div class="listra-field">
-        <label for="listra-texto">Frase</label>
+        <label for="listra-texto">Frase (contexto na Listra)</label>
         <textarea
           id="listra-texto"
           name="texto"
@@ -40,8 +40,47 @@
           rows="3"
           maxlength="2000"
           required
-          placeholder="Cole a pérola exatamente como saiu"
+          placeholder="Cole a pérola completa — fica na Listra para contextualizar"
+          data-listra-texto
         ></textarea>
+      </div>
+      <div class="listra-field">
+        <span class="listra-field-label">Emoji</span>
+        <div class="listra-emoji-picker" data-listra-emoji-picker>
+          <input
+            id="listra-emoji"
+            name="emoji"
+            class="listra-input listra-emoji-input"
+            type="text"
+            maxlength="16"
+            placeholder="📺"
+            data-listra-emoji
+            aria-label="Emoji da frase"
+          />
+          <div class="listra-emoji-opcoes" role="group" aria-label="Emojis rápidos">
+            {% for em in listra_emoji_opcoes %}
+            <button type="button" class="listra-emoji-opt" data-listra-emoji-opt="{{ em }}" title="{{ em }}">{{ em }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="listra-field">
+        <label for="listra-destaque">Trecho compartilhável</label>
+        <div class="listra-destaque-row">
+          <input
+            id="listra-destaque"
+            name="destaque"
+            class="listra-input"
+            type="text"
+            maxlength="500"
+            placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+            data-listra-destaque
+          />
+          <button type="button" class="listra-destaque-sel" data-listra-destaque-sel title="Usa o texto selecionado na frase">
+            Usar seleção
+          </button>
+        </div>
+        <p class="listra-field-hint">Selecione parte da frase acima e clique em “Usar seleção”. Se vazio, compartilha a frase inteira.</p>
       </div>
       <div class="listra-field">
         <label for="listra-responsavel">Nome do meliante</label>
@@ -155,17 +194,22 @@
       </summary>
       <ol class="listra-list" data-listra-lista="{{ l.ano }}">
         {% for f in l.frases %}
+        {% set emoji_item = listra_emoji_efetivo(f) %}
+        {% set texto_ctx = listra_texto_contexto(f) %}
+        {% set linha_share = listra_linha_compartilhar(f) %}
         <li
-          class="listra-item"
+          class="listra-item{% if f.destaque %} has-destaque{% endif %}"
           id="listra-frase-{{ f.id }}"
           data-listra-item="{{ f.id }}"
           data-meliante="{{ f.responsavel or '' }}"
           data-criado="{{ f.criado_em or '' }}"
+          data-listra-share="{{ linha_share|e }}"
         >
           <div class="listra-item-view">
             <div class="listra-item-main">
               <span class="listra-item-bullet" aria-hidden="true">*</span>
-              <p class="listra-item-texto">{{ f.texto }}</p>
+              {% if emoji_item %}<span class="listra-item-emoji" aria-hidden="true">{{ emoji_item }}</span>{% endif %}
+              <p class="listra-item-texto">{{ texto_ctx|listra_marcar_destaque(f.destaque) }}</p>
             </div>
             <div class="listra-item-meta">
               <div class="listra-item-meta-text">
@@ -211,12 +255,13 @@
             action="/grupo/listra/atualizar"
             class="listra-edit-form"
             data-listra-edit-form
+            data-listra-frase-form
             hidden
             autocomplete="off"
           >
             <input type="hidden" name="frase_id" value="{{ f.id }}" />
             <div class="listra-field">
-              <label for="listra-edit-texto-{{ f.id }}">Frase</label>
+              <label for="listra-edit-texto-{{ f.id }}">Frase (contexto na Listra)</label>
               <textarea
                 id="listra-edit-texto-{{ f.id }}"
                 name="texto"
@@ -224,7 +269,54 @@
                 rows="3"
                 maxlength="2000"
                 required
-              >{{ f.texto }}</textarea>
+                data-listra-texto
+              >{{ texto_ctx }}</textarea>
+            </div>
+            <div class="listra-field">
+              <span class="listra-field-label">Emoji</span>
+              <div class="listra-emoji-picker" data-listra-emoji-picker>
+                <input
+                  id="listra-edit-emoji-{{ f.id }}"
+                  name="emoji"
+                  class="listra-input listra-emoji-input"
+                  type="text"
+                  maxlength="16"
+                  value="{{ emoji_item }}"
+                  placeholder="📺"
+                  data-listra-emoji
+                  aria-label="Emoji da frase"
+                />
+                <div class="listra-emoji-opcoes" role="group" aria-label="Emojis rápidos">
+                  {% for em in listra_emoji_opcoes %}
+                  <button
+                    type="button"
+                    class="listra-emoji-opt{% if em == emoji_item %} is-selected{% endif %}"
+                    data-listra-emoji-opt="{{ em }}"
+                    title="{{ em }}"
+                    aria-pressed="{{ 'true' if em == emoji_item else 'false' }}"
+                  >{{ em }}</button>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            <div class="listra-field">
+              <label for="listra-edit-destaque-{{ f.id }}">Trecho compartilhável</label>
+              <div class="listra-destaque-row">
+                <input
+                  id="listra-edit-destaque-{{ f.id }}"
+                  name="destaque"
+                  class="listra-input"
+                  type="text"
+                  maxlength="500"
+                  value="{{ f.destaque or '' }}"
+                  placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+                  data-listra-destaque
+                />
+                <button type="button" class="listra-destaque-sel" data-listra-destaque-sel title="Usa o texto selecionado na frase">
+                  Usar seleção
+                </button>
+              </div>
+              <p class="listra-field-hint">Selecione parte da frase e clique em “Usar seleção”. Se vazio, compartilha a frase inteira.</p>
             </div>
             <div class="listra-field">
               <label for="listra-edit-resp-{{ f.id }}">Nome do meliante</label>
@@ -271,6 +363,62 @@
         el.classList.remove("listra-item--flash");
       }, 1600);
     }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function marcarEmojiSelecionado(form, emoji) {
+    form.querySelectorAll("[data-listra-emoji-opt]").forEach(function (btn) {
+      var sel = btn.getAttribute("data-listra-emoji-opt") === emoji;
+      btn.classList.toggle("is-selected", sel);
+      btn.setAttribute("aria-pressed", sel ? "true" : "false");
+    });
+  }
+
+  document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
+    var emojiInput = form.querySelector("[data-listra-emoji]");
+    var textoEl = form.querySelector("[data-listra-texto]");
+    var destaqueEl = form.querySelector("[data-listra-destaque]");
+
+    form.querySelectorAll("[data-listra-emoji-opt]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        var em = btn.getAttribute("data-listra-emoji-opt") || "";
+        if (!emojiInput) return;
+        if (emojiInput.value === em) {
+          emojiInput.value = "";
+          marcarEmojiSelecionado(form, "");
+        } else {
+          emojiInput.value = em;
+          marcarEmojiSelecionado(form, em);
+        }
+      });
+    });
+
+    if (emojiInput) {
+      emojiInput.addEventListener("input", function () {
+        marcarEmojiSelecionado(form, (emojiInput.value || "").trim());
+      });
+    }
+
+    form.querySelectorAll("[data-listra-destaque-sel]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        if (!textoEl || !destaqueEl) return;
+        var start = textoEl.selectionStart;
+        var end = textoEl.selectionEnd;
+        if (typeof start !== "number" || typeof end !== "number" || start === end) {
+          destaqueEl.focus();
+          return;
+        }
+        var sel = (textoEl.value || "").slice(start, end).replace(/\s+/g, " ").trim();
+        if (!sel) return;
+        destaqueEl.value = sel;
+        destaqueEl.focus();
+      });
+    });
   });
 })();
 </script>
@@ -387,9 +535,16 @@
 
   function textoDaLista(ano) {
     var linhas = ["*LISTRA THDFM " + ano + "*", ""];
-    var sel = '.listra-list[data-listra-lista="' + ano + '"] .listra-item-texto';
-    document.querySelectorAll(sel).forEach(function (el) {
-      var t = (el.textContent || "").replace(/\s+\n/g, "\n").trim();
+    var sel = '.listra-list[data-listra-lista="' + ano + '"] .listra-item[data-listra-item]';
+    document.querySelectorAll(sel).forEach(function (item) {
+      var t = (item.getAttribute("data-listra-share") || "").trim();
+      if (!t) {
+        var textoEl = item.querySelector(".listra-item-texto");
+        var emojiEl = item.querySelector(".listra-item-emoji");
+        var corpo = textoEl ? (textoEl.textContent || "").trim() : "";
+        var emoji = emojiEl ? (emojiEl.textContent || "").trim() : "";
+        t = emoji && corpo ? emoji + " " + corpo : emoji || corpo;
+      }
       if (!t) return;
       t.split(/\r?\n/).forEach(function (parte, i) {
         parte = parte.replace(/\s+/g, " ").trim();
