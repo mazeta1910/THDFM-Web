@@ -7080,6 +7080,50 @@ mark.listra-destaque {
 
 .listra-admin {
   max-width: 40rem;
+  display: grid;
+  gap: 1.5rem;
+}
+.listra-admin h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+.listra-meliantes-card {
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+.listra-meliantes-lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.listra-meliante-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.listra-meliante-add-row .listra-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.listra-meliantes-table .listra-meliante-usos {
+  width: 5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.listra-meliantes-table .listra-meliante-acoes {
+  width: 3rem;
+  text-align: right;
+}
+.listra-meliantes-table .listra-meliante-acoes form {
+  display: inline-flex;
+  margin: 0;
+}
+.listra-perm-section {
+  display: grid;
+  gap: 0.85rem;
 }
 .listra-perm-form {
   display: grid;

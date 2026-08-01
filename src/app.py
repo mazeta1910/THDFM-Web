@@ -925,10 +925,43 @@ def admin_listra(request: Request):
         request,
         "admin_listra.html",
         participantes=db.list_listra_permissoes_com_participantes(),
+        meliantes=db.list_listra_meliantes_detalhe(),
         total_frases=len(db.list_listra_frases()),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.post("/admin/listra/meliantes")
+def admin_listra_meliante_criar(request: Request, nome: str = Form(...)):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        criado = db.criar_listra_meliante(nome)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote(str(exc))}#meliantes",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote(f'Meliante {criado} adicionado')}#meliantes",
+        status_code=303,
+    )
+
+
+@app.post("/admin/listra/meliantes/apagar")
+def admin_listra_meliante_apagar(request: Request, nome: str = Form(...)):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not db.apagar_listra_meliante(nome):
+        return RedirectResponse(
+            f"/admin/listra?erro={quote('Meliante não encontrado')}#meliantes",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote('Meliante removido da lista')}#meliantes",
+        status_code=303,
     )
 
 

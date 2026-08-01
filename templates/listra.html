@@ -9,7 +9,9 @@
     <p class="listra-lead">
       Acervo oficial das pérolas tipográficas do grupo, ano a ano.
       {% if is_admin %}
-      <a class="listra-admin-link" href="/admin/listra">Gerenciar permissões</a>
+      <a class="listra-admin-link" href="/admin/listra#meliantes">Gestor de meliantes</a>
+      ·
+      <a class="listra-admin-link" href="/admin/listra#permissoes">Permissões</a>
       {% elif not pode_adicionar and not pode_enviar %}
       Leitura livre — quem adiciona ou envia recebe liberação da administração.
       {% endif %}
