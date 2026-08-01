@@ -1,11 +1,15 @@
-# Bolão THDFM — Copa do Brasil
+# THDFM Web
 
-Sistema web (FastAPI) para palpites, classificação e admin do bolão das **oitavas** da Copa do Brasil. Roda no seu PC com SQLite local; exponha com Cloudflare Tunnel quando o grupo for palpitar.
+Site da **THDFM** (Técnicos Horríveis do Futebol Mundial): bolão, Listra, Xonhômetro e outras páginas do grupo.
+
+Stack: **FastAPI** + **SQLite**. Roda no PC; dá para expor com Cloudflare Tunnel.
+
+Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/THDFM-Web)
 
 ## Subir local
 
 ```bash
-cd THDFM-Bolao-Copa-do-Brasil
+cd THDFM-Web
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -15,12 +19,22 @@ uvicorn src.app:app --host 0.0.0.0 --port 8000 --reload
 
 Abra http://127.0.0.1:8000
 
-- `/inscricao` — PIX **R$ 5,00** + comprovante
-- `/admin/login` — usuário + senha individuais (`ADMIN_USERS` no `.env`)
-- `/p/{token}` — palpites / conta (após liberação)
-- `/classificacao` — só para quem já tem link de participante (ou admin)
+### Rotas principais
 
-Banco: `data/bolao.db`. Comprovantes: `data/comprovantes/`. Avatares: `data/avatars/`. Emblemas: `data/emblemas/*.png`.
+| Área | Caminho |
+|------|---------|
+| Home | `/` · `/home` |
+| Bolão — inscrição | `/inscricao` |
+| Bolão — palpites / conta | `/p/{token}` |
+| Bolão — classificação | `/classificacao` |
+| Regras | `/regras` |
+| Listra | `/grupo/listra` |
+| Xonhômetro | `/xonhometro` |
+| Banimentos | `/grupo/bans` |
+| Transparência | `/transparencia` |
+| Admin | `/admin/login` |
+
+Banco: `data/bolao.db`. Comprovantes: `data/comprovantes/`. Avatares: `data/avatars/`. Emblemas: `data/emblemas/*.png`. Seeds da Listra: `data/listra/`.
 
 ## Túnel (link público)
 
@@ -44,14 +58,15 @@ PUBLIC_BASE_URL=https://xxxx.trycloudflare.com
 
 | Para quem | Link |
 |-----------|------|
-| Todo o grupo (inscrição) | `PUBLIC_BASE_URL/inscricao` |
+| Todo o grupo (inscrição no bolão) | `PUBLIC_BASE_URL/inscricao` |
 | Cada pessoa (depois de liberar) | `PUBLIC_BASE_URL/p/{token}` no privado |
+| Site em geral | `PUBLIC_BASE_URL/` |
 
 PC ligado + uvicorn + túnel = site no ar. A cada reinício do túnel *rápido* (`trycloudflare`), a URL muda — atualize o `.env`.
 
 ## Header (rotas)
 
-- Sem inscrição: **Inscrição**, **Regras**, **Admin**
+- Visitante: **Home**, páginas do grupo, **Inscrição**, **Regras**, **Admin**
 - Com link de participante: **Palpites** / status, **Classificação** (se liberado), **Regras**, **Conta**
 - Admin logado: **Admin** + nome na nav + **Sair**
 
@@ -73,7 +88,7 @@ Papéis:
 2. Cada um abre `/admin/login` com o **próprio** usuário/senha (isso ativa o botão Admin/Site).
 3. A nav mostra o nome + papel + **Sair**.
 
-## Fluxo admin
+## Bolão — fluxo admin
 
 1. Participantes se inscrevem em `/inscricao` (PIX + comprovante) **ou** você cadastra no admin (opção “já pagou”).
 2. Em **Inscrições**, abrir comprovante → **Liberar** (ou Recusar).
@@ -87,7 +102,7 @@ Papéis:
 pytest -q
 ```
 
-## Pontuação (resumo)
+## Pontuação do bolão (resumo)
 
 | Fase | Placar | Vencedor | Gols | Fid. máx. |
 |------|--------|----------|------|-----------|
