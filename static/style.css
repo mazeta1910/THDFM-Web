@@ -4122,7 +4122,20 @@ html[data-theme="light"] .admin-main {
   margin-bottom: 1rem;
 }
 .planilha-metricas-wrap > .planilha-body {
-  padding: 0.65rem 0.7rem 0.75rem;
+  padding: 0.55rem 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.planilha-metricas-bloco-title {
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-align: center;
 }
 .planilha-metricas-grid {
   margin: 0;
@@ -4142,11 +4155,11 @@ html[data-theme="light"] .admin-main {
   gap: 0.45rem 0.65rem;
   width: 100%;
   margin: 0;
-  padding: 0.55rem 0.35rem 0.65rem;
+  padding: 0.15rem 0.2rem 0.25rem;
   border-top: none;
 }
 .planilha-metrica-card .planilha-metricas {
-  padding-top: 0.15rem;
+  padding: 0.15rem 0.35rem 0.55rem;
 }
 .planilha-metrica {
   display: flex;
@@ -4179,12 +4192,9 @@ html[data-theme="light"] .admin-main {
   font-size: 0.62rem;
   font-weight: 600;
 }
-.planilha-ranking-card {
-  margin-bottom: 1rem;
-}
 .planilha-ranking-metricas {
   margin-top: 0;
-  padding: 0.55rem 0.65rem 0.7rem;
+  padding: 0.1rem 0.2rem 0.15rem;
 }
 .planilha-grid table.planilha {
   font-size: 0.75rem;

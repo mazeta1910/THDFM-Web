@@ -329,6 +329,18 @@ def ranking_apostadores(tabelas: list[dict]) -> dict[str, Any] | None:
     }
 
 
+def metricas_gerais(tabelas: list[dict]) -> dict[str, Any] | None:
+    """Agrega palpites da fase/perna atual (visão Geral)."""
+    rows: list[dict] = []
+    for t in tabelas:
+        for row in t.get("linhas") or []:
+            if row.get("tipo") == "palpite":
+                rows.append(row)
+    if not any(not r.get("sem_palpite") for r in rows):
+        return None
+    return _metricas_palpites(rows, clube_casa="Casa", clube_fora="Fora")
+
+
 def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
     """Tabelas por jogo com palpites dos liberados, para a fase pedida.
 
