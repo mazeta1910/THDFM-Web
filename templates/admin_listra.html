@@ -17,13 +17,39 @@
   <section class="card listra-meliantes-card" id="meliantes">
     <h2>Gestor de meliantes</h2>
     <p class="listra-meliantes-lead">
-      Nomes que aparecem ao escolher o responsável de uma frase.
+      Vincule usuários cadastrados ou cadastre nomes livres (não inscritos no site).
       Remover daqui não apaga frases já registradas.
     </p>
 
     <form method="post" action="/admin/listra/meliantes" class="listra-meliante-add" autocomplete="off">
       <div class="listra-field">
-        <label for="meliante-nome">Novo meliante</label>
+        <label for="meliante-participante">Usuário cadastrado</label>
+        <div class="listra-meliante-add-row">
+          <select
+            id="meliante-participante"
+            name="participante_id"
+            class="listra-input"
+            {% if not candidatos_meliante %}disabled{% endif %}
+          >
+            <option value="">
+              {% if candidatos_meliante %}Selecione um liberado…{% else %}Todos os liberados já estão na lista{% endif %}
+            </option>
+            {% for p in candidatos_meliante %}
+            <option value="{{ p.id }}">{{ p.nome }}{% if p.username %} (@{{ p.username }}){% endif %}</option>
+            {% endfor %}
+          </select>
+          <button
+            type="submit"
+            class="listra-submit listra-submit--small"
+            {% if not candidatos_meliante %}disabled{% endif %}
+          >Adicionar usuário</button>
+        </div>
+      </div>
+    </form>
+
+    <form method="post" action="/admin/listra/meliantes" class="listra-meliante-add" autocomplete="off">
+      <div class="listra-field">
+        <label for="meliante-nome">Nome livre (não cadastrado)</label>
         <div class="listra-meliante-add-row">
           <input
             id="meliante-nome"
@@ -32,10 +58,10 @@
             type="text"
             maxlength="30"
             required
-            placeholder="Ex.: Mazeta"
+            placeholder="Ex.: fulano do grupo"
             autocomplete="off"
           />
-          <button type="submit" class="listra-submit listra-submit--small">Adicionar</button>
+          <button type="submit" class="listra-submit listra-submit--small">Adicionar nome</button>
         </div>
       </div>
     </form>
@@ -45,6 +71,7 @@
         <thead>
           <tr>
             <th scope="col">Meliante</th>
+            <th scope="col">Origem</th>
             <th scope="col">Frases</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
@@ -52,7 +79,19 @@
         <tbody>
           {% for m in meliantes %}
           <tr>
-            <td><span class="listra-perm-nome">{{ m.nome }}</span></td>
+            <td>
+              <span class="listra-perm-nome">{{ m.nome }}</span>
+              {% if m.participante_username %}
+              <span class="listra-perm-user">@{{ m.participante_username }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.vinculado %}
+              <span class="listra-perm-badge">usuário</span>
+              {% else %}
+              <span class="listra-meliante-livre">livre</span>
+              {% endif %}
+            </td>
             <td class="listra-meliante-usos">{{ m.usos }}</td>
             <td class="listra-meliante-acoes">
               <form
@@ -67,7 +106,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="3" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
+            <td colspan="4" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
           </tr>
           {% endfor %}
         </tbody>

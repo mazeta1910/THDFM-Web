@@ -7113,6 +7113,13 @@ mark.listra-destaque {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
+.listra-meliante-livre {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .listra-meliantes-table .listra-meliante-acoes {
   width: 3rem;
   text-align: right;
