@@ -83,6 +83,7 @@
           id="listra-meliante-select"
           class="listra-input"
           data-listra-meliante-select
+          data-listra-custom-select
           required
           aria-label="Selecionar meliante"
         >
@@ -337,6 +338,7 @@
                 id="listra-edit-meliante-{{ f.id }}"
                 class="listra-input"
                 data-listra-meliante-select
+                data-listra-custom-select
                 aria-label="Selecionar meliante"
               >
                 <option value="">Selecione o meliante…</option>
@@ -801,4 +803,5 @@
 })();
 </script>
 {% endif %}
+<script src="/static/listra-custom-select.js?v=185"></script>
 {% endblock %}

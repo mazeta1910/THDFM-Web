@@ -353,6 +353,8 @@ def test_admin_gestor_meliantes(client: TestClient):
     assert "Usuário cadastrado" in painel.text
     assert "Nome livre" in painel.text
     assert "/admin/listra/meliantes/vincular" in painel.text
+    assert "data-listra-custom-select" in painel.text
+    assert "/static/listra-custom-select.js" in painel.text
 
     # Vínculo manual: meliante livre → usuário liberado
     part2 = _criar_liberado(
