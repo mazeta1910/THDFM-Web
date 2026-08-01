@@ -401,12 +401,21 @@
 <script>
 (function () {
   var toastHost = document.getElementById("listra-toast-host");
-  function showToast(text, type) {
+  function showToast(text, type, detail) {
     if (!toastHost || !text) return;
     var el = document.createElement("div");
     el.className = "toast toast-" + (type || "ok");
     el.setAttribute("role", "status");
-    el.textContent = text;
+    var titulo = document.createElement("span");
+    titulo.className = "toast-title";
+    titulo.textContent = text;
+    el.appendChild(titulo);
+    if (detail) {
+      var extra = document.createElement("span");
+      extra.className = "toast-detail";
+      extra.textContent = detail;
+      el.appendChild(extra);
+    }
     toastHost.appendChild(el);
     requestAnimationFrame(function () {
       el.classList.add("is-show");
@@ -416,8 +425,9 @@
       window.setTimeout(function () {
         el.remove();
       }, 280);
-    }, 3800);
+    }, detail ? 5200 : 3800);
   }
+  window.showListraToast = showToast;
 
   {% if msg %}showToast({{ msg.replace('+', ' ') | tojson }}, "ok");{% endif %}
   {% if erro %}showToast({{ erro.replace('+', ' ') | tojson }}, "erro");{% endif %}
@@ -677,6 +687,17 @@
     return linhas.join("\n") + "\n";
   }
 
+  function ultimaFraseCopiada(texto) {
+    var ultima = "";
+    String(texto || "")
+      .split(/\r?\n/)
+      .forEach(function (linha) {
+        linha = linha.replace(/\s+/g, " ").trim();
+        if (/^\d+\.\s/.test(linha)) ultima = linha;
+      });
+    return ultima;
+  }
+
   async function textoAtual(ano) {
     try {
       var r = await fetch("/grupo/listra/export.txt?ano=" + encodeURIComponent(ano), {
@@ -722,16 +743,33 @@
         var texto = await textoAtual(ano);
         if (!texto.trim()) {
           showHint("A Listra " + ano + " está vazia.", false);
+          if (window.showListraToast) {
+            window.showListraToast("A Listra " + ano + " está vazia.", "erro");
+          }
           return;
         }
         var ok = await copiar(texto);
         if (ok) {
+          var ultima = ultimaFraseCopiada(texto);
           showHint(
             "Listra " + ano + " copiada. Abra o grupo e cole com Ctrl+V (ou colar) para enviar.",
             true
           );
+          if (window.showListraToast) {
+            window.showListraToast(
+              "Listra " + ano + " copiada com sucesso.",
+              "ok",
+              ultima ? "Última frase: " + ultima : ""
+            );
+          }
         } else {
           showHint("Não deu pra copiar automaticamente. Tente de novo ou copie o texto da página.", false);
+          if (window.showListraToast) {
+            window.showListraToast(
+              "Não deu pra copiar automaticamente. Tente de novo.",
+              "erro"
+            );
+          }
         }
       } finally {
         btn.disabled = false;

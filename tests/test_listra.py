@@ -412,6 +412,10 @@ def test_participante_com_permissao_enviar(client: TestClient):
     assert 'data-ano="2025"' in r.text
     assert 'data-ano="2024"' in r.text
     assert "data-listra-ordenar" in r.text
+    assert "showListraToast" in r.text
+    assert "ultimaFraseCopiada" in r.text
+    assert "Última frase:" in r.text
+    assert "copiada com sucesso" in r.text
 
 
 def test_export_por_ano(client: TestClient):
