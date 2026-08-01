@@ -129,7 +129,11 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     dias = max((date.today() - date(2026, 7, 1)).days + 1, 1)
     assert stats["media_saidas_por_dia"] == round(2 / dias, 3)
     assert stats["status"] == "dentro"
-    assert stats["media_dias_entre_saidas"] == 0.0
+    # Saídas no mesmo dia 10:15 → 22:40 = 12h25m
+    assert stats["media_dias_entre_saidas"] == 0.5
+    assert stats["media_tempo_entre_saidas_texto"] == (
+        "12 horas, 25 minutos e 0 segundos"
+    )
     assert stats["saidas_mes_atual"] >= 0
     assert stats["saidas_ultimos_30_dias"] >= 0
     assert stats["dias_desde_ultima_saida"] is not None
@@ -166,10 +170,13 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "Horário campeão" in pub.text
     assert "xonha-status-block--dentro" in pub.text
     assert "Gerenciar registros" in pub.text
+    assert "xonha-status-foto-wrap" in pub.text
     assert 'id="xonha-status-relogio"' in pub.text
     assert 'data-xonha-status-desde="2026-07-02T18:00:00"' in pub.text
     assert "nesse status." in pub.text
     assert "setInterval" in pub.text
+    assert "Média de tempo entre saídas" in pub.text
+    assert "12 horas, 25 minutos e 0 segundos" in pub.text
 
 
 def test_formatar_duracao_status_unidades():
@@ -177,18 +184,19 @@ def test_formatar_duracao_status_unidades():
     assert f(0) == "Há 0 segundos nesse status."
     assert f(1) == "Há 1 segundo nesse status."
     assert f(59) == "Há 59 segundos nesse status."
-    assert f(60) == "Há 1 minuto nesse status."
-    assert f(120) == "Há 2 minutos nesse status."
-    assert f(3600) == "Há 1 hora nesse status."
-    assert f(7200) == "Há 2 horas nesse status."
-    assert f(86400) == "Há 1 dia nesse status."
-    assert f(172800) == "Há 2 dias nesse status."
-    assert f(604800) == "Há 1 semana nesse status."
-    assert f(1209600) == "Há 2 semanas nesse status."
-    assert f(2592000) == "Há 1 mês nesse status."
-    assert f(5184000) == "Há 2 meses nesse status."
-    assert f(31536000) == "Há 1 ano nesse status."
-    assert f(63072000) == "Há 2 anos nesse status."
+    assert f(60) == "Há 1 minuto e 0 segundos nesse status."
+    assert f(125) == "Há 2 minutos e 5 segundos nesse status."
+    assert f(3600) == "Há 1 hora, 0 minutos e 0 segundos nesse status."
+    assert f(4815) == "Há 1 hora, 20 minutos e 15 segundos nesse status."
+    assert f(90061) == "Há 1 dia, 1 hora, 1 minuto e 1 segundo nesse status."
+    assert f(2592000) == "Há 1 mês, 0 horas, 0 minutos e 0 segundos nesse status."
+    assert f(31536000) == "Há 1 ano, 0 horas, 0 minutos e 0 segundos nesse status."
+
+
+def test_formatar_duracao_sem_sufixo_de_status():
+    assert db.formatar_duracao(3725, prefixo="", sufixo="") == (
+        "1 hora, 2 minutos e 5 segundos"
+    )
 
 
 def test_admin_atualiza_e_apaga(client: TestClient):
@@ -341,6 +349,7 @@ def test_admin_registra_banimento(client: TestClient):
     assert "Banimento" in pub.text
     assert "banido do grupo" in pub.text
     assert "xonha-status-block--banido" in pub.text
+    assert "xonha-status-foto-wrap" in pub.text
     assert "Passou do limite" in pub.text
     assert "R$2,00" in pub.text
     assert "Contagem desde" in pub.text

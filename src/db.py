@@ -1557,31 +1557,64 @@ def apagar_xonha_evento(evento_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def formatar_duracao_status(segundos: float | int) -> str:
-    """Texto do relógio do status: s → min → h → dias → semanas → meses → anos."""
+def formatar_duracao(
+    segundos: float | int,
+    *,
+    prefixo: str = "Há ",
+    sufixo: str = "",
+) -> str:
+    """Duração legível com unidades compostas (ex.: 13 horas, 5 minutos e 9 segundos)."""
     total = max(int(segundos), 0)
-    if total < 60:
-        n = total
-        unidade = "segundo" if n == 1 else "segundos"
-    elif total < 3600:
-        n = total // 60
-        unidade = "minuto" if n == 1 else "minutos"
-    elif total < 86400:
-        n = total // 3600
-        unidade = "hora" if n == 1 else "horas"
-    elif total < 604800:
-        n = total // 86400
-        unidade = "dia" if n == 1 else "dias"
-    elif total < 2592000:  # < 30 dias
-        n = total // 604800
-        unidade = "semana" if n == 1 else "semanas"
-    elif total < 31536000:  # < 365 dias
-        n = total // 2592000
-        unidade = "mês" if n == 1 else "meses"
+    anos, rem = divmod(total, 31536000)
+    meses, rem = divmod(rem, 2592000)
+    dias, rem = divmod(rem, 86400)
+    horas, rem = divmod(rem, 3600)
+    minutos, segs = divmod(rem, 60)
+
+    parts: list[str] = []
+
+    def _add(n: int, um: str, varios: str) -> None:
+        if n:
+            parts.append(f"{n} {um if n == 1 else varios}")
+
+    _add(anos, "ano", "anos")
+    _add(meses, "mês", "meses")
+    _add(dias, "dia", "dias")
+
+    # Em minutos/horas+ sempre detalha até segundos (relógio ao vivo).
+    if anos or meses or dias or horas:
+        parts.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
+        parts.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
+        parts.append(f"{segs} {'segundo' if segs == 1 else 'segundos'}")
+    elif minutos:
+        parts.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
+        parts.append(f"{segs} {'segundo' if segs == 1 else 'segundos'}")
     else:
-        n = total // 31536000
-        unidade = "ano" if n == 1 else "anos"
-    return f"Há {n} {unidade} nesse status."
+        parts.append(f"{segs} {'segundo' if segs == 1 else 'segundos'}")
+
+    if len(parts) == 1:
+        corpo = parts[0]
+    elif len(parts) == 2:
+        corpo = f"{parts[0]} e {parts[1]}"
+    else:
+        corpo = ", ".join(parts[:-1]) + f" e {parts[-1]}"
+    return f"{prefixo}{corpo}{sufixo}"
+
+
+def formatar_duracao_status(segundos: float | int) -> str:
+    """Texto do relógio do status atual."""
+    return formatar_duracao(segundos, prefixo="Há ", sufixo=" nesse status.")
+
+
+def _xonha_evento_dt(e: dict[str, Any]) -> datetime | None:
+    try:
+        data = (e.get("data") or "")[:10]
+        hora = (e.get("hora") or "00:00").strip()[:5]
+        if len(hora) < 5:
+            hora = "00:00"
+        return datetime.strptime(f"{data} {hora}", "%Y-%m-%d %H:%M")
+    except (TypeError, ValueError):
+        return None
 
 
 def xonha_stats() -> dict[str, Any]:
@@ -1601,13 +1634,21 @@ def xonha_stats() -> dict[str, Any]:
     saidas_asc = sorted(saidas, key=_xonha_sort_key)
     fora_asc = sorted(saidas + banimentos, key=_xonha_sort_key)
     media_dias_entre_saidas: float | None = None
+    media_tempo_entre_saidas_texto: str | None = None
     if len(saidas_asc) >= 2:
-        gaps: list[int] = []
+        gaps_s: list[float] = []
         for prev, cur in zip(saidas_asc, saidas_asc[1:]):
-            d0 = datetime.strptime(prev["data"][:10], "%Y-%m-%d").date()
-            d1 = datetime.strptime(cur["data"][:10], "%Y-%m-%d").date()
-            gaps.append(abs((d1 - d0).days))
-        media_dias_entre_saidas = round(sum(gaps) / len(gaps), 1)
+            t0 = _xonha_evento_dt(prev)
+            t1 = _xonha_evento_dt(cur)
+            if t0 is None or t1 is None:
+                continue
+            gaps_s.append(abs((t1 - t0).total_seconds()))
+        if gaps_s:
+            media_s = sum(gaps_s) / len(gaps_s)
+            media_dias_entre_saidas = round(media_s / 86400.0, 1)
+            media_tempo_entre_saidas_texto = formatar_duracao(
+                media_s, prefixo="", sufixo=""
+            )
 
     media_saidas_por_mes: float | None = None
     media_saidas_por_dia: float | None = None
@@ -1845,6 +1886,7 @@ def xonha_stats() -> dict[str, Any]:
         "media_saidas_por_mes": media_saidas_por_mes,
         "media_saidas_por_dia": media_saidas_por_dia,
         "media_dias_entre_saidas": media_dias_entre_saidas,
+        "media_tempo_entre_saidas_texto": media_tempo_entre_saidas_texto,
         "recorde_dia": recorde_dia,
         "recorde_mes": recorde_mes,
         "recorde_banimento_dia": recorde_banimento_dia,
