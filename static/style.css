@@ -5711,7 +5711,7 @@ html.theme-light .xonha-hero {
   height: 128px;
   border-radius: 50%;
   object-fit: cover;
-  object-position: center 20%;
+  object-position: center center;
   border: 3px solid var(--border);
   background: #111;
   transition: filter 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
