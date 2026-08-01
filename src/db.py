@@ -1794,9 +1794,18 @@ def xonha_stats() -> dict[str, Any]:
             continue
 
     dias_desde_ultima_saida: int | None = None
+    tempo_desde_ultima_saida_texto: str | None = None
     if fora_asc:
-        d_ult = datetime.strptime(fora_asc[-1]["data"][:10], "%Y-%m-%d").date()
+        ult_fora = fora_asc[-1]
+        d_ult = datetime.strptime(ult_fora["data"][:10], "%Y-%m-%d").date()
         dias_desde_ultima_saida = max((hoje - d_ult).days, 0)
+        t_ult = _xonha_evento_dt(ult_fora)
+        if t_ult is not None:
+            tempo_desde_ultima_saida_texto = formatar_duracao(
+                max((datetime.now() - t_ult).total_seconds(), 0),
+                prefixo="",
+                sufixo="",
+            )
 
     dias_no_status_atual: int | None = None
     status_desde: str | None = None
@@ -1933,6 +1942,7 @@ def xonha_stats() -> dict[str, Any]:
         "saidas_mes_atual": saidas_mes_atual,
         "saidas_ultimos_30_dias": saidas_ultimos_30_dias,
         "dias_desde_ultima_saida": dias_desde_ultima_saida,
+        "tempo_desde_ultima_saida_texto": tempo_desde_ultima_saida_texto,
         "dias_no_status_atual": dias_no_status_atual,
         "status_desde": status_desde,
         "status_duracao_texto": status_duracao_texto,

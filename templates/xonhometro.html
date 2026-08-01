@@ -112,9 +112,9 @@
       </span>
     </div>
     <div class="xonha-stat" role="listitem">
-      <span class="xonha-stat-label">Dias desde a última saída</span>
-      <span class="xonha-stat-value">
-        {% if stats.dias_desde_ultima_saida is not none %}{{ stats.dias_desde_ultima_saida }}{% else %}—{% endif %}
+      <span class="xonha-stat-label">Tempo desde a última saída</span>
+      <span class="xonha-stat-value xonha-stat-value--tempo">
+        {% if stats.tempo_desde_ultima_saida_texto %}{{ stats.tempo_desde_ultima_saida_texto }}{% else %}—{% endif %}
       </span>
     </div>
     <div class="xonha-stat" role="listitem">

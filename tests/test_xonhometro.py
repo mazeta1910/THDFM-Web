@@ -133,6 +133,8 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert stats["saidas_mes_atual"] >= 0
     assert stats["saidas_ultimos_30_dias"] >= 0
     assert stats["dias_desde_ultima_saida"] is not None
+    assert stats["tempo_desde_ultima_saida_texto"]
+    assert "segundo" in stats["tempo_desde_ultima_saida_texto"] or "minuto" in stats["tempo_desde_ultima_saida_texto"] or "hora" in stats["tempo_desde_ultima_saida_texto"] or "dia" in stats["tempo_desde_ultima_saida_texto"]
     assert stats["dias_no_status_atual"] is not None
     assert stats["status_desde"] == "2026-07-02T18:00:00"
     assert stats["status_duracao_texto"]
@@ -178,6 +180,8 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "nesse status." in pub.text
     assert "setInterval" in pub.text
     assert "Média de tempo entre saídas" in pub.text
+    assert "Tempo desde a última saída" in pub.text
+    assert "Dias desde a última saída" not in pub.text
     assert "12 horas, 25 minutos e 0 segundos" in pub.text
     assert "19 horas, 20 minutos e 0 segundos" in pub.text
 
