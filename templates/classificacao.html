@@ -27,7 +27,38 @@
 </nav>
 {% endif %}
 
-<div class="card classificacao-card">
+<div
+  class="card classificacao-card"
+  data-classificacao-export-target
+  data-export-slug="{% if modo_historico %}{{ rodada_sel.rotulo }}{% else %}ao-vivo{% endif %}"
+>
+  <div class="classificacao-card-head">
+    <div class="classificacao-card-identity">
+      <strong>Classificação</strong>
+      <span class="classificacao-card-sub">
+        {% if modo_historico %}
+        {{ rodada_sel.rotulo }} · {{ rodada_sel.fase }} · janela {{ rodada_sel.janela }}
+        {% else %}
+        Ao vivo · {{ fase }} · janela {{ janela }}
+        {% endif %}
+      </span>
+    </div>
+    <div class="classificacao-card-actions" data-classificacao-export-ignore>
+      <button
+        type="button"
+        class="btn-classificacao-export secondary"
+        data-classificacao-export
+        title="Exportar classificação em PNG"
+        aria-label="Exportar classificação em PNG"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
   <div class="classificacao-scroll">
     <table class="classificacao-table" id="classificacao-table" data-classificacao-sort>
       <thead>
@@ -356,4 +387,5 @@
   });
 })();
 </script>
+<script src="/static/classificacao-export.js?v=203"></script>
 {% endblock %}

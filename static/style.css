@@ -4558,6 +4558,60 @@ tr.planilha-sem-palpite .planilha-num {
   padding: 0;
   overflow: hidden;
 }
+.classificacao-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+.classificacao-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.classificacao-card-identity strong {
+  font-size: 1rem;
+  line-height: 1.2;
+  color: var(--text);
+}
+.classificacao-card-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.classificacao-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.btn-classificacao-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-classificacao-export svg {
+  display: block;
+}
+.btn-classificacao-export.is-busy {
+  opacity: 0.55;
+  cursor: wait;
+}
+.classificacao-card.is-exporting .th-sort-icon {
+  display: none;
+}
+.classificacao-card.is-exporting .th-sort {
+  pointer-events: none;
+}
 .classificacao-scroll {
   width: 100%;
   overflow-x: auto;
