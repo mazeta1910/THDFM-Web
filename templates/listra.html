@@ -84,11 +84,19 @@
         <p class="listra-item-texto">{{ f.texto }}</p>
       </div>
       <div class="listra-item-meta">
-        {% if f.responsavel %}
-        <span class="listra-item-resp">{{ f.responsavel }}</span>
-        {% else %}
-        <span class="listra-item-resp listra-item-resp--vazio">Acervo 2026</span>
-        {% endif %}
+        <div class="listra-item-meta-text">
+          {% if f.responsavel %}
+          <span class="listra-item-resp">{{ f.responsavel }}</span>
+          {% else %}
+          <span class="listra-item-resp listra-item-resp--vazio">Acervo 2026</span>
+          {% endif %}
+          {% if f.criado_em %}
+          <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
+            {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
+            {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
+          </time>
+          {% endif %}
+        </div>
         {% if is_admin %}
         <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
           <input type="hidden" name="frase_id" value="{{ f.id }}" />

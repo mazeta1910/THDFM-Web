@@ -109,12 +109,18 @@ def test_admin_adiciona_e_apaga(client: TestClient):
     pub = client.get("/grupo/listra")
     assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text
+    assert "listra-item-quando" in pub.text
 
     from src import db
 
     frase = next(
         f for f in db.list_listra_frases() if f["texto"] == "Nova pérola do teste"
     )
+    assert frase.get("criado_em")
+    # Data no formato DD/MM/AAAA na tela
+    criado = frase["criado_em"]
+    data_br = f"{criado[8:10]}/{criado[5:7]}/{criado[0:4]}"
+    assert data_br in pub.text
     r = client.post(
         "/grupo/listra/apagar",
         data={"frase_id": frase["id"]},
