@@ -330,6 +330,7 @@ def _migrate_listra(conn: sqlite3.Connection) -> None:
     )
     _migrar_listra_emoji_destaque(conn)
     _migrar_listra_reembolsos_itens(conn)
+    _migrar_listra_meliantes(conn)
     for ano in LISTRA_ANOS:
         _seed_listra_ano_se_faltando(conn, int(ano), listra_seed_por_ano(int(ano)))
 
@@ -1949,6 +1950,54 @@ def _migrar_listra_reembolsos_itens(conn: sqlite3.Connection) -> None:
             )
 
 
+def _migrar_listra_meliantes(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS listra_meliantes (
+            nome TEXT PRIMARY KEY,
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    rows = conn.execute(
+        "SELECT DISTINCT TRIM(responsavel) AS nome FROM listra_frases "
+        "WHERE responsavel IS NOT NULL AND TRIM(responsavel) != ''"
+    ).fetchall()
+    for row in rows:
+        nome = (row["nome"] or "").strip()
+        if not nome:
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO listra_meliantes (nome, criado_em) "
+            "VALUES (?, datetime('now', 'localtime'))",
+            (nome,),
+        )
+
+
+def list_listra_meliantes() -> list[str]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT nome FROM listra_meliantes ORDER BY nome COLLATE NOCASE"
+        ).fetchall()
+        return [str(r["nome"]) for r in rows]
+
+
+def ensure_listra_meliante(nome: str) -> str:
+    """Registra o meliante (se novo) e devolve o nome normalizado."""
+    nome_ok = re.sub(r"\s+", " ", (nome or "").strip())
+    if not nome_ok:
+        return ""
+    if len(nome_ok) > NOME_MAX_LEN:
+        raise ValueError(f"Meliante com no máximo {NOME_MAX_LEN} caracteres.")
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO listra_meliantes (nome, criado_em) "
+            "VALUES (?, datetime('now', 'localtime'))",
+            (nome_ok,),
+        )
+    return nome_ok
+
+
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
     with get_db() as conn:
         if ano is None:
@@ -2117,6 +2166,8 @@ def criar_listra_frase(
     texto_ok, resp_ok, emoji_ok, dest_ok = _normalizar_listra_frase_campos(
         texto, responsavel, emoji=emoji, destaque=destaque
     )
+    if resp_ok:
+        ensure_listra_meliante(resp_ok)
     ano_ok = int(ano) if ano is not None else LISTRA_ANO_ATUAL
     if ano_ok not in LISTRA_ANOS:
         raise ValueError("Ano inválido para a Listra.")
@@ -2165,6 +2216,8 @@ def atualizar_listra_frase(
         destaque=destaque,
         exigir_responsavel=False,
     )
+    if resp_ok:
+        ensure_listra_meliante(resp_ok)
     with get_db() as conn:
         conn.execute(
             "UPDATE listra_frases SET texto = ?, responsavel = ?, emoji = ?, destaque = ? "

@@ -24,6 +24,12 @@
 
   <div class="toast-host" id="listra-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
+  <datalist id="listra-meliantes-list">
+    {% for nome in listra_meliantes|default([]) %}
+    <option value="{{ nome }}"></option>
+    {% endfor %}
+  </datalist>
+
   {% if pode_adicionar %}
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
@@ -62,34 +68,33 @@
       </div>
       <div class="listra-field">
         <label for="listra-destaque">Trecho compartilhável</label>
-        <div class="listra-destaque-row">
-          <input
-            id="listra-destaque"
-            name="destaque"
-            class="listra-input"
-            type="text"
-            maxlength="500"
-            placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
-            data-listra-destaque
-          />
-          <button type="button" class="listra-destaque-sel" data-listra-destaque-sel title="Usa o texto selecionado na frase">
-            Usar seleção
-          </button>
-        </div>
-        <p class="listra-field-hint">Selecione parte da frase acima e clique em “Usar seleção”. Se vazio, compartilha a frase inteira.</p>
+        <input
+          id="listra-destaque"
+          name="destaque"
+          class="listra-input"
+          type="text"
+          maxlength="500"
+          placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+          data-listra-destaque
+        />
+        <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
       </div>
       <div class="listra-field">
         <label for="listra-responsavel">Nome do meliante</label>
+        {% set meliante_padrao = participante_listra.nome if participante_listra and participante_listra.nome else '' %}
         <input
           id="listra-responsavel"
           name="responsavel"
           class="listra-input"
           type="text"
+          list="listra-meliantes-list"
           maxlength="30"
           required
-          value="{% if participante_listra %}{{ participante_listra.nome }}{% endif %}"
-          placeholder="Quem soltou essa"
+          value="{{ meliante_padrao }}"
+          placeholder="Selecione ou digite o meliante"
+          autocomplete="off"
         />
+        <p class="listra-field-hint">Sugestões dos meliantes já usados. Nomes novos entram na lista ao salvar.</p>
       </div>
       <button type="submit" class="listra-submit">Adicionar à Listra {{ ano_atual }}</button>
     </form>
@@ -288,22 +293,17 @@
             </div>
             <div class="listra-field">
               <label for="listra-edit-destaque-{{ f.id }}">Trecho compartilhável</label>
-              <div class="listra-destaque-row">
-                <input
-                  id="listra-edit-destaque-{{ f.id }}"
-                  name="destaque"
-                  class="listra-input"
-                  type="text"
-                  maxlength="500"
-                  value="{{ f.destaque or '' }}"
-                  placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
-                  data-listra-destaque
-                />
-                <button type="button" class="listra-destaque-sel" data-listra-destaque-sel title="Usa o texto selecionado na frase">
-                  Usar seleção
-                </button>
-              </div>
-              <p class="listra-field-hint">Selecione parte da frase e clique em “Usar seleção”. Se vazio, compartilha a frase inteira.</p>
+              <input
+                id="listra-edit-destaque-{{ f.id }}"
+                name="destaque"
+                class="listra-input"
+                type="text"
+                maxlength="500"
+                value="{{ f.destaque or '' }}"
+                placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+                data-listra-destaque
+              />
+              <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
             </div>
             <div class="listra-field">
               <label for="listra-edit-resp-{{ f.id }}">Nome do meliante</label>
@@ -312,9 +312,11 @@
                 name="responsavel"
                 class="listra-input"
                 type="text"
+                list="listra-meliantes-list"
                 maxlength="30"
                 value="{{ f.responsavel or '' }}"
-                placeholder="Quem soltou essa"
+                placeholder="Selecione ou digite o meliante"
+                autocomplete="off"
               />
             </div>
             <div class="listra-edit-actions">
@@ -417,8 +419,6 @@
 
   document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
     var emojiInput = form.querySelector("[data-listra-emoji]");
-    var textoEl = form.querySelector("[data-listra-texto]");
-    var destaqueEl = form.querySelector("[data-listra-destaque]");
 
     if (emojiInput) {
       emojiInput.addEventListener("input", function () {
@@ -434,23 +434,6 @@
         emojiInput.value = filtrarSoEmoji(txt);
       });
     }
-
-    form.querySelectorAll("[data-listra-destaque-sel]").forEach(function (btn) {
-      btn.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        if (!textoEl || !destaqueEl) return;
-        var start = textoEl.selectionStart;
-        var end = textoEl.selectionEnd;
-        if (typeof start !== "number" || typeof end !== "number" || start === end) {
-          destaqueEl.focus();
-          return;
-        }
-        var sel = (textoEl.value || "").slice(start, end).replace(/\s+/g, " ").trim();
-        if (!sel) return;
-        destaqueEl.value = sel;
-        destaqueEl.focus();
-      });
-    });
   });
 })();
 </script>
