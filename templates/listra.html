@@ -90,43 +90,11 @@
         {% endif %}
       </header>
 
-      {% if l.atual %}
-      <ol class="listra-list" data-listra-lista="{{ l.ano }}">
-        {% for f in l.frases %}
-        <li class="listra-item">
-          <div class="listra-item-main">
-            <span class="listra-item-bullet" aria-hidden="true">*</span>
-            <p class="listra-item-texto">{{ f.texto }}</p>
-          </div>
-          <div class="listra-item-meta">
-            <div class="listra-item-meta-text">
-              {% if f.responsavel %}
-              <span class="listra-item-resp">{{ f.responsavel }}</span>
-              {% else %}
-              <span class="listra-item-resp listra-item-resp--vazio">Acervo {{ l.ano }}</span>
-              {% endif %}
-              {% if f.criado_em %}
-              <time class="listra-item-quando" datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length > 10 %}T{{ f.criado_em[11:16] }}{% endif %}" title="Registrado em {{ f.criado_em }}">
-                {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}
-                {% if f.criado_em|length >= 16 %}· {{ f.criado_em[11:16] }}{% endif %}
-              </time>
-              {% endif %}
-            </div>
-            {% if is_admin %}
-            <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
-              <input type="hidden" name="frase_id" value="{{ f.id }}" />
-              <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
-            </form>
-            {% endif %}
-          </div>
-        </li>
-        {% else %}
-        <li class="listra-empty">A Listra {{ l.ano }} ainda está vazia.</li>
-        {% endfor %}
-      </ol>
-      {% else %}
-      <details class="listra-ano-details">
-        <summary class="listra-ano-summary">Ver frases de {{ l.ano }}</summary>
+      <details class="listra-ano-details" {% if l.atual %}open{% endif %}>
+        <summary class="listra-ano-summary">
+          <span class="listra-ano-summary-label listra-ano-summary-label--abrir">Ver frases de {{ l.ano }}</span>
+          <span class="listra-ano-summary-label listra-ano-summary-label--fechar">Minimizar frases de {{ l.ano }}</span>
+        </summary>
         <ol class="listra-list" data-listra-lista="{{ l.ano }}">
           {% for f in l.frases %}
           <li class="listra-item">
@@ -161,7 +129,6 @@
           {% endfor %}
         </ol>
       </details>
-      {% endif %}
     </section>
     {% endfor %}
   </div>
