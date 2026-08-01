@@ -5692,12 +5692,22 @@ html.theme-light .xonha-hero {
   color: var(--muted);
 }
 .xonha-counter-value {
-  margin: 0.35rem 0 0.85rem;
+  margin: 0.35rem 0 0.25rem;
   font-size: clamp(2.6rem, 10vw, 4.6rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--accent);
+}
+.xonha-counter-since {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.xonha-counter-since time {
+  color: var(--text);
+  font-weight: 700;
 }
 .xonha-status-block {
   display: flex;

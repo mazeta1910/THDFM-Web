@@ -21,6 +21,14 @@
       Se você recebesse R$1,00 por cada vez que o Xonha saiu ou foi banido do grupo você teria
     </p>
     <p class="xonha-counter-value">R${{ stats.total_placar }},00</p>
+    {% if stats.inicio_contagem %}
+    <p class="xonha-counter-since">
+      Contagem desde
+      <time datetime="{{ stats.inicio_contagem }}">
+        {{ stats.inicio_contagem[8:10] }}/{{ stats.inicio_contagem[5:7] }}/{{ stats.inicio_contagem[0:4] }}
+      </time>
+    </p>
+    {% endif %}
 
     <div class="xonha-status-block xonha-status-block--{{ stats.status }}">
       <img
@@ -155,12 +163,12 @@
 
   {% if stats.dias_semana %}
   <section class="xonha-weekdays card">
-    <h2>Dias da semana em que mais sai</h2>
+    <h2>Dias da semana em que mais sai / é banido</h2>
     <ol class="xonha-weekday-list">
       {% for d in stats.dias_semana %}
       <li>
         <span class="xonha-weekday-name">{{ d.dia }}</span>
-        <span class="xonha-weekday-bar" style="--pct: {{ (d.quantidade / stats.total_saidas * 100)|round(1) }}%"></span>
+        <span class="xonha-weekday-bar" style="--pct: {{ (d.quantidade / stats.total_placar * 100)|round(1) if stats.total_placar else 0 }}%"></span>
         <span class="xonha-weekday-qtd">{{ d.quantidade }}×</span>
       </li>
       {% endfor %}
