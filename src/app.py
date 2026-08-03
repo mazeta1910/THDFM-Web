@@ -1804,6 +1804,7 @@ async def salvar_palpites(request: Request, token: str):
     confrontos = db.list_confrontos_completos()
     from src.seed_data import jogo_palpite_travado
 
+    faltando_penaltis: list[int] = []
     try:
         for c in confrontos:
             ida = next(j for j in c["jogos"] if j["perna"] == "ida")
@@ -1825,6 +1826,8 @@ async def salvar_palpites(request: Request, token: str):
                     continue
                 if jogo_palpite_travado(volta.get("inicio_em"), janela=janela):
                     continue
+                # Sempre grava o placar antes de validar pênaltis, para não
+                # descartar o restante do formulário se faltar uma escolha.
                 db.salvar_palpite_jogo(part["id"], volta["id"], int(gm), int(gv))
 
                 # Agregado para pênaltis = resultado oficial da Ida + palpite da Volta.
@@ -1843,17 +1846,38 @@ async def salvar_palpites(request: Request, token: str):
                 pen = form.get(f"pen_{c['id']}")
                 if empate:
                     if pen not in ("a", "b"):
-                        return RedirectResponse(
-                            f"/p/{token}?erro=Escolha+os+penaltis+no+confronto+{c['id']}",
-                            status_code=303,
-                        )
-                    db.salvar_palpite_penaltis(part["id"], c["id"], str(pen))
+                        faltando_penaltis.append(int(c["id"]))
+                    else:
+                        db.salvar_palpite_penaltis(part["id"], c["id"], str(pen))
                 else:
                     db.limpar_palpite_penaltis(part["id"], c["id"])
     except ValueError:
-        return RedirectResponse(f"/p/{token}?erro=Placar+invalido", status_code=303)
+        return RedirectResponse(
+            f"/p/{token}?erro={quote('Placar inválido')}",
+            status_code=303,
+        )
 
-    return RedirectResponse(f"/p/{token}?msg=Palpites+salvos", status_code=303)
+    if faltando_penaltis:
+        n = len(faltando_penaltis)
+        if n == 1:
+            aviso = (
+                "Placares salvos. Ainda falta escolher quem passa nos pênaltis "
+                f"no jogo ({faltando_penaltis[0]})."
+            )
+        else:
+            aviso = (
+                "Placares salvos. Ainda falta escolher quem passa nos pênaltis "
+                f"em {n} jogos empatados."
+            )
+        return RedirectResponse(
+            f"/p/{token}?erro={quote(aviso)}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"/p/{token}?msg={quote('Palpites salvos')}",
+        status_code=303,
+    )
 
 
 @app.get("/admin/login", response_class=HTMLResponse)

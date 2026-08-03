@@ -23,7 +23,7 @@
 {% if erro %}
 <div class="modal-backdrop is-open" id="modal-palpites-erro">
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-erro-title">
-    <h3 id="modal-palpites-erro-title">Não foi possível salvar</h3>
+    <h3 id="modal-palpites-erro-title">{% if 'Placares salvos' in erro %}Quase lá{% else %}Não foi possível salvar{% endif %}</h3>
     <p style="margin:0 0 1rem">{{ erro.replace('+', ' ') }}</p>
     <button type="button" class="modal-ok" id="modal-palpites-erro-ok">Ok</button>
   </div>
