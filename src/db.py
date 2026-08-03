@@ -6,7 +6,7 @@ import secrets
 import sqlite3
 import unicodedata
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -591,8 +591,14 @@ def mensagem_whatsapp_cobranca_palpite(
     n_feitos: int,
     n_jogos: int,
     trava_min: int | None = None,
+    jogos: list[dict[str, Any]] | None = None,
+    agora: datetime | None = None,
 ) -> str:
-    """Lembrete individual para quem ainda não completou os palpites."""
+    """Lembrete individual para quem ainda não completou os palpites.
+
+    `jogos` — lista de dicts com clube_a, clube_b, inicio_em (os que faltam
+    para a pessoa). Cita os do dia de hoje ou, se não houver, o próximo dia.
+    """
     from src.config import TRAVA_PALPITE_ANTES_MIN
 
     if trava_min is None:
@@ -610,14 +616,75 @@ def mensagem_whatsapp_cobranca_palpite(
             f"Ainda não vimos seus palpites da {fase_label} ({perna_label}) "
             "no Bolão THDFM."
         )
+
+    bloco_jogos = texto_jogos_proximos_cobranca(jogos or [], agora=agora)
+    if bloco_jogos:
+        quando = (
+            f"{bloco_jogos}\n\n"
+            f"Os palpites ficam disponíveis para alteração até {trava_min} min "
+            "antes do início de cada partida."
+        )
+    else:
+        quando = (
+            "O(s) jogo(s) acontece(m) em breve — os palpites ficam disponíveis "
+            f"para alteração até {trava_min} min antes do início de cada partida."
+        )
+
     return (
         f"{oi}\n\n"
         f"{situacao}\n\n"
-        "O(s) jogo(s) acontece(m) em breve — os palpites ficam disponíveis "
-        f"para alteração até {trava_min} min antes do início de cada partida.\n\n"
+        f"{quando}\n\n"
         f"É por aqui (link pessoal):\n{link}\n\n"
         "Qualquer dúvida, fala com a gente!"
     )
+
+
+def texto_jogos_proximos_cobranca(
+    jogos: list[dict[str, Any]],
+    *,
+    agora: datetime | None = None,
+) -> str:
+    """Bloco WhatsApp listando os jogos do dia (ou do próximo dia com partida)."""
+    from src.config import _TZ_SP
+    from src.seed_data import parse_inicio_em
+
+    now = agora or datetime.now(_TZ_SP)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=_TZ_SP)
+    hoje = now.date()
+
+    por_dia: dict[Any, list[tuple[Any, str, str]]] = {}
+    for j in jogos:
+        dt = parse_inicio_em(j.get("inicio_em"))
+        if dt is None:
+            continue
+        a = (j.get("clube_a") or "?").strip()
+        b = (j.get("clube_b") or "?").strip()
+        label = f"{a} x {b}"
+        hora = dt.strftime("%H:%M")
+        por_dia.setdefault(dt.date(), []).append((dt, hora, label))
+
+    if not por_dia:
+        return ""
+
+    # Prefere hoje; senão o próximo dia com jogo; senão o mais cedo que existir.
+    if hoje in por_dia:
+        dia = hoje
+    else:
+        futuros = sorted(d for d in por_dia if d >= hoje)
+        dia = futuros[0] if futuros else min(por_dia)
+
+    itens = sorted(por_dia[dia], key=lambda t: t[0])
+    linhas = [f"• {label} — {hora}" for _, hora, label in itens]
+
+    if dia == hoje:
+        cabeca = f"Hoje ({dia.strftime('%d/%m')}) tem:"
+    elif dia == hoje + timedelta(days=1):
+        cabeca = f"Amanhã ({dia.strftime('%d/%m')}) tem:"
+    else:
+        cabeca = f"No dia {dia.strftime('%d/%m')} tem:"
+
+    return cabeca + "\n" + "\n".join(linhas)
 
 
 def jogos_ids_fase_perna(fase: str, perna: str) -> list[int]:
@@ -677,34 +744,36 @@ def status_palpites_liberados(
     jogo_ids = [j["id"] for j in considerados]
     n_jogos = len(jogo_ids)
     ids_set = set(jogo_ids)
+    por_id = {j["id"]: j for j in considerados}
 
     liberados = [
         p for p in list_participantes() if p.get("status") == "liberado"
     ]
-    feitos_por_pid: dict[int, int] = {int(p["id"]): 0 for p in liberados}
+    feitos_por_pid: dict[int, set[int]] = {int(p["id"]): set() for p in liberados}
     if jogo_ids:
         placeholders = ",".join("?" * len(jogo_ids))
         with get_db() as conn:
             rows = conn.execute(
-                f"SELECT participante_id, COUNT(*) AS n FROM palpites_jogo "
-                f"WHERE jogo_id IN ({placeholders}) "
-                f"GROUP BY participante_id",
+                f"SELECT participante_id, jogo_id FROM palpites_jogo "
+                f"WHERE jogo_id IN ({placeholders})",
                 tuple(jogo_ids),
             ).fetchall()
             for r in rows:
                 pid = int(r["participante_id"])
-                if pid in feitos_por_pid:
-                    feitos_por_pid[pid] = int(r["n"])
+                jid = int(r["jogo_id"])
+                if pid in feitos_por_pid and jid in ids_set:
+                    feitos_por_pid[pid].add(jid)
 
     completos: list[dict[str, Any]] = []
     incompletos: list[dict[str, Any]] = []
     for p in liberados:
         pid = int(p["id"])
-        n_feitos = feitos_por_pid.get(pid, 0)
-        # Defesa: COUNT não pode passar de n_jogos
+        feitos_ids = feitos_por_pid.get(pid, set())
+        n_feitos = len(feitos_ids)
         if n_feitos > n_jogos:
             n_feitos = n_jogos
         completo = n_jogos > 0 and n_feitos >= n_jogos
+        faltando = [por_id[jid] for jid in jogo_ids if jid not in feitos_ids]
         item = {
             "id": pid,
             "nome": p.get("nome") or "",
@@ -715,6 +784,7 @@ def status_palpites_liberados(
             "n_jogos": n_jogos,
             "completo": completo,
             "parcial": n_feitos > 0 and not completo,
+            "faltando_jogos": faltando,
         }
         if completo:
             completos.append(item)

@@ -54,6 +54,62 @@ def test_mensagem_cobranca_menciona_trava_e_link():
     assert "https://exemplo.test/p/tok123" in msg
 
 
+def test_mensagem_cobranca_cita_jogos_do_dia():
+    from datetime import datetime
+
+    from src.config import _TZ_SP
+
+    agora = datetime(2026, 8, 4, 10, 0, tzinfo=_TZ_SP)
+    jogos = [
+        {
+            "clube_a": "Atlético-MG",
+            "clube_b": "Juventude",
+            "inicio_em": "2026-08-04 19:30",
+        },
+        {
+            "clube_a": "Santos",
+            "clube_b": "Remo",
+            "inicio_em": "2026-08-04 21:30",
+        },
+        {
+            "clube_a": "Vasco",
+            "clube_b": "Fluminense",
+            "inicio_em": "2026-08-05 21:30",
+        },
+    ]
+    msg = db.mensagem_whatsapp_cobranca_palpite(
+        "Aleson",
+        "https://thdfm.com.br",
+        "tok",
+        fase_label="Oitavas",
+        perna_label="Volta",
+        n_feitos=0,
+        n_jogos=8,
+        jogos=jogos,
+        agora=agora,
+    )
+    assert "Hoje (04/08) tem:" in msg
+    assert "Juventude" in msg or "Atlético-MG" in msg
+    assert "19:30" in msg
+    assert "21:30" in msg
+    # Não lista o jogo de amanhã no bloco de hoje
+    assert "05/08" not in msg.split("É por aqui")[0]
+
+    amanha = datetime(2026, 8, 3, 10, 0, tzinfo=_TZ_SP)
+    msg2 = db.mensagem_whatsapp_cobranca_palpite(
+        "Aleson",
+        "https://thdfm.com.br",
+        "tok",
+        fase_label="Oitavas",
+        perna_label="Volta",
+        n_feitos=0,
+        n_jogos=2,
+        jogos=jogos,
+        agora=amanha,
+    )
+    assert "Amanhã (04/08) tem:" in msg2
+
+
 def test_admin_cobranca_lista_e_whatsapp(client):
     falta = db.criar_participante("Falta WA", status="liberado", celular="11990005555")
     ok = db.criar_participante("Completo WA", status="liberado", celular="11990006666")

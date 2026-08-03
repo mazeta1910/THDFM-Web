@@ -1373,6 +1373,7 @@ def admin_cobranca(request: Request):
             n_feitos=int(p["n_feitos"]),
             n_jogos=int(p["n_jogos"]),
             trava_min=TRAVA_PALPITE_ANTES_MIN,
+            jogos=p.get("faltando_jogos") or [],
         )
         p["wa_url"] = db.url_whatsapp_chat(p.get("celular"), msg)
 
@@ -1443,6 +1444,7 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
         n_feitos=int(row["n_feitos"]),
         n_jogos=int(row["n_jogos"]),
         trava_min=TRAVA_PALPITE_ANTES_MIN,
+        jogos=row.get("faltando_jogos") or [],
     )
     wa_url = db.url_whatsapp_chat(part.get("celular"), msg)
     if not wa_url:
