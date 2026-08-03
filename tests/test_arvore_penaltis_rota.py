@@ -37,6 +37,8 @@ def test_rota_meus_palpites_com_sessao(client):
     assert r.status_code == 200
     assert "form-palpites" in r.text or "Palpites" in r.text
     assert "Meus Palpites" in r.text
+    assert "30" in r.text
+    assert "minutos antes do início" in r.text
 
 
 def test_menu_aponta_rota_limpa(client):

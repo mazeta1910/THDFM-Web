@@ -2616,6 +2616,30 @@ input[type="file"] {
   padding: 0.08rem 0.35rem;
   border-radius: 4px;
 }
+.wrap.palpites-page .palpites-trava-aviso {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 8px;
+}
+.wrap.palpites-page .palpites-trava-aviso strong {
+  color: var(--accent);
+  font-weight: 800;
+}
+.match-travado-tag {
+  color: #ff3b30;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+html.theme-light .match-travado-tag,
+html[data-theme="light"] .match-travado-tag {
+  color: #c62828;
+}
 html.theme-light .wrap.palpites-page .palpites-save-hint,
 html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
   color: #c62828;

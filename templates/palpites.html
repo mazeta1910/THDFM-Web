@@ -5,6 +5,12 @@
 {% block content %}
 <h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
 <p class="palpites-lead">Faça aqui os seus palpites. <strong class="palpites-save-hint">Lembre de salvar</strong> antes de sair da página.</p>
+{% if janela != 'fechado' %}
+<p class="palpites-trava-aviso" role="note">
+  Os palpites de <strong>cada jogo fecham automaticamente {{ trava_antes_min|default(30) }}&nbsp;minutos antes do início</strong>.
+  Depois disso, aquele placar fica travado e não dá mais para alterar.
+</p>
+{% endif %}
 
 {% if janela == 'fechado' %}
 <p class="erro">Palpites fechados no momento.</p>
@@ -14,7 +20,7 @@
 <div class="modal-backdrop is-open" id="modal-palpites-msg">
   <div class="inscricao-modal sucesso-modal" role="dialog" aria-modal="true" aria-labelledby="modal-palpites-msg-title">
     <h3 id="modal-palpites-msg-title" class="sucesso-titulo">Palpites salvos!</h3>
-    <p class="sucesso-lead">Você pode alterar enquanto a janela estiver aberta — é só enviar de novo.</p>
+    <p class="sucesso-lead">Você pode alterar enquanto a janela estiver aberta e até {{ trava_antes_min|default(30) }}&nbsp;min antes de cada jogo — é só enviar de novo.</p>
     <button type="button" class="modal-ok" id="modal-palpites-msg-ok">Ok</button>
   </div>
 </div>
@@ -129,7 +135,7 @@
         {% if ida %}
         <div class="match-cell" data-confronto="{{ c.id }}">
           {% set inicio_lbl = formatar_inicio_jogo(ida.inicio_em) %}
-          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}</span>
+          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if ida.travado %} · <span class="match-travado-tag">Fechado</span>{% endif %}</span>
           <div class="match-teams">
             <div class="match-team-row">
               {{ emblema(c.clube_a) }}
@@ -163,7 +169,7 @@
         {% if volta %}
         <div class="match-cell" data-confronto="{{ c.id }}">
           {% set inicio_lbl = formatar_inicio_jogo(volta.inicio_em) %}
-          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}</span>
+          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if volta.travado %} · <span class="match-travado-tag">Fechado</span>{% endif %}</span>
           <div class="match-ref">
             <span class="match-ref-line">
               Seu palpite (Ida):
