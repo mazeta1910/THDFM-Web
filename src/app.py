@@ -1537,6 +1537,7 @@ def _render_meus_palpites(request: Request, part: dict):
         ),
         palpites_jogo=palpites["jogos"],
         palpites_pen=palpites["penaltis"],
+        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
     )
