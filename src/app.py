@@ -166,6 +166,7 @@ TEMPLATES.env.globals["formatar_inicio_jogo"] = formatar_inicio_jogo
 TEMPLATES.env.globals["inicio_em_input_value"] = inicio_em_input_value
 TEMPLATES.env.globals["nome_clube_curto"] = nome_clube_curto
 TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
+TEMPLATES.env.globals["url_whatsapp_chat"] = db.url_whatsapp_chat
 TEMPLATES.env.globals["avatar_url"] = avatar_url
 TEMPLATES.env.globals["avatar_padrao_url"] = avatar_padrao_url
 TEMPLATES.env.globals["listra_emoji_efetivo"] = db.listra_emoji_efetivo
@@ -173,6 +174,7 @@ TEMPLATES.env.globals["listra_texto_contexto"] = db.listra_texto_contexto
 TEMPLATES.env.globals["listra_linha_compartilhar"] = db.listra_linha_compartilhar
 TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
 TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
+TEMPLATES.env.filters["wa_chat"] = db.url_whatsapp_chat
 
 
 def _listra_marcar_destaque(texto: str, destaque: str) -> str:
@@ -457,15 +459,9 @@ def _enrich_confrontos(confrontos: list, *, janela: str | None = None) -> list:
 
 
 def _taxa_ctx() -> dict:
-    wa_digits = re.sub(r"\D+", "", ADMIN_WHATSAPP or os.environ.get("ADMIN_WHATSAPP", ""))
     wa_msg = os.environ.get("ADMIN_WHATSAPP_MSG", ADMIN_WHATSAPP_MSG)
-    wa_url = ""
-    if wa_digits:
-        from urllib.parse import quote
-
-        wa_url = f"https://wa.me/{wa_digits}?text={quote(wa_msg)}"
-    social_wa = re.sub(r"\D+", "", SOCIAL_WHATSAPP or "")
-    social_wa_url = f"https://wa.me/{social_wa}" if social_wa else ""
+    wa_url = db.url_whatsapp_chat(ADMIN_WHATSAPP or os.environ.get("ADMIN_WHATSAPP", ""), wa_msg) or ""
+    social_wa_url = db.url_whatsapp_chat(SOCIAL_WHATSAPP or "") or ""
     group_url = (
         WHATSAPP_GROUP_URL
         or os.environ.get("WHATSAPP_GROUP_URL", "")
@@ -1366,6 +1362,19 @@ def admin_cobranca(request: Request):
     )
     fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
     perna_label = "Ida" if perna == "ida" else "Volta"
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    for p in status["incompletos"]:
+        msg = db.mensagem_whatsapp_cobranca_palpite(
+            p["nome"],
+            base,
+            p["token"],
+            fase_label=fase_label,
+            perna_label=perna_label,
+            n_feitos=int(p["n_feitos"]),
+            n_jogos=int(p["n_jogos"]),
+            trava_min=TRAVA_PALPITE_ANTES_MIN,
+        )
+        p["wa_url"] = db.url_whatsapp_chat(p.get("celular"), msg)
 
     return render(
         request,
@@ -1380,7 +1389,7 @@ def admin_cobranca(request: Request):
         status=status,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         admin_cobranca_count=status.get("n_incompletos") or 0,
-        base_url=PUBLIC_BASE_URL or str(request.base_url).rstrip("/"),
+        base_url=base,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
     )
@@ -1408,12 +1417,6 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
             f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Participante não liberado')}",
             status_code=303,
         )
-    wa = db.celular_whatsapp(part.get("celular"))
-    if not wa:
-        return RedirectResponse(
-            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Participante sem celular')}",
-            status_code=303,
-        )
 
     status = db.status_palpites_liberados(
         fase, perna, so_abertos=True, janela=janela
@@ -1423,7 +1426,6 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
         None,
     )
     if not row:
-        # Já completou — ainda assim pode reenviar? Redireciona com aviso.
         return RedirectResponse(
             f"/admin/cobranca?fase={fase}&perna={perna}&msg={quote('Esse participante já completou os palpites')}",
             status_code=303,
@@ -1442,10 +1444,13 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
         n_jogos=int(row["n_jogos"]),
         trava_min=TRAVA_PALPITE_ANTES_MIN,
     )
-    return RedirectResponse(
-        f"https://wa.me/{wa}?text={quote(msg)}",
-        status_code=303,
-    )
+    wa_url = db.url_whatsapp_chat(part.get("celular"), msg)
+    if not wa_url:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Celular inválido para WhatsApp')}",
+            status_code=303,
+        )
+    return RedirectResponse(wa_url, status_code=303)
 
 
 @app.get("/classificacao", response_class=HTMLResponse)
@@ -2250,8 +2255,6 @@ def admin_liberar(request: Request, participante_id: int = Form(...)):
 @app.get("/admin/avisar-link/{participante_id}")
 def admin_avisar_link(request: Request, participante_id: int):
     """Marca link como enviado e abre o WhatsApp com a mensagem pronta."""
-    from urllib.parse import quote
-
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     part = db.get_participante(participante_id)
@@ -2259,25 +2262,22 @@ def admin_avisar_link(request: Request, participante_id: int):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
         )
-    wa = db.celular_whatsapp(part.get("celular"))
-    if not wa:
-        return RedirectResponse(
-            "/admin?sec=inscricoes&erro=Participante+sem+celular", status_code=303
-        )
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     msg = db.mensagem_whatsapp_link(part["nome"], base, part["token"])
+    wa_url = db.url_whatsapp_chat(part.get("celular"), msg)
+    if not wa_url:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Celular+invalido+para+WhatsApp",
+            status_code=303,
+        )
     db.marcar_link_enviado(participante_id, enviado=True)
     db.marcar_pedidos_recuperacao_atendidos_participante(participante_id)
-    return RedirectResponse(
-        f"https://wa.me/{wa}?text={quote(msg)}", status_code=303
-    )
+    return RedirectResponse(wa_url, status_code=303)
 
 
 @app.get("/admin/recuperacao/{pedido_id}/atender")
 def admin_recuperacao_atender(request: Request, pedido_id: int):
     """Fecha o pedido de recuperação e abre o WhatsApp com o link."""
-    from urllib.parse import quote
-
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     pedido = db.get_pedido_recuperacao(pedido_id)
@@ -2289,19 +2289,18 @@ def admin_recuperacao_atender(request: Request, pedido_id: int):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Participante+nao+liberado", status_code=303
         )
-    wa = db.celular_whatsapp(pedido.get("celular"))
-    if not wa:
-        return RedirectResponse(
-            "/admin?sec=inscricoes&erro=Participante+sem+celular", status_code=303
-        )
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     msg = db.mensagem_whatsapp_link(pedido["nome"], base, pedido["token"])
+    wa_url = db.url_whatsapp_chat(pedido.get("celular"), msg)
+    if not wa_url:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Celular+invalido+para+WhatsApp",
+            status_code=303,
+        )
     db.marcar_pedido_recuperacao_atendido(pedido_id)
     db.marcar_pedidos_recuperacao_atendidos_participante(pedido["participante_id"])
     db.marcar_link_enviado(pedido["participante_id"], enviado=True)
-    return RedirectResponse(
-        f"https://wa.me/{wa}?text={quote(msg)}", status_code=303
-    )
+    return RedirectResponse(wa_url, status_code=303)
 
 
 @app.get("/admin/marcar-link/{participante_id}")

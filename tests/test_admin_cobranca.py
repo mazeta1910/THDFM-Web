@@ -71,7 +71,8 @@ def test_admin_cobranca_lista_e_whatsapp(client):
     assert "Quem palpitou" in r.text
     assert "Falta WA" in r.text
     assert "Completo WA" in r.text
-    assert f"/admin/cobranca/avisar/{falta['id']}" in r.text
+    digitos = db.celular_whatsapp(falta["celular"])
+    assert f"api.whatsapp.com/send?phone={digitos}" in r.text
     assert "30" in r.text
 
     side = client.get("/admin")
@@ -84,8 +85,7 @@ def test_admin_cobranca_lista_e_whatsapp(client):
     )
     assert wa.status_code == 303
     loc = wa.headers.get("location") or ""
-    digitos = db.celular_whatsapp(falta["celular"])
-    assert loc.startswith(f"https://wa.me/{digitos}")
+    assert loc.startswith(f"https://api.whatsapp.com/send?phone={digitos}")
     assert "text=" in loc
     decoded = unquote(loc)
     assert "30 min" in decoded

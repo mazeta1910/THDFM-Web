@@ -229,7 +229,7 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     r = client.get(f"/admin/recuperacao/{pedido_id}/atender", follow_redirects=False)
     assert r.status_code == 303
     loc = unquote(r.headers["location"])
-    assert "wa.me/5511955443322" in loc
+    assert "api.whatsapp.com/send?phone=5511955443322" in loc
     assert f"/p/{part['token']}" in loc
     assert db.list_pedidos_recuperacao_pendentes() == []
     updated = db.get_participante(part["id"])
