@@ -69,24 +69,34 @@
       <details class="admin-menu-group" data-group="admin" open>
         <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
         <div class="admin-menu-items">
-          <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
-            {{ ico('inscricoes') }}<span>Inscrições</span>
-            {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
-          </a>
-          <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
-          <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
-          <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
-            {{ ico('whatsapp') }}<span>Quem palpitou</span>
-            {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
-          </a>
-          {% if is_dono %}
-          <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
-          {% endif %}
+          <details class="admin-menu-subgroup" data-group="admin-competicao" open>
+            <summary class="admin-menu-subsummary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
+            <div class="admin-menu-items admin-menu-items--nested">
+              <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
+              <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+            </div>
+          </details>
+          <details class="admin-menu-subgroup" data-group="admin-participantes" open>
+            <summary class="admin-menu-subsummary">{{ ico('participantes', 13) }}<span>Participantes</span></summary>
+            <div class="admin-menu-items admin-menu-items--nested">
+              <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
+                {{ ico('inscricoes') }}<span>Inscrições</span>
+                {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
+              </a>
+              <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
+                {{ ico('whatsapp') }}<span>Quem palpitou</span>
+                {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
+              </a>
+              {% if is_dono %}
+              <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+              {% endif %}
+            </div>
+          </details>
         </div>
       </details>
 
       <details class="admin-menu-group" data-group="competicao" open>
-        <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
+        <summary class="admin-menu-summary">{{ ico('classificacao', 13) }}<span>Bolão</span></summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
           <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
