@@ -134,12 +134,12 @@
             <div class="match-team-row">
               {{ emblema(c.clube_a) }}
               <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
-              <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
+              <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" {% if janela != 'ida' or (ida and ida.travado) %}readonly{% endif %} />
             </div>
             <div class="match-team-row">
               {{ emblema(c.clube_b) }}
               <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
-              <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" {% if janela != 'ida' %}readonly{% endif %} />
+              <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" {% if janela != 'ida' or (ida and ida.travado) %}readonly{% endif %} />
             </div>
           </div>
         </div>
@@ -199,29 +199,29 @@
               {{ emblema(c.clube_b) }}
               <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
-                data-ida-a="{{ p_ida.gols_mandante if p_ida else '' }}"
-                data-ida-b="{{ p_ida.gols_visitante if p_ida else '' }}"
+                data-ida-a="{{ ida.gols_mandante if ida and ida.gols_mandante is not none else '' }}"
+                data-ida-b="{{ ida.gols_visitante if ida and ida.gols_visitante is not none else '' }}"
                 value="{{ p_volta.gols_mandante if p_volta else '' }}"
-                {% if janela != 'volta' %}readonly{% endif %} />
+                {% if janela != 'volta' or (volta and volta.travado) %}readonly{% endif %} />
             </div>
             <div class="match-team-row">
               {{ emblema(c.clube_a) }}
               <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
                 value="{{ p_volta.gols_visitante if p_volta else '' }}"
-                {% if janela != 'volta' %}readonly{% endif %} />
+                {% if janela != 'volta' or (volta and volta.travado) %}readonly{% endif %} />
             </div>
           </div>
           <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
-            <p class="pen-group-title">Empate no agregado. Quem passa nos pênaltis?</p>
+            <p class="pen-group-title">Empate no agregado (oficial da Ida + seu palpite da Volta). Quem passa nos pênaltis?</p>
             <div class="pen-group-choices">
               <label class="pen-choice">
-                <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
+                <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
                 {{ emblema(c.clube_a) }}
                 <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               </label>
               <label class="pen-choice">
-                <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' %}disabled{% endif %} />
+                <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
                 {{ emblema(c.clube_b) }}
                 <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               </label>
@@ -508,6 +508,6 @@
 })();
 </script>
 {% if janela == 'volta' %}
-<script src="/static/palpites.js"></script>
+<script src="/static/palpites.js?v=198"></script>
 {% endif %}
 {% endblock %}

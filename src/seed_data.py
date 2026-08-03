@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote
+
+from src.config import TRAVA_PALPITE_ANTES_MIN, _TZ_SP
 
 # Horários da ida (tabela oficial / Google). Formato: YYYY-MM-DD HH:MM
 OITAVAS = [
@@ -45,18 +47,62 @@ def emblema_url(clube: str) -> str:
     return f"/emblemas/{quote(clube)}.png"
 
 
-def formatar_inicio_jogo(inicio_em: str | None) -> str:
-    """Ex.: '2026-08-01 17:30' → 'Sáb 01/08 17:30'."""
+def parse_inicio_em(inicio_em: str | None) -> datetime | None:
+    """Converte texto do banco/form em datetime aware (America/Sao_Paulo)."""
     if not inicio_em:
-        return ""
+        return None
     raw = str(inicio_em).strip().replace("T", " ")
-    dt = None
     for fmt, n in (("%Y-%m-%d %H:%M:%S", 19), ("%Y-%m-%d %H:%M", 16)):
         try:
             dt = datetime.strptime(raw[:n], fmt)
-            break
+            return dt.replace(tzinfo=_TZ_SP)
         except ValueError:
             continue
+    return None
+
+
+def formatar_inicio_jogo(inicio_em: str | None) -> str:
+    """Ex.: '2026-08-01 17:30' → 'Sáb 01/08 17:30'."""
+    dt = parse_inicio_em(inicio_em)
     if dt is None:
-        return raw
+        return str(inicio_em).strip() if inicio_em else ""
     return f"{_WEEKDAYS_PT[dt.weekday()]} {dt.strftime('%d/%m')} {dt.strftime('%H:%M')}"
+
+
+def inicio_em_input_value(inicio_em: str | None) -> str:
+    """Valor para <input type='datetime-local'>."""
+    dt = parse_inicio_em(inicio_em)
+    if dt is None:
+        return ""
+    return dt.strftime("%Y-%m-%dT%H:%M")
+
+
+def jogo_palpite_travado(
+    inicio_em: str | None,
+    *,
+    agora: datetime | None = None,
+    janela: str | None = None,
+) -> bool:
+    """True se o placar daquele jogo não pode mais ser editado.
+
+    - Janela fechado: tudo travado.
+    - Com horário: trava TRAVA_PALPITE_ANTES_MIN antes do apito.
+    - Sem horário: só a janela manda (compatível com jogos antigos).
+    """
+    if janela == "fechado":
+        return True
+    dt = parse_inicio_em(inicio_em)
+    if dt is None:
+        return False
+    now = agora or datetime.now(_TZ_SP)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=_TZ_SP)
+    return now >= (dt - timedelta(minutes=TRAVA_PALPITE_ANTES_MIN))
+
+
+def normalizar_inicio_em(valor: str | None) -> str | None:
+    """Aceita datetime-local ou 'YYYY-MM-DD HH:MM' e grava no formato do banco."""
+    dt = parse_inicio_em(valor)
+    if dt is None:
+        return None
+    return dt.strftime("%Y-%m-%d %H:%M")

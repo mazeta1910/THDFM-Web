@@ -3,7 +3,7 @@ function updatePens(card) {
   const v = card.querySelector(".volta-v");
   const pen = card.querySelector("[data-pen]");
   if (!m || !v || !pen) return;
-  // Regra: pênaltis só se seu Ida + sua Volta empatar.
+  // Regra: pênaltis só se oficial da Ida + sua Volta empatar.
   const idaA = m.dataset.idaA;
   const idaB = m.dataset.idaB;
   if (idaA === "" || idaB === "" || m.value === "" || v.value === "") {

@@ -134,17 +134,16 @@ def calcular_classificacao() -> list[dict]:
                     ida_b + volta["gols_mandante"]
                 )
                 if agg_empate and real_cls in ("a", "b"):
-                    pj_ida = palpites["jogos"].get(ida["id"])
                     pj_volta = palpites["jogos"].get(volta["id"])
                     pen_palpite = palpites["penaltis"].get(c["id"], {}).get(
                         "penaltis_clube_id"
                     )
-                    if pj_ida and pj_volta:
-                        # Seu agregado: se empatou usa pênaltis; senão o líder do agregado
-                        # é o "time dos pênaltis" implícito (como na Copa de um jogo).
+                    if pj_volta:
+                        # Agregado do palpite = oficial da Ida + Volta do usuário.
+                        # Se empatar, usa pênaltis; senão o líder é o implícito.
                         palpite_cls = quem_classifica_agregado(
-                            pj_ida["gols_mandante"],
-                            pj_ida["gols_visitante"],
+                            ida["gols_mandante"],
+                            ida["gols_visitante"],
                             pj_volta["gols_mandante"],
                             pj_volta["gols_visitante"],
                             penaltis_clube_id=pen_palpite,

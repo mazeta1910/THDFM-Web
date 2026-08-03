@@ -28,8 +28,13 @@
 </div>
 
 <div class="card">
-  <h2>Pênaltis (igual Copa do Mundo)</h2>
-  <p>Se o agregado da chave empatar e for a pênaltis, vale quem você apontou para passar — mesmo que tenha palpitado vitória no tempo (ex.: 2×0) ou empate + pênaltis.</p>
+  <h2>Pênaltis (ida/volta)</h2>
+  <p>
+    Na Volta, o agregado para pênaltis usa o <strong>resultado oficial da Ida</strong>
+    + o <strong>seu palpite da Volta</strong>. Se empatar, você escolhe quem passa.
+    Se não empatar, o time na frente nesse agregado é o seu “time dos pênaltis” implícito
+    (vale no desfecho se a série real for a pênaltis).
+  </p>
 </div>
 
 <div class="card">
@@ -75,9 +80,9 @@
 <div class="card">
   <h2>Ondas de palpite</h2>
   <ol>
-    <li>Janela <strong>ida</strong>: só placares de ida.</li>
-    <li>Janela <strong>volta</strong>: ida congelada (seu palpite + oficial) + volta. Pênaltis só se <em>seu Ida + sua Volta</em> empatar; se não empatar, o time na frente no seu agregado é o seu “time dos pênaltis” implícito (vale no desfecho se a série real for a pênaltis).</li>
-    <li>Janela <strong>fechado</strong>: sem edição.</li>
+    <li>Janela <strong>ida</strong>: placares de ida (travados automaticamente 30&nbsp;min antes de cada jogo, se houver horário).</li>
+    <li>Janela <strong>volta</strong>: ida congelada (seu palpite + oficial) + volta. Pênaltis só se <em>oficial da Ida + sua Volta</em> empatar.</li>
+    <li>Janela <strong>fechado</strong>: sem edição (override manual).</li>
   </ol>
 </div>
 {% endblock %}

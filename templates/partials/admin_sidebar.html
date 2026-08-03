@@ -108,7 +108,7 @@
         <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
         <div class="admin-menu-items">
           {% if participante_nav and participante_nav.status == 'liberado' %}
-          <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+          <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/bolao/meus-palpites">{{ ico('palpites') }}<span>Meus Palpites</span></a>
           {% else %}
           <span class="admin-side-link admin-side-disabled" title="Liberação necessária">{{ ico('palpites') }}<span>Meus Palpites</span></span>
           {% endif %}

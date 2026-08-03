@@ -43,7 +43,7 @@ def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
     assert r.status_code == 200
     bolao = r.text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
     assert "Meus Palpites" in bolao
-    assert f'href="/p/{part["token"]}"' in bolao
+    assert 'href="/bolao/meus-palpites"' in bolao
     assert "Classificação" in bolao
     assert 'data-acesso-open="entrar"' not in bolao
     assert ">Entrar<" not in bolao
@@ -68,7 +68,7 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     r2 = client.get("/", follow_redirects=False)
     assert r2.status_code == 200
     assert "Técnicos Horríveis do Futebol Mundial" in r2.text
-    assert f"/p/{part['token']}" in r2.text  # link Meus Palpites no menu
+    assert "/bolao/meus-palpites" in r2.text  # link Meus Palpites no menu
     assert 'action="/conta/sair"' in r2.text
     assert "site-side-sair" in r2.text
     assert 'id="conta-drawer-root"' in r2.text
