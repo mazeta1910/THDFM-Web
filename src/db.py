@@ -1201,6 +1201,148 @@ def get_jogo(jogo_id: int) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
+def set_inicio_jogo(jogo_id: int, inicio_em: str | None) -> None:
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE jogos SET inicio_em = ? WHERE id = ?",
+            (inicio_em, jogo_id),
+        )
+
+
+def proximo_confronto_id() -> int:
+    with get_db() as conn:
+        row = conn.execute("SELECT COALESCE(MAX(id), 0) AS m FROM confrontos").fetchone()
+        return int(row["m"] or 0) + 1
+
+
+def criar_confronto(
+    fase: str,
+    clube_a: str,
+    clube_b: str,
+    *,
+    confronto_id: int | None = None,
+    ida_em: str | None = None,
+    volta_em: str | None = None,
+) -> int:
+    """Cria chave + jogos ida/volta. Mandante ida=a, volta=b."""
+    from src.config import FASE_IDS
+
+    if fase not in FASE_IDS:
+        raise ValueError("fase inválida")
+    a = (clube_a or "").strip()
+    b = (clube_b or "").strip()
+    if not a or not b or a == b:
+        raise ValueError("clubes inválidos")
+    cid = confronto_id or proximo_confronto_id()
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, ?, ?, ?)",
+            (cid, fase, a, b),
+        )
+        conn.execute(
+            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+            "VALUES (?, 'ida', 'a', ?)",
+            (cid, ida_em),
+        )
+        conn.execute(
+            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+            "VALUES (?, 'volta', 'b', ?)",
+            (cid, volta_em),
+        )
+    return cid
+
+
+def substituir_confrontos_fase(
+    fase: str,
+    pares: list[dict[str, Any]],
+) -> list[int]:
+    """Apaga confrontos da fase e recria a partir de pares.
+
+    Cada item: {clube_a, clube_b, ida_em?, volta_em?}.
+    """
+    from src.config import FASE_IDS
+
+    if fase not in FASE_IDS:
+        raise ValueError("fase inválida")
+    if fase == "oitavas":
+        raise ValueError("oitavas não podem ser remontadas por aqui")
+    ids: list[int] = []
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id FROM confrontos WHERE fase = ?", (fase,)
+        ).fetchall()
+        for r in rows:
+            conn.execute("DELETE FROM jogos WHERE confronto_id = ?", (r["id"],))
+            conn.execute("DELETE FROM confrontos WHERE id = ?", (r["id"],))
+        next_id = int(
+            conn.execute("SELECT COALESCE(MAX(id), 0) AS m FROM confrontos").fetchone()[
+                "m"
+            ]
+            or 0
+        )
+        for par in pares:
+            a = (par.get("clube_a") or "").strip()
+            b = (par.get("clube_b") or "").strip()
+            if not a or not b or a == b:
+                raise ValueError("par inválido")
+            next_id += 1
+            conn.execute(
+                "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, ?, ?, ?)",
+                (next_id, fase, a, b),
+            )
+            conn.execute(
+                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                "VALUES (?, 'ida', 'a', ?)",
+                (next_id, par.get("ida_em")),
+            )
+            conn.execute(
+                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                "VALUES (?, 'volta', 'b', ?)",
+                (next_id, par.get("volta_em")),
+            )
+            ids.append(next_id)
+    return ids
+
+
+def classificados_da_fase(fase: str) -> list[dict[str, Any]]:
+    """Vencedores oficiais das chaves da fase (agregado + pênaltis)."""
+    from src.scoring import quem_classifica_agregado
+
+    out: list[dict[str, Any]] = []
+    for c in list_confrontos_completos(fase):
+        jogos = {j["perna"]: j for j in c.get("jogos") or []}
+        ida = jogos.get("ida")
+        volta = jogos.get("volta")
+        if not ida or not volta:
+            continue
+        if (
+            ida.get("gols_mandante") is None
+            or ida.get("gols_visitante") is None
+            or volta.get("gols_mandante") is None
+            or volta.get("gols_visitante") is None
+        ):
+            continue
+        lado = quem_classifica_agregado(
+            int(ida["gols_mandante"]),
+            int(ida["gols_visitante"]),
+            int(volta["gols_mandante"]),
+            int(volta["gols_visitante"]),
+            penaltis_clube_id=volta.get("penaltis_clube_id"),
+        )
+        if lado not in ("a", "b"):
+            continue
+        clube = c["clube_a"] if lado == "a" else c["clube_b"]
+        out.append(
+            {
+                "confronto_id": c["id"],
+                "clube": clube,
+                "lado": lado,
+                "fase": fase,
+            }
+        )
+    return out
+
+
 def set_resultado_jogo(
     jogo_id: int,
     gols_mandante: int,

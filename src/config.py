@@ -72,6 +72,9 @@ WHATSAPP_GROUP_URL = os.environ.get(
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
 
+# Trava automática de palpites por jogo (America/Sao_Paulo).
+TRAVA_PALPITE_ANTES_MIN = 30
+
 FASES = (
     {"id": "oitavas", "label": "Oitavas", "slots": 8},
     {"id": "quartas", "label": "Quartas", "slots": 4},
@@ -79,6 +82,13 @@ FASES = (
     {"id": "final", "label": "Final", "slots": 1},
 )
 FASE_IDS = tuple(f["id"] for f in FASES)
+
+
+def fase_anterior(fase: str) -> str | None:
+    if fase not in FASE_IDS:
+        return None
+    idx = FASE_IDS.index(fase)
+    return FASE_IDS[idx - 1] if idx > 0 else None
 
 COMPROVANTE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
 COMPROVANTE_MAX_BYTES = 5 * 1024 * 1024

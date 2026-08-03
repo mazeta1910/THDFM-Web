@@ -29,7 +29,7 @@
         </ol>
         <div class="home-ctas">
           {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
-          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+          <a class="btn home-cta-primary" href="/bolao/meus-palpites">Meus Palpites</a>
           <a class="btn secondary home-cta-secondary" href="/classificacao">Classificação</a>
           {% elif participante_nav and participante_nav.status == 'liberado' %}
           <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
@@ -83,7 +83,7 @@
         <div class="home-ctas">
           <button type="button" class="btn home-cta-primary" data-go-slide="0">Ir ao bolão</button>
           {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
-          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Meus Palpites</a>
+          <a class="btn secondary home-cta-secondary" href="/bolao/meus-palpites">Meus Palpites</a>
           {% elif participante_nav %}
           <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Minha inscrição</a>
           {% else %}

@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=215" />
+  <link rel="stylesheet" href="/static/style.css?v=216" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -47,7 +47,11 @@
 {% set on_acervo_xonha = on_xonhometro or on_grupo_cardapio %}
 {% set on_grupo_whatsapp = on_grupo_bans or on_grupo_listra or on_grupo_copypastas or on_acervo_xonha %}
 {% set on_inscricao = path.startswith('/inscricao') %}
-{% set on_palpites = participante_nav and path == '/p/' + participante_nav.token and '/conta' not in path %}
+{% set on_palpites = participante_nav and (
+  path == '/bolao/meus-palpites'
+  or path == '/bolao/meuspalpites'
+  or (path == '/p/' + participante_nav.token and '/conta' not in path)
+) %}
 {% set on_competicao = on_classificacao or on_transparencia or on_regras %}
 {% set on_meu_bolao = on_palpites %}
 <body class="{% block body_class %}{% endblock %}{% if admin_layout %} admin-body{% else %} site-body{% endif %}{% if is_admin and not is_dono %} is-moderador{% endif %}{% if is_dono %} is-dono{% endif %}">

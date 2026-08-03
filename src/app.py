@@ -50,13 +50,15 @@ from src.config import (
     SOCIAL_YOUTUBE,
     TAXA_PIX,
     TAXA_VALOR_LABEL,
+    TRAVA_PALPITE_ANTES_MIN,
     WHATSAPP_GROUP_URL,
+    fase_anterior,
     inscricao_aberta,
 )
 from src.estilo_palpites import trofeus_hall
 from src.ranking import calcular_classificacao, confirmar_rodada, desfazer_ultima_rodada, faixa_zonas
 from src.scoring import agregado_empatado
-from src.seed_data import emblema_url, formatar_inicio_jogo, nome_clube_curto
+from src.seed_data import emblema_url, formatar_inicio_jogo, inicio_em_input_value, nome_clube_curto
 from src.transparencia import metricas_gerais, montar_portal, ranking_apostadores
 
 load_dotenv(ROOT_DIR / ".env")
@@ -161,6 +163,7 @@ def avatar_url(avatar_path: str | None) -> str | None:
 
 TEMPLATES.env.globals["emblema_url"] = emblema_url
 TEMPLATES.env.globals["formatar_inicio_jogo"] = formatar_inicio_jogo
+TEMPLATES.env.globals["inicio_em_input_value"] = inicio_em_input_value
 TEMPLATES.env.globals["nome_clube_curto"] = nome_clube_curto
 TEMPLATES.env.globals["wa_msg_link"] = db.mensagem_whatsapp_link
 TEMPLATES.env.globals["avatar_url"] = avatar_url
@@ -428,10 +431,17 @@ def _gate_credenciais(part: dict) -> RedirectResponse | None:
     return None
 
 
-def _enrich_confrontos(confrontos: list) -> list:
+def _enrich_confrontos(confrontos: list, *, janela: str | None = None) -> list:
+    from src.seed_data import jogo_palpite_travado
+
+    j = janela if janela is not None else db.get_janela()
     for c in confrontos:
-        c["ida"] = next((j for j in c["jogos"] if j["perna"] == "ida"), None)
-        c["volta"] = next((j for j in c["jogos"] if j["perna"] == "volta"), None)
+        c["ida"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "ida"), None)
+        c["volta"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "volta"), None)
+        if c["ida"] is not None:
+            c["ida"]["travado"] = jogo_palpite_travado(c["ida"].get("inicio_em"), janela=j)
+        if c["volta"] is not None:
+            c["volta"]["travado"] = jogo_palpite_travado(c["volta"].get("inicio_em"), janela=j)
     return confrontos
 
 
@@ -634,7 +644,7 @@ async def entrar_post(
     # Vinculado ao .env: libera o painel na mesma sessão (sem 2º login)
     if _promover_admin_da_conta(request):
         return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
-    return RedirectResponse(f"/p/{part['token']}", status_code=303)
+    return RedirectResponse("/bolao/meus-palpites", status_code=303)
 
 
 _MSG_MARLON_PORTA_ERRADA = (
@@ -1480,6 +1490,29 @@ def pagina_palpites(request: Request, token: str):
     if gate:
         return gate
 
+    return _render_meus_palpites(request, part)
+
+
+@app.get("/bolao/meus-palpites", response_class=HTMLResponse)
+@app.get("/bolao/meuspalpites", response_class=HTMLResponse)
+def pagina_meus_palpites(request: Request):
+    """Rota limpa: usa a sessão. O link mágico /p/{token} continua valendo."""
+    token = request.session.get("participante_token")
+    if not token:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    part = db.get_participante_por_token(token)
+    if not part:
+        request.session.pop("participante_token", None)
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    if part.get("status") != "liberado":
+        return RedirectResponse(f"/p/{part['token']}", status_code=303)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
+    return _render_meus_palpites(request, part)
+
+
+def _render_meus_palpites(request: Request, part: dict):
     palpites = db.palpites_do_participante(part["id"])
     fase_atual = db.get_fase_atual()
     fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
@@ -1491,14 +1524,17 @@ def pagina_palpites(request: Request, token: str):
         }
         for f in FASES
     ]
+    janela = db.get_janela()
     return render(
         request,
         "palpites.html",
         participante=part,
-        janela=db.get_janela(),
+        janela=janela,
         fase_atual=fase_atual,
         fases=fases_ui,
-        confrontos=_enrich_confrontos(db.list_confrontos_completos(fase_atual)),
+        confrontos=_enrich_confrontos(
+            db.list_confrontos_completos(fase_atual), janela=janela
+        ),
         palpites_jogo=palpites["jogos"],
         palpites_pen=palpites["penaltis"],
         msg=request.query_params.get("msg"),
@@ -1766,6 +1802,7 @@ async def salvar_palpites(request: Request, token: str):
 
     form = await request.form()
     confrontos = db.list_confrontos_completos()
+    from src.seed_data import jogo_palpite_travado
 
     try:
         for c in confrontos:
@@ -1777,6 +1814,8 @@ async def salvar_palpites(request: Request, token: str):
                 gv = form.get(f"ida_{c['id']}_v")
                 if gm is None or gv is None or str(gm) == "" or str(gv) == "":
                     continue
+                if jogo_palpite_travado(ida.get("inicio_em"), janela=janela):
+                    continue
                 db.salvar_palpite_jogo(part["id"], ida["id"], int(gm), int(gv))
 
             elif janela == "volta":
@@ -1784,15 +1823,20 @@ async def salvar_palpites(request: Request, token: str):
                 gv = form.get(f"volta_{c['id']}_v")
                 if gm is None or gv is None or str(gm) == "" or str(gv) == "":
                     continue
+                if jogo_palpite_travado(volta.get("inicio_em"), janela=janela):
+                    continue
                 db.salvar_palpite_jogo(part["id"], volta["id"], int(gm), int(gv))
 
-                palpites = db.palpites_do_participante(part["id"])
-                pj_ida = palpites["jogos"].get(ida["id"])
-                if not pj_ida:
+                # Agregado para pênaltis = resultado oficial da Ida + palpite da Volta.
+                if (
+                    ida.get("gols_mandante") is None
+                    or ida.get("gols_visitante") is None
+                ):
+                    db.limpar_palpite_penaltis(part["id"], c["id"])
                     continue
                 empate = agregado_empatado(
-                    pj_ida["gols_mandante"],
-                    pj_ida["gols_visitante"],
+                    int(ida["gols_mandante"]),
+                    int(ida["gols_visitante"]),
                     int(gm),
                     int(gv),
                 )
@@ -1890,6 +1934,24 @@ def admin_home(request: Request):
         f["id"]: _enrich_confrontos(db.list_confrontos_completos(f["id"]))
         for f in FASES
     }
+    arvore_fases = []
+    for f in FASES:
+        if f["id"] == "oitavas":
+            continue
+        origem = fase_anterior(f["id"])
+        classificados = db.classificados_da_fase(origem) if origem else []
+        n_chaves = int(f["slots"])
+        arvore_fases.append(
+            {
+                "fase": f,
+                "origem": origem,
+                "classificados": classificados,
+                "n_chaves": n_chaves,
+                "n_clubes": n_chaves * 2,
+                "pronto": len(classificados) >= n_chaves * 2,
+                "existentes": confrontos_por_fase.get(f["id"]) or [],
+            }
+        )
     return render(
         request,
         "admin.html",
@@ -1898,6 +1960,8 @@ def admin_home(request: Request):
         fase_atual=fase_atual,
         fases=fases_ui,
         confrontos_por_fase=confrontos_por_fase,
+        arvore_fases=arvore_fases,
+        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         participantes=db.list_participantes(),
         recuperacao_pedidos=db.list_pedidos_recuperacao_pendentes(),
         ultima_rodada=db.get_ultima_rodada_historico(),
@@ -2355,16 +2419,26 @@ def admin_resultado(
 async def admin_resultados(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src.seed_data import normalizar_inicio_em
+
     form = await request.form()
     fase = str(form.get("fase") or db.get_fase_atual())
     if fase not in FASE_IDS:
         return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
     confrontos = db.list_confrontos_completos(fase)
     salvos = 0
+    horarios = 0
     try:
         for c in confrontos:
             for jogo in c.get("jogos") or []:
                 jid = jogo["id"]
+                inicio_raw = form.get(f"jogo_{jid}_inicio")
+                if inicio_raw is not None:
+                    novo = normalizar_inicio_em(str(inicio_raw) if inicio_raw != "" else None)
+                    atual = jogo.get("inicio_em") or None
+                    if (novo or None) != (atual or None):
+                        db.set_inicio_jogo(jid, novo)
+                        horarios += 1
                 gm = form.get(f"jogo_{jid}_m")
                 gv = form.get(f"jogo_{jid}_v")
                 if gm is None or gv is None or str(gm) == "" or str(gv) == "":
@@ -2375,9 +2449,80 @@ async def admin_resultados(request: Request):
                 salvos += 1
     except ValueError:
         return RedirectResponse("/admin?erro=Placar+invalido", status_code=303)
-    if salvos == 0:
+    if salvos == 0 and horarios == 0:
         return RedirectResponse("/admin?erro=Nenhum+resultado+para+salvar", status_code=303)
-    return RedirectResponse(f"/admin?msg={salvos}+resultado(s)+salvo(s)", status_code=303)
+    bits = []
+    if salvos:
+        bits.append(f"{salvos}+resultado(s)")
+    if horarios:
+        bits.append(f"{horarios}+horario(s)")
+    return RedirectResponse(f"/admin?msg={'+'.join(bits)}+salvo(s)", status_code=303)
+
+
+@app.post("/admin/arvore/montar")
+async def admin_arvore_montar(request: Request):
+    """Monta confrontos de uma fase (quartas/semis/final) a partir do sorteio."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from src.seed_data import normalizar_inicio_em
+
+    form = await request.form()
+    fase = str(form.get("fase") or "").strip()
+    meta = next((f for f in FASES if f["id"] == fase), None)
+    if not meta or fase == "oitavas":
+        return RedirectResponse("/admin?erro=Fase+invalida+para+montar", status_code=303)
+    n_chaves = int(meta["slots"])
+    origem = fase_anterior(fase)
+    classificados = {
+        c["clube"] for c in (db.classificados_da_fase(origem) if origem else [])
+    }
+    pares: list[dict] = []
+    usados: set[str] = set()
+    try:
+        for i in range(n_chaves):
+            a = str(form.get(f"chave_{i}_a") or "").strip()
+            b = str(form.get(f"chave_{i}_b") or "").strip()
+            if not a or not b:
+                return RedirectResponse(
+                    f"/admin?erro=Preencha+todos+os+pares+de+{fase}",
+                    status_code=303,
+                )
+            if a == b:
+                return RedirectResponse(
+                    "/admin?erro=Clube+repetido+no+mesmo+confronto",
+                    status_code=303,
+                )
+            if a in usados or b in usados:
+                return RedirectResponse(
+                    "/admin?erro=Clube+usado+em+mais+de+uma+chave",
+                    status_code=303,
+                )
+            if classificados and (a not in classificados or b not in classificados):
+                return RedirectResponse(
+                    "/admin?erro=Clube+fora+dos+classificados",
+                    status_code=303,
+                )
+            usados.add(a)
+            usados.add(b)
+            pares.append(
+                {
+                    "clube_a": a,
+                    "clube_b": b,
+                    "ida_em": normalizar_inicio_em(str(form.get(f"chave_{i}_ida") or "")),
+                    "volta_em": normalizar_inicio_em(
+                        str(form.get(f"chave_{i}_volta") or "")
+                    ),
+                }
+            )
+        db.substituir_confrontos_fase(fase, pares)
+    except ValueError as e:
+        from urllib.parse import quote
+
+        return RedirectResponse(f"/admin?erro={quote(str(e))}", status_code=303)
+    return RedirectResponse(
+        f"/admin?msg={n_chaves}+confronto(s)+de+{fase}+montados",
+        status_code=303,
+    )
 
 
 @app.post("/admin/confirmar-rodada")

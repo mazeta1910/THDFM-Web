@@ -103,7 +103,7 @@
           <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: janela de palpites">
             ?
             <span class="help-tip-bubble" role="tooltip">
-              Controla o que o participante pode editar em Meus Palpites: <strong>ida</strong> (só jogo 1), <strong>volta</strong> (ida congelada + jogo 2) ou <strong>fechado</strong> (sem edição).
+              Controla o que o participante pode editar em Meus Palpites: <strong>ida</strong> (só jogo 1), <strong>volta</strong> (ida congelada + jogo 2) ou <strong>fechado</strong> (sem edição). Com horário no jogo, o palpite trava sozinho {{ trava_antes_min|default(30) }}&nbsp;min antes do apito.
             </span>
           </span>
           <h2>Janela de palpites</h2>
@@ -137,6 +137,81 @@
             <button type="button" id="btn-atualizar-fase">Atualizar fase</button>
           </form>
         </div>
+      </div>
+
+      <div class="card admin-arvore-card" id="admin-arvore">
+        <h2>Árvore / próxima fase</h2>
+        <p class="admin-arvore-lead">
+          Monte os confrontos após o sorteio (quartas, semis, final). Defina também data/hora —
+          os palpites travam automaticamente {{ trava_antes_min|default(30) }}&nbsp;min antes de cada jogo.
+        </p>
+        {% for bloco in arvore_fases|default([]) %}
+        <section class="admin-arvore-fase" data-arvore-fase="{{ bloco.fase.id }}">
+          <h3>{{ bloco.fase.label }}</h3>
+          {% if bloco.existentes %}
+          <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase.</p>
+          <ul class="admin-arvore-existentes">
+            {% for c in bloco.existentes %}
+            <li>{{ c.clube_a }} × {{ c.clube_b }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if not bloco.pronto %}
+          <p class="locked-msg">
+            Aguardando classificados de {{ bloco.origem }} —
+            {{ bloco.classificados|length }}/{{ bloco.n_clubes }} definidos (placar oficial completo + pênaltis se houver).
+          </p>
+          {% else %}
+          <p class="admin-arvore-pool">
+            Classificados ({{ bloco.classificados|length }}):
+            {% for c in bloco.classificados %}
+            <span class="admin-arvore-chip">{{ emblema(c.clube) }} {{ c.clube }}</span>
+            {% endfor %}
+          </p>
+          <form method="post" action="/admin/arvore/montar" class="admin-arvore-form">
+            <input type="hidden" name="fase" value="{{ bloco.fase.id }}" />
+            <div class="admin-arvore-chaves">
+              {% for i in range(bloco.n_chaves) %}
+              <div class="admin-arvore-chave">
+                <span class="planilha-jogo-tag">Chave {{ i + 1 }}</span>
+                <label>
+                  Mandante Ida
+                  <select name="chave_{{ i }}_a" required>
+                    <option value="">—</option>
+                    {% for c in bloco.classificados %}
+                    <option value="{{ c.clube }}">{{ c.clube }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  Visitante Ida
+                  <select name="chave_{{ i }}_b" required>
+                    <option value="">—</option>
+                    {% for c in bloco.classificados %}
+                    <option value="{{ c.clube }}">{{ c.clube }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  Ida · data/hora
+                  <input type="datetime-local" name="chave_{{ i }}_ida" />
+                </label>
+                <label>
+                  Volta · data/hora
+                  <input type="datetime-local" name="chave_{{ i }}_volta" />
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="submit">
+              {% if bloco.existentes %}Remontar {{ bloco.fase.label }}{% else %}Confirmar {{ bloco.fase.label }}{% endif %}
+            </button>
+          </form>
+          {% endif %}
+        </section>
+        {% else %}
+        <p class="locked-msg">Nenhuma fase seguinte para montar.</p>
+        {% endfor %}
       </div>
 
       <div class="placares-head">
@@ -256,6 +331,10 @@
               {% for c in confrontos %}
               {% if c.ida %}
               <div class="match-cell">
+                <label class="match-inicio-label">
+                  Início Ida
+                  <input type="datetime-local" name="jogo_{{ c.ida.id }}_inicio" value="{{ inicio_em_input_value(c.ida.inicio_em) }}" />
+                </label>
                 <div class="match-teams">
                   <div class="match-team-row">
                     {{ emblema(c.clube_a) }}
@@ -283,6 +362,10 @@
               {% for c in confrontos %}
               {% if c.volta %}
               <div class="match-cell" data-confronto-admin="{{ c.id }}" data-ida-jogo="{{ c.ida.id if c.ida else '' }}">
+                <label class="match-inicio-label">
+                  Início Volta
+                  <input type="datetime-local" name="jogo_{{ c.volta.id }}_inicio" value="{{ inicio_em_input_value(c.volta.inicio_em) }}" />
+                </label>
                 <div class="match-ref">
                   <span class="match-ref-line match-ref-oficial">
                     Resultado Oficial (Ida):

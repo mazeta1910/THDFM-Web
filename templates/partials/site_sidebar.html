@@ -76,7 +76,7 @@
         <div class="site-menu-items">
           <a class="site-side-link" href="/#bolao">{{ ico('competicao') }}<span>Sobre o bolão</span></a>
           {% if liberado_ok %}
-          <a class="site-side-link {% if on_palpites %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('palpites') }}<span>Meus Palpites</span></a>
+          <a class="site-side-link {% if on_palpites %}active{% endif %}" href="/bolao/meus-palpites">{{ ico('palpites') }}<span>Meus Palpites</span></a>
           {% elif liberado_sem_senha %}
           <a class="site-side-link {% if on_credenciais %}active{% endif %}" href="/p/{{ participante_nav.token }}/credenciais">{{ ico('acesso') }}<span>Criar senha</span></a>
           {% elif participante_nav %}
