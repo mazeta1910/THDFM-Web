@@ -555,6 +555,165 @@ def mensagem_whatsapp_link(nome: str, base_url: str, token: str) -> str:
     )
 
 
+def mensagem_whatsapp_cobranca_palpite(
+    nome: str,
+    base_url: str,
+    token: str,
+    *,
+    fase_label: str,
+    perna_label: str,
+    n_feitos: int,
+    n_jogos: int,
+    trava_min: int | None = None,
+) -> str:
+    """Lembrete individual para quem ainda não completou os palpites."""
+    from src.config import TRAVA_PALPITE_ANTES_MIN
+
+    if trava_min is None:
+        trava_min = TRAVA_PALPITE_ANTES_MIN
+    link = f"{base_url.rstrip('/')}/p/{token}"
+    primeiro = (nome or "").strip().split()[0] if (nome or "").strip() else ""
+    oi = f"Oi, {primeiro}!" if primeiro else "Oi!"
+    if n_jogos > 0 and 0 < n_feitos < n_jogos:
+        situacao = (
+            f"Vimos que você já fez {n_feitos} de {n_jogos} palpites da "
+            f"{fase_label} ({perna_label}), mas ainda falta completar."
+        )
+    else:
+        situacao = (
+            f"Ainda não vimos seus palpites da {fase_label} ({perna_label}) "
+            "no Bolão THDFM."
+        )
+    return (
+        f"{oi}\n\n"
+        f"{situacao}\n\n"
+        "O(s) jogo(s) acontece(m) em breve — os palpites ficam disponíveis "
+        f"para alteração até {trava_min} min antes do início de cada partida.\n\n"
+        f"É por aqui (link pessoal):\n{link}\n\n"
+        "Qualquer dúvida, fala com a gente!"
+    )
+
+
+def jogos_ids_fase_perna(fase: str, perna: str) -> list[int]:
+    """IDs dos jogos de uma fase/perna (ordem dos confrontos)."""
+    if perna not in ("ida", "volta"):
+        raise ValueError("perna inválida")
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT j.id FROM jogos j "
+            "JOIN confrontos c ON c.id = j.confronto_id "
+            "WHERE c.fase = ? AND j.perna = ? "
+            "ORDER BY c.id",
+            (fase, perna),
+        ).fetchall()
+        return [int(r["id"]) for r in rows]
+
+
+def status_palpites_liberados(
+    fase: str,
+    perna: str,
+    *,
+    so_abertos: bool = True,
+    janela: str | None = None,
+) -> dict[str, Any]:
+    """Rollup por participante liberado: completo / incompleto na fase+perna.
+
+    Por padrão considera só jogos ainda editáveis (não travados por horário).
+    Se todos já estiverem travados, cai nos jogos da fase/perna inteira para
+    ainda dar para ver quem deixou de palpitar.
+    """
+    from src.seed_data import jogo_palpite_travado
+
+    if perna not in ("ida", "volta"):
+        raise ValueError("perna inválida")
+
+    confrontos = list_confrontos_completos(fase)
+    jogos_meta: list[dict[str, Any]] = []
+    for c in confrontos:
+        jogo = next((j for j in c["jogos"] if j.get("perna") == perna), None)
+        if not jogo:
+            continue
+        travado = jogo_palpite_travado(jogo.get("inicio_em"), janela=janela)
+        jogos_meta.append(
+            {
+                "id": int(jogo["id"]),
+                "confronto_id": int(c["id"]),
+                "inicio_em": jogo.get("inicio_em"),
+                "travado": travado,
+                "clube_a": c.get("clube_a"),
+                "clube_b": c.get("clube_b"),
+            }
+        )
+
+    considerados = [j for j in jogos_meta if not j["travado"]] if so_abertos else list(jogos_meta)
+    if so_abertos and not considerados and jogos_meta:
+        considerados = list(jogos_meta)
+    jogo_ids = [j["id"] for j in considerados]
+    n_jogos = len(jogo_ids)
+    ids_set = set(jogo_ids)
+
+    liberados = [
+        p for p in list_participantes() if p.get("status") == "liberado"
+    ]
+    feitos_por_pid: dict[int, int] = {int(p["id"]): 0 for p in liberados}
+    if jogo_ids:
+        placeholders = ",".join("?" * len(jogo_ids))
+        with get_db() as conn:
+            rows = conn.execute(
+                f"SELECT participante_id, COUNT(*) AS n FROM palpites_jogo "
+                f"WHERE jogo_id IN ({placeholders}) "
+                f"GROUP BY participante_id",
+                tuple(jogo_ids),
+            ).fetchall()
+            for r in rows:
+                pid = int(r["participante_id"])
+                if pid in feitos_por_pid:
+                    feitos_por_pid[pid] = int(r["n"])
+
+    completos: list[dict[str, Any]] = []
+    incompletos: list[dict[str, Any]] = []
+    for p in liberados:
+        pid = int(p["id"])
+        n_feitos = feitos_por_pid.get(pid, 0)
+        # Defesa: COUNT não pode passar de n_jogos
+        if n_feitos > n_jogos:
+            n_feitos = n_jogos
+        completo = n_jogos > 0 and n_feitos >= n_jogos
+        item = {
+            "id": pid,
+            "nome": p.get("nome") or "",
+            "celular": p.get("celular"),
+            "token": p.get("token"),
+            "avatar_path": p.get("avatar_path"),
+            "n_feitos": n_feitos,
+            "n_jogos": n_jogos,
+            "completo": completo,
+            "parcial": n_feitos > 0 and not completo,
+        }
+        if completo:
+            completos.append(item)
+        else:
+            incompletos.append(item)
+
+    completos.sort(key=lambda x: (x["nome"] or "").casefold())
+    incompletos.sort(
+        key=lambda x: (0 if x["n_feitos"] == 0 else 1, (x["nome"] or "").casefold())
+    )
+
+    return {
+        "fase": fase,
+        "perna": perna,
+        "jogos": considerados,
+        "jogos_todos": jogos_meta,
+        "n_jogos": n_jogos,
+        "n_completos": len(completos),
+        "n_incompletos": len(incompletos),
+        "completos": completos,
+        "incompletos": incompletos,
+        "ids_considerados": ids_set,
+    }
+
+
 def _migrar_celulares_br(conn: sqlite3.Connection) -> None:
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(participantes)").fetchall()}
     if "celular" not in cols:

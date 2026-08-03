@@ -8602,3 +8602,127 @@ html[data-theme="light"] .listra-perm-table th {
   letter-spacing: 0.04em;
   color: var(--muted);
 }
+
+/* Admin › Quem palpitou (cobrança) */
+.cobranca-lead {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  max-width: 46rem;
+}
+.cobranca-flash {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+.cobranca-flash-ok {
+  background: color-mix(in srgb, #22c55e 14%, var(--bg));
+  border: 1px solid color-mix(in srgb, #22c55e 40%, var(--border));
+  color: var(--text);
+}
+.cobranca-flash-erro {
+  background: var(--erro-bg);
+  color: var(--danger);
+  border: 1px solid var(--erro-border);
+}
+.cobranca-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 0.85rem;
+}
+.cobranca-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.cobranca-pill strong {
+  color: var(--text);
+  font-weight: 800;
+}
+.cobranca-pill-faltam {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}
+.cobranca-pill-ok {
+  border-color: color-mix(in srgb, #22c55e 45%, var(--border));
+  background: color-mix(in srgb, #22c55e 10%, var(--bg));
+}
+.cobranca-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .cobranca-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.cobranca-col {
+  padding: 0.75rem 0.85rem 0.9rem;
+  margin: 0;
+}
+.cobranca-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.cobranca-col-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.cobranca-col-head .col-count {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.cobranca-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.cobranca-item {
+  margin: 0;
+}
+.cobranca-nome-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.cobranca-avatar,
+.cobranca-avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.cobranca-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  color: var(--text);
+}
+.status-pill.cobranca-zero {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+.status-pill.cobranca-parcial {
+  background: color-mix(in srgb, #eab308 18%, transparent);
+  color: #eab308;
+}

@@ -6,6 +6,7 @@
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
+{% set on_admin_cobranca = path.startswith('/admin/cobranca') %}
 {% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
 {% set on_regras = path.startswith('/regras') %}
@@ -21,6 +22,7 @@
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set pend_n = admin_pendentes_count|default(0) %}
+{% set cobranca_n = admin_cobranca_count|default(0) %}
 {% from "partials/nav_icons.html" import ico %}
 
 <aside class="admin-sidebar" id="admin-sidebar">
@@ -73,6 +75,10 @@
           </a>
           <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
           <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+          <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
+            {{ ico('whatsapp') }}<span>Quem palpitou</span>
+            {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
+          </a>
           {% if is_dono %}
           <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
           {% endif %}

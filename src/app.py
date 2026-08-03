@@ -346,6 +346,17 @@ def render(request: Request, name: str, **ctx):
                 )
         except Exception:
             ctx["admin_pendentes_count"] = 0
+    if is_adm and "admin_cobranca_count" not in ctx:
+        try:
+            fase_meta = db.get_fase_atual()
+            janela_meta = db.get_janela()
+            perna_meta = "volta" if janela_meta == "volta" else "ida"
+            st = db.status_palpites_liberados(
+                fase_meta, perna_meta, so_abertos=True, janela=janela_meta
+            )
+            ctx["admin_cobranca_count"] = int(st.get("n_incompletos") or 0)
+        except Exception:
+            ctx["admin_cobranca_count"] = 0
     resp = TEMPLATES.TemplateResponse(request, name, ctx)
     if force_admin_cookie:
         resp.set_cookie(
@@ -1309,6 +1320,131 @@ def admin_palpites(request: Request):
         tabelas=tabelas,
         metricas_gerais=metricas_gerais(tabelas),
         ranking=ranking_apostadores(tabelas_geral),
+    )
+
+
+@app.get("/admin/cobranca", response_class=HTMLResponse)
+def admin_cobranca(request: Request):
+    """Quem já/não palpitou na fase+perna atual, com WhatsApp individual."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
+
+    fase = request.query_params.get("fase") or fase_atual
+    if fase not in FASE_IDS:
+        fase = fase_atual
+    if FASE_IDS.index(fase) > fase_idx:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase_atual}",
+            status_code=303,
+        )
+
+    janela = db.get_janela()
+    volta_liberada = janela != "ida"
+    perna_default = "volta" if janela == "volta" else "ida"
+    perna = request.query_params.get("perna") or perna_default
+    if perna not in ("ida", "volta"):
+        perna = perna_default
+    if perna == "volta" and not volta_liberada:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna=ida",
+            status_code=303,
+        )
+
+    status = db.status_palpites_liberados(
+        fase, perna, so_abertos=True, janela=janela
+    )
+    fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
+    perna_label = "Ida" if perna == "ida" else "Volta"
+
+    return render(
+        request,
+        "admin_cobranca.html",
+        fase=fase,
+        fases=fases_ui,
+        perna=perna,
+        janela=janela,
+        volta_liberada=volta_liberada,
+        fase_label=fase_label,
+        perna_label=perna_label,
+        status=status,
+        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
+        admin_cobranca_count=status.get("n_incompletos") or 0,
+        base_url=PUBLIC_BASE_URL or str(request.base_url).rstrip("/"),
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+    )
+
+
+@app.get("/admin/cobranca/avisar/{participante_id}")
+def admin_cobranca_avisar(request: Request, participante_id: int):
+    """Abre o WhatsApp com lembrete de palpites pendentes."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+
+    fase_atual = db.get_fase_atual()
+    fase = request.query_params.get("fase") or fase_atual
+    if fase not in FASE_IDS:
+        fase = fase_atual
+    janela = db.get_janela()
+    perna_default = "volta" if janela == "volta" else "ida"
+    perna = request.query_params.get("perna") or perna_default
+    if perna not in ("ida", "volta"):
+        perna = perna_default
+
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Participante não liberado')}",
+            status_code=303,
+        )
+    wa = db.celular_whatsapp(part.get("celular"))
+    if not wa:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Participante sem celular')}",
+            status_code=303,
+        )
+
+    status = db.status_palpites_liberados(
+        fase, perna, so_abertos=True, janela=janela
+    )
+    row = next(
+        (p for p in status["incompletos"] if p["id"] == participante_id),
+        None,
+    )
+    if not row:
+        # Já completou — ainda assim pode reenviar? Redireciona com aviso.
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&msg={quote('Esse participante já completou os palpites')}",
+            status_code=303,
+        )
+
+    fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
+    perna_label = "Ida" if perna == "ida" else "Volta"
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    msg = db.mensagem_whatsapp_cobranca_palpite(
+        part["nome"],
+        base,
+        part["token"],
+        fase_label=fase_label,
+        perna_label=perna_label,
+        n_feitos=int(row["n_feitos"]),
+        n_jogos=int(row["n_jogos"]),
+        trava_min=TRAVA_PALPITE_ANTES_MIN,
+    )
+    return RedirectResponse(
+        f"https://wa.me/{wa}?text={quote(msg)}",
+        status_code=303,
     )
 
 
