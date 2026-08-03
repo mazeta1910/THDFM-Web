@@ -1571,19 +1571,21 @@ button.danger {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 0.55rem;
+  gap: 0.45rem;
   width: 100%;
 }
 .pen-choice {
   position: relative;
-  flex: 1 1 0;
-  max-width: 10.5rem;
+  flex: 0 0 auto;
+  width: 3.25rem;
+  min-width: 3.25rem;
+  max-width: 3.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.7rem 0.55rem;
+  gap: 0;
+  padding: 0.55rem 0.35rem;
   margin: 0;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -1595,8 +1597,8 @@ button.danger {
   cursor: pointer;
 }
 .pen-choice img {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
 }
 .pen-choice input {

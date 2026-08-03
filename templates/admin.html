@@ -401,15 +401,13 @@
                 <div class="pen-group hidden" data-pen="{{ c.id }}">
                   <p class="pen-group-title">Empate no agregado. Quem passa nos pênaltis?</p>
                   <div class="pen-group-choices">
-                    <label class="pen-choice">
+                    <label class="pen-choice" title="{{ c.clube_a }}" aria-label="{{ c.clube_a }}">
                       <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="a" {% if c.volta.penaltis_clube_id == 'a' %}checked{% endif %} />
                       {{ emblema(c.clube_a) }}
-                      <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
                     </label>
-                    <label class="pen-choice">
+                    <label class="pen-choice" title="{{ c.clube_b }}" aria-label="{{ c.clube_b }}">
                       <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="b" {% if c.volta.penaltis_clube_id == 'b' %}checked{% endif %} />
                       {{ emblema(c.clube_b) }}
-                      <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
                     </label>
                   </div>
                 </div>

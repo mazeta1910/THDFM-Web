@@ -215,15 +215,13 @@
           <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
             <p class="pen-group-title">Empate no agregado (oficial da Ida + seu palpite da Volta). Quem passa nos pênaltis?</p>
             <div class="pen-group-choices">
-              <label class="pen-choice">
+              <label class="pen-choice" title="{{ c.clube_a }}" aria-label="{{ c.clube_a }}">
                 <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
                 {{ emblema(c.clube_a) }}
-                <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
               </label>
-              <label class="pen-choice">
+              <label class="pen-choice" title="{{ c.clube_b }}" aria-label="{{ c.clube_b }}">
                 <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
                 {{ emblema(c.clube_b) }}
-                <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
               </label>
             </div>
           </div>
