@@ -72,7 +72,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=216" in body
+    assert "/static/style.css?v=219" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
 
