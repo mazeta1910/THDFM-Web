@@ -8726,3 +8726,70 @@ html[data-theme="light"] .listra-perm-table th {
   background: color-mix(in srgb, #eab308 18%, transparent);
   color: #eab308;
 }
+
+.cobranca-pill-wa-warn {
+  border-color: color-mix(in srgb, var(--accent2, #e11) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent2, #e11) 12%, var(--bg));
+}
+.cobranca-hint-wa {
+  margin: 0 0 0.85rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--muted);
+  max-width: 46rem;
+}
+.cobranca-item-sem-wa {
+  border-color: color-mix(in srgb, var(--accent2, #e11) 35%, var(--border));
+}
+.cobranca-wa-bad {
+  color: var(--accent2, #e11);
+  font-weight: 600;
+}
+.cobranca-cel-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: flex-end;
+  margin: 0.45rem 0 0.35rem;
+}
+.cobranca-cel-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 10rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.cobranca-cel-label input {
+  font: inherit;
+  font-size: 0.88rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+.cobranca-cel-btn {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.7rem;
+}
+.cobranca-fabs {
+  position: static;
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.cobranca-fab-alt,
+.cobranca-fab-copy {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  min-width: 2.4rem;
+  padding: 0 0.45rem;
+}
