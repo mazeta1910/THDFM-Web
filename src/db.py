@@ -507,11 +507,24 @@ def criar_participante(
 def normalizar_celular(celular: str) -> str:
     """Retorna só dígitos no formato internacional BR (55 + DDD + número).
 
-    Números com 10/11 dígitos (DDD local) ganham o 55.
+    Aceita entradas comuns no Brasil:
+    - (11) 99999-9999 / 11999999999
+    - +55 11 99999-9999 / 5511999999999
+    - 011 99999-9999 (zero de tronco antes do DDD)
+    - 5555… (código do país duplicado por engano)
+
     Não confundir DDD 55 (RS) com código do país: só trata como
-    internacional se já tiver 12 ou 13 dígitos começando com 55.
+    internacional se, após limpar, tiver 12 ou 13 dígitos começando com 55.
     """
     digits = re.sub(r"\D+", "", celular or "")
+    # 00… (saída internacional) ou 0… (tronco) — WhatsApp rejeita zero à esquerda
+    while digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("0"):
+        digits = digits.lstrip("0")
+    # 55 duplicado: 5555119… (14/15 dígitos) → remove um 55
+    if digits.startswith("5555") and len(digits) in (14, 15):
+        digits = digits[2:]
     if digits.startswith("55") and len(digits) in (12, 13):
         return digits
     if len(digits) in (10, 11):
@@ -520,27 +533,40 @@ def normalizar_celular(celular: str) -> str:
 
 
 def celular_whatsapp(celular: str | None) -> str | None:
-    """Dígitos para wa.me (com 55). Aceita dados antigos sem país."""
+    """Dígitos para wa.me / api.whatsapp.com (com 55). None se inválido."""
     if not celular:
         return None
     try:
         return normalizar_celular(celular)
     except ValueError:
-        digits = re.sub(r"\D+", "", celular)
-        return digits or None
+        return None
 
 
 def formatar_celular(celular: str | None) -> str:
     """Exibição: +55 (11) 99999-9999."""
     digits = celular_whatsapp(celular)
     if not digits:
-        return ""
+        # Mostra o que deu para limpar, sem inventar link quebrado
+        raw = re.sub(r"\D+", "", celular or "")
+        return raw
     local = digits[2:] if digits.startswith("55") and len(digits) >= 12 else digits
     if len(local) == 11:
         return f"+55 ({local[:2]}) {local[2:7]}-{local[7:]}"
     if len(local) == 10:
         return f"+55 ({local[:2]}) {local[2:6]}-{local[6:]}"
     return f"+{digits}" if not digits.startswith("+") else digits
+
+
+def url_whatsapp_chat(celular: str | None, texto: str = "") -> str | None:
+    """Link de conversa no WhatsApp (phone= só dígitos internacionais)."""
+    from urllib.parse import quote
+
+    wa = celular_whatsapp(celular)
+    if not wa:
+        return None
+    if texto:
+        return f"https://api.whatsapp.com/send?phone={wa}&text={quote(texto)}"
+    return f"https://api.whatsapp.com/send?phone={wa}"
 
 
 def mensagem_whatsapp_link(nome: str, base_url: str, token: str) -> str:

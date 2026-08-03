@@ -627,9 +627,13 @@
               </div>
               <div class="inscricao-meta-row">
                 {% if p.celular %}
-                {% set wa = p.celular|celular_wa %}
                 {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
-                <span>Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% set wa_url = p.celular|wa_chat(wa_msg) %}
+                {% if wa_url %}
+                <span>Celular: <a href="{{ wa_url }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% else %}
+                <span style="color:var(--accent2)">Celular inválido: {{ p.celular|celular_fmt }}</span>
+                {% endif %}
                 {% else %}
                 <span>Celular: —</span>
                 {% endif %}
@@ -674,9 +678,13 @@
               </div>
               <div class="inscricao-meta-row">
                 {% if p.celular %}
-                {% set wa = p.celular|celular_wa %}
                 {% set wa_msg = wa_msg_link(p.nome, base_url, p.token) %}
-                <span>Celular: <a href="https://wa.me/{{ wa }}?text={{ wa_msg|urlencode }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% set wa_url = p.celular|wa_chat(wa_msg) %}
+                {% if wa_url %}
+                <span>Celular: <a href="{{ wa_url }}" target="_blank" rel="noopener">{{ p.celular|celular_fmt }}</a></span>
+                {% else %}
+                <span style="color:var(--accent2)">Celular inválido: {{ p.celular|celular_fmt }}</span>
+                {% endif %}
                 {% else %}
                 <span>Celular: —</span>
                 {% endif %}
