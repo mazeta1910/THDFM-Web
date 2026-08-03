@@ -512,6 +512,7 @@ def normalizar_celular(celular: str) -> str:
     - +55 11 99999-9999 / 5511999999999
     - 011 99999-9999 (zero de tronco antes do DDD)
     - 5555… (código do país duplicado por engano)
+    - celular antigo sem o 9º dígito (DDD + 8 dígitos) → insere o 9
 
     Não confundir DDD 55 (RS) com código do país: só trata como
     internacional se, após limpar, tiver 12 ou 13 dígitos começando com 55.
@@ -525,11 +526,34 @@ def normalizar_celular(celular: str) -> str:
     # 55 duplicado: 5555119… (14/15 dígitos) → remove um 55
     if digits.startswith("5555") and len(digits) in (14, 15):
         digits = digits[2:]
+    # 55 + DDD + 9 extra + 9 + 8 dígitos (14 no total) → tira o 9 duplicado
+    if digits.startswith("55") and len(digits) == 14:
+        local = digits[2:]
+        if local[2] == "9" and local[3] == "9" and len(local) == 12:
+            digits = "55" + local[:2] + "9" + local[4:]
+    digits = _garantir_nono_digito_movel(digits)
     if digits.startswith("55") and len(digits) in (12, 13):
         return digits
     if len(digits) in (10, 11):
-        return "55" + digits
+        local = _garantir_nono_digito_movel(digits)
+        return "55" + local
     raise ValueError("Celular inválido")
+
+
+def _garantir_nono_digito_movel(digits: str) -> str:
+    """Insere o 9º dígito em celular BR antigo (DDD + 8 dígitos 6–9…).
+
+    Aceita só local (10 dígitos) ou internacional 55+local (12 dígitos).
+    Fixo/não-móvel (2–5 após o DDD) permanece como está.
+    """
+    if digits.startswith("55") and len(digits) == 12:
+        local = digits[2:]
+        if local[2] in "6789":
+            return "55" + local[:2] + "9" + local[2:]
+        return digits
+    if len(digits) == 10 and digits[2] in "6789":
+        return digits[:2] + "9" + digits[2:]
+    return digits
 
 
 def celular_whatsapp(celular: str | None) -> str | None:
@@ -540,6 +564,32 @@ def celular_whatsapp(celular: str | None) -> str | None:
         return normalizar_celular(celular)
     except ValueError:
         return None
+
+
+def diagnostico_celular_whatsapp(celular: str | None) -> dict[str, Any]:
+    """Explica se o celular serve para link do WhatsApp."""
+    raw = (celular or "").strip()
+    if not raw:
+        return {
+            "ok": False,
+            "motivo": "sem_celular",
+            "rotulo": "Sem celular cadastrado",
+            "digits": None,
+        }
+    digits = celular_whatsapp(raw)
+    if not digits:
+        return {
+            "ok": False,
+            "motivo": "invalido",
+            "rotulo": "Celular inválido — confira DDD e número",
+            "digits": None,
+        }
+    return {
+        "ok": True,
+        "motivo": "ok",
+        "rotulo": formatar_celular(digits),
+        "digits": digits,
+    }
 
 
 def formatar_celular(celular: str | None) -> str:
@@ -567,6 +617,18 @@ def url_whatsapp_chat(celular: str | None, texto: str = "") -> str | None:
     if texto:
         return f"https://api.whatsapp.com/send?phone={wa}&text={quote(texto)}"
     return f"https://api.whatsapp.com/send?phone={wa}"
+
+
+def url_whatsapp_chat_me(celular: str | None, texto: str = "") -> str | None:
+    """Alternativa wa.me — alguns clientes abrem melhor que api.whatsapp.com."""
+    from urllib.parse import quote
+
+    wa = celular_whatsapp(celular)
+    if not wa:
+        return None
+    if texto:
+        return f"https://wa.me/{wa}?text={quote(texto)}"
+    return f"https://wa.me/{wa}"
 
 
 def mensagem_whatsapp_link(nome: str, base_url: str, token: str) -> str:

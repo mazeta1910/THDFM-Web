@@ -148,3 +148,32 @@ def test_admin_cobranca_lista_e_whatsapp(client):
     decoded = unquote(loc)
     assert "30 min" in decoded
     assert falta["token"] in decoded
+
+
+def test_admin_cobranca_corrige_celular(client):
+    part = db.criar_participante("Cel Ruim", status="liberado", celular="1198887766")
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        db.set_inicio_jogo(ida["id"], "2099-08-10 20:00")
+    db.set_janela("ida")
+    login_admin(client)
+    r = client.get("/admin/cobranca?fase=oitavas&perna=ida")
+    assert r.status_code == 200
+    assert "copiar" in r.text
+    # número antigo sem 9 já normalizado no create — botão WA presente
+    assert "api.whatsapp.com/send?phone=5511998887766" in r.text
+
+    # cadastro inválido: atualiza via formulário
+    part2 = db.criar_participante("Sem DDD", status="liberado")
+    with db.get_db() as conn:
+        conn.execute("UPDATE participantes SET celular = ? WHERE id = ?", ("9999", part2["id"]))
+    r2 = client.post(
+        f"/admin/cobranca/celular/{part2['id']}",
+        data={"celular": "11 98888-7777", "fase": "oitavas", "perna": "ida"},
+        follow_redirects=False,
+    )
+    assert r2.status_code == 303
+    assert "Celular" in (r2.headers.get("location") or "")
+    atualizado = db.get_participante(part2["id"])
+    assert atualizado["celular"] == "5511988887777"

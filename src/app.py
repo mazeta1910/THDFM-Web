@@ -1363,6 +1363,7 @@ def admin_cobranca(request: Request):
     fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
     perna_label = "Ida" if perna == "ida" else "Volta"
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    n_sem_wa = 0
     for p in status["incompletos"]:
         msg = db.mensagem_whatsapp_cobranca_palpite(
             p["nome"],
@@ -1375,7 +1376,15 @@ def admin_cobranca(request: Request):
             trava_min=TRAVA_PALPITE_ANTES_MIN,
             jogos=p.get("faltando_jogos") or [],
         )
-        p["wa_url"] = db.url_whatsapp_chat(p.get("celular"), msg)
+        diag = db.diagnostico_celular_whatsapp(p.get("celular"))
+        p["wa_msg"] = msg
+        p["wa_diag"] = diag
+        p["wa_url"] = db.url_whatsapp_chat(p.get("celular"), msg) if diag["ok"] else None
+        p["wa_url_me"] = (
+            db.url_whatsapp_chat_me(p.get("celular"), msg) if diag["ok"] else None
+        )
+        if not diag["ok"]:
+            n_sem_wa += 1
 
     return render(
         request,
@@ -1390,9 +1399,45 @@ def admin_cobranca(request: Request):
         status=status,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         admin_cobranca_count=status.get("n_incompletos") or 0,
+        n_sem_wa=n_sem_wa,
         base_url=base,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/admin/cobranca/celular/{participante_id}")
+def admin_cobranca_celular(
+    request: Request,
+    participante_id: int,
+    celular: str = Form(""),
+    fase: str = Form(""),
+    perna: str = Form(""),
+):
+    """Corrige o celular direto na página Quem palpitou."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    fase_atual = db.get_fase_atual()
+    if fase not in FASE_IDS:
+        fase = fase_atual
+    if perna not in ("ida", "volta"):
+        perna = "volta" if db.get_janela() == "volta" else "ida"
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote('Participante não liberado')}",
+            status_code=303,
+        )
+    try:
+        db.atualizar_celular_participante(participante_id, celular)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}&erro={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/cobranca?fase={fase}&perna={perna}&msg={quote('Celular atualizado')}",
+        status_code=303,
     )
 
 
