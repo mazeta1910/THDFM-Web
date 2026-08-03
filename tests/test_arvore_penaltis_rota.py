@@ -102,3 +102,38 @@ def test_montar_quartas_via_admin(client):
     assert admin.status_code == 200
     assert "Árvore / próxima fase" in admin.text
     assert "Quartas" in admin.text
+
+
+def test_seed_oitavas_tem_horarios_da_volta(client):
+    from src.seed_data import OITAVAS
+
+    by_id = {item["id"]: item for item in OITAVAS}
+    assert by_id[1]["volta_em"] == "2026-08-05 21:30"  # Flu x Vasco
+    assert by_id[2]["volta_em"] == "2026-08-04 19:30"  # Juventude x CAM
+    assert by_id[3]["volta_em"] == "2026-08-04 21:30"  # Remo x Santos
+    assert by_id[4]["volta_em"] == "2026-08-05 21:30"  # Fortaleza x Palmeiras
+    assert by_id[5]["volta_em"] == "2026-08-05 19:30"  # Grêmio x Mirassol
+    assert by_id[6]["volta_em"] == "2026-08-05 19:00"  # Cruzeiro x Chape
+    assert by_id[7]["volta_em"] == "2026-08-06 20:00"  # Corinthians x Inter
+    assert by_id[8]["volta_em"] == "2026-08-06 20:00"  # Vitória x Athletico
+
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        assert volta.get("inicio_em") == by_id[c["id"]]["volta_em"]
+
+
+def test_migrate_preenche_volta_vazia(client, tmp_path, monkeypatch):
+    """Banco antigo sem horário na volta recebe os oficiais na migração."""
+    from src.seed_data import OITAVAS
+
+    # Simula volta sem início
+    with db.get_db() as conn:
+        conn.execute(
+            "UPDATE jogos SET inicio_em = NULL WHERE perna = 'volta'"
+        )
+    db.init_db()  # roda _migrate_jogos de novo
+    by_id = {item["id"]: item for item in OITAVAS}
+    for c in db.list_confrontos_completos("oitavas"):
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        assert volta.get("inicio_em") == by_id[c["id"]]["volta_em"]

@@ -200,14 +200,41 @@ def _migrate_jogos(conn: sqlite3.Connection) -> None:
     if "inicio_em" not in cols:
         conn.execute("ALTER TABLE jogos ADD COLUMN inicio_em TEXT")
     for item in OITAVAS:
-        inicio = item.get("ida_em")
-        if not inicio:
-            continue
+        ida = item.get("ida_em")
+        if ida:
+            conn.execute(
+                "UPDATE jogos SET inicio_em = ? "
+                "WHERE confronto_id = ? AND perna = 'ida' "
+                "AND (inicio_em IS NULL OR inicio_em = '')",
+                (ida, item["id"]),
+            )
+        volta = item.get("volta_em")
+        if volta:
+            # Preenche Volta vazia; também alinha com a tabela oficial se ainda
+            # estiver em branco (primeira carga dos horários da volta).
+            conn.execute(
+                "UPDATE jogos SET inicio_em = ? "
+                "WHERE confronto_id = ? AND perna = 'volta' "
+                "AND (inicio_em IS NULL OR inicio_em = '')",
+                (volta, item["id"]),
+            )
+
+
+def _seed_oitavas(conn: sqlite3.Connection) -> None:
+    for item in OITAVAS:
         conn.execute(
-            "UPDATE jogos SET inicio_em = ? "
-            "WHERE confronto_id = ? AND perna = 'ida' "
-            "AND (inicio_em IS NULL OR inicio_em = '')",
-            (inicio, item["id"]),
+            "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, 'oitavas', ?, ?)",
+            (item["id"], item["clube_a"], item["clube_b"]),
+        )
+        conn.execute(
+            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+            "VALUES (?, 'ida', 'a', ?)",
+            (item["id"], item.get("ida_em")),
+        )
+        conn.execute(
+            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+            "VALUES (?, 'volta', 'b', ?)",
+            (item["id"], item.get("volta_em")),
         )
 
 
@@ -371,23 +398,6 @@ def init_db() -> None:
             )
         if not conn.execute("SELECT 1 FROM confrontos LIMIT 1").fetchone():
             _seed_oitavas(conn)
-
-
-def _seed_oitavas(conn: sqlite3.Connection) -> None:
-    for item in OITAVAS:
-        conn.execute(
-            "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, 'oitavas', ?, ?)",
-            (item["id"], item["clube_a"], item["clube_b"]),
-        )
-        conn.execute(
-            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
-            "VALUES (?, 'ida', 'a', ?)",
-            (item["id"], item.get("ida_em")),
-        )
-        conn.execute(
-            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id) VALUES (?, 'volta', 'b')",
-            (item["id"],),
-        )
 
 
 def get_meta(chave: str, default: str | None = None) -> str | None:
