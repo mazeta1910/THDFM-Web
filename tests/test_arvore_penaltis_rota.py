@@ -137,3 +137,47 @@ def test_migrate_preenche_volta_vazia(client, tmp_path, monkeypatch):
     for c in db.list_confrontos_completos("oitavas"):
         volta = next(j for j in c["jogos"] if j["perna"] == "volta")
         assert volta.get("inicio_em") == by_id[c["id"]]["volta_em"]
+
+
+def test_salvar_mantem_placares_se_faltar_penaltis(client):
+    """Faltar pênaltis não pode descartar os placares já preenchidos."""
+    part = db.criar_participante("Pen Falta", status="liberado")
+    db.definir_credenciais(part["id"], "penfalta", "senha12345")
+    confrontos = db.list_confrontos_completos("oitavas")
+    c1, c2 = confrontos[0], confrontos[1]
+    for c in (c1, c2):
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        # Ida 0x0 oficial → Volta 1x1 empata no agregado e exige pênaltis
+        db.set_resultado_jogo(ida["id"], 0, 0, None)
+        # Libera edição (horário no futuro)
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_inicio_jogo(volta["id"], "2099-01-01 20:00")
+    db.set_janela("volta")
+    client.get(f"/p/{part['token']}")
+
+    data = {
+        f"volta_{c1['id']}_m": "1",
+        f"volta_{c1['id']}_v": "1",
+        f"volta_{c2['id']}_m": "2",
+        f"volta_{c2['id']}_v": "2",
+        # sem pen_* de propósito
+    }
+    r = client.post(
+        f"/p/{part['token']}/salvar",
+        data=data,
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = r.headers.get("location") or ""
+    assert "erro=" in loc
+    assert "Placares" in loc or "penaltis" in loc.lower() or "p%C3%AAnaltis" in loc
+
+    palp = db.palpites_do_participante(part["id"])
+    v1 = next(j for j in c1["jogos"] if j["perna"] == "volta")
+    v2 = next(j for j in c2["jogos"] if j["perna"] == "volta")
+    assert palp["jogos"][v1["id"]]["gols_mandante"] == 1
+    assert palp["jogos"][v1["id"]]["gols_visitante"] == 1
+    assert palp["jogos"][v2["id"]]["gols_mandante"] == 2
+    assert palp["jogos"][v2["id"]]["gols_visitante"] == 2
+    assert c1["id"] not in palp["penaltis"]
+    assert c2["id"] not in palp["penaltis"]
