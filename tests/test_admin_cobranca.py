@@ -64,16 +64,19 @@ def test_mensagem_cobranca_cita_jogos_do_dia():
         {
             "clube_a": "Atlético-MG",
             "clube_b": "Juventude",
+            "rotulo": "Juventude x Atlético-MG",
             "inicio_em": "2026-08-04 19:30",
         },
         {
             "clube_a": "Santos",
             "clube_b": "Remo",
+            "rotulo": "Remo x Santos",
             "inicio_em": "2026-08-04 21:30",
         },
         {
             "clube_a": "Vasco",
             "clube_b": "Fluminense",
+            "rotulo": "Fluminense x Vasco",
             "inicio_em": "2026-08-05 21:30",
         },
     ]
@@ -89,9 +92,8 @@ def test_mensagem_cobranca_cita_jogos_do_dia():
         agora=agora,
     )
     assert "Hoje (04/08) tem:" in msg
-    assert "Juventude" in msg or "Atlético-MG" in msg
-    assert "19:30" in msg
-    assert "21:30" in msg
+    assert "Juventude x Atlético-MG — 19:30" in msg
+    assert "Remo x Santos — 21:30" in msg
     # Não lista o jogo de amanhã no bloco de hoje
     assert "05/08" not in msg.split("É por aqui")[0]
 

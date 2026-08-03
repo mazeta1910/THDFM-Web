@@ -658,9 +658,11 @@ def texto_jogos_proximos_cobranca(
         dt = parse_inicio_em(j.get("inicio_em"))
         if dt is None:
             continue
-        a = (j.get("clube_a") or "?").strip()
-        b = (j.get("clube_b") or "?").strip()
-        label = f"{a} x {b}"
+        label = (j.get("rotulo") or "").strip()
+        if not label:
+            a = (j.get("clube_a") or "?").strip()
+            b = (j.get("clube_b") or "?").strip()
+            label = f"{a} x {b}"
         hora = dt.strftime("%H:%M")
         por_dia.setdefault(dt.date(), []).append((dt, hora, label))
 
@@ -727,14 +729,22 @@ def status_palpites_liberados(
         if not jogo:
             continue
         travado = jogo_palpite_travado(jogo.get("inicio_em"), janela=janela)
+        clube_a = c.get("clube_a")
+        clube_b = c.get("clube_b")
+        # Na volta o mandante é o clube B — lista como no placar do jogo.
+        if perna == "volta":
+            rotulo = f"{clube_b} x {clube_a}"
+        else:
+            rotulo = f"{clube_a} x {clube_b}"
         jogos_meta.append(
             {
                 "id": int(jogo["id"]),
                 "confronto_id": int(c["id"]),
                 "inicio_em": jogo.get("inicio_em"),
                 "travado": travado,
-                "clube_a": c.get("clube_a"),
-                "clube_b": c.get("clube_b"),
+                "clube_a": clube_a,
+                "clube_b": clube_b,
+                "rotulo": rotulo,
             }
         )
 
