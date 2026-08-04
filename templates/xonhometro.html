@@ -239,25 +239,28 @@
                   {% if e.motivo %}
                   <div class="xonha-item-motivo-wrap">
                     <p class="xonha-item-motivo" data-xonha-motivo-preview>{{ e.motivo }}</p>
-                    <button
-                      type="button"
-                      class="xonha-motivo-mais"
-                      hidden
-                      aria-expanded="false"
-                      aria-label="Ver motivo completo"
-                      title="Ver motivo completo"
-                      data-xonha-motivo-mais
-                      data-xonha-motivo-full="{{ e.motivo }}"
-                    >
-                      <svg class="xonha-motivo-mais-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
-                        <path d="M8 3.25v9.5M3.25 8h9.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-                      </svg>
-                    </button>
+                    <span class="xonha-motivo-mais-slot">
+                      <span
+                        class="xonha-motivo-mais"
+                        role="button"
+                        tabindex="0"
+                        hidden
+                        aria-expanded="false"
+                        aria-label="Ver motivo completo"
+                        title="Ver motivo completo"
+                        data-xonha-motivo-mais
+                        data-xonha-motivo-full="{{ e.motivo }}"
+                      >
+                        <svg class="xonha-motivo-mais-icon" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">
+                          <path d="M8 3.25v9.5M3.25 8h9.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                        </svg>
+                      </span>
+                    </span>
                   </div>
                   {% else %}
                   <div class="xonha-item-motivo-wrap">
                     <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
-                    <span class="xonha-motivo-mais xonha-motivo-mais--spacer" aria-hidden="true"></span>
+                    <span class="xonha-motivo-mais-slot" aria-hidden="true"></span>
                   </div>
                   {% endif %}
                 </div>
@@ -273,20 +276,20 @@
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
     </details>
-  <dialog class="xonha-motivo-dialog" id="xonha-motivo-dialog" aria-labelledby="xonha-motivo-dialog-title">
-    <div class="xonha-motivo-dialog-card">
-      <header class="xonha-motivo-dialog-head">
-        <h3 id="xonha-motivo-dialog-title">Motivo</h3>
-        <button type="button" class="xonha-motivo-dialog-fechar" data-xonha-motivo-fechar aria-label="Fechar">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-            <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </header>
-      <p class="xonha-motivo-dialog-texto" id="xonha-motivo-dialog-texto"></p>
-    </div>
-  </dialog>
 </section>
+<dialog class="xonha-motivo-dialog" id="xonha-motivo-dialog" aria-labelledby="xonha-motivo-dialog-title">
+  <div class="xonha-motivo-dialog-card">
+    <header class="xonha-motivo-dialog-head">
+      <h3 id="xonha-motivo-dialog-title">Motivo</h3>
+      <button type="button" class="xonha-motivo-dialog-fechar" data-xonha-motivo-fechar aria-label="Fechar">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+          <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+    <p class="xonha-motivo-dialog-texto" id="xonha-motivo-dialog-texto"></p>
+  </div>
+</dialog>
 <script>
 (function () {
   var el = document.getElementById("xonha-status-relogio");
@@ -352,10 +355,36 @@
 
   var dialog = document.getElementById("xonha-motivo-dialog");
   var dialogTexto = document.getElementById("xonha-motivo-dialog-texto");
+  if (dialog && dialog.parentElement !== document.body) {
+    document.body.appendChild(dialog);
+  }
   var openBtn = null;
 
   function motivoTexto(btn) {
     return (btn.getAttribute("data-xonha-motivo-full") || "").trim();
+  }
+
+  function motivoTruncado(p) {
+    if (!p) return false;
+    // Mede altura real sem clamp — line-clamp mente no scrollHeight em alguns browsers.
+    var prevClamp = p.style.webkitLineClamp;
+    var prevDisplay = p.style.display;
+    var prevOrient = p.style.webkitBoxOrient;
+    var prevOverflow = p.style.overflow;
+    var prevHeight = p.style.height;
+    var clamped = p.getBoundingClientRect().height;
+    p.style.webkitLineClamp = "unset";
+    p.style.display = "block";
+    p.style.webkitBoxOrient = "unset";
+    p.style.overflow = "visible";
+    p.style.height = "auto";
+    var full = p.scrollHeight;
+    p.style.webkitLineClamp = prevClamp;
+    p.style.display = prevDisplay;
+    p.style.webkitBoxOrient = prevOrient;
+    p.style.overflow = prevOverflow;
+    p.style.height = prevHeight;
+    return full > clamped + 1;
   }
 
   function fecharMotivoDialog() {
@@ -386,7 +415,7 @@
     btn.setAttribute("aria-expanded", "true");
     if (typeof dialog.showModal === "function") {
       try {
-        dialog.showModal();
+        if (!dialog.open) dialog.showModal();
       } catch (err) {
         dialog.setAttribute("open", "");
         dialog.classList.add("is-fallback-open");
@@ -401,17 +430,14 @@
     document.querySelectorAll("[data-xonha-motivo-mais]").forEach(function (btn) {
       var wrap = btn.closest(".xonha-item-motivo-wrap");
       var p = wrap && wrap.querySelector("[data-xonha-motivo-preview]");
-      var texto = motivoTexto(btn);
-      var truncado = false;
-      if (texto.length > 48) truncado = true;
-      else if (p && p.scrollHeight > p.clientHeight + 1) truncado = true;
-      btn.hidden = !truncado;
+      var truncado = motivoTruncado(p);
+      if (truncado) btn.removeAttribute("hidden");
+      else btn.setAttribute("hidden", "");
       if (!truncado && openBtn === btn) fecharMotivoDialog();
     });
   }
 
-  var timeline = document.querySelector(".xonha-page") || document;
-  timeline.addEventListener("click", function (ev) {
+  function onMaisActivate(ev) {
     var fechar = ev.target.closest("[data-xonha-motivo-fechar]");
     if (fechar) {
       ev.preventDefault();
@@ -419,9 +445,22 @@
       return;
     }
     var btn = ev.target.closest("[data-xonha-motivo-mais]");
-    if (!btn || btn.hidden) return;
+    if (!btn || btn.hasAttribute("hidden")) return;
     ev.preventDefault();
     ev.stopPropagation();
+    abrirMotivoDialog(btn);
+  }
+
+  document.addEventListener("click", onMaisActivate);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") {
+      fecharMotivoDialog();
+      return;
+    }
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    var btn = ev.target.closest && ev.target.closest("[data-xonha-motivo-mais]");
+    if (!btn || btn.hasAttribute("hidden")) return;
+    ev.preventDefault();
     abrirMotivoDialog(btn);
   });
 
@@ -436,10 +475,6 @@
       }
     });
   }
-
-  document.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") fecharMotivoDialog();
-  });
 
   window.addEventListener("resize", atualizarBotoesMotivo);
   atualizarBotoesMotivo();
