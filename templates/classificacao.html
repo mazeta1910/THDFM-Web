@@ -408,7 +408,7 @@
     };
     const rodadas = (p.resumo_rodadas || [])
       .map((r) => {
-        const meta = [r.fase_label, r.janela_label].filter(Boolean).join(" · ");
+        const meta = [r.fase_label_curta || r.fase_label, r.janela_label].filter(Boolean).join(" · ");
         const pos = r.posicao != null ? `${r.posicao}º` : "—";
         let mov = "";
         if (r.movimento != null && Number(r.movimento) !== 0) {
@@ -417,15 +417,27 @@
             ? `<span class="ficha-rodada-mov up">▲${m}</span>`
             : `<span class="ficha-rodada-mov down">▼${Math.abs(m)}</span>`;
         }
+        const rotulo = r.rotulo_curto || r.rotulo || "Rodada";
         return (
           `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}">` +
-          `<span class="ficha-rodada-titulo">${r.rotulo || "Rodada"}` +
+          `<span class="ficha-rodada-titulo">` +
+          `<span class="ficha-rodada-rotulo-full">${r.rotulo || "Rodada"}</span>` +
+          `<span class="ficha-rodada-rotulo-short">${rotulo}</span>` +
           (meta ? `<span class="ficha-rodada-meta">${meta}</span>` : "") +
           `</span>` +
-          `<span class="ficha-rodada-nums">` +
-          `<span class="ficha-rodada-rod" title="Pontos na rodada">${fmtPts(r.rod)} pts</span>` +
-          `<span class="ficha-rodada-soma" title="Pontuação total">${r.soma} pts</span>` +
-          `<span class="ficha-rodada-pos" title="Colocação">${pos}${mov}</span>` +
+          `<span class="ficha-rodada-nums" aria-label="Pontuação da rodada">` +
+          `<span class="ficha-rodada-stat" title="Pontos na rodada">` +
+          `<span class="ficha-rodada-lab">Rod</span>` +
+          `<span class="ficha-rodada-rod">${fmtPts(r.rod)}</span>` +
+          `</span>` +
+          `<span class="ficha-rodada-stat" title="Pontuação total">` +
+          `<span class="ficha-rodada-lab">Pts</span>` +
+          `<span class="ficha-rodada-soma">${r.soma}</span>` +
+          `</span>` +
+          `<span class="ficha-rodada-stat" title="Colocação">` +
+          `<span class="ficha-rodada-lab">#</span>` +
+          `<span class="ficha-rodada-pos">${pos}${mov}</span>` +
+          `</span>` +
           `</span>` +
           `</li>`
         );

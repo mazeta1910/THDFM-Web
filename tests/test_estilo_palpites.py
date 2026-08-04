@@ -122,7 +122,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
         encoding="utf-8"
     ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=224" in r.text
+    assert "/static/style.css?v=225" in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
@@ -180,8 +180,10 @@ def test_resumo_rodadas_na_ficha(client):
     entradas = resumo[a["id"]]
     assert len(entradas) == 2
     assert entradas[0]["rotulo"] == "Rodada 1"
+    assert entradas[0]["rotulo_curto"] == "R1"
     assert entradas[0]["ao_vivo"] is False
     assert entradas[0]["fase_label"] == "Oitavas"
+    assert entradas[0]["fase_label_curta"] == "Oit"
     assert entradas[1]["rotulo"] == "Ao vivo"
     assert entradas[1]["ao_vivo"] is True
     # Após confirmar, a coluna Rod ao vivo zera (baseline = soma)
@@ -193,8 +195,13 @@ def test_resumo_rodadas_na_ficha(client):
     assert r.status_code == 200
     assert "Resumo das rodadas" in r.text
     assert "ficha-rodadas-lista" in r.text
+    assert "ficha-rodada-lab" in r.text
     assert "Rodada 1" in r.text
     assert "Palpites por jogo" not in r.text
+    assert "/static/style.css?v=225" in r.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".ficha-rodada-rotulo-short" in css
+    assert "ficha-rodada-lab" in css
 
 
 def test_triangulo_e_quarteto(client):

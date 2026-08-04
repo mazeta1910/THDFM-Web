@@ -278,6 +278,12 @@ _FASE_LABEL = {
     "semis": "Semis",
     "final": "Final",
 }
+_FASE_LABEL_CURTA = {
+    "oitavas": "Oit",
+    "quartas": "Qua",
+    "semis": "Sem",
+    "final": "Fin",
+}
 _JANELA_LABEL = {
     "ida": "Ida",
     "volta": "Volta",
@@ -310,11 +316,20 @@ def _entrada_resumo_rodada(
     janela: str,
     linha: dict | None,
     ao_vivo: bool = False,
+    numero: int | None = None,
 ) -> dict:
+    if ao_vivo:
+        rotulo_curto = "Ao vivo"
+    elif numero is not None:
+        rotulo_curto = f"R{numero}"
+    else:
+        rotulo_curto = rotulo
     return {
         "rotulo": rotulo,
+        "rotulo_curto": rotulo_curto,
         "fase": fase or "",
         "fase_label": _FASE_LABEL.get(fase or "", fase or ""),
+        "fase_label_curta": _FASE_LABEL_CURTA.get(fase or "", _FASE_LABEL.get(fase or "", fase or "")),
         "janela": janela or "",
         "janela_label": _JANELA_LABEL.get(janela or "", janela or ""),
         "rod": int(linha.get("rod") or 0) if linha else 0,
@@ -368,6 +383,7 @@ def resumo_pontuacao_por_participante(
                     janela=rod.get("janela") or "",
                     linha=linha,
                     ao_vivo=False,
+                    numero=rod.get("numero"),
                 )
             )
         entradas.append(

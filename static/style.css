@@ -5423,6 +5423,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   padding: 0;
   max-width: min(36rem, calc(100vw - 2rem));
   width: 100%;
+  overflow-x: hidden;
 }
 .ficha-dialog::backdrop {
   background: rgba(0, 0, 0, 0.55);
@@ -5430,9 +5431,14 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
 .ficha-estilo-card {
   margin: 0;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .ficha-estilo-body {
   padding: 0.85rem 1rem 1.1rem;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .ficha-dialog-close {
   appearance: none;
@@ -5463,9 +5469,11 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  max-width: 100%;
 }
 .ficha-rodadas-resumo {
   margin: 0 0 0.85rem;
+  min-width: 0;
 }
 .ficha-rodadas-resumo-title {
   margin: 0 0 0.35rem;
@@ -5481,14 +5489,16 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   padding: 0;
   display: grid;
   gap: 0;
+  min-width: 0;
 }
 .ficha-rodada-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.35rem 0.75rem;
+  gap: 0.35rem 0.55rem;
   align-items: baseline;
   padding: 0.55rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  min-width: 0;
 }
 .ficha-rodada-item:last-child {
   border-bottom: 0;
@@ -5504,6 +5514,9 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   line-height: 1.3;
   color: var(--text);
 }
+.ficha-rodada-rotulo-short {
+  display: none;
+}
 .ficha-rodada-meta {
   display: block;
   margin-top: 0.08rem;
@@ -5512,13 +5525,28 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-weight: 600;
 }
 .ficha-rodada-nums {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem 0.7rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(2.4rem, auto));
+  justify-content: end;
+  gap: 0.35rem 0.55rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-size: 0.8rem;
+  min-width: 0;
+}
+.ficha-rodada-stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+  line-height: 1.15;
+}
+.ficha-rodada-lab {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .ficha-rodada-rod {
   font-weight: 800;
@@ -5544,6 +5572,35 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
 }
 .ficha-rodada-mov.down {
   color: #e03131;
+}
+@media (max-width: 520px) {
+  .ficha-dialog {
+    max-width: calc(100vw - 1rem);
+  }
+  .ficha-estilo-body {
+    padding: 0.75rem 0.75rem 1rem;
+  }
+  .ficha-rodada-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.3rem 0.4rem;
+  }
+  .ficha-rodada-rotulo-full {
+    display: none;
+  }
+  .ficha-rodada-rotulo-short {
+    display: inline;
+  }
+  .ficha-rodada-titulo {
+    font-size: 0.82rem;
+  }
+  .ficha-rodada-nums {
+    grid-template-columns: repeat(3, minmax(2.1rem, auto));
+    gap: 0.25rem 0.4rem;
+    font-size: 0.76rem;
+  }
+  .ficha-rodada-lab {
+    font-size: 0.54rem;
+  }
 }
 .visually-hidden {
   position: absolute;
