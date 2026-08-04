@@ -149,7 +149,6 @@ def _perfil_de(
     n_com_resultado = 0
     # assinatura de placar por jogo para similaridade: {jogo_id: "gm-gv"}
     assinatura: dict[int, str] = {}
-    palpites_jogos: list[dict[str, Any]] = []
 
     for jogo in jogos:
         jid = int(jogo["id"])
@@ -175,25 +174,6 @@ def _perfil_de(
         key = f"{gm}×{gv}"
         placares[key] += 1
         assinatura[jid] = f"{gm}-{gv}"
-
-        mid = jogo.get("mandante_clube_id") or "a"
-        casa_nome = jogo.get("clube_a") if mid == "a" else jogo.get("clube_b")
-        fora_nome = jogo.get("clube_b") if mid == "a" else jogo.get("clube_a")
-        perna = jogo.get("perna") or ""
-        perna_label = {"ida": "Ida", "volta": "Volta", "unico": "Único"}.get(perna, perna)
-        palpites_jogos.append(
-            {
-                "jogo_id": jid,
-                "casa": casa_nome or "Casa",
-                "fora": fora_nome or "Fora",
-                "gols_m": gm,
-                "gols_v": gv,
-                "placar": f"{gm}×{gv}",
-                "perna": perna,
-                "perna_label": perna_label,
-                "fase": jogo.get("fase") or "",
-            }
-        )
 
         cons = consenso.get(jid)
         tem_res = (
@@ -281,7 +261,7 @@ def _perfil_de(
         "acertos_placar": acertos_placar,
         "n_com_resultado": n_com_resultado,
         "assinatura": assinatura,
-        "palpites_jogos": palpites_jogos,
+        "resumo_rodadas": [],  # preenchido na classificação
         "badges": [],  # preenchido depois pelo Hall
     }
 

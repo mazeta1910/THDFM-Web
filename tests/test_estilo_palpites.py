@@ -115,20 +115,24 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "data-abrir-ficha" in r.text
     assert "ficha-estilo-card" in r.text
     assert "Exportar ficha em PNG" in r.text
-    assert "Palpites por jogo" in r.text
-    assert "ficha-palpites-resumo" in r.text
-    assert "ficha-palpite-placar" in r.text
+    assert "Resumo das rodadas" in r.text
+    assert "ficha-rodadas-resumo" in r.text
+    assert "Palpites por jogo" not in r.text
+    assert "ficha-palpites-resumo" not in r.text
     assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
         encoding="utf-8"
     ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=223" in r.text
+    assert "/static/style.css?v=224" in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
-    assert perfil["palpites_jogos"]
-    assert perfil["palpites_jogos"][0]["placar"] == "2×0"
-    assert "casa" in perfil["palpites_jogos"][0]
-    assert "fora" in perfil["palpites_jogos"][0]
+    assert "palpites_jogos" not in perfil or not perfil.get("palpites_jogos")
+    assert perfil["n_casa"] >= 1
+
+    # JSON da ficha traz resumo de pontuação (ao vivo no mínimo)
+    assert '"resumo_rodadas"' in r.text
+    assert '"Ao vivo"' in r.text or "Ao vivo" in r.text
+    assert '"rotulo"' in r.text
 
 
 def test_empate_muitos_nomes_resume_lista(client):
@@ -154,6 +158,43 @@ def test_empate_muitos_nomes_resume_lista(client):
     assert "hall-avatar-more" in r.text
     assert ">+1<" in r.text or "+1" in r.text
     assert "hall-card-fullrow" in r.text or "arqui_inimigos" not in ids
+
+
+def test_resumo_rodadas_na_ficha(client):
+    """Ficha mostra pontuação por rodada confirmada + ao vivo (não palpites)."""
+    from src.ranking import confirmar_rodada, resumo_pontuacao_por_participante
+
+    login_admin(client)
+    a = db.criar_participante("Alpha", status="liberado")
+    b = db.criar_participante("Beta", status="liberado")
+    _cinfo, jogo = _jogo_oitavas()
+    db.salvar_palpite_jogo(a["id"], jogo["id"], 2, 0)
+    db.salvar_palpite_jogo(b["id"], jogo["id"], 0, 1)
+    db.set_resultado_jogo(jogo["id"], 0, 1)
+
+    hist = confirmar_rodada()
+    assert hist["numero"] == 1
+
+    resumo = resumo_pontuacao_por_participante()
+    assert a["id"] in resumo
+    entradas = resumo[a["id"]]
+    assert len(entradas) == 2
+    assert entradas[0]["rotulo"] == "Rodada 1"
+    assert entradas[0]["ao_vivo"] is False
+    assert entradas[0]["fase_label"] == "Oitavas"
+    assert entradas[1]["rotulo"] == "Ao vivo"
+    assert entradas[1]["ao_vivo"] is True
+    # Após confirmar, a coluna Rod ao vivo zera (baseline = soma)
+    assert entradas[1]["rod"] == 0
+    assert entradas[0]["soma"] == entradas[1]["soma"]
+    assert entradas[0]["posicao"] is not None
+
+    r = client.get("/classificacao")
+    assert r.status_code == 200
+    assert "Resumo das rodadas" in r.text
+    assert "ficha-rodadas-lista" in r.text
+    assert "Rodada 1" in r.text
+    assert "Palpites por jogo" not in r.text
 
 
 def test_triangulo_e_quarteto(client):

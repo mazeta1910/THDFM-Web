@@ -5464,53 +5464,86 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.ficha-palpites-resumo {
-  margin: 0.85rem 0 0;
+.ficha-rodadas-resumo {
+  margin: 0 0 0.85rem;
 }
-.ficha-palpites-resumo-title {
-  margin: 0 0 0.45rem;
+.ficha-rodadas-resumo-title {
+  margin: 0 0 0.35rem;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.ficha-palpites-lista {
+.ficha-rodadas-lista {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.35rem;
+  gap: 0;
 }
-.ficha-palpite-item {
+.ficha-rodada-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.45rem 0.75rem;
+  gap: 0.35rem 0.75rem;
   align-items: baseline;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-.ficha-palpite-jogo {
+.ficha-rodada-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0.15rem;
+}
+.ficha-rodada-item.is-ao-vivo .ficha-rodada-titulo {
+  color: var(--accent);
+}
+.ficha-rodada-titulo {
   min-width: 0;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
+  font-weight: 700;
   line-height: 1.3;
   color: var(--text);
 }
-.ficha-palpite-meta {
+.ficha-rodada-meta {
   display: block;
-  margin-top: 0.1rem;
+  margin-top: 0.08rem;
   font-size: 0.68rem;
   color: var(--muted);
   font-weight: 600;
 }
-.ficha-palpite-placar {
+.ficha-rodada-nums {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem 0.7rem;
   font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  font-size: 0.95rem;
-  color: var(--accent);
   white-space: nowrap;
+  font-size: 0.8rem;
+}
+.ficha-rodada-rod {
+  font-weight: 800;
+  color: var(--accent);
+}
+.ficha-rodada-soma {
+  font-weight: 700;
+  color: var(--text);
+}
+.ficha-rodada-pos {
+  font-weight: 700;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.ficha-rodada-mov {
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.ficha-rodada-mov.up {
+  color: #2f9e44;
+}
+.ficha-rodada-mov.down {
+  color: #e03131;
 }
 .visually-hidden {
   position: absolute;
