@@ -7265,8 +7265,8 @@ html[data-theme="light"] .xonha-weekday-bar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--mais-size, 0.95rem);
-  height: var(--mais-size, 0.95rem);
+  width: 1.5rem;
+  height: 1.5rem;
   margin: 0;
   padding: 0;
   border: 0;
@@ -7276,6 +7276,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   line-height: 0;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .xonha-motivo-mais-icon {
   display: block;
@@ -7292,6 +7293,8 @@ html[data-theme="light"] .xonha-weekday-bar {
 .xonha-motivo-mais--spacer {
   visibility: hidden;
   pointer-events: none;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 .xonha-motivo-mais:hover,
 .xonha-motivo-mais:focus-visible {
@@ -7304,24 +7307,79 @@ html[data-theme="light"] .xonha-weekday-bar {
 .xonha-motivo-mais[aria-expanded="true"] .xonha-motivo-mais-icon {
   transform: rotate(45deg);
 }
-.xonha-motivo-tip-host {
-  position: fixed;
-  z-index: 10000;
-  max-width: min(18rem, calc(100vw - 1.5rem));
-  padding: 0.7rem 0.85rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
+.xonha-motivo-dialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  width: 100%;
+  background: transparent;
   color: var(--text);
-  font-size: 0.82rem;
-  font-weight: 500;
+}
+.xonha-motivo-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.xonha-motivo-dialog.is-fallback-open {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.55);
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+.xonha-motivo-dialog-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 0.95rem 1rem 1.05rem;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  width: 100%;
+}
+.xonha-motivo-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.55rem;
+}
+.xonha-motivo-dialog-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.xonha-motivo-dialog-fechar {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.xonha-motivo-dialog-fechar:hover,
+.xonha-motivo-dialog-fechar:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+.xonha-motivo-dialog-texto {
+  margin: 0;
+  font-size: 0.92rem;
   line-height: 1.45;
-  text-align: left;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  color: var(--text);
 }
-.xonha-motivo-tip-host[hidden] { display: none !important; }
 .xonha-empty { margin: 0.85rem 0 0; color: var(--muted); }
 
 /* Admin gestor — cards estreitos */

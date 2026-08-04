@@ -273,12 +273,19 @@
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
     </details>
-  <div
-    class="xonha-motivo-tip-host"
-    id="xonha-motivo-tip-host"
-    role="tooltip"
-    hidden
-  ></div>
+  <dialog class="xonha-motivo-dialog" id="xonha-motivo-dialog" aria-labelledby="xonha-motivo-dialog-title">
+    <div class="xonha-motivo-dialog-card">
+      <header class="xonha-motivo-dialog-head">
+        <h3 id="xonha-motivo-dialog-title">Motivo</h3>
+        <button type="button" class="xonha-motivo-dialog-fechar" data-xonha-motivo-fechar aria-label="Fechar">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+            <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+      <p class="xonha-motivo-dialog-texto" id="xonha-motivo-dialog-texto"></p>
+    </div>
+  </dialog>
 </section>
 <script>
 (function () {
@@ -343,126 +350,105 @@
     }
   }
 
-  var tipHost = document.getElementById("xonha-motivo-tip-host");
-  if (tipHost && tipHost.parentElement !== document.body) {
-    document.body.appendChild(tipHost);
-  }
+  var dialog = document.getElementById("xonha-motivo-dialog");
+  var dialogTexto = document.getElementById("xonha-motivo-dialog-texto");
   var openBtn = null;
-  var ignoreDocClick = false;
 
-  function fecharMotivoTip() {
-    if (!tipHost) return;
-    tipHost.hidden = true;
-    tipHost.textContent = "";
+  function motivoTexto(btn) {
+    return (btn.getAttribute("data-xonha-motivo-full") || "").trim();
+  }
+
+  function fecharMotivoDialog() {
+    if (!dialog) return;
+    if (typeof dialog.close === "function" && dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute("open");
+      dialog.classList.remove("is-fallback-open");
+    }
     if (openBtn) {
       openBtn.setAttribute("aria-expanded", "false");
       openBtn = null;
     }
   }
 
-  function posicionarMotivoTip(btn) {
-    if (!tipHost || tipHost.hidden) return;
-    var r = btn.getBoundingClientRect();
-    var pad = 8;
-    var maxW = Math.min(288, window.innerWidth - pad * 2);
-    tipHost.style.width = maxW + "px";
-    tipHost.style.maxWidth = maxW + "px";
-    tipHost.style.left = "0px";
-    tipHost.style.top = "0px";
-    var tw = tipHost.offsetWidth || maxW;
-    var th = tipHost.offsetHeight || 40;
-    var left = r.left + r.width / 2 - tw / 2;
-    left = Math.max(pad, Math.min(left, window.innerWidth - tw - pad));
-    var top = r.bottom + 8;
-    if (top + th > window.innerHeight - pad && r.top - 8 - th > pad) {
-      top = r.top - 8 - th;
-    }
-    tipHost.style.left = left + "px";
-    tipHost.style.top = Math.max(pad, top) + "px";
-  }
-
-  function motivoTexto(btn) {
-    return (btn.getAttribute("data-xonha-motivo-full") || "").trim();
-  }
-
-  function abrirMotivoTip(btn) {
-    if (!tipHost) return;
+  function abrirMotivoDialog(btn) {
+    if (!dialog || !dialogTexto) return;
     var texto = motivoTexto(btn);
     if (!texto) return;
-    if (openBtn === btn) {
-      fecharMotivoTip();
+    if (openBtn === btn && (dialog.open || dialog.classList.contains("is-fallback-open"))) {
+      fecharMotivoDialog();
       return;
     }
-    fecharMotivoTip();
-    tipHost.textContent = texto;
-    tipHost.hidden = false;
+    dialogTexto.textContent = texto;
+    if (openBtn) openBtn.setAttribute("aria-expanded", "false");
     openBtn = btn;
     btn.setAttribute("aria-expanded", "true");
-    ignoreDocClick = true;
-    posicionarMotivoTip(btn);
-    window.requestAnimationFrame(function () {
-      posicionarMotivoTip(btn);
-    });
+    if (typeof dialog.showModal === "function") {
+      try {
+        dialog.showModal();
+      } catch (err) {
+        dialog.setAttribute("open", "");
+        dialog.classList.add("is-fallback-open");
+      }
+    } else {
+      dialog.setAttribute("open", "");
+      dialog.classList.add("is-fallback-open");
+    }
   }
 
   function atualizarBotoesMotivo() {
-    document.querySelectorAll("[data-xonha-motivo-preview]").forEach(function (p) {
-      var wrap = p.closest(".xonha-item-motivo-wrap");
-      var btn = wrap && wrap.querySelector("[data-xonha-motivo-mais]");
-      if (!btn) return;
+    document.querySelectorAll("[data-xonha-motivo-mais]").forEach(function (btn) {
+      var wrap = btn.closest(".xonha-item-motivo-wrap");
+      var p = wrap && wrap.querySelector("[data-xonha-motivo-preview]");
       var texto = motivoTexto(btn);
-      // line-clamp nem sempre aumenta scrollHeight; usa também o tamanho do texto.
-      var truncado =
-        texto.length > 48 || p.scrollHeight > p.clientHeight + 1;
-      if (truncado) {
-        btn.hidden = false;
-      } else {
-        if (openBtn === btn) fecharMotivoTip();
-        btn.hidden = true;
-      }
+      var truncado = false;
+      if (texto.length > 48) truncado = true;
+      else if (p && p.scrollHeight > p.clientHeight + 1) truncado = true;
+      btn.hidden = !truncado;
+      if (!truncado && openBtn === btn) fecharMotivoDialog();
     });
-    if (openBtn) posicionarMotivoTip(openBtn);
   }
 
-  document.querySelectorAll("[data-xonha-motivo-mais]").forEach(function (btn) {
-    btn.addEventListener("click", function (ev) {
+  var timeline = document.querySelector(".xonha-page") || document;
+  timeline.addEventListener("click", function (ev) {
+    var fechar = ev.target.closest("[data-xonha-motivo-fechar]");
+    if (fechar) {
       ev.preventDefault();
-      ev.stopPropagation();
-      abrirMotivoTip(btn);
-    });
-  });
-
-  document.addEventListener("click", function (ev) {
-    if (ignoreDocClick) {
-      ignoreDocClick = false;
+      fecharMotivoDialog();
       return;
     }
-    if (!openBtn) return;
-    var t = ev.target;
-    if (tipHost && (t === tipHost || tipHost.contains(t))) return;
-    if (t === openBtn || (openBtn.contains && openBtn.contains(t))) return;
-    fecharMotivoTip();
+    var btn = ev.target.closest("[data-xonha-motivo-mais]");
+    if (!btn || btn.hidden) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    abrirMotivoDialog(btn);
   });
+
+  if (dialog) {
+    dialog.addEventListener("click", function (ev) {
+      if (ev.target === dialog) fecharMotivoDialog();
+    });
+    dialog.addEventListener("close", function () {
+      if (openBtn) {
+        openBtn.setAttribute("aria-expanded", "false");
+        openBtn = null;
+      }
+    });
+  }
 
   document.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") fecharMotivoTip();
+    if (ev.key === "Escape") fecharMotivoDialog();
   });
 
-  window.addEventListener("scroll", function () {
-    if (openBtn) posicionarMotivoTip(openBtn);
-  }, true);
-
-  window.addEventListener("resize", function () {
-    atualizarBotoesMotivo();
-  });
-
+  window.addEventListener("resize", atualizarBotoesMotivo);
   atualizarBotoesMotivo();
   window.setTimeout(atualizarBotoesMotivo, 50);
   window.setTimeout(atualizarBotoesMotivo, 300);
 
-  var timeline = document.querySelector(".xonha-timeline");
-  if (timeline) {
-    timeline.addEventListener("toggle", function () {
+  var timelineDetails = document.querySelector(".xonha-timeline");
+  if (timelineDetails) {
+    timelineDetails.addEventListener("toggle", function () {
       window.setTimeout(atualizarBotoesMotivo, 30);
     });
   }
