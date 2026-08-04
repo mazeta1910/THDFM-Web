@@ -158,7 +158,9 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=221" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=222" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "overflow-x: hidden" in css
+    assert "overscroll-behavior-x: contain" in css
     assert "Recorde de permanência" in pub.text
     assert "Média / dia desde o início" not in pub.text
     assert "Média de saída / mês" in pub.text

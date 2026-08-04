@@ -7047,6 +7047,9 @@ html[data-theme="light"] .xonha-weekday-bar {
 /* Linha do tempo real (colapsável, horizontal estilo FM) */
 .xonha-timeline {
   margin-bottom: 1.1rem;
+  max-width: 100%;
+  /* Impede o trilho largo de estourar o card (grid/flex min-width:auto). */
+  overflow-x: hidden;
 }
 .xonha-timeline-summary {
   display: flex;
@@ -7101,6 +7104,12 @@ html[data-theme="light"] .xonha-weekday-bar {
   display: grid;
   gap: 1.15rem;
   margin-top: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.xonha-timeline-year {
+  min-width: 0;
+  max-width: 100%;
 }
 .xonha-timeline-year-head {
   display: flex;
@@ -7127,12 +7136,16 @@ html[data-theme="light"] .xonha-weekday-bar {
   margin-top: 0;
 }
 .xonha-timeline-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   margin-top: 1rem;
   padding-bottom: 0.4rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
+  overscroll-behavior-x: contain;
 }
 .xonha-timeline-chart {
   --count: 1;
@@ -7144,6 +7157,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   box-sizing: border-box;
   min-width: 100%;
   width: max(100%, calc(var(--count) * var(--item-min)));
+  max-width: none;
   padding: 0.2rem var(--pad-x) 0.15rem;
 }
 .xonha-timeline-rail {
