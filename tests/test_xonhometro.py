@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
+from src.config import ROOT_DIR
 from tests.conftest import login_admin as _login_admin
 
 
@@ -148,6 +149,10 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "xonha-motivo-mais" in pub.text
     assert "xonha-motivo-tip-host" in pub.text
     assert "data-xonha-motivo-preview" in pub.text
+    # CSS de alinhamento horizontal dos botões +
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "Altura fixa de 3 linhas" in css
+    assert ".xonha-motivo-mais[hidden]" in css
     assert "Recorde de permanência" in pub.text
     assert "Média / dia desde o início" not in pub.text
     assert "Média de saída / mês" in pub.text

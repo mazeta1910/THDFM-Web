@@ -251,7 +251,10 @@
                     <template data-xonha-motivo-full>{{ e.motivo }}</template>
                   </div>
                   {% else %}
-                  <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
+                  <div class="xonha-item-motivo-wrap">
+                    <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
+                    <span class="xonha-motivo-mais xonha-motivo-mais--spacer" aria-hidden="true">+</span>
+                  </div>
                   {% endif %}
                 </div>
               </li>
