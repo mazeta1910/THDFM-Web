@@ -141,6 +141,13 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "xonha-timeline-track" in pub.text
     assert "xonha-timeline-event" in pub.text
     assert "xonha-timeline-rail" in pub.text
+    assert "xonha-timeline-anos" in pub.text
+    assert "xonha-timeline-year" in pub.text
+    assert "xonha-timeline-year-title" in pub.text
+    assert ">2026<" in pub.text
+    assert "xonha-motivo-mais" in pub.text
+    assert "xonha-motivo-tip-host" in pub.text
+    assert "data-xonha-motivo-preview" in pub.text
     assert "Recorde de permanência" in pub.text
     assert "Média / dia desde o início" not in pub.text
     assert "Média de saída / mês" in pub.text
@@ -178,6 +185,40 @@ def test_formatar_duracao_sem_sufixo_de_status():
     assert db.formatar_duracao(3725, prefixo="", sufixo="") == (
         "1 hora, 2 minutos e 5 segundos"
     )
+
+
+def test_agrupar_xonha_eventos_por_ano(client: TestClient):
+    part = db.criar_participante("Leitor Anos", status="liberado", celular="11990007777")
+    db.definir_credenciais(part["id"], "leitor.anos", "senha12345")
+    client.get(f"/p/{part['token']}")
+
+    db.criar_xonha_evento("saida", "2024-12-31", "fim 24", hora="23:00")
+    db.criar_xonha_evento("volta", "2025-01-01", "ano novo", hora="00:10")
+    db.criar_xonha_evento("banimento", "2025-06-15", "ban", hora="12:00")
+    db.criar_xonha_evento("saida", "2026-03-01", "saiu", hora="09:00")
+
+    grupos = db.agrupar_xonha_eventos_por_ano()
+    assert [g["ano"] for g in grupos] == ["2026", "2025", "2024"]
+    assert grupos[0]["quantidade"] == 1
+    assert grupos[1]["quantidade"] == 2
+    assert grupos[2]["quantidade"] == 1
+    # Dentro do ano: ordem cronológica (antigo → novo)
+    assert [e["data"] for e in grupos[1]["eventos"]] == ["2025-01-01", "2025-06-15"]
+
+    pub = client.get("/xonhometro")
+    assert pub.status_code == 200
+    assert "xonha-timeline-anos" in pub.text
+    assert ">2024<" in pub.text
+    assert ">2025<" in pub.text
+    assert ">2026<" in pub.text
+    # Motivo longo deve trazer botão + e template do texto completo
+    longo = "X" * 160
+    db.criar_xonha_evento("saida", "2026-04-01", longo, hora="10:00")
+    pub2 = client.get("/xonhometro")
+    assert "xonha-motivo-mais" in pub2.text
+    assert longo in pub2.text
+    assert "data-xonha-motivo-mais" in pub2.text
+
 
 def test_admin_atualiza_e_apaga(client: TestClient):
     _login_admin(client)
