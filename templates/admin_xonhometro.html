@@ -25,6 +25,21 @@
   </div>
 
   <section class="card xonha-admin-form-card">
+    <h2>Importar histórico WhatsApp</h2>
+    <p class="login-lead">
+      Carrega saídas, voltas e banimentos inferidos do export do grupo
+      ({{ import_meta.quantidade if import_meta else '—' }} eventos no arquivo).
+      Substitui os registros atuais do Xonhômetro.
+    </p>
+    <form method="post" action="/admin/xonhometro/importar-whatsapp" class="xonha-admin-form"
+          onsubmit="return confirm('Substituir todo o histórico atual do Xonhômetro pelos eventos do WhatsApp?');">
+      <button type="submit" class="xonha-icon-btn xonha-icon-btn--save" title="Importar WhatsApp" aria-label="Importar WhatsApp">
+        Importar agora
+      </button>
+    </form>
+  </section>
+
+  <section class="card xonha-admin-form-card">
     <h2>Novo registro</h2>
     <form method="post" action="/admin/xonhometro" class="xonha-admin-form" autocomplete="off">
       <div class="xonha-admin-row">

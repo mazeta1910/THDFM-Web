@@ -1138,14 +1138,43 @@ def xonhometro(request: Request):
 def admin_xonhometro(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    import_meta = None
+    try:
+        from src.xonhometro_seed import carregar_eventos_import
+
+        _, import_meta = carregar_eventos_import()
+    except Exception:
+        import_meta = None
     return render(
         request,
         "admin_xonhometro.html",
         eventos=db.list_xonha_eventos(),
         stats=db.xonha_stats(),
+        import_meta=import_meta,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.post("/admin/xonhometro/importar-whatsapp")
+def admin_xonhometro_importar_whatsapp(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        resultado = db.importar_xonha_eventos_whatsapp(substituir=True)
+    except (FileNotFoundError, ValueError) as exc:
+        return RedirectResponse(
+            f"/admin/xonhometro?erro={quote(str(exc))}",
+            status_code=303,
+        )
+    msg = (
+        f"Importados {resultado['inseridos']} eventos do WhatsApp "
+        f"({resultado['total_atual']} no total)"
+    )
+    return RedirectResponse(
+        f"/admin/xonhometro?msg={quote(msg)}",
+        status_code=303,
     )
 
 
