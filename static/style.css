@@ -7097,6 +7097,35 @@ html[data-theme="light"] .xonha-weekday-bar {
 .xonha-timeline[open] > .xonha-timeline-summary .xonha-timeline-toggle::after {
   opacity: 0;
 }
+.xonha-timeline-anos {
+  display: grid;
+  gap: 1.15rem;
+  margin-top: 1rem;
+}
+.xonha-timeline-year-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin: 0 0 0.45rem;
+  padding: 0 0.1rem;
+}
+.xonha-timeline-year-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.xonha-timeline-year-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.xonha-timeline-year .xonha-timeline-scroll {
+  margin-top: 0;
+}
 .xonha-timeline-scroll {
   overflow-x: auto;
   overflow-y: hidden;
@@ -7201,6 +7230,14 @@ html[data-theme="light"] .xonha-weekday-bar {
   line-height: 1.25;
 }
 .xonha-item-hora { font-weight: 700; color: var(--text); }
+.xonha-item-motivo-wrap {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
 .xonha-item-motivo {
   margin: 0.1rem 0 0;
   font-size: 0.78rem;
@@ -7212,6 +7249,49 @@ html[data-theme="light"] .xonha-weekday-bar {
   max-width: 100%;
 }
 .xonha-item-motivo--vazio { color: var(--muted); font-style: italic; }
+.xonha-motivo-mais {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.xonha-motivo-mais:hover,
+.xonha-motivo-mais:focus-visible,
+.xonha-motivo-mais[aria-expanded="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  outline: none;
+}
+.xonha-motivo-tip-host {
+  position: fixed;
+  z-index: 10000;
+  max-width: min(18rem, calc(100vw - 1.5rem));
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.xonha-motivo-tip-host[hidden] { display: none !important; }
 .xonha-empty { margin: 0.85rem 0 0; color: var(--muted); }
 
 /* Admin gestor — cards estreitos */

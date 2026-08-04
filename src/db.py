@@ -1976,6 +1976,37 @@ def list_xonha_eventos() -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def agrupar_xonha_eventos_por_ano(
+    eventos: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Agrupa eventos por ano (mais recente primeiro).
+
+    Dentro de cada ano, devolve ordem cronológica (antigo → novo) para a
+    linha do tempo horizontal.
+    """
+    itens = eventos if eventos is not None else list_xonha_eventos()
+    por_ano: dict[str, list[dict[str, Any]]] = {}
+    for ev in itens:
+        data = str(ev.get("data") or "")
+        ano = data[:4]
+        if len(ano) != 4 or not ano.isdigit():
+            continue
+        por_ano.setdefault(ano, []).append(ev)
+
+    grupos: list[dict[str, Any]] = []
+    for ano in sorted(por_ano.keys(), reverse=True):
+        # list_xonha_eventos vem DESC; inverte para a timeline (esquerda = mais antigo)
+        cronologicos = list(reversed(por_ano[ano]))
+        grupos.append(
+            {
+                "ano": ano,
+                "eventos": cronologicos,
+                "quantidade": len(cronologicos),
+            }
+        )
+    return grupos
+
+
 def get_xonha_evento(evento_id: int) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(

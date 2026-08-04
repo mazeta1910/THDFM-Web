@@ -1125,10 +1125,12 @@ def grupo_cardapio(request: Request):
 
 @app.get("/xonhometro", response_class=HTMLResponse)
 def xonhometro(request: Request):
+    eventos = db.list_xonha_eventos()
     return render(
         request,
         "xonhometro.html",
-        eventos=db.list_xonha_eventos(),
+        eventos=eventos,
+        timeline_anos=db.agrupar_xonha_eventos_por_ano(eventos),
         stats=db.xonha_stats(),
         **_taxa_ctx(),
     )

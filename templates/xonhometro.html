@@ -213,33 +213,61 @@
       </span>
       <span class="xonha-timeline-toggle" aria-hidden="true"></span>
     </summary>
-    {% if eventos %}
-    <div class="xonha-timeline-scroll">
-      <div class="xonha-timeline-chart" style="--count: {{ eventos|length }}">
-        <div class="xonha-timeline-rail" aria-hidden="true"></div>
-        <ol class="xonha-timeline-track">
-          {% for e in eventos|reverse %}
-          <li class="xonha-timeline-event xonha-timeline-event--{{ e.tipo }}">
-            <span class="xonha-timeline-dot" aria-hidden="true"></span>
-            <div class="xonha-timeline-body">
-              <span class="xonha-item-tipo">
-                {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
-              </span>
-              <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
-                {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
-                {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
-              </time>
-              {% if e.motivo %}
-              <p class="xonha-item-motivo">{{ e.motivo }}</p>
-              {% else %}
-              <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
-              {% endif %}
-            </div>
-          </li>
-          {% endfor %}
-        </ol>
-      </div>
+    {% if timeline_anos %}
+    <div class="xonha-timeline-anos">
+      {% for grupo in timeline_anos %}
+      <section class="xonha-timeline-year" aria-label="Linha do tempo {{ grupo.ano }}">
+        <header class="xonha-timeline-year-head">
+          <h3 class="xonha-timeline-year-title">{{ grupo.ano }}</h3>
+          <span class="xonha-timeline-year-count">{{ grupo.quantidade }} registro{{ 's' if grupo.quantidade != 1 else '' }}</span>
+        </header>
+        <div class="xonha-timeline-scroll">
+          <div class="xonha-timeline-chart" style="--count: {{ grupo.quantidade }}">
+            <div class="xonha-timeline-rail" aria-hidden="true"></div>
+            <ol class="xonha-timeline-track">
+              {% for e in grupo.eventos %}
+              <li class="xonha-timeline-event xonha-timeline-event--{{ e.tipo }}">
+                <span class="xonha-timeline-dot" aria-hidden="true"></span>
+                <div class="xonha-timeline-body">
+                  <span class="xonha-item-tipo">
+                    {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
+                  </span>
+                  <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
+                    {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
+                    {% if e.hora %}<span class="xonha-item-hora">· {{ e.hora }}</span>{% endif %}
+                  </time>
+                  {% if e.motivo %}
+                  <div class="xonha-item-motivo-wrap">
+                    <p class="xonha-item-motivo" data-xonha-motivo-preview>{{ e.motivo }}</p>
+                    <button
+                      type="button"
+                      class="xonha-motivo-mais"
+                      hidden
+                      aria-expanded="false"
+                      aria-label="Ver motivo completo"
+                      title="Ver motivo completo"
+                      data-xonha-motivo-mais
+                    >+</button>
+                    <template data-xonha-motivo-full>{{ e.motivo }}</template>
+                  </div>
+                  {% else %}
+                  <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
+                  {% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      </section>
+      {% endfor %}
     </div>
+    <div
+      class="xonha-motivo-tip-host"
+      id="xonha-motivo-tip-host"
+      role="tooltip"
+      hidden
+    ></div>
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
@@ -248,63 +276,174 @@
 <script>
 (function () {
   var el = document.getElementById("xonha-status-relogio");
-  if (!el) return;
-  var iso = el.getAttribute("data-xonha-status-desde") || "";
-  var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/);
-  if (!m) return;
-  var desde = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
-  if (isNaN(desde.getTime())) return;
+  if (el) {
+    var iso = el.getAttribute("data-xonha-status-desde") || "";
+    var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/);
+    if (m) {
+      var desde = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+      if (!isNaN(desde.getTime())) {
+        function plural(n, um, varios) {
+          return n === 1 ? um : varios;
+        }
 
-  function plural(n, um, varios) {
-    return n === 1 ? um : varios;
-  }
+        function formatar(segundos) {
+          var total = Math.max(Math.floor(segundos), 0);
+          var anos = Math.floor(total / 31536000);
+          var rem = total % 31536000;
+          var meses = Math.floor(rem / 2592000);
+          rem = rem % 2592000;
+          var dias = Math.floor(rem / 86400);
+          rem = rem % 86400;
+          var horas = Math.floor(rem / 3600);
+          rem = rem % 3600;
+          var minutos = Math.floor(rem / 60);
+          var segs = rem % 60;
+          var parts = [];
 
-  function formatar(segundos) {
-    var total = Math.max(Math.floor(segundos), 0);
-    var anos = Math.floor(total / 31536000);
-    var rem = total % 31536000;
-    var meses = Math.floor(rem / 2592000);
-    rem = rem % 2592000;
-    var dias = Math.floor(rem / 86400);
-    rem = rem % 86400;
-    var horas = Math.floor(rem / 3600);
-    rem = rem % 3600;
-    var minutos = Math.floor(rem / 60);
-    var segs = rem % 60;
-    var parts = [];
+          function add(n, um, varios) {
+            if (n) parts.push(n + " " + plural(n, um, varios));
+          }
 
-    function add(n, um, varios) {
-      if (n) parts.push(n + " " + plural(n, um, varios));
+          add(anos, "ano", "anos");
+          add(meses, "mês", "meses");
+          add(dias, "dia", "dias");
+
+          if (anos || meses || dias || horas) {
+            parts.push(horas + " " + plural(horas, "hora", "horas"));
+            parts.push(minutos + " " + plural(minutos, "minuto", "minutos"));
+            parts.push(segs + " " + plural(segs, "segundo", "segundos"));
+          } else if (minutos) {
+            parts.push(minutos + " " + plural(minutos, "minuto", "minutos"));
+            parts.push(segs + " " + plural(segs, "segundo", "segundos"));
+          } else {
+            parts.push(segs + " " + plural(segs, "segundo", "segundos"));
+          }
+
+          var corpo;
+          if (parts.length === 1) corpo = parts[0];
+          else if (parts.length === 2) corpo = parts[0] + " e " + parts[1];
+          else corpo = parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1];
+          return "Há " + corpo + " nesse status.";
+        }
+
+        function tick() {
+          el.textContent = formatar((Date.now() - desde.getTime()) / 1000);
+        }
+
+        tick();
+        window.setInterval(tick, 1000);
+      }
     }
+  }
 
-    add(anos, "ano", "anos");
-    add(meses, "mês", "meses");
-    add(dias, "dia", "dias");
+  var tipHost = document.getElementById("xonha-motivo-tip-host");
+  var openBtn = null;
 
-    if (anos || meses || dias || horas) {
-      parts.push(horas + " " + plural(horas, "hora", "horas"));
-      parts.push(minutos + " " + plural(minutos, "minuto", "minutos"));
-      parts.push(segs + " " + plural(segs, "segundo", "segundos"));
-    } else if (minutos) {
-      parts.push(minutos + " " + plural(minutos, "minuto", "minutos"));
-      parts.push(segs + " " + plural(segs, "segundo", "segundos"));
-    } else {
-      parts.push(segs + " " + plural(segs, "segundo", "segundos"));
+  function fecharMotivoTip() {
+    if (!tipHost) return;
+    tipHost.hidden = true;
+    tipHost.textContent = "";
+    if (openBtn) {
+      openBtn.setAttribute("aria-expanded", "false");
+      openBtn.textContent = "+";
+      openBtn = null;
     }
-
-    var corpo;
-    if (parts.length === 1) corpo = parts[0];
-    else if (parts.length === 2) corpo = parts[0] + " e " + parts[1];
-    else corpo = parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1];
-    return "Há " + corpo + " nesse status.";
   }
 
-  function tick() {
-    el.textContent = formatar((Date.now() - desde.getTime()) / 1000);
+  function posicionarMotivoTip(btn) {
+    if (!tipHost || tipHost.hidden) return;
+    var r = btn.getBoundingClientRect();
+    var pad = 8;
+    var maxW = Math.min(288, window.innerWidth - pad * 2);
+    tipHost.style.width = maxW + "px";
+    tipHost.style.maxWidth = maxW + "px";
+    // Mede depois de definir largura
+    var tw = tipHost.offsetWidth || maxW;
+    var th = tipHost.offsetHeight || 40;
+    var left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(pad, Math.min(left, window.innerWidth - tw - pad));
+    var top = r.bottom + 8;
+    if (top + th > window.innerHeight - pad && r.top - 8 - th > pad) {
+      top = r.top - 8 - th;
+    }
+    tipHost.style.left = left + "px";
+    tipHost.style.top = top + "px";
   }
 
-  tick();
-  window.setInterval(tick, 1000);
+  function abrirMotivoTip(btn) {
+    if (!tipHost) return;
+    var wrap = btn.closest(".xonha-item-motivo-wrap");
+    var tpl = wrap && wrap.querySelector("template[data-xonha-motivo-full]");
+    var texto = tpl ? (tpl.textContent || "").trim() : "";
+    if (!texto) return;
+    if (openBtn === btn) {
+      fecharMotivoTip();
+      return;
+    }
+    fecharMotivoTip();
+    tipHost.textContent = texto;
+    tipHost.hidden = false;
+    openBtn = btn;
+    btn.setAttribute("aria-expanded", "true");
+    btn.textContent = "−";
+    posicionarMotivoTip(btn);
+  }
+
+  function atualizarBotoesMotivo() {
+    document.querySelectorAll("[data-xonha-motivo-preview]").forEach(function (p) {
+      var wrap = p.closest(".xonha-item-motivo-wrap");
+      var btn = wrap && wrap.querySelector("[data-xonha-motivo-mais]");
+      if (!btn) return;
+      var truncado = p.scrollHeight > p.clientHeight + 1;
+      if (truncado) {
+        btn.hidden = false;
+      } else {
+        if (openBtn === btn) fecharMotivoTip();
+        btn.hidden = true;
+      }
+    });
+    if (openBtn) posicionarMotivoTip(openBtn);
+  }
+
+  document.querySelectorAll("[data-xonha-motivo-mais]").forEach(function (btn) {
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      abrirMotivoTip(btn);
+    });
+  });
+
+  document.addEventListener("click", function (ev) {
+    if (!openBtn) return;
+    var t = ev.target;
+    if (t === tipHost || (tipHost && tipHost.contains(t))) return;
+    if (t === openBtn || (openBtn && openBtn.contains(t))) return;
+    fecharMotivoTip();
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") fecharMotivoTip();
+  });
+
+  window.addEventListener("scroll", function () {
+    if (openBtn) posicionarMotivoTip(openBtn);
+  }, true);
+
+  window.addEventListener("resize", function () {
+    atualizarBotoesMotivo();
+  });
+
+  // Recalcula após fontes/layout; details aberto muda altura
+  atualizarBotoesMotivo();
+  window.setTimeout(atualizarBotoesMotivo, 50);
+  window.setTimeout(atualizarBotoesMotivo, 300);
+
+  var timeline = document.querySelector(".xonha-timeline");
+  if (timeline) {
+    timeline.addEventListener("toggle", function () {
+      window.setTimeout(atualizarBotoesMotivo, 30);
+    });
+  }
 })();
 </script>
 {% endblock %}
