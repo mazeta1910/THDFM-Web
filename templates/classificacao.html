@@ -402,27 +402,56 @@
     const assinatura = p.placar_assinatura
       ? `${p.placar_assinatura.placar} <small>(${p.placar_assinatura.n}×)</small>`
       : "—";
-    const jogos = (p.palpites_jogos || [])
-      .map((j) => {
-        const meta = [j.perna_label, j.fase].filter(Boolean).join(" · ");
+    const fmtPts = (n) => {
+      const v = Number(n) || 0;
+      return (v > 0 ? "+" : "") + v;
+    };
+    const rodadas = (p.resumo_rodadas || [])
+      .map((r) => {
+        const meta = [r.fase_label_curta || r.fase_label, r.janela_label].filter(Boolean).join(" · ");
+        const pos = r.posicao != null ? `${r.posicao}º` : "—";
+        let mov = "";
+        if (r.movimento != null && Number(r.movimento) !== 0) {
+          const m = Number(r.movimento);
+          mov = m > 0
+            ? `<span class="ficha-rodada-mov up">▲${m}</span>`
+            : `<span class="ficha-rodada-mov down">▼${Math.abs(m)}</span>`;
+        }
+        const rotulo = r.rotulo_curto || r.rotulo || "Rodada";
         return (
-          `<li class="ficha-palpite-item">` +
-          `<span class="ficha-palpite-jogo">${j.casa} × ${j.fora}` +
-          (meta ? `<span class="ficha-palpite-meta">${meta}</span>` : "") +
+          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}">` +
+          `<span class="ficha-rodada-titulo">` +
+          `<span class="ficha-rodada-rotulo-full">${r.rotulo || "Rodada"}</span>` +
+          `<span class="ficha-rodada-rotulo-short">${rotulo}</span>` +
+          (meta ? `<span class="ficha-rodada-meta">${meta}</span>` : "") +
           `</span>` +
-          `<span class="ficha-palpite-placar">${j.placar}</span>` +
+          `<span class="ficha-rodada-nums" aria-label="Pontuação da rodada">` +
+          `<span class="ficha-rodada-stat" title="Pontos na rodada">` +
+          `<span class="ficha-rodada-lab">Rod</span>` +
+          `<span class="ficha-rodada-rod">${fmtPts(r.rod)}</span>` +
+          `</span>` +
+          `<span class="ficha-rodada-stat" title="Pontuação total">` +
+          `<span class="ficha-rodada-lab">Pts</span>` +
+          `<span class="ficha-rodada-soma">${r.soma}</span>` +
+          `</span>` +
+          `<span class="ficha-rodada-stat" title="Colocação">` +
+          `<span class="ficha-rodada-lab">#</span>` +
+          `<span class="ficha-rodada-pos">${pos}${mov}</span>` +
+          `</span>` +
+          `</span>` +
           `</li>`
         );
       })
       .join("");
-    const resumo = jogos
-      ? `<section class="ficha-palpites-resumo" aria-label="Palpites por jogo">` +
-        `<h3 class="ficha-palpites-resumo-title">Palpites por jogo</h3>` +
-        `<ul class="ficha-palpites-lista">${jogos}</ul>` +
+    const resumo = rodadas
+      ? `<section class="ficha-rodadas-resumo" aria-label="Resumo das rodadas">` +
+        `<h3 class="ficha-rodadas-resumo-title">Resumo das rodadas</h3>` +
+        `<ul class="ficha-rodadas-lista">${rodadas}</ul>` +
         `</section>`
       : "";
     return `
       ${badges ? `<div class="ficha-badges">${badges}</div>` : ""}
+      ${resumo}
       <section class="planilha-metricas-bloco" aria-label="Métricas do participante">
         <h3 class="planilha-metricas-bloco-title">Perfil</h3>
         <div class="planilha-metricas">
@@ -442,7 +471,6 @@
           ${tile("Acertos placar", p.acertos_placar)}
         </div>
       </section>
-      ${resumo}
     `;
   };
 

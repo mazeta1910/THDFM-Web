@@ -272,6 +272,133 @@ def confirmar_rodada() -> dict:
     return hist
 
 
+_FASE_LABEL = {
+    "oitavas": "Oitavas",
+    "quartas": "Quartas",
+    "semis": "Semis",
+    "final": "Final",
+}
+_FASE_LABEL_CURTA = {
+    "oitavas": "Oit",
+    "quartas": "Qua",
+    "semis": "Sem",
+    "final": "Fin",
+}
+_JANELA_LABEL = {
+    "ida": "Ida",
+    "volta": "Volta",
+}
+
+
+def _linha_do_participante(
+    linhas: list[dict],
+    *,
+    participante_id: int | None,
+    nome: str | None,
+) -> dict | None:
+    if participante_id is not None:
+        for row in linhas:
+            rid = row.get("participante_id")
+            if rid is not None and int(rid) == int(participante_id):
+                return row
+    if nome:
+        nome_cf = nome.casefold()
+        for row in linhas:
+            if (row.get("participante") or "").casefold() == nome_cf:
+                return row
+    return None
+
+
+def _entrada_resumo_rodada(
+    *,
+    rotulo: str,
+    fase: str,
+    janela: str,
+    linha: dict | None,
+    ao_vivo: bool = False,
+    numero: int | None = None,
+) -> dict:
+    if ao_vivo:
+        rotulo_curto = "Ao vivo"
+    elif numero is not None:
+        rotulo_curto = f"R{numero}"
+    else:
+        rotulo_curto = rotulo
+    return {
+        "rotulo": rotulo,
+        "rotulo_curto": rotulo_curto,
+        "fase": fase or "",
+        "fase_label": _FASE_LABEL.get(fase or "", fase or ""),
+        "fase_label_curta": _FASE_LABEL_CURTA.get(fase or "", _FASE_LABEL.get(fase or "", fase or "")),
+        "janela": janela or "",
+        "janela_label": _JANELA_LABEL.get(janela or "", janela or ""),
+        "rod": int(linha.get("rod") or 0) if linha else 0,
+        "soma": int(linha.get("soma") or 0) if linha else 0,
+        "posicao": int(linha["posicao"]) if linha and linha.get("posicao") is not None else None,
+        "movimento": linha.get("movimento") if linha else None,
+        "ao_vivo": ao_vivo,
+    }
+
+
+def resumo_pontuacao_por_participante(
+    linhas_ao_vivo: list[dict] | None = None,
+) -> dict[int, list[dict]]:
+    """Histórico de pontuação por rodada confirmada + situação ao vivo.
+
+    Devolve ``{participante_id: [entrada, ...]}`` em ordem cronológica.
+    Cada entrada traz rótulo da rodada, fase/janela, pts da rodada, soma e posição.
+    """
+    from src.db import get_janela, get_meta, get_rodada_historico, list_rodadas_historico
+
+    ao_vivo = linhas_ao_vivo if linhas_ao_vivo is not None else calcular_classificacao()
+    historico_meta = list_rodadas_historico()
+    rodadas: list[dict] = []
+    for meta in historico_meta:
+        full = get_rodada_historico(int(meta["id"]))
+        if full:
+            rodadas.append(full)
+
+    fase_atual = get_meta("fase_atual", "oitavas") or "oitavas"
+    janela_atual = get_janela()
+
+    out: dict[int, list[dict]] = {}
+    # Índice por id a partir do ao vivo (fonte mais completa de ids)
+    for row in ao_vivo:
+        pid = row.get("participante_id")
+        if pid is None:
+            continue
+        pid = int(pid)
+        nome = row.get("participante")
+        entradas: list[dict] = []
+        for rod in rodadas:
+            linha = _linha_do_participante(
+                rod.get("linhas") or [],
+                participante_id=pid,
+                nome=nome,
+            )
+            entradas.append(
+                _entrada_resumo_rodada(
+                    rotulo=rod.get("rotulo") or f"Rodada {rod.get('numero')}",
+                    fase=rod.get("fase") or "",
+                    janela=rod.get("janela") or "",
+                    linha=linha,
+                    ao_vivo=False,
+                    numero=rod.get("numero"),
+                )
+            )
+        entradas.append(
+            _entrada_resumo_rodada(
+                rotulo="Ao vivo",
+                fase=fase_atual,
+                janela=janela_atual,
+                linha=row,
+                ao_vivo=True,
+            )
+        )
+        out[pid] = entradas
+    return out
+
+
 def desfazer_ultima_rodada() -> dict:
     """Remove a última rodada confirmada e restaura o baseline anterior."""
     from src.db import (
