@@ -205,7 +205,9 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     assert admin.status_code == 200
     assert "modal-xonha-apagar" in admin.text
     assert "data-xonha-apagar" in admin.text
-    assert "confirm(" not in admin.text
+    # Apagar usa modal custom; o único confirm() é o da importação WhatsApp.
+    assert admin.text.count("confirm(") == 1
+    assert "importar-whatsapp" in admin.text
     assert "xonha-admin-details" in admin.text
     assert 'class="xonha-admin-details"' in admin.text
     assert "xonha-btn-primary" not in admin.text

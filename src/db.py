@@ -303,6 +303,15 @@ def _migrate_xonhometro(conn: sqlite3.Connection) -> None:
             """
         )
 
+    cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(xonha_eventos)").fetchall()
+    }
+    if "origem" not in cols:
+        conn.execute("ALTER TABLE xonha_eventos ADD COLUMN origem TEXT")
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_xonha_eventos_origem "
+        "ON xonha_eventos(origem) WHERE origem IS NOT NULL AND origem != ''"
+    )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_xonha_eventos_data "
         "ON xonha_eventos(data DESC, id DESC)"
@@ -2034,6 +2043,70 @@ def apagar_xonha_evento(evento_id: int) -> bool:
     with get_db() as conn:
         cur = conn.execute("DELETE FROM xonha_eventos WHERE id = ?", (evento_id,))
         return cur.rowcount > 0
+
+
+def contar_xonha_eventos() -> int:
+    with get_db() as conn:
+        row = conn.execute("SELECT COUNT(*) AS n FROM xonha_eventos").fetchone()
+        return int(row["n"] if row else 0)
+
+
+def importar_xonha_eventos_whatsapp(
+    *,
+    substituir: bool = True,
+    path: Path | str | None = None,
+) -> dict[str, Any]:
+    """Importa saídas/voltas/banimentos inferidos do export WhatsApp.
+
+    Com ``substituir=True`` (padrão), apaga os registros atuais e reinsere
+    o histórico completo do JSON. Com ``False``, só insere origens novas.
+    """
+    from src.xonhometro_seed import carregar_eventos_import, caminho_import_padrao
+
+    arquivo = Path(path) if path else caminho_import_padrao()
+    eventos, meta = carregar_eventos_import(arquivo)
+    if not eventos:
+        raise ValueError("Nenhum evento válido no arquivo de importação.")
+
+    inseridos = 0
+    ignorados = 0
+    with get_db() as conn:
+        if substituir:
+            conn.execute("DELETE FROM xonha_eventos")
+        for ev in eventos:
+            tipo = ev["tipo"]
+            data = _validar_data_xonha(ev["data"])
+            hora = _validar_hora_xonha(ev.get("hora"))
+            motivo = (ev.get("motivo") or "").strip() or None
+            if motivo and len(motivo) > 500:
+                raise ValueError("Motivo muito longo (máx. 500).")
+            origem = (ev.get("origem") or "").strip() or None
+            if not substituir and origem:
+                existe = conn.execute(
+                    "SELECT 1 FROM xonha_eventos WHERE origem = ? LIMIT 1",
+                    (origem,),
+                ).fetchone()
+                if existe:
+                    ignorados += 1
+                    continue
+            try:
+                conn.execute(
+                    "INSERT INTO xonha_eventos (tipo, data, hora, motivo, origem) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (tipo, data, hora, motivo, origem),
+                )
+                inseridos += 1
+            except sqlite3.IntegrityError:
+                ignorados += 1
+
+    return {
+        "inseridos": inseridos,
+        "ignorados": ignorados,
+        "total_arquivo": len(eventos),
+        "substituir": substituir,
+        "meta": meta,
+        "total_atual": contar_xonha_eventos(),
+    }
 
 
 def formatar_duracao(
