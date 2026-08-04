@@ -7236,14 +7236,14 @@ html[data-theme="light"] .xonha-weekday-bar {
   --motivo-fs: 0.78rem;
   --motivo-lh: 1.3;
   --motivo-lines: 3;
-  --mais-size: 0.95rem;
+  --mais-slot: 0.95rem;
   width: 100%;
   min-width: 0;
   margin-top: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.12rem;
 }
 .xonha-item-motivo {
   margin: 0.1rem 0 0;
@@ -7260,49 +7260,57 @@ html[data-theme="light"] .xonha-weekday-bar {
   width: 100%;
 }
 .xonha-item-motivo--vazio { color: var(--muted); font-style: italic; }
-.xonha-motivo-mais {
-  appearance: none;
-  display: inline-flex;
+.xonha-motivo-mais-slot {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--muted);
-  line-height: 0;
+  width: var(--mais-slot);
+  height: var(--mais-slot);
+  flex-shrink: 0;
+}
+/* Não usa <button>: o CSS global de button (width:100%, padding grande, fundo accent)
+   transformava o + num bloco laranja enorme. */
+.xonha-motivo-mais {
+  appearance: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: var(--mais-slot) !important;
+  height: var(--mais-slot) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: var(--mais-slot) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 0 !important;
+  font-weight: 400 !important;
+  line-height: 0 !important;
+  box-shadow: none !important;
   cursor: pointer;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
+  text-align: center;
 }
 .xonha-motivo-mais-icon {
   display: block;
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   transition: transform 0.15s ease, color 0.15s ease;
 }
-/* Mantém o espaço do botão mesmo quando oculto, para o alinhamento horizontal. */
 .xonha-motivo-mais[hidden] {
-  visibility: hidden;
-  display: inline-flex !important;
-  pointer-events: none;
-}
-.xonha-motivo-mais--spacer {
-  visibility: hidden;
-  pointer-events: none;
-  width: 1.5rem;
-  height: 1.5rem;
+  display: none !important;
 }
 .xonha-motivo-mais:hover,
 .xonha-motivo-mais:focus-visible {
-  color: var(--accent);
+  color: var(--accent) !important;
   outline: none;
 }
 .xonha-motivo-mais[aria-expanded="true"] {
-  color: var(--accent);
+  color: var(--accent) !important;
 }
 .xonha-motivo-mais[aria-expanded="true"] .xonha-motivo-mais-icon {
   transform: rotate(45deg);
@@ -7353,18 +7361,22 @@ html[data-theme="light"] .xonha-weekday-bar {
   font-weight: 800;
 }
 .xonha-motivo-dialog-fechar {
-  appearance: none;
-  display: inline-flex;
+  appearance: none !important;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--muted);
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 0 !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
   cursor: pointer;
 }
 .xonha-motivo-dialog-fechar:hover,
