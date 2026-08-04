@@ -49,7 +49,7 @@ def test_montar_portal_agrupa_por_time_e_inclui_avatar(client: TestClient):
     emp_row = next(r for r in linhas if r.get("nome") == "Empate Fan")
     assert emp_row["grupo"] == "empate"
 
-    # Empate com pênaltis conta como vitória do time escolhido
+    # Empate na ida permanece empate mesmo com pênaltis salvos (só valem na volta)
     db.salvar_palpite_penaltis(emp["id"], c["id"], visitante)
     tabelas2 = [
         t
@@ -57,7 +57,24 @@ def test_montar_portal_agrupa_por_time_e_inclui_avatar(client: TestClient):
         if t["jogo_id"] == jogo["id"]
     ]
     emp2 = next(r for r in tabelas2[0]["linhas"] if r.get("nome") == "Empate Fan")
-    assert emp2["grupo"] == "fora"
+    assert emp2["grupo"] == "empate"
+    assert emp2["penaltis"] == ""
+
+    # Na volta, empate + pênaltis agrupa no time escolhido e exibe o label
+    jogo_volta = next(j for j in c["jogos"] if j.get("perna") == "volta")
+    mandante_v = jogo_volta["mandante_clube_id"]
+    visitante_v = "b" if mandante_v == "a" else "a"
+    db.salvar_palpite_penaltis(emp["id"], c["id"], visitante_v)
+    db.salvar_palpite_jogo(emp["id"], jogo_volta["id"], 1, 1)
+    tabelas_v = [
+        t
+        for t in montar_portal("oitavas", exigir_resultado=False)
+        if t["jogo_id"] == jogo_volta["id"]
+    ]
+    assert len(tabelas_v) == 1
+    emp_v = next(r for r in tabelas_v[0]["linhas"] if r.get("nome") == "Empate Fan")
+    assert emp_v["grupo"] == "fora"
+    assert emp_v["penaltis"]
 
 def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
     part = db.criar_participante("Foto User", status="liberado", celular="11990000009")
@@ -258,11 +275,26 @@ def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
     assert e["pts_total"] == 0
 
     _login_admin(client)
-    r = client.get("/transparencia")
+    r = client.get("/transparencia?fase=oitavas&perna=ida")
     assert r.status_code == 200
     assert ">Total<" in r.text or ">Total</th>" in r.text
     assert "Placar +10" in r.text
     assert "Acertou +7" in r.text
     assert "Gols Casa +5" in r.text
     assert "planilha-pts-total" in r.text
-    assert "/static/style.css?v=220" in r.text
+    assert ">Pênaltis<" not in r.text
+    assert "/static/style.css?v=223" in r.text
+
+    db.set_janela("volta")
+    jogo_volta = next(j for j in c["jogos"] if j.get("perna") == "volta")
+    db.set_resultado_jogo(jogo_volta["id"], 1, 1, None)
+    r_volta = client.get("/transparencia?fase=oitavas&perna=volta")
+    assert r_volta.status_code == 200
+    assert ">Pênaltis<" in r_volta.text
+
+    # Sem perna na query, abre na janela atual (volta)
+    r_default = client.get("/transparencia")
+    assert r_default.status_code == 200
+    compact = " ".join(r_default.text.split())
+    assert 'perna=volta" class="active"' in compact or "perna=volta' class='active'" in compact
+    assert ">Pênaltis<" in r_default.text

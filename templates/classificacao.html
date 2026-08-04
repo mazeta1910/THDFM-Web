@@ -402,6 +402,25 @@
     const assinatura = p.placar_assinatura
       ? `${p.placar_assinatura.placar} <small>(${p.placar_assinatura.n}×)</small>`
       : "—";
+    const jogos = (p.palpites_jogos || [])
+      .map((j) => {
+        const meta = [j.perna_label, j.fase].filter(Boolean).join(" · ");
+        return (
+          `<li class="ficha-palpite-item">` +
+          `<span class="ficha-palpite-jogo">${j.casa} × ${j.fora}` +
+          (meta ? `<span class="ficha-palpite-meta">${meta}</span>` : "") +
+          `</span>` +
+          `<span class="ficha-palpite-placar">${j.placar}</span>` +
+          `</li>`
+        );
+      })
+      .join("");
+    const resumo = jogos
+      ? `<section class="ficha-palpites-resumo" aria-label="Palpites por jogo">` +
+        `<h3 class="ficha-palpites-resumo-title">Palpites por jogo</h3>` +
+        `<ul class="ficha-palpites-lista">${jogos}</ul>` +
+        `</section>`
+      : "";
     return `
       ${badges ? `<div class="ficha-badges">${badges}</div>` : ""}
       <section class="planilha-metricas-bloco" aria-label="Métricas do participante">
@@ -423,6 +442,7 @@
           ${tile("Acertos placar", p.acertos_placar)}
         </div>
       </section>
+      ${resumo}
     `;
   };
 
