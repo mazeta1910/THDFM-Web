@@ -5449,6 +5449,8 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 0.75rem;
+  justify-content: center;
+  text-align: center;
 }
 .ficha-badge {
   display: inline-flex;
@@ -5461,6 +5463,54 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+.ficha-palpites-resumo {
+  margin: 0.85rem 0 0;
+}
+.ficha-palpites-resumo-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ficha-palpites-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.ficha-palpite-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem 0.75rem;
+  align-items: baseline;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+}
+.ficha-palpite-jogo {
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: var(--text);
+}
+.ficha-palpite-meta {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.ficha-palpite-placar {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--accent);
+  white-space: nowrap;
 }
 .visually-hidden {
   position: absolute;

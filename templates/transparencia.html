@@ -105,7 +105,9 @@
             {{ emblema(t.clube_fora, alt=t.clube_fora) }}
             <span class="sr-only">{{ t.clube_fora }}</span>
           </th>
+          {% if perna == 'volta' %}
           <th>Pênaltis</th>
+          {% endif %}
           <th>Acertou</th>
           <th>Vencedor</th>
           <th>Total</th>
@@ -115,7 +117,7 @@
         {% for row in t.linhas %}
         {% if row.tipo == 'grupo' %}
         <tr class="planilha-grupo planilha-grupo--{{ row.grupo }}" data-planilha-grupo="{{ row.grupo }}">
-          <td colspan="8">
+          <td colspan="{{ 8 if perna == 'volta' else 7 }}">
             <div class="planilha-grupo-row">
               <span class="planilha-grupo-label">
                 {% if row.grupo == 'casa' %}
@@ -157,7 +159,9 @@
           <td class="planilha-num">{{ row.gols_m }}</td>
           <td class="planilha-x">x</td>
           <td class="planilha-num">{{ row.gols_v }}</td>
+          {% if perna == 'volta' %}
           <td>{{ row.penaltis }}</td>
+          {% endif %}
           <td class="{{ row.acertou_class }}">
             {% if row.acertou == 'Placar' and row.pts_placar %}Placar +{{ row.pts_placar }}
             {% elif row.acertou == 'Gols Casa' and row.pts_gols_casa %}Gols Casa +{{ row.pts_gols_casa }}

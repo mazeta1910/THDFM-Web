@@ -6,7 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import src.db as db
-from src.config import inscricao_aberta
+from src.config import ROOT_DIR, inscricao_aberta
 from src.estilo_palpites import consenso_por_jogo, trofeus_hall
 from tests.conftest import login_admin
 
@@ -115,6 +115,20 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "data-abrir-ficha" in r.text
     assert "ficha-estilo-card" in r.text
     assert "Exportar ficha em PNG" in r.text
+    assert "Palpites por jogo" in r.text
+    assert "ficha-palpites-resumo" in r.text
+    assert "ficha-palpite-placar" in r.text
+    assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
+        encoding="utf-8"
+    ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
+    assert "/static/style.css?v=223" in r.text
+
+    hall = trofeus_hall("oitavas")
+    perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
+    assert perfil["palpites_jogos"]
+    assert perfil["palpites_jogos"][0]["placar"] == "2×0"
+    assert "casa" in perfil["palpites_jogos"][0]
+    assert "fora" in perfil["palpites_jogos"][0]
 
 
 def test_empate_muitos_nomes_resume_lista(client):

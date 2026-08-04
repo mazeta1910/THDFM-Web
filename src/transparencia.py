@@ -448,16 +448,23 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
 
                 pen_row = palp["penaltis"].get(c["id"])
                 palpite_pen = pen_row["penaltis_clube_id"] if pen_row else None
+                # Pênaltis só existem na volta — na ida ignoramos escolha/exibição.
+                pen_efetivo = palpite_pen if perna == "volta" else None
+                real_pen_efetivo = real_pen if perna == "volta" else None
                 pen_label = ""
-                if pj["gols_mandante"] == pj["gols_visitante"] and palpite_pen in ("a", "b"):
-                    pen_label = _clube_nome(c, palpite_pen)
+                if (
+                    perna == "volta"
+                    and pj["gols_mandante"] == pj["gols_visitante"]
+                    and pen_efetivo in ("a", "b")
+                ):
+                    pen_label = _clube_nome(c, pen_efetivo)
 
                 grupo = _grupo_lado_palpite(
                     int(pj["gols_mandante"]),
                     int(pj["gols_visitante"]),
                     mandante_clube_id=mandante_id,
                     visitante_clube_id=visitante_id,
-                    penaltis_clube_id=palpite_pen,
+                    penaltis_clube_id=pen_efetivo,
                 )
 
                 if tem_resultado:
@@ -467,8 +474,8 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         real_m,
                         real_v,
                         clube_casa_id=mandante_id,
-                        palpite_penaltis=palpite_pen,
-                        real_penaltis=real_pen,
+                        palpite_penaltis=pen_efetivo,
+                        real_penaltis=real_pen_efetivo,
                         permite_empate=True,
                     )
                     det = pontos_detalhados(
@@ -478,8 +485,8 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                         real_v,
                         fase=c["fase"],
                         clube_casa_id=mandante_id,
-                        palpite_penaltis=palpite_pen,
-                        real_penaltis=real_pen,
+                        palpite_penaltis=pen_efetivo,
+                        real_penaltis=real_pen_efetivo,
                         permite_empate=True,
                     )
                     acertou_slug = {

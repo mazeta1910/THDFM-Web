@@ -1265,17 +1265,18 @@ def transparencia(request: Request):
     if fase not in FASE_IDS:
         fase = fase_atual
     # Fases futuras bloqueadas — igual Resultados / Meus Palpites
+    janela = db.get_janela()
+    volta_liberada = janela != "ida"
+    perna_default = "volta" if janela == "volta" else "ida"
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
-            f"/transparencia?fase={fase_atual}&perna=ida",
+            f"/transparencia?fase={fase_atual}&perna={perna_default}",
             status_code=303,
         )
 
-    perna = request.query_params.get("perna") or "ida"
+    perna = request.query_params.get("perna") or perna_default
     if perna not in ("ida", "volta"):
-        perna = "ida"
-    janela = db.get_janela()
-    volta_liberada = janela != "ida"
+        perna = perna_default
     if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/transparencia?fase={fase}&perna=ida",
@@ -1313,17 +1314,18 @@ def admin_palpites(request: Request):
     fase = request.query_params.get("fase") or fase_atual
     if fase not in FASE_IDS:
         fase = fase_atual
+    janela = db.get_janela()
+    volta_liberada = janela != "ida"
+    perna_default = "volta" if janela == "volta" else "ida"
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
-            f"/admin/palpites?fase={fase_atual}&perna=ida",
+            f"/admin/palpites?fase={fase_atual}&perna={perna_default}",
             status_code=303,
         )
 
-    perna = request.query_params.get("perna") or "ida"
+    perna = request.query_params.get("perna") or perna_default
     if perna not in ("ida", "volta"):
-        perna = "ida"
-    janela = db.get_janela()
-    volta_liberada = janela != "ida"
+        perna = perna_default
     if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/admin/palpites?fase={fase}&perna=ida",
