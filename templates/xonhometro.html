@@ -247,13 +247,17 @@
                       aria-label="Ver motivo completo"
                       title="Ver motivo completo"
                       data-xonha-motivo-mais
-                    >+</button>
-                    <template data-xonha-motivo-full>{{ e.motivo }}</template>
+                      data-xonha-motivo-full="{{ e.motivo }}"
+                    >
+                      <svg class="xonha-motivo-mais-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+                        <path d="M8 3.25v9.5M3.25 8h9.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                      </svg>
+                    </button>
                   </div>
                   {% else %}
                   <div class="xonha-item-motivo-wrap">
                     <p class="xonha-item-motivo xonha-item-motivo--vazio">Sem motivo</p>
-                    <span class="xonha-motivo-mais xonha-motivo-mais--spacer" aria-hidden="true">+</span>
+                    <span class="xonha-motivo-mais xonha-motivo-mais--spacer" aria-hidden="true"></span>
                   </div>
                   {% endif %}
                 </div>
@@ -265,16 +269,16 @@
       </section>
       {% endfor %}
     </div>
-    <div
-      class="xonha-motivo-tip-host"
-      id="xonha-motivo-tip-host"
-      role="tooltip"
-      hidden
-    ></div>
     {% else %}
     <p class="xonha-empty">Nenhuma saída, volta ou banimento registrado ainda. O Xonha está em modo zen… por enquanto.</p>
     {% endif %}
     </details>
+  <div
+    class="xonha-motivo-tip-host"
+    id="xonha-motivo-tip-host"
+    role="tooltip"
+    hidden
+  ></div>
 </section>
 <script>
 (function () {
@@ -340,7 +344,11 @@
   }
 
   var tipHost = document.getElementById("xonha-motivo-tip-host");
+  if (tipHost && tipHost.parentElement !== document.body) {
+    document.body.appendChild(tipHost);
+  }
   var openBtn = null;
+  var ignoreDocClick = false;
 
   function fecharMotivoTip() {
     if (!tipHost) return;
@@ -348,7 +356,6 @@
     tipHost.textContent = "";
     if (openBtn) {
       openBtn.setAttribute("aria-expanded", "false");
-      openBtn.textContent = "+";
       openBtn = null;
     }
   }
@@ -360,7 +367,8 @@
     var maxW = Math.min(288, window.innerWidth - pad * 2);
     tipHost.style.width = maxW + "px";
     tipHost.style.maxWidth = maxW + "px";
-    // Mede depois de definir largura
+    tipHost.style.left = "0px";
+    tipHost.style.top = "0px";
     var tw = tipHost.offsetWidth || maxW;
     var th = tipHost.offsetHeight || 40;
     var left = r.left + r.width / 2 - tw / 2;
@@ -370,14 +378,16 @@
       top = r.top - 8 - th;
     }
     tipHost.style.left = left + "px";
-    tipHost.style.top = top + "px";
+    tipHost.style.top = Math.max(pad, top) + "px";
+  }
+
+  function motivoTexto(btn) {
+    return (btn.getAttribute("data-xonha-motivo-full") || "").trim();
   }
 
   function abrirMotivoTip(btn) {
     if (!tipHost) return;
-    var wrap = btn.closest(".xonha-item-motivo-wrap");
-    var tpl = wrap && wrap.querySelector("template[data-xonha-motivo-full]");
-    var texto = tpl ? (tpl.textContent || "").trim() : "";
+    var texto = motivoTexto(btn);
     if (!texto) return;
     if (openBtn === btn) {
       fecharMotivoTip();
@@ -388,8 +398,11 @@
     tipHost.hidden = false;
     openBtn = btn;
     btn.setAttribute("aria-expanded", "true");
-    btn.textContent = "−";
+    ignoreDocClick = true;
     posicionarMotivoTip(btn);
+    window.requestAnimationFrame(function () {
+      posicionarMotivoTip(btn);
+    });
   }
 
   function atualizarBotoesMotivo() {
@@ -397,7 +410,10 @@
       var wrap = p.closest(".xonha-item-motivo-wrap");
       var btn = wrap && wrap.querySelector("[data-xonha-motivo-mais]");
       if (!btn) return;
-      var truncado = p.scrollHeight > p.clientHeight + 1;
+      var texto = motivoTexto(btn);
+      // line-clamp nem sempre aumenta scrollHeight; usa também o tamanho do texto.
+      var truncado =
+        texto.length > 48 || p.scrollHeight > p.clientHeight + 1;
       if (truncado) {
         btn.hidden = false;
       } else {
@@ -417,10 +433,14 @@
   });
 
   document.addEventListener("click", function (ev) {
+    if (ignoreDocClick) {
+      ignoreDocClick = false;
+      return;
+    }
     if (!openBtn) return;
     var t = ev.target;
-    if (t === tipHost || (tipHost && tipHost.contains(t))) return;
-    if (t === openBtn || (openBtn && openBtn.contains(t))) return;
+    if (tipHost && (t === tipHost || tipHost.contains(t))) return;
+    if (t === openBtn || (openBtn.contains && openBtn.contains(t))) return;
     fecharMotivoTip();
   });
 
@@ -436,7 +456,6 @@
     atualizarBotoesMotivo();
   });
 
-  // Recalcula após fontes/layout; details aberto muda altura
   atualizarBotoesMotivo();
   window.setTimeout(atualizarBotoesMotivo, 50);
   window.setTimeout(atualizarBotoesMotivo, 300);

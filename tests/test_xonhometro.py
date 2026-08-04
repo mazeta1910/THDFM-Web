@@ -149,6 +149,8 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "xonha-motivo-mais" in pub.text
     assert "xonha-motivo-tip-host" in pub.text
     assert "data-xonha-motivo-preview" in pub.text
+    assert "data-xonha-motivo-full=" in pub.text
+    assert "xonha-motivo-mais-icon" in pub.text
     # CSS de alinhamento horizontal dos botões +
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
