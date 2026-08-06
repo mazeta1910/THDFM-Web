@@ -4755,7 +4755,7 @@ tr.planilha-sem-palpite .planilha-num {
   font-weight: 700;
   line-height: 1;
 }
-.classificacao-table .pos-mov.up { color: #1f911b; }
+.classificacao-table .pos-mov.up { color: #22a3df; }
 .classificacao-table .pos-mov.down { color: #e74c3c; }
 
 /* Zebrado (como na planilha) + tinta da zona (regra de 3 / Brasileirão) */
@@ -5076,7 +5076,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   cursor: pointer;
   border-bottom-color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
-.classificacao-rod.positivo { color: #1f911b; font-weight: 700; }
+.classificacao-rod.positivo { color: #22a3df; font-weight: 700; }
 .classificacao-rod.negativo { color: #e74c3c; font-weight: 700; }
 .col-tip {
   position: relative;
