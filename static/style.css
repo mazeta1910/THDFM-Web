@@ -5076,7 +5076,7 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   cursor: pointer;
   border-bottom-color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
-.classificacao-rod.positivo { color: var(--accent); font-weight: 700; }
+.classificacao-rod.positivo { color: #1f911b; font-weight: 700; }
 .classificacao-rod.negativo { color: #e74c3c; font-weight: 700; }
 .col-tip {
   position: relative;
