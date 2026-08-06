@@ -28,10 +28,14 @@ def lado_por_clube(
         return clube_casa_id
     if gols_casa < gols_fora:
         return "b" if clube_casa_id == "a" else "a"
-    if permite_empate:
-        return "empate"
+    
+    # A CORREÇÃO ESTÁ AQUI: Pênaltis avaliados ANTES do empate
     if penaltis_clube_id in ("a", "b"):
         return penaltis_clube_id
+        
+    if permite_empate:
+        return "empate"
+        
     return None
 
 
