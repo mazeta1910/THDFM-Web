@@ -4755,7 +4755,7 @@ tr.planilha-sem-palpite .planilha-num {
   font-weight: 700;
   line-height: 1;
 }
-.classificacao-table .pos-mov.up { color: var(--accent); }
+.classificacao-table .pos-mov.up { color: #1f911b; }
 .classificacao-table .pos-mov.down { color: #e74c3c; }
 
 /* Zebrado (como na planilha) + tinta da zona (regra de 3 / Brasileirão) */
