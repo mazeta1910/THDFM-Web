@@ -102,7 +102,6 @@
         class="{% if f.ativa and perna_ini == 'volta' %}active{% endif %}"
         {% if f.ativa and perna_ini == 'volta' %}aria-current="true"{% endif %}
         {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"
-        {% elif f.ativa and janela == 'ida' %}disabled title="Volta ainda não liberada"
         {% elif f.ativa and janela == 'fechado' %}disabled title="Palpites fechados"{% endif %}
       ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
     </div>
@@ -201,7 +200,7 @@
         {% set name_v = 'volta_' ~ c.id ~ '_v' %}
         {% set val_m = p_volta.gols_mandante if p_volta else '' %}
         {% set val_v = p_volta.gols_visitante if p_volta else '' %}
-        {% set readonly = janela != 'volta' or (volta and volta.travado) %}
+        {% set readonly = janela == 'fechado' or (volta and volta.travado) %}
         {% set inicio_lbl = formatar_inicio_jogo(volta.inicio_em) %}
         {% set travado_tag = 'Fechado' if volta.travado else none %}
         {% set confirmado = false %}
@@ -236,7 +235,7 @@
           'hidden': not p_pen,
           'clube_a': c.clube_a,
           'clube_b': c.clube_b,
-          'disabled': janela != 'volta' or (volta and volta.travado),
+          'disabled': janela == 'fechado' or (volta and volta.travado),
         } %}
         {% set admin_attrs = '' %}
         {% set classificado_preview = false %}
@@ -520,7 +519,7 @@
   }
 })();
 </script>
-{% if janela == 'volta' %}
+{% if janela != 'fechado' %}
 <script src="/static/palpites.js?v=198"></script>
 {% endif %}
 {% endblock %}
