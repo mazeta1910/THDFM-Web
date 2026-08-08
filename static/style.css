@@ -2613,9 +2613,42 @@ input[type="file"] {
   padding-top: 0.65rem;
   padding-bottom: 2.5rem;
 }
+.wrap.palpites-page .palpites-hello-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.1rem 0 0.35rem;
+  min-width: 0;
+}
 .wrap.palpites-page .palpites-hello {
   font-size: 1.2rem;
-  margin: 0.1rem 0 0.2rem;
+  margin: 0;
+  min-width: 0;
+  line-height: 1.25;
+}
+.wrap.palpites-page .palpites-hello-avatar,
+.wrap.palpites-page .palpites-hello-avatar-fallback {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 22%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.wrap.palpites-page .transparencia-nav-col.is-encerrada {
+  opacity: 0.55;
+}
+.wrap.palpites-page .transparencia-nav-col.is-encerrada .transparencia-nav-fase,
+.wrap.palpites-page .transparencia-nav-col.is-encerrada .transparencia-nav-pernas button {
+  cursor: not-allowed;
 }
 .wrap.palpites-page .palpites-lead {
   margin: 0 0 0.55rem;

@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% from "macros/emblema.html" import emblema %}
+{% from "macros/avatar.html" import avatar %}
 {% block title %}Palpites — {{ participante.nome }}{% endblock %}
 {% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
-<h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
+<div class="palpites-hello-row">
+  {{ avatar(participante.avatar_path, participante.nome, class_prefix="palpites-hello-avatar", alt="") }}
+  <h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
+</div>
 <p class="palpites-lead">Faça aqui os seus palpites. <strong class="palpites-save-hint">Lembre de salvar</strong> antes de sair da página.</p>
 {% if janela != 'fechado' %}
 <p class="palpites-trava-aviso" role="note">
@@ -67,29 +71,39 @@
 <section class="fases-panel is-collapsed" data-fases-collapse>
 {% include "partials/fases_panel_head.html" %}
 <div class="fases-panel-body">
+{% set perna_ini = perna_default|default('ida') %}
 <div class="transparencia-nav" id="palpites-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
-  <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
+  {% set fase_encerrada = f.encerrada|default(false) %}
+  {% set fase_bloqueada = (not f.unlocked) or fase_encerrada %}
+  <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %} {% if fase_encerrada %}is-encerrada{% endif %}" data-fase-col="{{ f.id }}">
     <button
       type="button"
       class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
       data-fase="{{ f.id }}"
-      {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
-    >{{ f.label }}</button>
+      {% if f.ativa %}aria-current="true"{% endif %}
+      {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"{% endif %}
+    >{{ f.label }}{% if fase_encerrada %} · fechada{% endif %}</button>
     <div class="transparencia-nav-pernas">
       <button
         type="button"
         data-fase="{{ f.id }}"
         data-tab="ida"
-        class="{% if f.ativa and janela != 'volta' %}active{% endif %}"
-        {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
+        class="{% if f.ativa and perna_ini == 'ida' %}active{% endif %}"
+        {% if f.ativa and perna_ini == 'ida' %}aria-current="true"{% endif %}
+        {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"
+        {% elif f.ativa and janela == 'volta' %}disabled title="Ida encerrada — palpites só na Volta"
+        {% elif f.ativa and janela == 'fechado' %}disabled title="Palpites fechados"{% endif %}
       ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
       <button
         type="button"
         data-fase="{{ f.id }}"
         data-tab="volta"
-        class="{% if f.ativa and janela == 'volta' %}active{% endif %}"
-        {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% elif janela == 'ida' %}disabled title="Volta ainda não liberada"{% endif %}
+        class="{% if f.ativa and perna_ini == 'volta' %}active{% endif %}"
+        {% if f.ativa and perna_ini == 'volta' %}aria-current="true"{% endif %}
+        {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"
+        {% elif f.ativa and janela == 'ida' %}disabled title="Volta ainda não liberada"
+        {% elif f.ativa and janela == 'fechado' %}disabled title="Palpites fechados"{% endif %}
       ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
     </div>
   </div>
@@ -122,9 +136,14 @@
     </div>
   </div>
 
+  {% elif f.encerrada|default(false) %}
+  <div class="card palpites-card">
+    <p class="locked-msg" style="margin:0">Fase encerrada. Os palpites desta etapa não podem mais ser alterados.</p>
+  </div>
+
   {% elif f.ativa %}
   <form method="post" action="/p/{{ participante.token }}/salvar" id="form-palpites" class="card palpites-card">
-    <div class="match-panel {% if janela == 'volta' %}hidden{% endif %}" data-panel="ida">
+    <div class="match-panel {% if perna_default|default('ida') != 'ida' %}hidden{% endif %}" data-panel="ida">
       {% if not confrontos %}
       <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
       {% else %}
@@ -161,7 +180,7 @@
       {% endif %}
     </div>
 
-    <div class="match-panel {% if janela != 'volta' %}hidden{% endif %}" data-panel="volta">
+    <div class="match-panel {% if perna_default|default('ida') != 'volta' %}hidden{% endif %}" data-panel="volta">
       {% if not confrontos %}
       <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
       {% else %}
