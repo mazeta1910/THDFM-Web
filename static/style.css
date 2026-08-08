@@ -3526,12 +3526,15 @@ html[data-theme="light"] .admin-main {
 .admin-match-grid.match-grid,
 .admin-resultados-form .match-grid.admin-match-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 220px));
+  justify-content: center;
+  justify-items: stretch;
   gap: 0.65rem;
   border: none;
   border-radius: 0;
   overflow: visible;
   background: transparent;
+  width: 100%;
 }
 .admin-match-grid .match-cell,
 .admin-resultados-form .admin-match-grid .match-cell {
