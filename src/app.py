@@ -466,6 +466,16 @@ def _perna_default_confrontos(confrontos: list) -> str:
     return "ida"
 
 
+def _volta_liberada(janela: str | None = None) -> bool:
+    """Volta liberada junto com a Ida — os confrontos da fase já são conhecidos.
+
+    A janela ``fechado`` ainda trava edição nos formulários; a aba Volta
+    permanece disponível para consulta.
+    """
+    j = janela if janela is not None else db.get_janela()
+    return j in ("ida", "volta", "fechado")
+
+
 def _admin_wants_json(request: Request) -> bool:
     accept = (request.headers.get("accept") or "").lower()
     return "application/json" in accept or request.query_params.get("format") == "json"
@@ -1343,7 +1353,7 @@ def transparencia(request: Request):
         fase = fase_atual
     # Fases futuras bloqueadas — igual Resultados / Meus Palpites
     janela = db.get_janela()
-    volta_liberada = janela != "ida"
+    volta_liberada = _volta_liberada(janela)
     perna_default = "volta" if janela == "volta" else "ida"
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
@@ -1392,7 +1402,7 @@ def admin_palpites(request: Request):
     if fase not in FASE_IDS:
         fase = fase_atual
     janela = db.get_janela()
-    volta_liberada = janela != "ida"
+    volta_liberada = _volta_liberada(janela)
     perna_default = "volta" if janela == "volta" else "ida"
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
@@ -1456,7 +1466,7 @@ def admin_cobranca(request: Request):
         )
 
     janela = db.get_janela()
-    volta_liberada = janela != "ida"
+    volta_liberada = _volta_liberada(janela)
     perna_default = "volta" if janela == "volta" else "ida"
     perna = request.query_params.get("perna") or perna_default
     if perna not in ("ida", "volta"):
@@ -2120,16 +2130,16 @@ async def salvar_palpites(request: Request, token: str):
             ida = next(j for j in c["jogos"] if j["perna"] == "ida")
             volta = next(j for j in c["jogos"] if j["perna"] == "volta")
 
+            # Ida editável só na janela "ida". Volta (e pênaltis) liberada
+            # junto — os confrontos da fase já são conhecidos.
             if janela == "ida":
                 gm = form.get(f"ida_{c['id']}_m")
                 gv = form.get(f"ida_{c['id']}_v")
-                if gm is None or gv is None or str(gm) == "" or str(gv) == "":
-                    continue
-                if jogo_palpite_travado(ida.get("inicio_em"), janela=janela):
-                    continue
-                db.salvar_palpite_jogo(part["id"], ida["id"], int(gm), int(gv))
+                if gm is not None and gv is not None and str(gm) != "" and str(gv) != "":
+                    if not jogo_palpite_travado(ida.get("inicio_em"), janela=janela):
+                        db.salvar_palpite_jogo(part["id"], ida["id"], int(gm), int(gv))
 
-            elif janela == "volta":
+            if janela in ("ida", "volta"):
                 gm = form.get(f"volta_{c['id']}_m")
                 gv = form.get(f"volta_{c['id']}_v")
                 if gm is None or gv is None or str(gm) == "" or str(gv) == "":
