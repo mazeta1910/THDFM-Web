@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS jogos (
     gols_visitante INTEGER,
     penaltis_clube_id TEXT CHECK (penaltis_clube_id IN ('a', 'b') OR penaltis_clube_id IS NULL),
     inicio_em TEXT,
+    confirmado_em TEXT,
     UNIQUE (confronto_id, perna)
 );
 
@@ -199,6 +200,8 @@ def _migrate_jogos(conn: sqlite3.Connection) -> None:
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(jogos)").fetchall()}
     if "inicio_em" not in cols:
         conn.execute("ALTER TABLE jogos ADD COLUMN inicio_em TEXT")
+    if "confirmado_em" not in cols:
+        conn.execute("ALTER TABLE jogos ADD COLUMN confirmado_em TEXT")
     for item in OITAVAS:
         ida = item.get("ida_em")
         if ida:
@@ -1547,8 +1550,20 @@ def get_jogo(jogo_id: int) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
-def set_inicio_jogo(jogo_id: int, inicio_em: str | None) -> None:
+def set_inicio_jogo(
+    jogo_id: int,
+    inicio_em: str | None,
+    *,
+    permitir_confirmado: bool = False,
+) -> None:
     with get_db() as conn:
+        row = conn.execute(
+            "SELECT confirmado_em FROM jogos WHERE id = ?", (jogo_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError("jogo não encontrado")
+        if not permitir_confirmado and (row["confirmado_em"] or "").strip():
+            raise ValueError("jogo confirmado — desfaça a confirmação para alterar")
         conn.execute(
             "UPDATE jogos SET inicio_em = ? WHERE id = ?",
             (inicio_em, jogo_id),
@@ -1689,18 +1704,70 @@ def classificados_da_fase(fase: str) -> list[dict[str, Any]]:
     return out
 
 
+def get_jogo(jogo_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM jogos WHERE id = ?", (jogo_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def jogo_confirmado(jogo: dict[str, Any] | None) -> bool:
+    if not jogo:
+        return False
+    return bool((jogo.get("confirmado_em") or "").strip())
+
+
 def set_resultado_jogo(
     jogo_id: int,
     gols_mandante: int,
     gols_visitante: int,
     penaltis_clube_id: str | None = None,
+    *,
+    permitir_confirmado: bool = False,
 ) -> None:
     with get_db() as conn:
+        row = conn.execute(
+            "SELECT confirmado_em FROM jogos WHERE id = ?", (jogo_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError("jogo não encontrado")
+        if not permitir_confirmado and (row["confirmado_em"] or "").strip():
+            raise ValueError("jogo confirmado — desfaça a confirmação para alterar")
         conn.execute(
             "UPDATE jogos SET gols_mandante = ?, gols_visitante = ?, penaltis_clube_id = ? "
             "WHERE id = ?",
             (gols_mandante, gols_visitante, penaltis_clube_id, jogo_id),
         )
+
+
+def confirmar_jogo(jogo_id: int) -> dict[str, Any]:
+    """Trava o placar oficial do jogo. Exige gols preenchidos."""
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM jogos WHERE id = ?", (jogo_id,)).fetchone()
+        if not row:
+            raise ValueError("jogo não encontrado")
+        if row["gols_mandante"] is None or row["gols_visitante"] is None:
+            raise ValueError("salve o placar antes de confirmar")
+        if (row["confirmado_em"] or "").strip():
+            return dict(row)
+        conn.execute(
+            "UPDATE jogos SET confirmado_em = datetime('now', 'localtime') WHERE id = ?",
+            (jogo_id,),
+        )
+        out = conn.execute("SELECT * FROM jogos WHERE id = ?", (jogo_id,)).fetchone()
+        return dict(out) if out else dict(row)
+
+
+def desfazer_confirmacao_jogo(jogo_id: int) -> dict[str, Any]:
+    """Reabre edição do placar oficial."""
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM jogos WHERE id = ?", (jogo_id,)).fetchone()
+        if not row:
+            raise ValueError("jogo não encontrado")
+        conn.execute(
+            "UPDATE jogos SET confirmado_em = NULL WHERE id = ?", (jogo_id,)
+        )
+        out = conn.execute("SELECT * FROM jogos WHERE id = ?", (jogo_id,)).fetchone()
+        return dict(out) if out else dict(row)
 
 
 def limpar_resultados_oficiais(*, fase: str, perna: str) -> int:
@@ -1713,13 +1780,13 @@ def limpar_resultados_oficiais(*, fase: str, perna: str) -> int:
             "JOIN confrontos c ON c.id = j.confronto_id "
             "WHERE c.fase = ? AND j.perna = ? "
             "AND (j.gols_mandante IS NOT NULL OR j.gols_visitante IS NOT NULL "
-            "OR j.penaltis_clube_id IS NOT NULL)",
+            "OR j.penaltis_clube_id IS NOT NULL OR j.confirmado_em IS NOT NULL)",
             (fase, perna),
         ).fetchall()
         n = len(rows)
         conn.execute(
             "UPDATE jogos SET gols_mandante = NULL, gols_visitante = NULL, "
-            "penaltis_clube_id = NULL "
+            "penaltis_clube_id = NULL, confirmado_em = NULL "
             "WHERE id IN ("
             "  SELECT j.id FROM jogos j "
             "  JOIN confrontos c ON c.id = j.confronto_id "

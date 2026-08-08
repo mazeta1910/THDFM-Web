@@ -58,6 +58,8 @@ def test_penaltis_usam_ida_oficial(client):
     c = confrontos[0]
     ida = next(j for j in c["jogos"] if j["perna"] == "ida")
     volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+    # Mantém a volta aberta para palpites (seed antigo pode já ter passado).
+    db.set_inicio_jogo(volta["id"], "2026-12-01 20:00")
     # Oficial Ida 1x0; usuário na ida tinha palpitado outra coisa
     db.set_resultado_jogo(ida["id"], 1, 0, None)
     db.salvar_palpite_jogo(part["id"], ida["id"], 3, 3)

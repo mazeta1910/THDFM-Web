@@ -133,22 +133,28 @@
         {% set ida = c.ida %}
         {% set p_ida = palpites_jogo.get(ida.id) if ida else none %}
         {% if ida %}
-        <div class="match-cell" data-confronto="{{ c.id }}">
-          {% set inicio_lbl = formatar_inicio_jogo(ida.inicio_em) %}
-          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if ida.travado %} · <span class="match-travado-tag">Fechado</span>{% endif %}</span>
-          <div class="match-teams">
-            <div class="match-team-row">
-              {{ emblema(c.clube_a) }}
-              <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
-              <input type="number" min="0" max="20" name="ida_{{ c.id }}_m" value="{{ p_ida.gols_mandante if p_ida else '' }}" {% if janela != 'ida' or (ida and ida.travado) %}readonly{% endif %} />
-            </div>
-            <div class="match-team-row">
-              {{ emblema(c.clube_b) }}
-              <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
-              <input type="number" min="0" max="20" name="ida_{{ c.id }}_v" value="{{ p_ida.gols_visitante if p_ida else '' }}" {% if janela != 'ida' or (ida and ida.travado) %}readonly{% endif %} />
-            </div>
-          </div>
-        </div>
+        {% set mode = 'palpite' %}
+        {% set jogo_num = loop.index %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_a %}
+        {% set clube_v = c.clube_b %}
+        {% set name_m = 'ida_' ~ c.id ~ '_m' %}
+        {% set name_v = 'ida_' ~ c.id ~ '_v' %}
+        {% set val_m = p_ida.gols_mandante if p_ida else '' %}
+        {% set val_v = p_ida.gols_visitante if p_ida else '' %}
+        {% set readonly = janela != 'ida' or (ida and ida.travado) %}
+        {% set inicio_lbl = formatar_inicio_jogo(ida.inicio_em) %}
+        {% set travado_tag = 'Fechado' if ida.travado else none %}
+        {% set confirmado = false %}
+        {% set jogo_id = none %}
+        {% set inicio_input_name = none %}
+        {% set ref_lines = none %}
+        {% set pen = none %}
+        {% set admin_attrs = '' %}
+        {% set classificado_preview = false %}
+        {% set volta_classes_m = '' %}
+        {% set volta_classes_v = '' %}
+        {% include "partials/match_cell.html" %}
         {% endif %}
         {% endfor %}
       </div>
@@ -167,71 +173,55 @@
         {% set p_volta = palpites_jogo.get(volta.id) if volta else none %}
         {% set p_pen = palpites_pen.get(c.id) %}
         {% if volta %}
-        <div class="match-cell" data-confronto="{{ c.id }}">
-          {% set inicio_lbl = formatar_inicio_jogo(volta.inicio_em) %}
-          <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ loop.index }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if volta.travado %} · <span class="match-travado-tag">Fechado</span>{% endif %}</span>
-          <div class="match-ref">
-            <span class="match-ref-line">
-              Seu palpite (Ida):
-              {% if p_ida %}
-              <span class="match-ref-score">
-                {{ emblema(c.clube_a) }}
-                <strong>{{ p_ida.gols_mandante }}</strong>
-                <span class="match-ref-x">x</span>
-                <strong>{{ p_ida.gols_visitante }}</strong>
-                {{ emblema(c.clube_b) }}
-              </span>
-              {% else %}
-              —
-              {% endif %}
-            </span>
-            <span class="match-ref-line match-ref-oficial">
-              Resultado Oficial (Ida):
-              {% if ida and ida.gols_mandante is not none %}
-              <span class="match-ref-score">
-                {{ emblema(c.clube_a) }}
-                <strong>{{ ida.gols_mandante }}</strong>
-                <span class="match-ref-x">x</span>
-                <strong>{{ ida.gols_visitante }}</strong>
-                {{ emblema(c.clube_b) }}
-              </span>
-              {% else %}
-              —
-              {% endif %}
-            </span>
-          </div>
-          <div class="match-teams">
-            <div class="match-team-row">
-              {{ emblema(c.clube_b) }}
-              <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
-              <input class="volta-m" type="number" min="0" max="20" name="volta_{{ c.id }}_m"
-                data-ida-a="{{ ida.gols_mandante if ida and ida.gols_mandante is not none else '' }}"
-                data-ida-b="{{ ida.gols_visitante if ida and ida.gols_visitante is not none else '' }}"
-                value="{{ p_volta.gols_mandante if p_volta else '' }}"
-                {% if janela != 'volta' or (volta and volta.travado) %}readonly{% endif %} />
-            </div>
-            <div class="match-team-row">
-              {{ emblema(c.clube_a) }}
-              <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
-              <input class="volta-v" type="number" min="0" max="20" name="volta_{{ c.id }}_v"
-                value="{{ p_volta.gols_visitante if p_volta else '' }}"
-                {% if janela != 'volta' or (volta and volta.travado) %}readonly{% endif %} />
-            </div>
-          </div>
-          <div class="pen-group {% if not p_pen %}hidden{% endif %}" data-pen="{{ c.id }}">
-            <p class="pen-group-title">Empate no agregado (oficial da Ida + seu palpite da Volta). Quem passa nos pênaltis?</p>
-            <div class="pen-group-choices">
-              <label class="pen-choice" title="{{ c.clube_a }}" aria-label="{{ c.clube_a }}">
-                <input type="radio" name="pen_{{ c.id }}" value="a" {% if p_pen and p_pen.penaltis_clube_id == 'a' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
-                {{ emblema(c.clube_a) }}
-              </label>
-              <label class="pen-choice" title="{{ c.clube_b }}" aria-label="{{ c.clube_b }}">
-                <input type="radio" name="pen_{{ c.id }}" value="b" {% if p_pen and p_pen.penaltis_clube_id == 'b' %}checked{% endif %} {% if janela != 'volta' or (volta and volta.travado) %}disabled{% endif %} />
-                {{ emblema(c.clube_b) }}
-              </label>
-            </div>
-          </div>
-        </div>
+        {% set mode = 'palpite' %}
+        {% set jogo_num = loop.index %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_b %}
+        {% set clube_v = c.clube_a %}
+        {% set name_m = 'volta_' ~ c.id ~ '_m' %}
+        {% set name_v = 'volta_' ~ c.id ~ '_v' %}
+        {% set val_m = p_volta.gols_mandante if p_volta else '' %}
+        {% set val_v = p_volta.gols_visitante if p_volta else '' %}
+        {% set readonly = janela != 'volta' or (volta and volta.travado) %}
+        {% set inicio_lbl = formatar_inicio_jogo(volta.inicio_em) %}
+        {% set travado_tag = 'Fechado' if volta.travado else none %}
+        {% set confirmado = false %}
+        {% set jogo_id = none %}
+        {% set inicio_input_name = none %}
+        {% set volta_classes_m = 'volta-m' %}
+        {% set volta_classes_v = 'volta-v' %}
+        {% set data_ida_a = ida.gols_mandante if ida and ida.gols_mandante is not none else '' %}
+        {% set data_ida_b = ida.gols_visitante if ida and ida.gols_visitante is not none else '' %}
+        {% set ref_lines = [
+          {
+            'label': 'Seu palpite (Ida):',
+            'oficial': false,
+            'gols_m': p_ida.gols_mandante if p_ida else none,
+            'gols_v': p_ida.gols_visitante if p_ida else none,
+            'clube_a': c.clube_a,
+            'clube_b': c.clube_b,
+          },
+          {
+            'label': 'Resultado Oficial (Ida):',
+            'oficial': true,
+            'gols_m': ida.gols_mandante if ida else none,
+            'gols_v': ida.gols_visitante if ida else none,
+            'clube_a': c.clube_a,
+            'clube_b': c.clube_b,
+          },
+        ] %}
+        {% set pen = {
+          'name': 'pen_' ~ c.id,
+          'checked': p_pen.penaltis_clube_id if p_pen else none,
+          'title': 'Empate no agregado (oficial da Ida + seu palpite da Volta). Quem passa nos pênaltis?',
+          'hidden': not p_pen,
+          'clube_a': c.clube_a,
+          'clube_b': c.clube_b,
+          'disabled': janela != 'volta' or (volta and volta.travado),
+        } %}
+        {% set admin_attrs = '' %}
+        {% set classificado_preview = false %}
+        {% include "partials/match_cell.html" %}
         {% endif %}
         {% endfor %}
       </div>
