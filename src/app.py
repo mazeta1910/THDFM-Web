@@ -1654,6 +1654,7 @@ def classificacao(request: Request):
     perfis = hall_data.get("perfis") or {}
     for pid, perfil in perfis.items():
         perfil["resumo_rodadas"] = resumo_por_id.get(int(pid), [])
+        perfil["avatar_url"] = avatar_url(perfil.get("avatar_path"))
     return render(
         request,
         "classificacao.html",
