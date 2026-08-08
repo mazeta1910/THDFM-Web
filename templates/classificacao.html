@@ -406,8 +406,55 @@
       const v = Number(n) || 0;
       return (v > 0 ? "+" : "") + v;
     };
+    const esc = (s) => String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+    const iniciais = (nome) => {
+      const parts = String(nome || "").trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return "?";
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
+    const avatarHtml = p.avatar_url
+      ? `<img class="ficha-rodadas-avatar" src="${esc(p.avatar_url)}" alt="" />`
+      : `<span class="ficha-rodadas-avatar ficha-rodadas-avatar-fallback">${esc(iniciais(p.nome))}</span>`;
+
+    const jogosHtml = (jogos) => {
+      if (!jogos || !jogos.length) {
+        return `<p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>`;
+      }
+      return jogos.map((j) => {
+        const real = `${j.real_m}×${j.real_v}`;
+        let tip;
+        if (j.sem_palpite) tip = "Sem palpite";
+        else tip = `Palpite ${j.palpite_m}×${j.palpite_v}`;
+        const ptsCls = Number(j.pts) > 0 ? "" : " is-zero";
+        const ptsLab = Number(j.pts) > 0 ? fmtPts(j.pts) : "0";
+        const br = j.sem_palpite
+          ? ""
+          : `<div class="ficha-jogo-breakdown">` +
+            `<span>Plc <b>${j.placar || 0}</b></span>` +
+            `<span>Ven <b>${j.vencedor || 0}</b></span>` +
+            `<span>GC <b>${j.gols_casa || 0}</b></span>` +
+            `<span>GF <b>${j.gols_fora || 0}</b></span>` +
+            `</div>`;
+        return (
+          `<div class="ficha-jogo">` +
+          `<div class="ficha-jogo-times">` +
+          `<span class="ficha-jogo-placar">${esc(j.casa)} ${real} ${esc(j.fora)}</span>` +
+          `<small>${esc(tip)}</small>` +
+          `</div>` +
+          `<span class="ficha-jogo-pts${ptsCls}">${ptsLab}</span>` +
+          br +
+          `</div>`
+        );
+      }).join("");
+    };
+
     const rodadas = (p.resumo_rodadas || [])
-      .map((r) => {
+      .map((r, idx) => {
         const meta = [r.fase_label_curta || r.fase_label, r.janela_label].filter(Boolean).join(" · ");
         const pos = r.posicao != null ? `${r.posicao}º` : "—";
         let mov = "";
@@ -418,27 +465,32 @@
             : `<span class="ficha-rodada-mov down">▼${Math.abs(m)}</span>`;
         }
         const rotulo = r.rotulo_curto || r.rotulo || "Rodada";
+        const open = idx === 0 ? " is-open" : "";
+        const expanded = idx === 0 ? "true" : "false";
         return (
-          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}">` +
+          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}${open}" data-ficha-rodada>` +
+          `<button type="button" class="ficha-rodada-toggle" aria-expanded="${expanded}">` +
           `<span class="ficha-rodada-titulo">` +
-          `<span class="ficha-rodada-rotulo-full">${r.rotulo || "Rodada"}</span>` +
-          `<span class="ficha-rodada-rotulo-short">${rotulo}</span>` +
-          (meta ? `<span class="ficha-rodada-meta">${meta}</span>` : "") +
+          `<span class="ficha-rodada-rotulo-line">` +
+          `<span class="ficha-rodada-chev" aria-hidden="true"></span>` +
+          `<span class="ficha-rodada-rotulo-full">${esc(r.rotulo || "Rodada")}</span>` +
+          `<span class="ficha-rodada-rotulo-short">${esc(rotulo)}</span>` +
+          `</span>` +
+          (meta ? `<span class="ficha-rodada-meta">${esc(meta)}</span>` : "") +
           `</span>` +
           `<span class="ficha-rodada-nums" aria-label="Pontuação da rodada">` +
           `<span class="ficha-rodada-stat" title="Pontos na rodada">` +
-          `<span class="ficha-rodada-lab">Rod</span>` +
           `<span class="ficha-rodada-rod">${fmtPts(r.rod)}</span>` +
           `</span>` +
           `<span class="ficha-rodada-stat" title="Pontuação total">` +
-          `<span class="ficha-rodada-lab">Pts</span>` +
           `<span class="ficha-rodada-soma">${r.soma}</span>` +
           `</span>` +
           `<span class="ficha-rodada-stat" title="Colocação">` +
-          `<span class="ficha-rodada-lab">#</span>` +
           `<span class="ficha-rodada-pos">${pos}${mov}</span>` +
           `</span>` +
           `</span>` +
+          `</button>` +
+          `<div class="ficha-rodada-jogos">${jogosHtml(r.jogos)}</div>` +
           `</li>`
         );
       })
@@ -446,6 +498,10 @@
     const resumo = rodadas
       ? `<section class="ficha-rodadas-resumo" aria-label="Resumo das rodadas">` +
         `<h3 class="ficha-rodadas-resumo-title">Resumo das rodadas</h3>` +
+        `<div class="ficha-rodadas-head">` +
+        `<div class="ficha-rodadas-who">${avatarHtml}<span class="ficha-rodadas-nome">${esc(p.nome || "")}</span></div>` +
+        `<div class="ficha-rodadas-cols" aria-hidden="true"><span>Rod</span><span>Pts</span><span>#</span></div>` +
+        `</div>` +
         `<ul class="ficha-rodadas-lista">${rodadas}</ul>` +
         `</section>`
       : "";
@@ -482,9 +538,21 @@
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 
+  const bindRodadas = () => {
+    body.querySelectorAll("[data-ficha-rodada]").forEach((el) => {
+      const btn = el.querySelector(".ficha-rodada-toggle");
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        const openNow = el.classList.toggle("is-open");
+        btn.setAttribute("aria-expanded", openNow ? "true" : "false");
+      });
+    });
+  };
+
   const open = (id) => {
     const p = perfis[String(id)] || perfis[id];
     body.innerHTML = render(p);
+    bindRodadas();
     if (sub) sub.textContent = p && p.nome ? p.nome : "Ficha individual";
     if (card) card.setAttribute("data-export-slug", p && p.nome ? "ficha-" + slugify(p.nome) : "ficha");
     if (typeof dialog.showModal === "function") dialog.showModal();

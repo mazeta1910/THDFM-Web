@@ -260,13 +260,14 @@ def serializar_linhas_historico(linhas: list[dict]) -> list[dict]:
 
 def confirmar_rodada() -> dict:
     """Arquiva a tabela atual e atualiza o baseline da próxima rodada."""
-    from src.db import append_rodada_historico, get_janela, get_meta, save_snapshot
+    from src.db import append_rodada_historico, get_meta, save_snapshot
 
     linhas = calcular_classificacao()
+    fase = get_meta("fase_atual", "oitavas") or "oitavas"
     hist = append_rodada_historico(
         linhas=serializar_linhas_historico(linhas),
-        fase=get_meta("fase_atual", "oitavas") or "oitavas",
-        janela=get_janela(),
+        fase=fase,
+        janela=janela_para_nova_rodada(fase),
     )
     save_snapshot(snapshot_atual(linhas))
     return hist
@@ -317,6 +318,7 @@ def _entrada_resumo_rodada(
     linha: dict | None,
     ao_vivo: bool = False,
     numero: int | None = None,
+    jogos: list[dict] | None = None,
 ) -> dict:
     if ao_vivo:
         rotulo_curto = "Ao vivo"
@@ -337,7 +339,125 @@ def _entrada_resumo_rodada(
         "posicao": int(linha["posicao"]) if linha and linha.get("posicao") is not None else None,
         "movimento": linha.get("movimento") if linha else None,
         "ao_vivo": ao_vivo,
+        "jogos": jogos or [],
     }
+
+
+def _janela_inferida_na_fase(fase: str, indice_na_fase: int, janela_gravada: str) -> str:
+    """1ª rodada da fase → Ida; 2ª → Volta; demais mantêm o gravado."""
+    if indice_na_fase <= 0:
+        return "ida"
+    if indice_na_fase == 1:
+        return "volta"
+    return janela_gravada if janela_gravada in ("ida", "volta") else "volta"
+
+
+def _rodada_historico_vazia(rod: dict) -> bool:
+    """True se ninguém pontuou na rodada (fechamento fantasma)."""
+    linhas = rod.get("linhas") or []
+    if not linhas:
+        return True
+    return all(int(r.get("rod") or 0) == 0 for r in linhas)
+
+
+def _jogos_detalhe_participante(
+    participante_id: int,
+    *,
+    fase: str,
+    perna: str,
+) -> list[dict]:
+    """Pontos jogo a jogo do participante na fase/perna (resultados oficiais)."""
+    from src.db import list_confrontos_completos, palpites_do_participante
+
+    if perna not in ("ida", "volta") or not fase:
+        return []
+    palpites = palpites_do_participante(participante_id)
+    out: list[dict] = []
+    for c in list_confrontos_completos(fase):
+        jogo = _jogo_por_perna(c, perna)
+        if not jogo:
+            continue
+        if jogo.get("gols_mandante") is None or jogo.get("gols_visitante") is None:
+            continue
+        real_m = int(jogo["gols_mandante"])
+        real_v = int(jogo["gols_visitante"])
+        # Na volta o mandante é o clube B.
+        if perna == "volta":
+            casa_nome = c.get("clube_b") or "?"
+            fora_nome = c.get("clube_a") or "?"
+        else:
+            casa_nome = c.get("clube_a") or "?"
+            fora_nome = c.get("clube_b") or "?"
+        pj = palpites["jogos"].get(jogo["id"])
+        if not pj:
+            out.append(
+                {
+                    "casa": casa_nome,
+                    "fora": fora_nome,
+                    "real_m": real_m,
+                    "real_v": real_v,
+                    "palpite_m": None,
+                    "palpite_v": None,
+                    "pts": 0,
+                    "placar": 0,
+                    "vencedor": 0,
+                    "gols_casa": 0,
+                    "gols_fora": 0,
+                    "sem_palpite": True,
+                }
+            )
+            continue
+        det = pontos_detalhados(
+            int(pj["gols_mandante"]),
+            int(pj["gols_visitante"]),
+            real_m,
+            real_v,
+            fase=fase,
+            clube_casa_id=jogo.get("mandante_clube_id") or "a",
+            palpite_penaltis=None,
+            real_penaltis=None,
+            permite_empate=True,
+        )
+        out.append(
+            {
+                "casa": casa_nome,
+                "fora": fora_nome,
+                "real_m": real_m,
+                "real_v": real_v,
+                "palpite_m": int(pj["gols_mandante"]),
+                "palpite_v": int(pj["gols_visitante"]),
+                "pts": int(det.total),
+                "placar": int(det.placar),
+                "vencedor": int(det.vencedor),
+                "gols_casa": int(det.gols_casa),
+                "gols_fora": int(det.gols_fora),
+                "sem_palpite": False,
+            }
+        )
+    return out
+
+
+def janela_para_nova_rodada(fase: str | None = None) -> str:
+    """Janela gravada ao confirmar: 1ª da fase = ida, 2ª = volta.
+
+    Conta só rodadas com pontuação (ignora fechamentos fantasma).
+    """
+    from src.db import get_janela, get_meta, get_rodada_historico, list_rodadas_historico
+
+    fase_ref = fase or get_meta("fase_atual", "oitavas") or "oitavas"
+    n = 0
+    for h in list_rodadas_historico():
+        if (h.get("fase") or "") != fase_ref:
+            continue
+        full = get_rodada_historico(int(h["id"]))
+        if full and not _rodada_historico_vazia(full):
+            n += 1
+    if n <= 0:
+        return "ida"
+    if n == 1:
+        return "volta"
+    j = get_janela()
+    return j if j in ("ida", "volta") else "volta"
 
 
 def resumo_pontuacao_por_participante(
@@ -346,7 +466,9 @@ def resumo_pontuacao_por_participante(
     """Histórico de pontuação por rodada confirmada + situação ao vivo.
 
     Devolve ``{participante_id: [entrada, ...]}`` em ordem cronológica.
-    Cada entrada traz rótulo da rodada, fase/janela, pts da rodada, soma e posição.
+    Cada entrada traz rótulo, fase/perna (Ida/Volta inferida), pts, soma,
+    posição e lista ``jogos`` (detalhe jogo a jogo). Rodadas confirmadas
+    sem pontuação de ninguém são omitidas.
     """
     from src.db import get_janela, get_meta, get_rodada_historico, list_rodadas_historico
 
@@ -355,14 +477,24 @@ def resumo_pontuacao_por_participante(
     rodadas: list[dict] = []
     for meta in historico_meta:
         full = get_rodada_historico(int(meta["id"]))
-        if full:
+        if full and not _rodada_historico_vazia(full):
             rodadas.append(full)
+
+    # Índice da rodada dentro da fase (para Ida/Volta corretos).
+    indice_na_fase: dict[int, int] = {}
+    contagem_fase: dict[str, int] = {}
+    for rod in rodadas:
+        f = rod.get("fase") or ""
+        indice_na_fase[int(rod["id"])] = contagem_fase.get(f, 0)
+        contagem_fase[f] = contagem_fase.get(f, 0) + 1
 
     fase_atual = get_meta("fase_atual", "oitavas") or "oitavas"
     janela_atual = get_janela()
+    if janela_atual not in ("ida", "volta"):
+        janela_atual = "ida"
 
     out: dict[int, list[dict]] = {}
-    # Índice por id a partir do ao vivo (fonte mais completa de ids)
+
     for row in ao_vivo:
         pid = row.get("participante_id")
         if pid is None:
@@ -376,14 +508,20 @@ def resumo_pontuacao_por_participante(
                 participante_id=pid,
                 nome=nome,
             )
+            fase_r = rod.get("fase") or ""
+            idx = indice_na_fase.get(int(rod["id"]), 0)
+            janela_r = _janela_inferida_na_fase(fase_r, idx, rod.get("janela") or "")
             entradas.append(
                 _entrada_resumo_rodada(
                     rotulo=rod.get("rotulo") or f"Rodada {rod.get('numero')}",
-                    fase=rod.get("fase") or "",
-                    janela=rod.get("janela") or "",
+                    fase=fase_r,
+                    janela=janela_r,
                     linha=linha,
                     ao_vivo=False,
                     numero=rod.get("numero"),
+                    jogos=_jogos_detalhe_participante(
+                        pid, fase=fase_r, perna=janela_r
+                    ),
                 )
             )
         entradas.append(
@@ -393,6 +531,9 @@ def resumo_pontuacao_por_participante(
                 janela=janela_atual,
                 linha=row,
                 ao_vivo=True,
+                jogos=_jogos_detalhe_participante(
+                    pid, fase=fase_atual, perna=janela_atual
+                ),
             )
         )
         out[pid] = entradas

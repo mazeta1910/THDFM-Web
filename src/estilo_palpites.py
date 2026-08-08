@@ -383,8 +383,14 @@ def _melhor_grupo(
 
 
 def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
-    """Monta Hall + mapa de perfis para a ficha."""
-    u = _carregar_universo(fase)
+    """Monta Hall + mapa de perfis para a ficha.
+
+    Carrega jogos de **todas** as fases para o Perfil não zerar ao avançar
+    (ex.: Quartas ainda sem confrontos). O parâmetro ``fase`` fica só por
+    compatibilidade de chamada.
+    """
+    _ = fase  # universo completo — ver docstring
+    u = _carregar_universo(None)
     consenso = consenso_por_jogo(u)
     perfis = [
         _perfil_de(p, jogos=u["jogos"], cache_palp=u["cache"][p["id"]], consenso=consenso)
