@@ -446,9 +446,29 @@ def _enrich_confrontos(confrontos: list, *, janela: str | None = None) -> list:
         c["volta"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "volta"), None)
         if c["ida"] is not None:
             c["ida"]["travado"] = jogo_palpite_travado(c["ida"].get("inicio_em"), janela=j)
+            c["ida"]["confirmado"] = db.jogo_confirmado(c["ida"])
         if c["volta"] is not None:
             c["volta"]["travado"] = jogo_palpite_travado(c["volta"].get("inicio_em"), janela=j)
+            c["volta"]["confirmado"] = db.jogo_confirmado(c["volta"])
     return confrontos
+
+
+def _perna_default_confrontos(confrontos: list) -> str:
+    """Volta se todos os jogos de ida da fase já têm placar oficial."""
+    idas = [c.get("ida") for c in confrontos if c.get("ida")]
+    if not idas:
+        return "ida"
+    if all(
+        j.get("gols_mandante") is not None and j.get("gols_visitante") is not None
+        for j in idas
+    ):
+        return "volta"
+    return "ida"
+
+
+def _admin_wants_json(request: Request) -> bool:
+    accept = (request.headers.get("accept") or "").lower()
+    return "application/json" in accept or request.query_params.get("format") == "json"
 
 
 def _taxa_ctx() -> dict:
@@ -2242,6 +2262,11 @@ def admin_home(request: Request):
         f["id"]: _enrich_confrontos(db.list_confrontos_completos(f["id"]))
         for f in FASES
     }
+    perna_default_por_fase = {
+        f["id"]: _perna_default_confrontos(confrontos_por_fase.get(f["id"]) or [])
+        for f in FASES
+    }
+    perna_default = perna_default_por_fase.get(fase_atual, "ida")
     arvore_fases = []
     for f in FASES:
         if f["id"] == "oitavas":
@@ -2249,6 +2274,11 @@ def admin_home(request: Request):
         origem = fase_anterior(f["id"])
         classificados = db.classificados_da_fase(origem) if origem else []
         n_chaves = int(f["slots"])
+        existentes = confrontos_por_fase.get(f["id"]) or []
+        pronto = len(classificados) >= n_chaves * 2
+        # Só mostra bloco com ação possível (montar/remontar) ou já cadastrado.
+        if not pronto and not existentes:
+            continue
         arvore_fases.append(
             {
                 "fase": f,
@@ -2256,8 +2286,8 @@ def admin_home(request: Request):
                 "classificados": classificados,
                 "n_chaves": n_chaves,
                 "n_clubes": n_chaves * 2,
-                "pronto": len(classificados) >= n_chaves * 2,
-                "existentes": confrontos_por_fase.get(f["id"]) or [],
+                "pronto": pronto,
+                "existentes": existentes,
             }
         )
     return render(
@@ -2268,6 +2298,8 @@ def admin_home(request: Request):
         fase_atual=fase_atual,
         fases=fases_ui,
         confrontos_por_fase=confrontos_por_fase,
+        perna_default=perna_default,
+        perna_default_por_fase=perna_default_por_fase,
         arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         participantes=db.list_participantes(),
@@ -2713,7 +2745,20 @@ def admin_resultado(
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     pen = penaltis_clube_id if penaltis_clube_id in ("a", "b") else None
-    db.set_resultado_jogo(jogo_id, gols_mandante, gols_visitante, pen)
+    try:
+        db.set_resultado_jogo(jogo_id, gols_mandante, gols_visitante, pen)
+    except ValueError as e:
+        if _admin_wants_json(request):
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse({"ok": False, "erro": str(e)}, status_code=400)
+        return RedirectResponse(
+            f"/admin?erro={str(e).replace(' ', '+')}", status_code=303
+        )
+    if _admin_wants_json(request):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse({"ok": True, "msg": "Resultado salvo"})
     return RedirectResponse("/admin?msg=Resultado+salvo", status_code=303)
 
 
@@ -2722,43 +2767,121 @@ async def admin_resultados(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     from src.seed_data import normalizar_inicio_em
+    from fastapi.responses import JSONResponse
+    from urllib.parse import quote
 
     form = await request.form()
     fase = str(form.get("fase") or db.get_fase_atual())
+    perna = str(form.get("perna") or "").strip().lower()
     if fase not in FASE_IDS:
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": "Fase inválida"}, status_code=400)
         return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
+    if perna and perna not in ("ida", "volta"):
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": "Perna inválida"}, status_code=400)
+        return RedirectResponse("/admin?erro=Perna+invalida", status_code=303)
     confrontos = db.list_confrontos_completos(fase)
     salvos = 0
     horarios = 0
+    ignorados_confirmados = 0
     try:
         for c in confrontos:
             for jogo in c.get("jogos") or []:
+                if perna and jogo.get("perna") != perna:
+                    continue
                 jid = jogo["id"]
+                confirmado = db.jogo_confirmado(jogo)
                 inicio_raw = form.get(f"jogo_{jid}_inicio")
                 if inicio_raw is not None:
                     novo = normalizar_inicio_em(str(inicio_raw) if inicio_raw != "" else None)
                     atual = jogo.get("inicio_em") or None
                     if (novo or None) != (atual or None):
-                        db.set_inicio_jogo(jid, novo)
-                        horarios += 1
+                        if confirmado:
+                            ignorados_confirmados += 1
+                        else:
+                            db.set_inicio_jogo(jid, novo)
+                            horarios += 1
                 gm = form.get(f"jogo_{jid}_m")
                 gv = form.get(f"jogo_{jid}_v")
                 if gm is None or gv is None or str(gm) == "" or str(gv) == "":
+                    continue
+                if confirmado:
+                    ignorados_confirmados += 1
                     continue
                 pen_raw = form.get(f"jogo_{jid}_pen") or ""
                 pen = pen_raw if pen_raw in ("a", "b") else None
                 db.set_resultado_jogo(jid, int(gm), int(gv), pen)
                 salvos += 1
-    except ValueError:
-        return RedirectResponse("/admin?erro=Placar+invalido", status_code=303)
+    except ValueError as e:
+        msg = str(e) or "Placar inválido"
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": msg}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(msg)}", status_code=303)
     if salvos == 0 and horarios == 0:
-        return RedirectResponse("/admin?erro=Nenhum+resultado+para+salvar", status_code=303)
+        erro = (
+            "Nenhum resultado editável para salvar"
+            if ignorados_confirmados
+            else "Nenhum resultado para salvar"
+        )
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": erro}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(erro)}", status_code=303)
     bits = []
     if salvos:
-        bits.append(f"{salvos}+resultado(s)")
+        bits.append(f"{salvos} resultado(s)")
     if horarios:
-        bits.append(f"{horarios}+horario(s)")
-    return RedirectResponse(f"/admin?msg={'+'.join(bits)}+salvo(s)", status_code=303)
+        bits.append(f"{horarios} horario(s)")
+    msg = " + ".join(bits) + " salvo(s)"
+    if _admin_wants_json(request):
+        return JSONResponse(
+            {
+                "ok": True,
+                "msg": msg,
+                "salvos": salvos,
+                "horarios": horarios,
+                "ignorados_confirmados": ignorados_confirmados,
+            }
+        )
+    return RedirectResponse(f"/admin?msg={quote(msg)}", status_code=303)
+
+
+@app.post("/admin/jogo/{jogo_id}/confirmar")
+def admin_confirmar_jogo(request: Request, jogo_id: int):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from fastapi.responses import JSONResponse
+    from urllib.parse import quote
+
+    try:
+        db.confirmar_jogo(jogo_id)
+    except ValueError as e:
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": str(e)}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(str(e))}", status_code=303)
+    if _admin_wants_json(request):
+        return JSONResponse({"ok": True, "msg": "Jogo confirmado", "jogo_id": jogo_id})
+    return RedirectResponse("/admin?msg=Jogo+confirmado", status_code=303)
+
+
+@app.post("/admin/jogo/{jogo_id}/desfazer-confirmacao")
+def admin_desfazer_confirmacao_jogo(request: Request, jogo_id: int):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from fastapi.responses import JSONResponse
+    from urllib.parse import quote
+
+    try:
+        db.desfazer_confirmacao_jogo(jogo_id)
+    except ValueError as e:
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": str(e)}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(str(e))}", status_code=303)
+    if _admin_wants_json(request):
+        return JSONResponse(
+            {"ok": True, "msg": "Confirmação desfeita", "jogo_id": jogo_id}
+        )
+    return RedirectResponse("/admin?msg=Confirmacao+desfeita", status_code=303)
 
 
 @app.post("/admin/arvore/montar")
@@ -2817,6 +2940,12 @@ async def admin_arvore_montar(request: Request):
                 }
             )
         db.substituir_confrontos_fase(fase, pares)
+        # Liberar a fase montada (substitui o card "Fase liberada").
+        atual = db.get_fase_atual()
+        if fase in FASE_IDS and atual in FASE_IDS:
+            if FASE_IDS.index(fase) > FASE_IDS.index(atual):
+                db.set_fase_atual(fase)
+                db.set_janela("ida")
     except ValueError as e:
         from urllib.parse import quote
 

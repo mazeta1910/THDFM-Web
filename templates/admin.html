@@ -98,125 +98,9 @@
 {%- endmacro %}
 
     <section class="admin-panel{% if admin_sec != 'inscricoes' %} active{% endif %}" data-panel="resultados">
-      <div class="admin-grid-2 admin-ops-grid" style="margin-bottom:1rem">
-        <div class="card card-with-tip admin-op-card">
-          <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: janela de palpites">
-            ?
-            <span class="help-tip-bubble" role="tooltip">
-              Controla o que o participante pode editar em Meus Palpites: <strong>ida</strong> (só jogo 1), <strong>volta</strong> (ida congelada + jogo 2) ou <strong>fechado</strong> (sem edição). Com horário no jogo, o palpite trava sozinho {{ trava_antes_min|default(30) }}&nbsp;min antes do apito.
-            </span>
-          </span>
-          <h2>Janela de palpites</h2>
-          <form method="post" action="/admin/janela" id="form-janela" class="admin-op-form">
-            <div class="select-wrap">
-              <select name="janela" id="select-janela">
-                {% for j in janelas %}
-                <option value="{{ j }}" {% if j == janela %}selected{% endif %}>{{ j|capitalize }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <button type="button" id="btn-atualizar-janela">Atualizar janela</button>
-          </form>
-        </div>
-        <div class="card card-with-tip admin-op-card">
-          <span class="help-tip" tabindex="0" role="img" aria-label="Ajuda: fase liberada">
-            ?
-            <span class="help-tip-bubble" role="tooltip">
-              Define até qual etapa da Copa o bolão está aberto (oitavas, quartas, semi, final). Fases acima ficam bloqueadas nos palpites e nos resultados até você liberar a próxima.
-            </span>
-          </span>
-          <h2>Fase liberada</h2>
-          <form method="post" action="/admin/fase" id="form-fase" class="admin-op-form">
-            <div class="select-wrap">
-              <select name="fase" id="select-fase">
-                {% for f in fases %}
-                <option value="{{ f.id }}" {% if f.id == fase_atual %}selected{% endif %}>{{ f.label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <button type="button" id="btn-atualizar-fase">Atualizar fase</button>
-          </form>
-        </div>
-      </div>
-
-      <div class="card admin-arvore-card" id="admin-arvore">
-        <h2>Árvore / próxima fase</h2>
-        <p class="admin-arvore-lead">
-          Monte os confrontos após o sorteio (quartas, semis, final). Defina também data/hora —
-          os palpites travam automaticamente {{ trava_antes_min|default(30) }}&nbsp;min antes de cada jogo.
-        </p>
-        {% for bloco in arvore_fases|default([]) %}
-        <section class="admin-arvore-fase" data-arvore-fase="{{ bloco.fase.id }}">
-          <h3>{{ bloco.fase.label }}</h3>
-          {% if bloco.existentes %}
-          <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase.</p>
-          <ul class="admin-arvore-existentes">
-            {% for c in bloco.existentes %}
-            <li>{{ c.clube_a }} × {{ c.clube_b }}</li>
-            {% endfor %}
-          </ul>
-          {% endif %}
-          {% if not bloco.pronto %}
-          <p class="locked-msg">
-            Aguardando classificados de {{ bloco.origem }} —
-            {{ bloco.classificados|length }}/{{ bloco.n_clubes }} definidos (placar oficial completo + pênaltis se houver).
-          </p>
-          {% else %}
-          <p class="admin-arvore-pool">
-            Classificados ({{ bloco.classificados|length }}):
-            {% for c in bloco.classificados %}
-            <span class="admin-arvore-chip">{{ emblema(c.clube) }} {{ c.clube }}</span>
-            {% endfor %}
-          </p>
-          <form method="post" action="/admin/arvore/montar" class="admin-arvore-form">
-            <input type="hidden" name="fase" value="{{ bloco.fase.id }}" />
-            <div class="admin-arvore-chaves">
-              {% for i in range(bloco.n_chaves) %}
-              <div class="admin-arvore-chave">
-                <span class="planilha-jogo-tag">Chave {{ i + 1 }}</span>
-                <label>
-                  Mandante Ida
-                  <select name="chave_{{ i }}_a" required>
-                    <option value="">—</option>
-                    {% for c in bloco.classificados %}
-                    <option value="{{ c.clube }}">{{ c.clube }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-                <label>
-                  Visitante Ida
-                  <select name="chave_{{ i }}_b" required>
-                    <option value="">—</option>
-                    {% for c in bloco.classificados %}
-                    <option value="{{ c.clube }}">{{ c.clube }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-                <label>
-                  Ida · data/hora
-                  <input type="datetime-local" name="chave_{{ i }}_ida" />
-                </label>
-                <label>
-                  Volta · data/hora
-                  <input type="datetime-local" name="chave_{{ i }}_volta" />
-                </label>
-              </div>
-              {% endfor %}
-            </div>
-            <button type="submit">
-              {% if bloco.existentes %}Remontar {{ bloco.fase.label }}{% else %}Confirmar {{ bloco.fase.label }}{% endif %}
-            </button>
-          </form>
-          {% endif %}
-        </section>
-        {% else %}
-        <p class="locked-msg">Nenhuma fase seguinte para montar.</p>
-        {% endfor %}
-      </div>
-
       <div class="placares-head">
         <h2>Placares oficiais</h2>
-        <div class="placares-actions">
+        <div class="placares-actions" id="placares-sticky-actions">
           <form
             method="post"
             action="/admin/zerar-resultados"
@@ -224,24 +108,24 @@
             id="form-zerar-resultados"
           >
             <input type="hidden" name="fase" id="zerar-fase" value="{{ fase_atual }}" />
-            <input type="hidden" name="perna" id="zerar-perna" value="ida" />
-            <button type="button" class="secondary placares-action-btn placares-btn-icon" id="btn-zerar-resultados">
+            <input type="hidden" name="perna" id="zerar-perna" value="{{ perna_default|default('ida') }}" />
+            <button type="button" class="secondary placares-action-btn placares-btn-icon placares-btn-zerar" id="btn-zerar-resultados" title="Zerar placares da perna" aria-label="Zerar placares">
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6M14 11v6" />
                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
-              <span id="btn-zerar-label">Zerar placares Ida (Oitavas)</span>
+              <span id="btn-zerar-label" class="placares-btn-text">Zerar</span>
             </button>
           </form>
-          <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" id="btn-salvar-placares" title="Salvar placares" aria-label="Salvar todos os placares">
+          <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" id="btn-salvar-placares" title="Salvar placares da perna" aria-label="Salvar placares">
             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
-            <span>Salvar placares</span>
+            <span class="placares-btn-text">Salvar</span>
           </button>
           {% if ultima_rodada %}
           <button type="button" class="secondary placares-action-btn placares-btn-icon" id="btn-desfazer-rodada" title="Remove a última rodada fechada do histórico">
@@ -249,58 +133,71 @@
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
             </svg>
-            <span>Desfazer {{ ultima_rodada.rotulo }}</span>
+            <span class="placares-btn-text">Desfazer {{ ultima_rodada.rotulo }}</span>
           </button>
           {% endif %}
-          <button type="button" class="placares-action-btn placares-btn-icon placares-btn-fechar" id="btn-confirmar-rodada" title="Arquiva a classificação e zera a coluna Rodada">
+          <button type="button" class="secondary placares-action-btn placares-btn-icon placares-btn-fechar" id="btn-confirmar-rodada" title="Arquiva a classificação e zera a coluna Rodada">
             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
               <line x1="4" y1="22" x2="4" y2="15" />
             </svg>
-            <span>Fechar rodada</span>
+            <span class="placares-btn-text">Fechar rodada</span>
           </button>
         </div>
       </div>
-      <section class="fases-panel" data-fases-collapse>
-      {% include "partials/fases_panel_head.html" %}
-      <div class="fases-panel-body">
-      <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
-        {% for f in fases %}
-        <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
-          <button
-            type="button"
-            class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
-            data-fase="{{ f.id }}"
-            {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
-          >{{ f.label }}</button>
-          <div class="transparencia-nav-pernas">
-            <button
-              type="button"
-              data-fase="{{ f.id }}"
-              data-tab="ida"
-              class="{% if f.ativa %}active{% endif %}"
-              {% if not f.unlocked %}disabled{% endif %}
-            ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
-            <button
-              type="button"
-              data-fase="{{ f.id }}"
-              data-tab="volta"
-              {% if not f.unlocked %}disabled{% endif %}
-            ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
+      <p class="placares-dirty" id="placares-dirty" hidden>Alterações não salvas</p>
+
+      <section class="fases-panel admin-fases-panel" data-fases-collapse data-fases-storage="thdfm-admin-fases-collapsed">
+        <div class="fases-panel-head">
+          <div class="fases-panel-titles">
+            <h2 class="fases-panel-title">Fase e perna</h2>
+            <p class="fases-panel-summary" data-fases-summary></p>
           </div>
         </div>
-        {% endfor %}
-      </div>
-      </div>
+        <div class="fases-panel-body">
+          <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
+            {% for f in fases %}
+            {% set perna_f = (perna_default_por_fase|default({})).get(f.id, 'ida') %}
+            <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
+              <button
+                type="button"
+                class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
+                data-fase="{{ f.id }}"
+                {% if f.ativa %}aria-current="true"{% endif %}
+                {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
+              >{{ f.label }}</button>
+              <div class="transparencia-nav-pernas">
+                <button
+                  type="button"
+                  data-fase="{{ f.id }}"
+                  data-tab="ida"
+                  class="{% if f.ativa and perna_f == 'ida' %}active{% endif %}"
+                  {% if f.ativa and perna_f == 'ida' %}aria-current="true"{% endif %}
+                  {% if not f.unlocked %}disabled title="Fase bloqueada"{% endif %}
+                ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
+                <button
+                  type="button"
+                  data-fase="{{ f.id }}"
+                  data-tab="volta"
+                  class="{% if f.ativa and perna_f == 'volta' %}active{% endif %}"
+                  {% if f.ativa and perna_f == 'volta' %}aria-current="true"{% endif %}
+                  {% if not f.unlocked %}disabled title="Fase bloqueada"{% endif %}
+                ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </section>
 
       {% for f in fases %}
       {% set confrontos = confrontos_por_fase.get(f.id, []) %}
+      {% set perna_f = (perna_default_por_fase|default({})).get(f.id, 'ida') %}
       <div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">
 
         {% if not f.unlocked %}
-        <div class="card admin-resultados-form locked-card">
-          <p class="locked-msg" style="margin:0">Libere esta fase acima para cadastrar os placares.</p>
+        <div class="admin-resultados-form locked-card">
+          <p class="locked-msg" style="margin:0">Monte a árvore desta fase abaixo (ou aguarde classificados) para liberar os placares.</p>
           <div class="match-grid locked-grid" style="margin-top:0.85rem">
             {% for _ in range(f.slots) %}
             <div class="match-cell locked">
@@ -320,109 +217,180 @@
         </div>
 
         {% else %}
-        <form method="post" action="/admin/resultados" class="card admin-resultados-form">
+        <form method="post" action="/admin/resultados" class="admin-resultados-form" data-fase="{{ f.id }}">
           <input type="hidden" name="fase" value="{{ f.id }}" />
+          <input type="hidden" name="perna" value="{{ perna_f }}" class="admin-perna-field" />
 
-          <div class="match-panel" data-panel="ida">
+          <div class="match-panel {% if perna_f != 'ida' %}hidden{% endif %}" data-panel="ida">
             {% if not confrontos %}
             <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
             {% else %}
             <div class="match-grid">
               {% for c in confrontos %}
               {% if c.ida %}
-              <div class="match-cell">
-                <label class="match-inicio-label">
-                  Início Ida
-                  <input type="datetime-local" name="jogo_{{ c.ida.id }}_inicio" value="{{ inicio_em_input_value(c.ida.inicio_em) }}" />
-                </label>
-                <div class="match-teams">
-                  <div class="match-team-row">
-                    {{ emblema(c.clube_a) }}
-                    <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
-                    <input type="number" min="0" name="jogo_{{ c.ida.id }}_m" value="{{ c.ida.gols_mandante if c.ida.gols_mandante is not none else '' }}" />
-                  </div>
-                  <div class="match-team-row">
-                    {{ emblema(c.clube_b) }}
-                    <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
-                    <input type="number" min="0" name="jogo_{{ c.ida.id }}_v" value="{{ c.ida.gols_visitante if c.ida.gols_visitante is not none else '' }}" />
-                  </div>
-                </div>
-              </div>
+              {% set mode = 'admin' %}
+              {% set jogo_num = loop.index %}
+              {% set confronto_id = c.id %}
+              {% set clube_m = c.clube_a %}
+              {% set clube_v = c.clube_b %}
+              {% set clube_a = c.clube_a %}
+              {% set clube_b = c.clube_b %}
+              {% set name_m = 'jogo_' ~ c.ida.id ~ '_m' %}
+              {% set name_v = 'jogo_' ~ c.ida.id ~ '_v' %}
+              {% set val_m = c.ida.gols_mandante if c.ida.gols_mandante is not none else '' %}
+              {% set val_v = c.ida.gols_visitante if c.ida.gols_visitante is not none else '' %}
+              {% set readonly = false %}
+              {% set inicio_lbl = formatar_inicio_jogo(c.ida.inicio_em) %}
+              {% set travado_tag = none %}
+              {% set confirmado = c.ida.confirmado|default(false) %}
+              {% set jogo_id = c.ida.id %}
+              {% set inicio_input_name = 'jogo_' ~ c.ida.id ~ '_inicio' %}
+              {% set inicio_input_value = inicio_em_input_value(c.ida.inicio_em) %}
+              {% set inicio_label = 'Início Ida' %}
+              {% set volta_classes_m = '' %}
+              {% set volta_classes_v = '' %}
+              {% set data_ida_a = none %}
+              {% set data_ida_b = none %}
+              {% set ref_lines = none %}
+              {% set pen = none %}
+              {% set admin_attrs = '' %}
+              {% set classificado_preview = false %}
+              {% include "partials/match_cell.html" %}
               {% endif %}
               {% endfor %}
             </div>
             {% endif %}
           </div>
 
-          <div class="match-panel hidden" data-panel="volta">
+          <div class="match-panel {% if perna_f != 'volta' %}hidden{% endif %}" data-panel="volta">
             {% if not confrontos %}
             <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
             {% else %}
             <div class="match-grid">
               {% for c in confrontos %}
               {% if c.volta %}
-              <div class="match-cell" data-confronto-admin="{{ c.id }}" data-ida-jogo="{{ c.ida.id if c.ida else '' }}">
-                <label class="match-inicio-label">
-                  Início Volta
-                  <input type="datetime-local" name="jogo_{{ c.volta.id }}_inicio" value="{{ inicio_em_input_value(c.volta.inicio_em) }}" />
-                </label>
-                <div class="match-ref">
-                  <span class="match-ref-line match-ref-oficial">
-                    Resultado Oficial (Ida):
-                    {% if c.ida and c.ida.gols_mandante is not none %}
-                    <span class="match-ref-score">
-                      {{ emblema(c.clube_a) }}
-                      <strong>{{ c.ida.gols_mandante }}</strong>
-                      <span class="match-ref-x">x</span>
-                      <strong>{{ c.ida.gols_visitante }}</strong>
-                      {{ emblema(c.clube_b) }}
-                    </span>
-                    {% else %}
-                    —
-                    {% endif %}
-                  </span>
-                </div>
-                <div class="match-teams">
-                  <div class="match-team-row">
-                    {{ emblema(c.clube_b) }}
-                    <span class="clube-nome" data-nome="{{ c.clube_b }}" data-curto="{{ nome_clube_curto(c.clube_b) }}" title="{{ c.clube_b }}">{{ c.clube_b }}</span>
-                    <input class="volta-m" type="number" min="0" name="jogo_{{ c.volta.id }}_m"
-                      data-ida-a="{{ c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' }}"
-                      data-ida-b="{{ c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' }}"
-                      value="{{ c.volta.gols_mandante if c.volta.gols_mandante is not none else '' }}" />
-                  </div>
-                  <div class="match-team-row">
-                    {{ emblema(c.clube_a) }}
-                    <span class="clube-nome" data-nome="{{ c.clube_a }}" data-curto="{{ nome_clube_curto(c.clube_a) }}" title="{{ c.clube_a }}">{{ c.clube_a }}</span>
-                    <input class="volta-v" type="number" min="0" name="jogo_{{ c.volta.id }}_v"
-                      value="{{ c.volta.gols_visitante if c.volta.gols_visitante is not none else '' }}" />
-                  </div>
-                </div>
-                <div class="pen-group hidden" data-pen="{{ c.id }}">
-                  <p class="pen-group-title">Empate no agregado. Quem passa nos pênaltis?</p>
-                  <div class="pen-group-choices">
-                    <label class="pen-choice" title="{{ c.clube_a }}" aria-label="{{ c.clube_a }}">
-                      <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="a" {% if c.volta.penaltis_clube_id == 'a' %}checked{% endif %} />
-                      {{ emblema(c.clube_a) }}
-                    </label>
-                    <label class="pen-choice" title="{{ c.clube_b }}" aria-label="{{ c.clube_b }}">
-                      <input type="radio" name="jogo_{{ c.volta.id }}_pen" value="b" {% if c.volta.penaltis_clube_id == 'b' %}checked{% endif %} />
-                      {{ emblema(c.clube_b) }}
-                    </label>
-                  </div>
-                </div>
-              </div>
+              {% set mode = 'admin' %}
+              {% set jogo_num = loop.index %}
+              {% set confronto_id = c.id %}
+              {% set clube_m = c.clube_b %}
+              {% set clube_v = c.clube_a %}
+              {% set clube_a = c.clube_a %}
+              {% set clube_b = c.clube_b %}
+              {% set name_m = 'jogo_' ~ c.volta.id ~ '_m' %}
+              {% set name_v = 'jogo_' ~ c.volta.id ~ '_v' %}
+              {% set val_m = c.volta.gols_mandante if c.volta.gols_mandante is not none else '' %}
+              {% set val_v = c.volta.gols_visitante if c.volta.gols_visitante is not none else '' %}
+              {% set readonly = false %}
+              {% set inicio_lbl = formatar_inicio_jogo(c.volta.inicio_em) %}
+              {% set travado_tag = none %}
+              {% set confirmado = c.volta.confirmado|default(false) %}
+              {% set jogo_id = c.volta.id %}
+              {% set inicio_input_name = 'jogo_' ~ c.volta.id ~ '_inicio' %}
+              {% set inicio_input_value = inicio_em_input_value(c.volta.inicio_em) %}
+              {% set inicio_label = 'Início Volta' %}
+              {% set volta_classes_m = 'volta-m' %}
+              {% set volta_classes_v = 'volta-v' %}
+              {% set data_ida_a = c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' %}
+              {% set data_ida_b = c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' %}
+              {% set ref_lines = [{
+                'label': 'Resultado Oficial (Ida):',
+                'oficial': true,
+                'gols_m': c.ida.gols_mandante if c.ida else none,
+                'gols_v': c.ida.gols_visitante if c.ida else none,
+                'clube_a': c.clube_a,
+                'clube_b': c.clube_b,
+              }] %}
+              {% set pen = {
+                'name': 'jogo_' ~ c.volta.id ~ '_pen',
+                'checked': c.volta.penaltis_clube_id,
+                'title': 'Empate no agregado. Quem passa nos pênaltis?',
+                'hidden': true,
+                'clube_a': c.clube_a,
+                'clube_b': c.clube_b,
+                'disabled': false,
+              } %}
+              {% set admin_attrs = 'data-confronto-admin="' ~ c.id ~ '" data-ida-jogo="' ~ (c.ida.id if c.ida else '') ~ '"' %}
+              {% set classificado_preview = true %}
+              {% include "partials/match_cell.html" %}
               {% endif %}
               {% endfor %}
             </div>
             {% endif %}
           </div>
 
+          <div class="sticky-save admin-sticky-save" id="admin-sticky-save-{{ f.id }}">
+            <span class="admin-sticky-dirty" data-sticky-dirty hidden>Alterações não salvas</span>
+            <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" data-sticky-salvar title="Salvar placares da perna">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span>Salvar</span>
+            </button>
+          </div>
         </form>
         {% endif %}
 
       </div>
       {% endfor %}
+
+      {% if arvore_fases|default([]) %}
+      <div class="card admin-arvore-card" id="admin-arvore">
+        <h2>Árvore / próxima fase</h2>
+        <p class="admin-arvore-lead">
+          Monte os confrontos após o sorteio. Defina data/hora —
+          os palpites travam automaticamente {{ trava_antes_min|default(30) }}&nbsp;min antes de cada jogo.
+          Arraste os classificados para as chaves ou use os selects.
+        </p>
+        {% for bloco in arvore_fases %}
+        <section class="admin-arvore-fase" data-arvore-fase="{{ bloco.fase.id }}">
+          <h3>{{ bloco.fase.label }}</h3>
+          {% if bloco.existentes %}
+          <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase.</p>
+          <ul class="admin-arvore-existentes">
+            {% for c in bloco.existentes %}
+            <li>{{ c.clube_a }} × {{ c.clube_b }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if not bloco.pronto %}
+          <p class="locked-msg">
+            Aguardando classificados de {{ bloco.origem }} —
+            {{ bloco.classificados|length }}/{{ bloco.n_clubes }} definidos (placar oficial completo + pênaltis se houver).
+          </p>
+          {% else %}
+          <p class="admin-arvore-pool" data-arvore-pool>
+            Classificados ({{ bloco.classificados|length }}):
+            {% for c in bloco.classificados %}
+            <span
+              class="admin-arvore-chip"
+              draggable="true"
+              data-clube="{{ c.clube }}"
+              title="Arraste para uma chave"
+            >{{ emblema(c.clube) }} {{ c.clube }}</span>
+            {% endfor %}
+          </p>
+          <form method="post" action="/admin/arvore/montar" class="admin-arvore-form">
+            <input type="hidden" name="fase" value="{{ bloco.fase.id }}" />
+            <div class="admin-arvore-chaves">
+              {% for i in range(bloco.n_chaves) %}
+              {% set classificados = bloco.classificados %}
+              {% include "partials/admin_arvore_chave.html" %}
+              {% endfor %}
+            </div>
+            <button type="submit" class="placares-action-btn placares-btn-icon placares-btn-save admin-arvore-submit">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>{% if bloco.existentes %}Remontar {{ bloco.fase.label }}{% else %}Confirmar {{ bloco.fase.label }}{% endif %}</span>
+            </button>
+          </form>
+          {% endif %}
+        </section>
+        {% endfor %}
+      </div>
+      {% endif %}
     </section>
 
     <section class="admin-panel{% if admin_sec == 'inscricoes' %} active{% endif %}" data-panel="inscricoes">
@@ -1171,10 +1139,25 @@ document.querySelectorAll("[data-perna-tabs]").forEach((tabs) => {
   });
 });
 
+const toastHost = document.getElementById("admin-toast-host");
+const showToast = (text, type = "ok") => {
+  if (!toastHost || !text) return;
+  const el = document.createElement("div");
+  el.className = `admin-toast admin-toast-${type}`;
+  el.textContent = text;
+  toastHost.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("is-show"));
+  setTimeout(() => {
+    el.classList.remove("is-show");
+    setTimeout(() => el.remove(), 280);
+  }, 3800);
+};
+
 const placaresNav = document.getElementById("admin-placares-nav");
 const formZerar = document.getElementById("form-zerar-resultados");
 const modalZerar = document.getElementById("modal-zerar");
 const zerarTexto = document.getElementById("modal-zerar-texto");
+const dirtyBanner = document.getElementById("placares-dirty");
 if (modalZerar) document.body.appendChild(modalZerar);
 
 const abrirZerar = () => {
@@ -1184,6 +1167,94 @@ const abrirZerar = () => {
 const fecharZerar = () => {
   modalZerar?.classList.remove("is-open");
   modalZerar?.setAttribute("hidden", "");
+};
+
+const activeForm = () => {
+  const fase = document.getElementById("zerar-fase")?.value;
+  return document.querySelector(
+    `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
+  );
+};
+
+const setDirty = (on) => {
+  dirtyBanner?.toggleAttribute("hidden", !on);
+  document.querySelectorAll("[data-sticky-dirty]").forEach((el) => {
+    el.toggleAttribute("hidden", !on);
+  });
+  document.querySelector(".admin-panel[data-panel='resultados']")?.classList.toggle("is-dirty", !!on);
+};
+
+const snapshotForm = (form) => {
+  if (!form) return "";
+  const fd = new FormData(form);
+  return Array.from(fd.entries())
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+};
+
+let formBaseline = "";
+const refreshBaseline = () => {
+  formBaseline = snapshotForm(activeForm());
+  setDirty(false);
+};
+
+const checkDirty = () => {
+  const form = activeForm();
+  if (!form) {
+    setDirty(false);
+    return;
+  }
+  setDirty(snapshotForm(form) !== formBaseline);
+};
+
+const postJson = async (url, body) => {
+  const opts = {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  };
+  if (body instanceof FormData) {
+    opts.body = body;
+  } else if (body) {
+    opts.body = body;
+  }
+  const res = await fetch(url, opts);
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (e) {
+    data = null;
+  }
+  if (!res.ok || (data && data.ok === false)) {
+    const err = (data && data.erro) || "Não foi possível salvar";
+    throw new Error(err);
+  }
+  return data || { ok: true };
+};
+
+const salvarPlacaresAtivos = async () => {
+  const form = activeForm();
+  if (!form) return;
+  const pernaField = form.querySelector(".admin-perna-field");
+  if (pernaField) {
+    pernaField.value = document.getElementById("zerar-perna")?.value || pernaField.value;
+  }
+  const fd = new FormData(form);
+  try {
+    const data = await postJson("/admin/resultados?format=json", fd);
+    showToast(data.msg || "Salvo", "ok");
+    refreshBaseline();
+    // Habilita confirmar nos cards com placar preenchido
+    form.querySelectorAll(".match-cell").forEach((cell) => {
+      const btn = cell.querySelector("[data-confirmar-jogo]");
+      if (!btn) return;
+      const inputs = cell.querySelectorAll(".match-teams input[type=number]");
+      const filled = Array.from(inputs).every((i) => i.value !== "");
+      btn.disabled = !filled;
+    });
+  } catch (e) {
+    showToast(e.message || "Erro ao salvar", "erro");
+  }
 };
 
 if (placaresNav) {
@@ -1209,21 +1280,32 @@ if (placaresNav) {
     }
     const zerarLabel = document.getElementById("btn-zerar-label");
     if (zerarLabel) {
-      zerarLabel.textContent = `Zerar placares ${label} (${faseLabel})`;
+      zerarLabel.textContent = `Zerar ${label}`;
+      zerarLabel.title = `Zerar placares ${label} (${faseLabel})`;
     }
     const form = document.querySelector(
       `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
     );
+    form?.querySelectorAll(".admin-perna-field").forEach((el) => {
+      el.value = perna;
+    });
     if (btnSalvar) btnSalvar.disabled = !form;
+    refreshBaseline();
   };
 
   const showFasePerna = (fase, perna) => {
     placaresNav.querySelectorAll(".transparencia-nav-col").forEach((col) => {
       const on = col.dataset.faseCol === fase;
       col.classList.toggle("is-active", on);
-      col.querySelector(".transparencia-nav-fase")?.classList.toggle("active", on);
+      const faseBtn = col.querySelector(".transparencia-nav-fase");
+      faseBtn?.classList.toggle("active", on);
+      if (on) faseBtn?.setAttribute("aria-current", "true");
+      else faseBtn?.removeAttribute("aria-current");
       col.querySelectorAll("[data-tab]").forEach((b) => {
-        b.classList.toggle("active", on && b.dataset.tab === perna);
+        const active = on && b.dataset.tab === perna;
+        b.classList.toggle("active", active);
+        if (active) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
       });
     });
     document.querySelectorAll("[data-fase-panel]").forEach((panel) => {
@@ -1252,8 +1334,8 @@ if (placaresNav) {
   const initialCol = placaresNav.querySelector(".transparencia-nav-col.is-active");
   const initialFase = initialCol?.dataset.faseCol || "{{ fase_atual }}";
   const initialPerna =
-    initialCol?.querySelector("[data-tab].active")?.dataset.tab || "ida";
-  syncZerarForm(initialFase, initialPerna);
+    initialCol?.querySelector("[data-tab].active")?.dataset.tab || "{{ perna_default|default('ida') }}";
+  showFasePerna(initialFase, initialPerna);
 
   btnZerar?.addEventListener("click", abrirZerar);
   document.getElementById("modal-zerar-cancelar")?.addEventListener("click", fecharZerar);
@@ -1262,13 +1344,33 @@ if (placaresNav) {
     if (e.target === modalZerar) fecharZerar();
   });
 
-  btnSalvar?.addEventListener("click", () => {
-    const fase = zerarFase?.value;
-    const form = document.querySelector(
-      `.fase-panel[data-fase-panel="${fase}"] form.admin-resultados-form`
-    );
-    if (form?.requestSubmit) form.requestSubmit();
-    else form?.submit();
+  const bindSave = (btn) => btn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    salvarPlacaresAtivos();
+  });
+  bindSave(btnSalvar);
+  document.querySelectorAll("[data-sticky-salvar]").forEach(bindSave);
+
+  document.querySelectorAll("form.admin-resultados-form").forEach((form) => {
+    form.addEventListener("input", checkDirty);
+    form.addEventListener("change", checkDirty);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      salvarPlacaresAtivos();
+    });
+  });
+
+  // Autosave com debounce quando há alterações
+  let autosaveTimer = null;
+  document.querySelectorAll("form.admin-resultados-form").forEach((form) => {
+    form.addEventListener("input", () => {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => {
+        if (document.querySelector(".admin-panel[data-panel='resultados'].is-dirty")) {
+          salvarPlacaresAtivos();
+        }
+      }, 1800);
+    });
   });
 }
 
@@ -1331,20 +1433,6 @@ document.getElementById("modal-desfazer-rodada-confirmar")?.addEventListener("cl
 modalDesfazerRodada?.addEventListener("click", (e) => {
   if (e.target === modalDesfazerRodada) fecharModal(modalDesfazerRodada);
 });
-const toastHost = document.getElementById("admin-toast-host");
-const showToast = (text, type = "ok") => {
-  if (!toastHost || !text) return;
-  const el = document.createElement("div");
-  el.className = `admin-toast admin-toast-${type}`;
-  el.textContent = text;
-  toastHost.appendChild(el);
-  requestAnimationFrame(() => el.classList.add("is-show"));
-  setTimeout(() => {
-    el.classList.remove("is-show");
-    setTimeout(() => el.remove(), 280);
-  }, 3800);
-};
-
 {% if msg %}showToast({{ msg.replace('+', ' ') | tojson }}, "ok");{% endif %}
 {% if erro %}showToast({{ erro.replace('+', ' ') | tojson }}, "erro");{% endif %}
 
@@ -1406,7 +1494,8 @@ function updateAdminPens(card) {
   const m = card.querySelector(".volta-m");
   const v = card.querySelector(".volta-v");
   const pen = card.querySelector("[data-pen]");
-  if (!m || !v || !pen) return;
+  const preview = card.querySelector("[data-classificado-out]");
+  if (!m || !v) return;
   let idaA = m.dataset.idaA;
   let idaB = m.dataset.idaB;
   const idaJogo = card.dataset.idaJogo;
@@ -1417,24 +1506,48 @@ function updateAdminPens(card) {
     if (idaM && idaM.value !== "") idaA = idaM.value;
     if (idaV && idaV.value !== "") idaB = idaV.value;
   }
+  const clubeA = card.dataset.clubeA || "";
+  const clubeB = card.dataset.clubeB || "";
   if (idaA === "" || idaB === "" || m.value === "" || v.value === "") {
-    pen.classList.add("hidden");
-    pen.querySelectorAll("input").forEach((i) => (i.checked = false));
+    pen?.classList.add("hidden");
+    pen?.querySelectorAll("input").forEach((i) => (i.checked = false));
+    if (preview) {
+      preview.hidden = true;
+      preview.textContent = "—";
+    }
     return;
   }
   const totalA = Number(idaA) + Number(v.value);
   const totalB = Number(idaB) + Number(m.value);
+  const penChecked = pen?.querySelector("input:checked")?.value;
   if (totalA === totalB) {
-    pen.classList.remove("hidden");
+    pen?.classList.remove("hidden");
   } else {
-    pen.classList.add("hidden");
-    pen.querySelectorAll("input").forEach((i) => (i.checked = false));
+    pen?.classList.add("hidden");
+    pen?.querySelectorAll("input").forEach((i) => (i.checked = false));
+  }
+  if (preview) {
+    let winner = null;
+    if (totalA > totalB) winner = clubeA;
+    else if (totalB > totalA) winner = clubeB;
+    else if (penChecked === "a") winner = clubeA;
+    else if (penChecked === "b") winner = clubeB;
+    if (winner) {
+      preview.hidden = false;
+      preview.textContent = `Classificado (preview): ${winner}`;
+    } else {
+      preview.hidden = false;
+      preview.textContent = "Empate no agregado — escolha nos pênaltis";
+    }
   }
 }
 
 document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
   card.querySelectorAll(".volta-m, .volta-v").forEach((input) => {
     input.addEventListener("input", () => updateAdminPens(card));
+  });
+  card.querySelectorAll('[data-pen] input[type="radio"]').forEach((input) => {
+    input.addEventListener("change", () => updateAdminPens(card));
   });
   const idaJogo = card.dataset.idaJogo;
   if (idaJogo) {
@@ -1445,6 +1558,171 @@ document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
   }
   updateAdminPens(card);
 });
+
+// Confirmar / desfazer por jogo
+document.querySelector(".admin-panel[data-panel='resultados']")?.addEventListener("click", async (e) => {
+  const conf = e.target.closest("[data-confirmar-jogo]");
+  const undo = e.target.closest("[data-desfazer-jogo]");
+  if (!conf && !undo) return;
+  e.preventDefault();
+  const jogoId = conf?.dataset.confirmarJogo || undo?.dataset.desfazerJogo;
+  if (!jogoId) return;
+  const cell = (conf || undo).closest(".match-cell");
+  if (conf) {
+    // Garante placar salvo antes de confirmar
+    try {
+      await salvarPlacaresAtivos();
+      await postJson(`/admin/jogo/${jogoId}/confirmar?format=json`);
+      showToast("Jogo confirmado", "ok");
+      cell?.classList.add("is-confirmado");
+      cell?.querySelectorAll("input").forEach((i) => {
+        if (i.type === "radio") i.disabled = true;
+        else {
+          i.readOnly = true;
+          if (i.type === "datetime-local") i.disabled = true;
+        }
+      });
+      const actions = cell?.querySelector(".match-cell-actions");
+      if (actions) {
+        actions.innerHTML = `
+          <button type="button" class="match-cell-action match-cell-undo" data-desfazer-jogo="${jogoId}" title="Desfazer confirmação" aria-label="Desfazer confirmação">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+          </button>`;
+      }
+      const tag = cell?.querySelector(".match-jogo-tag");
+      if (tag && !tag.querySelector(".match-confirmado-tag")) {
+        tag.insertAdjacentHTML(
+          "beforeend",
+          ' · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>'
+        );
+      }
+      refreshBaseline();
+    } catch (err) {
+      showToast(err.message || "Erro ao confirmar", "erro");
+    }
+    return;
+  }
+  try {
+    await postJson(`/admin/jogo/${jogoId}/desfazer-confirmacao?format=json`);
+    showToast("Confirmação desfeita", "ok");
+    cell?.classList.remove("is-confirmado");
+    cell?.querySelectorAll("input").forEach((i) => {
+      i.readOnly = false;
+      i.disabled = false;
+    });
+    cell?.querySelector(".match-confirmado-tag")?.previousSibling?.remove?.();
+    cell?.querySelector(".match-confirmado-tag")?.remove();
+    // limpa " · " órfão aproximado re-renderizando o botão
+    const actions = cell?.querySelector(".match-cell-actions");
+    if (actions) {
+      actions.innerHTML = `
+        <button type="button" class="match-cell-action match-cell-confirm" data-confirmar-jogo="${jogoId}" title="Confirmar placar" aria-label="Confirmar placar">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>`;
+    }
+    const tag = cell?.querySelector(".match-jogo-tag");
+    if (tag) {
+      tag.innerHTML = tag.innerHTML
+        .replace(/\s*·\s*<span class="match-travado-tag match-confirmado-tag">Confirmado<\/span>/, "");
+    }
+    refreshBaseline();
+  } catch (err) {
+    showToast(err.message || "Erro ao desfazer", "erro");
+  }
+});
+
+// Tab entre inputs de gols na ordem visual do grid
+document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((panel) => {
+  panel.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    const input = e.target.closest("input[type=number]");
+    if (!input || input.readOnly) return;
+    const inputs = Array.from(panel.querySelectorAll(".match-teams input[type=number]:not([readonly])"));
+    const idx = inputs.indexOf(input);
+    if (idx < 0) return;
+    let next = null;
+    if (e.key === "ArrowUp") next = inputs[idx - 1];
+    else next = inputs[idx + 1];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+    next.select?.();
+  });
+});
+
+// Drag-and-drop da árvore
+(() => {
+  const arvore = document.getElementById("admin-arvore");
+  if (!arvore) return;
+  let dragging = null;
+
+  const syncDropFromSelect = (chave) => {
+    chave.querySelectorAll(".admin-arvore-select").forEach((sel) => {
+      const slot = sel.dataset.slot;
+      const drop = chave.querySelector(`[data-drop-slot="${slot}"]`);
+      if (!drop) return;
+      const clube = sel.value;
+      if (!clube) {
+        drop.innerHTML = '<span class="admin-arvore-drop-placeholder">Arraste um classificado</span>';
+        drop.classList.remove("has-clube");
+        return;
+      }
+      drop.textContent = clube;
+      drop.classList.add("has-clube");
+      drop.dataset.clube = clube;
+    });
+  };
+
+  arvore.querySelectorAll(".admin-arvore-chave").forEach((chave) => {
+    syncDropFromSelect(chave);
+    chave.querySelectorAll(".admin-arvore-select").forEach((sel) => {
+      sel.addEventListener("change", () => syncDropFromSelect(chave));
+    });
+  });
+
+  arvore.querySelectorAll(".admin-arvore-chip[draggable]").forEach((chip) => {
+    chip.addEventListener("dragstart", (e) => {
+      dragging = chip.dataset.clube;
+      e.dataTransfer?.setData("text/plain", dragging || "");
+      chip.classList.add("is-dragging");
+    });
+    chip.addEventListener("dragend", () => {
+      chip.classList.remove("is-dragging");
+      dragging = null;
+      arvore.querySelectorAll(".admin-arvore-drop").forEach((d) => d.classList.remove("is-over"));
+    });
+  });
+
+  arvore.querySelectorAll("[data-drop-slot]").forEach((drop) => {
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("is-over");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("is-over");
+      const clube = dragging || e.dataTransfer?.getData("text/plain");
+      if (!clube) return;
+      const chave = drop.closest(".admin-arvore-chave");
+      const slot = drop.dataset.dropSlot;
+      const sel = chave?.querySelector(`.admin-arvore-select[data-slot="${slot}"]`);
+      if (!sel) return;
+      // Evita clube duplicado em outra chave/slot
+      arvore.querySelectorAll(".admin-arvore-select").forEach((other) => {
+        if (other !== sel && other.value === clube) other.value = "";
+      });
+      sel.value = clube;
+      chave && syncDropFromSelect(chave);
+      arvore.querySelectorAll(".admin-arvore-chave").forEach(syncDropFromSelect);
+    });
+  });
+})();
 
 (() => {
   const section = document.querySelector('[data-participantes-section="liberados"]');

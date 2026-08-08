@@ -1,0 +1,173 @@
+{# Card de jogo compartilhado (Meus Palpites + admin Resultados).
+   Variáveis esperadas:
+   - mode: 'palpite' | 'admin'
+   - jogo_num: int
+   - confronto_id: int
+   - clube_m, clube_v: nomes (mandante/visitante desta perna)
+   - name_m, name_v: names dos inputs de gols
+   - val_m, val_v: valores (ou '')
+   - readonly: bool
+   - inicio_lbl: str|none (rótulo formatado; palpite)
+   - travado_tag: str|none ('Fechado' no palpite)
+   - confirmado: bool (admin)
+   - jogo_id: int|none (admin — para confirmar/desfazer e datetime)
+   - inicio_input_name / inicio_input_value: admin datetime
+   - inicio_label: 'Início Ida' | 'Início Volta' (admin)
+   - volta_classes_m / volta_classes_v: classes extras nos inputs (ex. volta-m)
+   - data_ida_a / data_ida_b: attrs data-ida-* no input mandante volta
+   - ref_lines: lista opcional de {label, gols_m, gols_v, clube_a, clube_b, oficial?}
+     (clube_a/clube_b = ordem da ida para emblemas do placar de referência)
+   - pen: dict|none { name, value_a, value_b, checked, title, hidden, clube_a, clube_b, disabled }
+   - admin_attrs: str opcional (data-confronto-admin etc.)
+   - classificado_preview: bool (admin volta — mostra quem passa)
+#}
+{% set _confirmado = confirmado|default(false) %}
+{% set _readonly = readonly|default(false) or _confirmado %}
+<div
+  class="match-cell{% if _confirmado %} is-confirmado{% endif %}"
+  data-confronto="{{ confronto_id }}"
+  {% if mode == 'admin' and jogo_id %}data-jogo-id="{{ jogo_id }}"{% endif %}
+  {% if admin_attrs %} {{ admin_attrs|safe }}{% endif %}
+  {% if classificado_preview|default(false) %}data-classificado-preview="1"{% endif %}
+  data-clube-a="{{ clube_a|default(clube_m) }}"
+  data-clube-b="{{ clube_b|default(clube_v) }}"
+>
+  <div class="match-cell-head">
+    <span class="planilha-jogo-tag match-jogo-tag">
+      JOGO ({{ jogo_num }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
+    </span>
+    {% if mode == 'admin' and jogo_id %}
+    <div class="match-cell-actions">
+      {% if _confirmado %}
+      <button
+        type="button"
+        class="match-cell-action match-cell-undo"
+        data-desfazer-jogo="{{ jogo_id }}"
+        title="Desfazer confirmação"
+        aria-label="Desfazer confirmação do jogo {{ jogo_num }}"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+        </svg>
+      </button>
+      {% else %}
+      <button
+        type="button"
+        class="match-cell-action match-cell-confirm"
+        data-confirmar-jogo="{{ jogo_id }}"
+        title="Confirmar placar"
+        aria-label="Confirmar placar do jogo {{ jogo_num }}"
+        {% if val_m == '' or val_v == '' or val_m is none or val_v is none %}disabled{% endif %}
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if mode == 'admin' and inicio_input_name %}
+  <label class="match-inicio-label">
+    {{ inicio_label|default('Início') }}
+    <input
+      type="datetime-local"
+      name="{{ inicio_input_name }}"
+      value="{{ inicio_input_value|default('') }}"
+      {% if _readonly %}readonly disabled{% endif %}
+    />
+  </label>
+  {% endif %}
+
+  {% if ref_lines %}
+  <div class="match-ref">
+    {% for line in ref_lines %}
+    <span class="match-ref-line{% if line.oficial %} match-ref-oficial{% endif %}">
+      {{ line.label }}
+      {% if line.gols_m is not none and line.gols_v is not none %}
+      <span class="match-ref-score">
+        {{ emblema(line.clube_a) }}
+        <strong>{{ line.gols_m }}</strong>
+        <span class="match-ref-x">x</span>
+        <strong>{{ line.gols_v }}</strong>
+        {{ emblema(line.clube_b) }}
+      </span>
+      {% else %}
+      —
+      {% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="match-teams">
+    <div class="match-team-row">
+      {{ emblema(clube_m) }}
+      <span class="clube-nome" data-nome="{{ clube_m }}" data-curto="{{ nome_clube_curto(clube_m) }}" title="{{ clube_m }}">{{ clube_m }}</span>
+      <input
+        type="number"
+        min="0"
+        {% if mode == 'palpite' %}max="20"{% endif %}
+        class="{{ volta_classes_m|default('') }}"
+        name="{{ name_m }}"
+        value="{{ val_m if val_m is not none else '' }}"
+        aria-label="Gols {{ clube_m }}"
+        {% if data_ida_a is defined and data_ida_a is not none %}data-ida-a="{{ data_ida_a }}"{% endif %}
+        {% if data_ida_b is defined and data_ida_b is not none %}data-ida-b="{{ data_ida_b }}"{% endif %}
+        {% if _readonly %}readonly{% endif %}
+      />
+    </div>
+    <div class="match-team-row">
+      {{ emblema(clube_v) }}
+      <span class="clube-nome" data-nome="{{ clube_v }}" data-curto="{{ nome_clube_curto(clube_v) }}" title="{{ clube_v }}">{{ clube_v }}</span>
+      <input
+        type="number"
+        min="0"
+        {% if mode == 'palpite' %}max="20"{% endif %}
+        class="{{ volta_classes_v|default('') }}"
+        name="{{ name_v }}"
+        value="{{ val_v if val_v is not none else '' }}"
+        aria-label="Gols {{ clube_v }}"
+        {% if _readonly %}readonly{% endif %}
+      />
+    </div>
+  </div>
+
+  {% if classificado_preview|default(false) %}
+  <p class="match-classificado-preview" data-classificado-out hidden>—</p>
+  {% endif %}
+
+  {% if pen %}
+  <div class="pen-group{% if pen.hidden %} hidden{% endif %}" data-pen="{{ confronto_id }}">
+    <p class="pen-group-title">{{ pen.title }}</p>
+    <div class="pen-group-choices" role="radiogroup" aria-label="Pênaltis">
+      <label class="pen-choice" title="{{ pen.clube_a }}">
+        <input
+          type="radio"
+          name="{{ pen.name }}"
+          value="a"
+          {% if pen.checked == 'a' %}checked{% endif %}
+          {% if pen.disabled or _readonly %}disabled{% endif %}
+          aria-label="{{ pen.clube_a }} nos pênaltis"
+        />
+        {{ emblema(pen.clube_a) }}
+        <span class="pen-choice-name">{{ pen.clube_a }}</span>
+      </label>
+      <label class="pen-choice" title="{{ pen.clube_b }}">
+        <input
+          type="radio"
+          name="{{ pen.name }}"
+          value="b"
+          {% if pen.checked == 'b' %}checked{% endif %}
+          {% if pen.disabled or _readonly %}disabled{% endif %}
+          aria-label="{{ pen.clube_b }} nos pênaltis"
+        />
+        {{ emblema(pen.clube_b) }}
+        <span class="pen-choice-name">{{ pen.clube_b }}</span>
+      </label>
+    </div>
+  </div>
+  {% endif %}
+</div>

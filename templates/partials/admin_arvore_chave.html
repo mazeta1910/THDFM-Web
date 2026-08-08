@@ -1,0 +1,42 @@
+{# Chave da árvore admin.
+   Vars: i, classificados, chave_a='', chave_b='', ida_em='', volta_em=''
+#}
+<div
+  class="admin-arvore-chave"
+  data-arvore-chave="{{ i }}"
+  data-drop-chave
+>
+  <span class="planilha-jogo-tag">Chave {{ i + 1 }}</span>
+  <label>
+    Mandante Ida
+    <select name="chave_{{ i }}_a" required data-slot="a" class="admin-arvore-select">
+      <option value="">—</option>
+      {% for c in classificados %}
+      <option value="{{ c.clube }}" {% if chave_a == c.clube %}selected{% endif %}>{{ c.clube }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="admin-arvore-drop" data-drop-slot="a" tabindex="0" aria-label="Solte o mandante da ida aqui">
+    <span class="admin-arvore-drop-placeholder">Arraste um classificado</span>
+  </div>
+  <label>
+    Visitante Ida
+    <select name="chave_{{ i }}_b" required data-slot="b" class="admin-arvore-select">
+      <option value="">—</option>
+      {% for c in classificados %}
+      <option value="{{ c.clube }}" {% if chave_b == c.clube %}selected{% endif %}>{{ c.clube }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="admin-arvore-drop" data-drop-slot="b" tabindex="0" aria-label="Solte o visitante da ida aqui">
+    <span class="admin-arvore-drop-placeholder">Arraste um classificado</span>
+  </div>
+  <label>
+    Ida · data/hora
+    <input type="datetime-local" name="chave_{{ i }}_ida" value="{{ ida_em|default('') }}" />
+  </label>
+  <label>
+    Volta · data/hora
+    <input type="datetime-local" name="chave_{{ i }}_volta" value="{{ volta_em|default('') }}" />
+  </label>
+</div>

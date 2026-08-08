@@ -1607,7 +1607,7 @@ button.danger {
   width: 1px;
   height: 1px;
   margin: 0;
-  pointer-events: none;
+  clip: rect(0 0 0 0);
 }
 .pen-choice:hover {
   border-color: var(--accent);
@@ -1617,9 +1617,24 @@ button.danger {
   background: color-mix(in srgb, var(--accent) 18%, var(--bg));
   color: var(--text);
 }
+.pen-choice:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .pen-choice:has(input:disabled) {
   opacity: 0.65;
   cursor: default;
+}
+.pen-choice-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 .pen-group.hidden { display: none; }
 
@@ -3513,21 +3528,137 @@ html[data-theme="light"] .admin-main {
 .placares-btn-icon svg {
   flex: 0 0 auto;
 }
-.placares-btn-save,
-.placares-btn-fechar {
+.placares-btn-save {
   background: var(--accent);
   border: 1px solid var(--accent);
   color: #111;
 }
-.placares-btn-save:hover,
-.placares-btn-fechar:hover {
+.placares-btn-fechar {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.placares-btn-save:hover {
   filter: brightness(1.05);
   color: #111;
+}
+.placares-btn-fechar:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.placares-btn-zerar {
+  color: var(--muted);
 }
 .placares-btn-save:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   filter: none;
+}
+.placares-dirty {
+  margin: -0.35rem 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+.admin-fases-panel .fases-panel-head {
+  margin-bottom: 0.35rem;
+}
+.admin-sticky-save {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 92%, var(--bg));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.admin-sticky-dirty {
+  margin-right: auto;
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+.match-cell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.match-cell-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+.match-cell-action {
+  width: auto;
+  min-width: 2rem;
+  padding: 0.3rem 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.75rem;
+}
+.match-cell-confirm {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #111;
+}
+.match-cell-undo {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.match-cell.is-confirmado {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.match-confirmado-tag {
+  color: var(--accent);
+}
+.match-classificado-preview {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.admin-resultados-form {
+  margin-top: 0;
+  padding: 0.85rem 0 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.admin-panel[data-panel="resultados"] .fase-panel > .admin-resultados-form {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.transparencia-nav-fase:focus-visible,
+.transparencia-nav-pernas button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .placares-btn-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .placares-action-btn {
+    position: relative;
+  }
 }
 /* Une abas + placares num bloco só (sem vão) */
 .admin-panel[data-panel="resultados"] .fases-panel {
@@ -8866,10 +8997,11 @@ html[data-theme="light"] .listra-perm-table th {
 
 /* Árvore / horários no admin Resultados */
 .admin-arvore-card {
-  margin-bottom: 1.25rem;
+  margin: 1.5rem 0 1.25rem;
+  text-align: center;
 }
 .admin-arvore-lead {
-  margin: 0 0 1rem;
+  margin: 0 auto 1rem;
   color: var(--muted);
   font-size: 0.92rem;
   max-width: 44rem;
@@ -8878,6 +9010,7 @@ html[data-theme="light"] .listra-perm-table th {
   margin-top: 1rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
+  text-align: center;
 }
 .admin-arvore-fase h3 {
   margin: 0 0 0.5rem;
@@ -8885,8 +9018,9 @@ html[data-theme="light"] .listra-perm-table th {
 }
 .admin-arvore-status,
 .admin-arvore-pool {
-  margin: 0 0 0.75rem;
+  margin: 0 auto 0.75rem;
   font-size: 0.9rem;
+  max-width: 52rem;
 }
 .admin-arvore-chip {
   display: inline-flex;
@@ -8898,6 +9032,11 @@ html[data-theme="light"] .listra-perm-table th {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--card) 80%, var(--bg));
   font-size: 0.82rem;
+  cursor: grab;
+  user-select: none;
+}
+.admin-arvore-chip.is-dragging {
+  opacity: 0.55;
 }
 .admin-arvore-chip img {
   width: 16px;
@@ -8905,16 +9044,20 @@ html[data-theme="light"] .listra-perm-table th {
   object-fit: contain;
 }
 .admin-arvore-existentes {
-  margin: 0 0 0.75rem;
+  margin: 0 auto 0.75rem;
   padding-left: 1.1rem;
   color: var(--muted);
   font-size: 0.88rem;
+  display: inline-block;
+  text-align: left;
 }
 .admin-arvore-chaves {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.75rem;
-  margin-bottom: 0.85rem;
+  margin: 0 auto 0.85rem;
+  max-width: 64rem;
+  text-align: left;
 }
 .admin-arvore-chave {
   display: flex;
@@ -8937,6 +9080,8 @@ html[data-theme="light"] .listra-perm-table th {
 .admin-arvore-chave select,
 .admin-arvore-chave input[type="datetime-local"],
 .match-inicio-label input[type="datetime-local"] {
+  width: 100%;
+  box-sizing: border-box;
   font: inherit;
   font-size: 0.85rem;
   text-transform: none;
@@ -8947,11 +9092,38 @@ html[data-theme="light"] .listra-perm-table th {
   border-radius: 6px;
   padding: 0.35rem 0.45rem;
 }
+.admin-arvore-drop {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 70%, var(--card));
+}
+.admin-arvore-drop.is-over {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.admin-arvore-drop.has-clube {
+  border-style: solid;
+  color: var(--text);
+  font-weight: 600;
+}
+.admin-arvore-submit {
+  width: auto;
+  margin: 0 auto;
+  display: inline-flex;
+}
 .match-inicio-label {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   margin-bottom: 0.45rem;
+  padding: 0 0.65rem;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;

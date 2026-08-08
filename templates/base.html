@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=230" />
+  <link rel="stylesheet" href="/static/style.css?v=231" />
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
 {% set path = request.url.path %}
@@ -249,10 +249,10 @@
   </script>
   <script>
   (() => {
-    const KEY = "thdfm-fases-collapsed";
-    const readCollapsed = () => {
+    const DEFAULT_KEY = "thdfm-fases-collapsed";
+    const readCollapsed = (key) => {
       try {
-        const v = localStorage.getItem(KEY);
+        const v = localStorage.getItem(key || DEFAULT_KEY);
         // Padrão: expandido (maximizado)
         if (v === null) return false;
         return v === "1";
@@ -260,8 +260,8 @@
         return false;
       }
     };
-    const writeCollapsed = (collapsed) => {
-      try { localStorage.setItem(KEY, collapsed ? "1" : "0"); } catch (e) {}
+    const writeCollapsed = (key, collapsed) => {
+      try { localStorage.setItem(key || DEFAULT_KEY, collapsed ? "1" : "0"); } catch (e) {}
     };
     const syncSummary = (panel) => {
       const summary = panel.querySelector("[data-fases-summary]");
@@ -277,17 +277,29 @@
       summary.textContent = [fase, perna].filter(Boolean).join(" · ");
     };
     document.querySelectorAll("[data-fases-collapse]").forEach((panel) => {
+      const storageKey = panel.getAttribute("data-fases-storage") || DEFAULT_KEY;
       const btn = panel.querySelector("[data-fases-toggle]");
-      const label = btn?.querySelector(".btn-toggle-fases-label");
+      // Painéis sem botão Minimizar (ex.: admin Resultados) ficam sempre abertos.
+      if (!btn) {
+        panel.classList.remove("is-collapsed");
+        syncSummary(panel);
+        panel.addEventListener("click", (e) => {
+          if (e.target.closest("[data-fase], .transparencia-nav-fase, .transparencia-nav-pernas a, .transparencia-nav-pernas button")) {
+            requestAnimationFrame(() => syncSummary(panel));
+          }
+        });
+        return;
+      }
+      const label = btn.querySelector(".btn-toggle-fases-label");
       const setCollapsed = (collapsed) => {
         panel.classList.toggle("is-collapsed", collapsed);
-        btn?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
         if (label) label.textContent = collapsed ? "Expandir" : "Minimizar";
         syncSummary(panel);
-        writeCollapsed(collapsed);
+        writeCollapsed(storageKey, collapsed);
       };
-      setCollapsed(readCollapsed());
-      btn?.addEventListener("click", () => {
+      setCollapsed(readCollapsed(storageKey));
+      btn.addEventListener("click", () => {
         setCollapsed(!panel.classList.contains("is-collapsed"));
       });
       panel.addEventListener("click", (e) => {
