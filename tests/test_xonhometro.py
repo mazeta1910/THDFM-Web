@@ -30,7 +30,8 @@ def test_xonhometro_publico_vazio(client: TestClient):
     assert "xonha-counter-value" in r.text
     assert "/static/img/xonha.png" in r.text
     assert "xonha-status-foto" in r.text
-    assert "xonha-timeline-track" in r.text or "xonha-empty" in r.text
+    assert "xonha-empty" in r.text
+    assert 'data-xonha-timeline-lazy="1"' not in r.text
     assert 'action="/admin/xonhometro"' not in r.text
 
 def test_visitante_nao_cria_evento(client: TestClient):
@@ -127,9 +128,10 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
 
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
-    assert "Brigou no zap" in pub.text
-    assert "10:15" in pub.text
-    assert "22:40" in pub.text
+    # First paint: stats + cascas dos anos — sem montar ~N eventos no HTML.
+    assert "Brigou no zap" not in pub.text
+    assert "data-xonha-timeline-lazy" in pub.text
+    assert 'data-xonha-timeline-src="/xonhometro/timeline.json"' in pub.text
     assert "R$2,00" in pub.text
     assert "Contagem desde" in pub.text
     assert "01/07/2026" in pub.text
@@ -138,29 +140,36 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     assert "2 saídas" in pub.text
     assert "0 ban" in pub.text
     assert "xonha-weekday-seg--saida" in pub.text
-    assert "xonha-timeline-scroll" in pub.text
-    assert "xonha-timeline-track" in pub.text
-    assert "xonha-timeline-event" in pub.text
-    assert "xonha-timeline-rail" in pub.text
     assert "xonha-timeline-anos" in pub.text
     assert "xonha-timeline-year" in pub.text
     assert "xonha-timeline-year-title" in pub.text
+    assert 'data-xonha-ano="2026"' in pub.text
     assert ">2026<" in pub.text
-    assert "xonha-motivo-mais" in pub.text
+    assert 'data-xonha-timeline-lazy="1"' in pub.text
+    assert "[data-xonha-year-body]" in pub.text
     assert "xonha-motivo-dialog" in pub.text
-    assert "data-xonha-motivo-preview" in pub.text
-    assert "data-xonha-motivo-full=" in pub.text
-    assert "xonha-motivo-mais-icon" in pub.text
-    assert "xonha-motivo-mais-slot" in pub.text
-    assert 'role="button"' in pub.text
-    assert "showModal" in pub.text
+    assert "carregarTimeline" in pub.text
     assert "motivoTruncado" in pub.text
+    assert "showModal" in pub.text
+
+    tl = client.get("/xonhometro/timeline.json")
+    assert tl.status_code == 200
+    assert "private, max-age=60" in (tl.headers.get("cache-control") or "")
+    payload = tl.json()
+    assert payload and payload[0]["ano"] == "2026"
+    motivos = [e.get("motivo") for g in payload for e in g["eventos"]]
+    assert "Brigou no zap" in motivos
+    horas = [e.get("hora") for g in payload for e in g["eventos"]]
+    assert "10:15" in horas
+    assert "22:40" in horas
+
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=225" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=228" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
     assert "overflow-x: hidden" in css
     assert "overscroll-behavior-x: contain" in css
+    assert ".xonha-timeline-loading" in css
     assert "Recorde de permanência" in pub.text
     assert "Média / dia desde o início" not in pub.text
     assert "Média de saída / mês" in pub.text
@@ -221,16 +230,43 @@ def test_agrupar_xonha_eventos_por_ano(client: TestClient):
     pub = client.get("/xonhometro")
     assert pub.status_code == 200
     assert "xonha-timeline-anos" in pub.text
+    assert 'data-xonha-ano="2024"' in pub.text
+    assert 'data-xonha-ano="2025"' in pub.text
+    assert 'data-xonha-ano="2026"' in pub.text
     assert ">2024<" in pub.text
     assert ">2025<" in pub.text
     assert ">2026<" in pub.text
-    # Motivo longo deve trazer botão + e template do texto completo
+    # Motivo longo fica no JSON sob demanda — não no HTML inicial
     longo = "X" * 160
     db.criar_xonha_evento("saida", "2026-04-01", longo, hora="10:00")
     pub2 = client.get("/xonhometro")
-    assert "xonha-motivo-mais" in pub2.text
-    assert longo in pub2.text
-    assert "data-xonha-motivo-mais" in pub2.text
+    assert longo not in pub2.text
+    assert "data-xonha-timeline-lazy" in pub2.text
+    assert "carregarTimeline" in pub2.text
+    assert "renderEvento" in pub2.text
+    tl = client.get("/xonhometro/timeline.json")
+    assert tl.status_code == 200
+    assert longo in tl.text
+
+
+def test_xonhometro_html_inicial_leve_com_muitos_eventos(client: TestClient):
+    """Garante que o first paint não embute a timeline completa."""
+    part = db.criar_participante("Perf Xonha", status="liberado", celular="11990008888")
+    db.definir_credenciais(part["id"], "perf.xonha", "senha12345")
+    client.get(f"/p/{part['token']}")
+    for i in range(40):
+        dia = f"2026-01-{(i % 28) + 1:02d}"
+        db.criar_xonha_evento("saida", dia, f"motivo-pesado-{i}-{'Z' * 80}", hora="12:00")
+    pub = client.get("/xonhometro")
+    assert pub.status_code == 200
+    assert "motivo-pesado-0" not in pub.text
+    assert 'data-xonha-timeline-lazy="1"' in pub.text
+    assert "xonha-timeline-year-body" in pub.text
+    assert len(pub.text) < 200_000
+    tl = client.get("/xonhometro/timeline.json")
+    assert tl.status_code == 200
+    assert "motivo-pesado-0" in tl.text
+    assert len(tl.json()[0]["eventos"]) == 40
 
 
 def test_admin_atualiza_e_apaga(client: TestClient):
@@ -387,7 +423,7 @@ def test_admin_registra_banimento(client: TestClient):
     assert "banido do grupo" in pub.text
     assert "xonha-status-block--banido" in pub.text
     assert "xonha-status-foto-wrap" in pub.text
-    assert "Passou do limite" in pub.text
+    assert "Passou do limite" not in pub.text
     assert "R$2,00" in pub.text
     assert "Contagem desde" in pub.text
     assert "20/07/2026" in pub.text
@@ -395,6 +431,9 @@ def test_admin_registra_banimento(client: TestClient):
     assert "1 ban" in pub.text
     assert "Data com mais banimentos" in pub.text
     assert "xonha-weekday-seg--banimento" in pub.text
+    tl = client.get("/xonhometro/timeline.json")
+    assert tl.status_code == 200
+    assert "Passou do limite" in tl.text
 
 
 def test_xonha_metricas_mes_gaps_e_permanencia(client: TestClient):
