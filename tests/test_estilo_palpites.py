@@ -209,6 +209,7 @@ def test_resumo_rodadas_na_ficha(client):
     assert entradas[0]["rotulo_curto"] == "R1"
     assert entradas[0]["janela"] == "ida"
     assert entradas[0]["janela_label"] == "Ida"
+    assert entradas[0]["fase_label"] == "Oitavas"
     assert entradas[0]["fase_label_curta"] == "Oit"
     assert entradas[0]["jogos"]
     assert any(j.get("palpite_m") is not None for j in entradas[0]["jogos"])
@@ -218,7 +219,7 @@ def test_resumo_rodadas_na_ficha(client):
     assert entradas[1]["jogos"]
     assert entradas[2]["rotulo"] == "Rodada 3"
     assert entradas[2]["ao_vivo"] is True
-    assert entradas[2]["fase_label_curta"] == "Oit"
+    assert entradas[2]["fase_label"] == "Oitavas"
     assert entradas[2]["rod"] == 0
     assert entradas[0]["posicao"] is not None
     # Só uma Volta das Oitavas (sem R3/R4 duplicada)
@@ -287,6 +288,7 @@ def test_avancar_fase_nao_infla_pontos_nem_rod_fantasma(client):
     ao_vivo = resumo[a["id"]][-1]
     assert ao_vivo["ao_vivo"] is True
     assert ao_vivo["rotulo"] == "Rodada 2"
+    assert ao_vivo["fase_label"] == "Quartas"
     assert ao_vivo["fase_label_curta"] == "Qua"
     assert ao_vivo["janela_label"] == "Ida"
     assert ao_vivo["rod"] == 0
