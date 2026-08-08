@@ -5961,73 +5961,140 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
 }
 .ficha-rodada-jogos {
   display: none;
-  gap: 0.35rem;
-  padding: 0 0 0.55rem;
+  gap: 0.2rem;
+  padding: 0.1rem 0 0.55rem;
 }
 .ficha-rodada-item.is-open .ficha-rodada-jogos {
   display: grid;
 }
+.ficha-jogos-cols,
 .ficha-jogo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.2rem 0.5rem;
+  grid-template-columns:
+    minmax(4.6rem, 1.15fr)
+    minmax(3.4rem, 0.95fr)
+    1.45rem 1.45rem 1.35rem 1.35rem
+    minmax(2.1rem, auto);
+  gap: 0.2rem 0.35rem;
   align-items: center;
-  padding: 0.42rem 0.55rem;
-  border-radius: 8px;
-  background: var(--bg2);
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+.ficha-jogos-cols {
+  padding: 0.2rem 0.2rem 0.28rem;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.ficha-jogos-cols > span:nth-child(n+3) {
+  text-align: center;
+}
+.ficha-jogos-cols > span:last-child {
+  text-align: right;
+}
+.ficha-jogo {
+  padding: 0.42rem 0.2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   font-size: 0.78rem;
+  background: transparent;
 }
-.ficha-jogo-times {
+.ficha-jogo:last-child {
+  border-bottom: 0;
+}
+.ficha-jogo-oficial,
+.ficha-jogo-palpite {
   min-width: 0;
-  line-height: 1.25;
-}
-.ficha-jogo-placar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  line-height: 1.15;
+}
+.ficha-jogo-scoreline {
+  display: inline-flex;
   align-items: center;
-  gap: 0.22rem 0.28rem;
-  font-weight: 650;
-  color: var(--text);
+  gap: 0.22rem;
   min-width: 0;
 }
-.ficha-jogo-embl {
-  width: 1.05rem;
-  height: 1.05rem;
+.ficha-jogo-embl,
+.ficha-jogo-embl-fallback {
+  width: 1.1rem;
+  height: 1.1rem;
   object-fit: contain;
   flex: 0 0 auto;
 }
-.ficha-jogo-score {
+.ficha-jogo-embl-fallback {
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.ficha-jogo-score,
+.ficha-jogo-palpite-score {
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   color: var(--text);
+  white-space: nowrap;
 }
-.ficha-jogo-times small {
+.ficha-jogo-oficial small,
+.ficha-jogo-palpite small {
   display: block;
-  margin-top: 0.08rem;
   color: var(--muted);
-  font-weight: 500;
-  font-size: 0.68rem;
+  font-weight: 700;
+  font-size: 0.54rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.ficha-jogo-mark {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  justify-self: center;
+  flex: 0 0 auto;
+  color: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 25%, transparent);
+}
+.ficha-jogo-mark.is-ok {
+  background: #2f9e44;
+}
+.ficha-jogo-mark.is-miss {
+  background: #e03131;
+}
+.ficha-jogo-mark.is-na {
+  background: #e8a317;
+  color: #1a1208;
+}
+.ficha-jogo-num {
+  justify-self: center;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text);
+  min-width: 1.15rem;
+}
+.ficha-jogo-num.is-hit {
+  color: #1a1208;
+  background: #e8a317;
+  border-radius: 999px;
+  padding: 0.08rem 0.34rem;
+  font-weight: 800;
+  font-size: 0.7rem;
 }
 .ficha-jogo-pts {
+  justify-self: end;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   white-space: nowrap;
+  font-size: 0.86rem;
 }
 .ficha-jogo-pts.is-zero { color: var(--muted); }
-.ficha-jogo-breakdown {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.45rem;
-  color: var(--muted);
-  font-size: 0.64rem;
-}
-.ficha-jogo-breakdown b {
-  color: var(--accent);
-  font-weight: 700;
-}
 .ficha-jogo-vazio {
   margin: 0;
   padding: 0.25rem 0.15rem 0.1rem;
@@ -6097,6 +6164,18 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   .ficha-rodada-lab {
     font-size: 0.54rem;
   }
+  .ficha-jogos-cols,
+  .ficha-jogo {
+    grid-template-columns:
+      minmax(4.1rem, 1.1fr)
+      minmax(3rem, 0.9fr)
+      1.3rem 1.3rem 1.2rem 1.2rem
+      minmax(1.9rem, auto);
+    gap: 0.15rem 0.25rem;
+  }
+  .ficha-jogo-score,
+  .ficha-jogo-palpite-score { font-size: 0.74rem; }
+  .ficha-jogo-pts { font-size: 0.8rem; }
 }
 .visually-hidden {
   position: absolute;
