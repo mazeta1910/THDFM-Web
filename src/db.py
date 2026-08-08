@@ -1770,6 +1770,23 @@ def desfazer_confirmacao_jogo(jogo_id: int) -> dict[str, Any]:
         return dict(out) if out else dict(row)
 
 
+def confirmar_jogos_da_fase(fase: str) -> int:
+    """Confirma todos os jogos da fase que já têm placar. Retorna quantos travou."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE jogos SET confirmado_em = datetime('now', 'localtime') "
+            "WHERE id IN ("
+            "  SELECT j.id FROM jogos j "
+            "  JOIN confrontos c ON c.id = j.confronto_id "
+            "  WHERE c.fase = ? "
+            "  AND j.gols_mandante IS NOT NULL AND j.gols_visitante IS NOT NULL "
+            "  AND (j.confirmado_em IS NULL OR j.confirmado_em = '')"
+            ")",
+            (fase,),
+        )
+        return int(cur.rowcount or 0)
+
+
 def limpar_resultados_oficiais(*, fase: str, perna: str) -> int:
     """Zera placares oficiais da fase+perna. Retorna quantos jogos foram afetados."""
     if perna not in ("ida", "volta", "unico"):

@@ -143,6 +143,16 @@
             </svg>
             <span class="placares-btn-text">Fechar rodada</span>
           </button>
+          {% if proxima_fase %}
+          <form method="post" action="/admin/avancar-fase" id="form-avancar-fase" class="placares-zerar-form">
+            <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" id="btn-avancar-fase" title="Confirma placares da fase atual e libera {{ proxima_fase.label }}">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              <span class="placares-btn-text">Liberar {{ proxima_fase.label }}</span>
+            </button>
+          </form>
+          {% endif %}
         </div>
       </div>
       <p class="placares-dirty" id="placares-dirty" hidden>Alterações não salvas</p>
@@ -158,14 +168,14 @@
           <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
             {% for f in fases %}
             {% set perna_f = (perna_default_por_fase|default({})).get(f.id, 'ida') %}
-            <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}" data-fase-col="{{ f.id }}">
+            <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %} {% if f.encerrada %}is-encerrada{% endif %}" data-fase-col="{{ f.id }}">
               <button
                 type="button"
                 class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
                 data-fase="{{ f.id }}"
                 {% if f.ativa %}aria-current="true"{% endif %}
-                {% if not f.unlocked %}disabled title="Aguardando liberação desta fase"{% endif %}
-              >{{ f.label }}</button>
+                title="{% if f.encerrada %}Fase encerrada (somente leitura){% elif not f.unlocked %}Prévia — libere a fase para editar{% else %}{{ f.label }}{% endif %}"
+              >{{ f.label }}{% if f.encerrada %} · fechada{% endif %}</button>
               <div class="transparencia-nav-pernas">
                 <button
                   type="button"
@@ -173,7 +183,6 @@
                   data-tab="ida"
                   class="{% if f.ativa and perna_f == 'ida' %}active{% endif %}"
                   {% if f.ativa and perna_f == 'ida' %}aria-current="true"{% endif %}
-                  {% if not f.unlocked %}disabled title="Fase bloqueada"{% endif %}
                 ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
                 <button
                   type="button"
@@ -181,7 +190,6 @@
                   data-tab="volta"
                   class="{% if f.ativa and perna_f == 'volta' %}active{% endif %}"
                   {% if f.ativa and perna_f == 'volta' %}aria-current="true"{% endif %}
-                  {% if not f.unlocked %}disabled title="Fase bloqueada"{% endif %}
                 ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
               </div>
             </div>
@@ -193,39 +201,90 @@
       {% for f in fases %}
       {% set confrontos = confrontos_por_fase.get(f.id, []) %}
       {% set perna_f = (perna_default_por_fase|default({})).get(f.id, 'ida') %}
+      {% set fase_encerrada = f.encerrada|default(false) %}
       <div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">
 
         {% if not f.unlocked %}
         <div class="admin-resultados-form locked-card">
-          <p class="locked-msg" style="margin:0">Monte a árvore desta fase abaixo (ou aguarde classificados) para liberar os placares.</p>
-          <div class="match-grid locked-grid" style="margin-top:0.85rem">
-            {% for _ in range(f.slots) %}
-            <div class="match-cell locked">
-              <div class="match-teams">
-                <div class="match-team-row">
-                  <span>A definir</span>
-                  <input type="number" disabled placeholder="—" />
-                </div>
-                <div class="match-team-row">
-                  <span>A definir</span>
-                  <input type="number" disabled placeholder="—" />
+          <p class="locked-msg" style="margin:0">Prévia da fase. Use <strong>Liberar {{ f.label }}</strong> para abrir no bolão. Ida e Volta já aparecem abaixo.</p>
+          <div class="match-panel" data-panel="ida">
+            <p class="admin-perna-caption">Jogo 1 (Ida) — rascunho</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
                 </div>
               </div>
+              {% endfor %}
             </div>
-            {% endfor %}
+          </div>
+          <div class="match-panel hidden" data-panel="volta">
+            <p class="admin-perna-caption">Jogo 2 (Volta) — rascunho</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
 
         {% else %}
-        <form method="post" action="/admin/resultados" class="admin-resultados-form" data-fase="{{ f.id }}">
+        <form method="post" action="/admin/resultados" class="admin-resultados-form{% if fase_encerrada %} is-fase-encerrada{% endif %}" data-fase="{{ f.id }}" {% if fase_encerrada %}data-fase-encerrada="1"{% endif %}>
           <input type="hidden" name="fase" value="{{ f.id }}" />
           <input type="hidden" name="perna" value="{{ perna_f }}" class="admin-perna-field" />
+          {% if fase_encerrada %}
+          <p class="locked-msg admin-fase-encerrada-msg">Fase encerrada — placares somente leitura.</p>
+          {% endif %}
 
           <div class="match-panel {% if perna_f != 'ida' %}hidden{% endif %}" data-panel="ida">
             {% if not confrontos %}
-            <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+            <p class="locked-msg">Confrontos ainda não montados — use a Árvore. Esqueleto da Ida:</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
             {% else %}
-            <div class="match-grid">
+            <div class="match-grid admin-match-grid">
               {% for c in confrontos %}
               {% if c.ida %}
               {% set mode = 'admin' %}
@@ -239,14 +298,14 @@
               {% set name_v = 'jogo_' ~ c.ida.id ~ '_v' %}
               {% set val_m = c.ida.gols_mandante if c.ida.gols_mandante is not none else '' %}
               {% set val_v = c.ida.gols_visitante if c.ida.gols_visitante is not none else '' %}
-              {% set readonly = false %}
+              {% set readonly = fase_encerrada %}
               {% set inicio_lbl = formatar_inicio_jogo(c.ida.inicio_em) %}
               {% set travado_tag = none %}
               {% set confirmado = c.ida.confirmado|default(false) %}
               {% set jogo_id = c.ida.id %}
               {% set inicio_input_name = 'jogo_' ~ c.ida.id ~ '_inicio' %}
               {% set inicio_input_value = inicio_em_input_value(c.ida.inicio_em) %}
-              {% set inicio_label = 'Início Ida' %}
+              {% set inicio_label = 'Início' %}
               {% set volta_classes_m = '' %}
               {% set volta_classes_v = '' %}
               {% set data_ida_a = none %}
@@ -264,9 +323,28 @@
 
           <div class="match-panel {% if perna_f != 'volta' %}hidden{% endif %}" data-panel="volta">
             {% if not confrontos %}
-            <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+            <p class="locked-msg">Confrontos ainda não montados — use a Árvore. Esqueleto da Volta:</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
             {% else %}
-            <div class="match-grid">
+            <div class="match-grid admin-match-grid">
               {% for c in confrontos %}
               {% if c.volta %}
               {% set mode = 'admin' %}
@@ -280,20 +358,20 @@
               {% set name_v = 'jogo_' ~ c.volta.id ~ '_v' %}
               {% set val_m = c.volta.gols_mandante if c.volta.gols_mandante is not none else '' %}
               {% set val_v = c.volta.gols_visitante if c.volta.gols_visitante is not none else '' %}
-              {% set readonly = false %}
+              {% set readonly = fase_encerrada %}
               {% set inicio_lbl = formatar_inicio_jogo(c.volta.inicio_em) %}
               {% set travado_tag = none %}
               {% set confirmado = c.volta.confirmado|default(false) %}
               {% set jogo_id = c.volta.id %}
               {% set inicio_input_name = 'jogo_' ~ c.volta.id ~ '_inicio' %}
               {% set inicio_input_value = inicio_em_input_value(c.volta.inicio_em) %}
-              {% set inicio_label = 'Início Volta' %}
+              {% set inicio_label = 'Início' %}
               {% set volta_classes_m = 'volta-m' %}
               {% set volta_classes_v = 'volta-v' %}
               {% set data_ida_a = c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' %}
               {% set data_ida_b = c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' %}
               {% set ref_lines = [{
-                'label': 'Resultado Oficial (Ida):',
+                'label': 'Ida:',
                 'oficial': true,
                 'gols_m': c.ida.gols_mandante if c.ida else none,
                 'gols_v': c.ida.gols_visitante if c.ida else none,
@@ -307,7 +385,7 @@
                 'hidden': true,
                 'clube_a': c.clube_a,
                 'clube_b': c.clube_b,
-                'disabled': false,
+                'disabled': fase_encerrada,
               } %}
               {% set admin_attrs = 'data-confronto-admin="' ~ c.id ~ '" data-ida-jogo="' ~ (c.ida.id if c.ida else '') ~ '"' %}
               {% set classificado_preview = true %}
@@ -318,6 +396,7 @@
             {% endif %}
           </div>
 
+          {% if not fase_encerrada and confrontos %}
           <div class="sticky-save admin-sticky-save" id="admin-sticky-save-{{ f.id }}">
             <span class="admin-sticky-dirty" data-sticky-dirty hidden>Alterações não salvas</span>
             <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" data-sticky-salvar title="Salvar placares da perna">
@@ -329,6 +408,7 @@
               <span>Salvar</span>
             </button>
           </div>
+          {% endif %}
         </form>
         {% endif %}
 
@@ -847,6 +927,24 @@
     </div>
   </div>
 </div>
+<div class="modal-backdrop" id="modal-avancar-fase" hidden>
+  <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-avancar-fase-title">
+    <h3 id="modal-avancar-fase-title">Liberar {{ proxima_fase.label if proxima_fase else 'próxima fase' }}?</h3>
+    <div class="confirm-alert">
+      <p>Isso <strong>fecha {{ fases|selectattr('ativa')|map(attribute='label')|first|default('a fase atual') }}</strong>:</p>
+      <ul>
+        <li>Confirma todos os placares oficiais já preenchidos</li>
+        <li>Placares da fase fechada ficam somente leitura</li>
+        <li>Libera <strong>{{ proxima_fase.label if proxima_fase else 'a próxima' }}</strong> (Ida e Volta) no bolão</li>
+      </ul>
+      <p class="confirm-alert-warn">Você ainda pode montar os confrontos na Árvore depois.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="modal-avancar-fase-cancelar">Cancelar</button>
+      <button type="button" id="modal-avancar-fase-confirmar">Sim, liberar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modal-rodada" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-rodada-title">
     <h3 id="modal-rodada-title">Fechar rodada agora?</h3>
@@ -1289,7 +1387,8 @@ if (placaresNav) {
     form?.querySelectorAll(".admin-perna-field").forEach((el) => {
       el.value = perna;
     });
-    if (btnSalvar) btnSalvar.disabled = !form;
+    const encerrada = !!form?.dataset.faseEncerrada;
+    if (btnSalvar) btnSalvar.disabled = !form || encerrada;
     refreshBaseline();
   };
 
@@ -1319,7 +1418,7 @@ if (placaresNav) {
     syncZerarForm(fase, perna);
   };
 
-  placaresNav.querySelectorAll("button[data-fase]:not([disabled])").forEach((btn) => {
+  placaresNav.querySelectorAll("button[data-fase]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const fase = btn.dataset.fase;
       let perna = btn.dataset.tab;
@@ -1390,6 +1489,16 @@ document.getElementById("modal-rodada-cancelar")?.addEventListener("click", () =
 document.getElementById("modal-rodada-confirmar")?.addEventListener("click", () => formRodada?.submit());
 modalRodada?.addEventListener("click", (e) => {
   if (e.target === modalRodada) fecharModal(modalRodada);
+});
+
+const formAvancarFase = document.getElementById("form-avancar-fase");
+const modalAvancarFase = document.getElementById("modal-avancar-fase");
+if (modalAvancarFase) document.body.appendChild(modalAvancarFase);
+document.getElementById("btn-avancar-fase")?.addEventListener("click", () => abrirModal(modalAvancarFase));
+document.getElementById("modal-avancar-fase-cancelar")?.addEventListener("click", () => fecharModal(modalAvancarFase));
+document.getElementById("modal-avancar-fase-confirmar")?.addEventListener("click", () => formAvancarFase?.submit());
+modalAvancarFase?.addEventListener("click", (e) => {
+  if (e.target === modalAvancarFase) fecharModal(modalAvancarFase);
 });
 
 const formJanela = document.getElementById("form-janela");

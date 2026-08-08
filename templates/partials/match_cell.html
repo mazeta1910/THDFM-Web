@@ -10,21 +10,22 @@
    - inicio_lbl: str|none (rótulo formatado; palpite)
    - travado_tag: str|none ('Fechado' no palpite)
    - confirmado: bool (admin)
+   - fase_encerrada: bool (admin — some ações de editar/desfazer)
    - jogo_id: int|none (admin — para confirmar/desfazer e datetime)
    - inicio_input_name / inicio_input_value: admin datetime
    - inicio_label: 'Início Ida' | 'Início Volta' (admin)
    - volta_classes_m / volta_classes_v: classes extras nos inputs (ex. volta-m)
    - data_ida_a / data_ida_b: attrs data-ida-* no input mandante volta
    - ref_lines: lista opcional de {label, gols_m, gols_v, clube_a, clube_b, oficial?}
-     (clube_a/clube_b = ordem da ida para emblemas do placar de referência)
-   - pen: dict|none { name, value_a, value_b, checked, title, hidden, clube_a, clube_b, disabled }
+   - pen: dict|none { name, checked, title, hidden, clube_a, clube_b, disabled }
    - admin_attrs: str opcional (data-confronto-admin etc.)
    - classificado_preview: bool (admin volta — mostra quem passa)
 #}
-{% set _confirmado = confirmado|default(false) %}
+{% set _confirmado = confirmado|default(false) or fase_encerrada|default(false) %}
 {% set _readonly = readonly|default(false) or _confirmado %}
+{% set _encerrada = fase_encerrada|default(false) %}
 <div
-  class="match-cell{% if _confirmado %} is-confirmado{% endif %}"
+  class="match-cell{% if _confirmado %} is-confirmado{% endif %}{% if _encerrada %} is-fase-encerrada{% endif %}"
   data-confronto="{{ confronto_id }}"
   {% if mode == 'admin' and jogo_id %}data-jogo-id="{{ jogo_id }}"{% endif %}
   {% if admin_attrs %} {{ admin_attrs|safe }}{% endif %}
@@ -34,9 +35,9 @@
 >
   <div class="match-cell-head">
     <span class="planilha-jogo-tag match-jogo-tag">
-      JOGO ({{ jogo_num }}){% if inicio_lbl %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
+      JOGO ({{ jogo_num }}){% if inicio_lbl and mode != 'admin' %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _encerrada %} · <span class="match-travado-tag">Encerrado</span>{% elif _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
     </span>
-    {% if mode == 'admin' and jogo_id %}
+    {% if mode == 'admin' and jogo_id and not _encerrada %}
     <div class="match-cell-actions">
       {% if _confirmado %}
       <button
@@ -70,8 +71,8 @@
   </div>
 
   {% if mode == 'admin' and inicio_input_name %}
-  <label class="match-inicio-label">
-    {{ inicio_label|default('Início') }}
+  <label class="match-inicio-label match-inicio-compact">
+    <span>{{ inicio_label|default('Início') }}</span>
     <input
       type="datetime-local"
       name="{{ inicio_input_name }}"
@@ -88,11 +89,11 @@
       {{ line.label }}
       {% if line.gols_m is not none and line.gols_v is not none %}
       <span class="match-ref-score">
-        {{ emblema(line.clube_a) }}
+        {{ emblema(line.clube_a, class="match-emblema") }}
         <strong>{{ line.gols_m }}</strong>
         <span class="match-ref-x">x</span>
         <strong>{{ line.gols_v }}</strong>
-        {{ emblema(line.clube_b) }}
+        {{ emblema(line.clube_b, class="match-emblema") }}
       </span>
       {% else %}
       —
@@ -104,7 +105,7 @@
 
   <div class="match-teams">
     <div class="match-team-row">
-      {{ emblema(clube_m) }}
+      {{ emblema(clube_m, class="match-emblema") }}
       <span class="clube-nome" data-nome="{{ clube_m }}" data-curto="{{ nome_clube_curto(clube_m) }}" title="{{ clube_m }}">{{ clube_m }}</span>
       <input
         type="number"
@@ -120,7 +121,7 @@
       />
     </div>
     <div class="match-team-row">
-      {{ emblema(clube_v) }}
+      {{ emblema(clube_v, class="match-emblema") }}
       <span class="clube-nome" data-nome="{{ clube_v }}" data-curto="{{ nome_clube_curto(clube_v) }}" title="{{ clube_v }}">{{ clube_v }}</span>
       <input
         type="number"
@@ -152,7 +153,7 @@
           {% if pen.disabled or _readonly %}disabled{% endif %}
           aria-label="{{ pen.clube_a }} nos pênaltis"
         />
-        {{ emblema(pen.clube_a) }}
+        {{ emblema(pen.clube_a, class="match-emblema") }}
         <span class="pen-choice-name">{{ pen.clube_a }}</span>
       </label>
       <label class="pen-choice" title="{{ pen.clube_b }}">
@@ -164,7 +165,7 @@
           {% if pen.disabled or _readonly %}disabled{% endif %}
           aria-label="{{ pen.clube_b }} nos pênaltis"
         />
-        {{ emblema(pen.clube_b) }}
+        {{ emblema(pen.clube_b, class="match-emblema") }}
         <span class="pen-choice-name">{{ pen.clube_b }}</span>
       </label>
     </div>
