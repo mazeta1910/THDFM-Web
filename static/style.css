@@ -8051,6 +8051,15 @@ textarea.xonha-input {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
+.listra-ano-loading,
+.listra-ano-erro {
+  margin: 0.65rem 0 0.25rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.listra-ano-erro {
+  color: #e03131;
+}
 .listra-ano-actions {
   display: inline-flex;
   flex-direction: row;

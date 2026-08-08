@@ -132,6 +132,7 @@
       class="listra-ano-card {% if l.atual %}listra-ano-card--atual{% endif %}"
       id="listra-ano-{{ l.ano }}"
       data-ano="{{ l.ano }}"
+      data-listra-lazy="1"
       {% if l.atual %}open{% endif %}
     >
       <summary class="listra-ano-summary">
@@ -218,184 +219,127 @@
           </p>
         </div>
       </summary>
-      <ol class="listra-list" data-listra-lista="{{ l.ano }}">
-        {% for f in l.frases %}
-        {% set emoji_item = listra_emoji_efetivo(f) %}
-        {% set texto_ctx = listra_texto_contexto(f) %}
-        {% set linha_share = listra_linha_compartilhar(f) %}
-        <li
-          class="listra-item{% if f.destaque %} has-destaque{% endif %}"
-          id="listra-frase-{{ f.id }}"
-          data-listra-item="{{ f.id }}"
-          data-meliante="{{ f.responsavel or '' }}"
-          data-criado="{{ f.criado_em or '' }}"
-          data-listra-share="{{ linha_share|e }}"
-        >
-          <div class="listra-item-view">
-            <div class="listra-item-main">
-              <span class="listra-item-bullet" aria-hidden="true">{{ loop.index }}.</span>
-              {% if emoji_item %}<span class="listra-item-emoji" aria-hidden="true">{{ emoji_item }}</span>{% endif %}
-              <p class="listra-item-texto">{{ texto_ctx|listra_marcar_destaque(f.destaque) }}</p>
-            </div>
-            <div class="listra-item-meta">
-              <div class="listra-item-meta-text">
-                <span class="listra-item-resp {% if not f.responsavel %}listra-item-resp--vazio{% endif %}">
-                  Nome do meliante:
-                  {% if f.responsavel %}{{ f.responsavel }}{% else %}—{% endif %}
-                </span>
-                {% if f.criado_em %}
-                <time
-                  class="listra-item-quando"
-                  datetime="{{ f.criado_em[:10] }}{% if f.criado_em|length >= 16 %}T{{ f.criado_em[11:16] }}{% endif %}"
-                  title="Registrado em {{ f.criado_em }}"
-                >
-                  {{ f.criado_em[8:10] }}/{{ f.criado_em[5:7] }}/{{ f.criado_em[0:4] }}{% if f.criado_em|length >= 16 %} · {{ f.criado_em[11:16] }}{% endif %}
-                </time>
-                {% endif %}
-              </div>
-              {% if is_admin %}
-              <div class="listra-item-actions">
-                <button
-                  type="button"
-                  class="listra-editar-btn"
-                  data-listra-edit-open
-                  title="Editar"
-                  aria-label="Editar frase"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"/>
-                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                  </svg>
-                </button>
-                <form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm('Apagar esta frase da Listra?');">
-                  <input type="hidden" name="frase_id" value="{{ f.id }}" />
-                  <button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>
-                </form>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-          {% if is_admin %}
-          <form
-            method="post"
-            action="/grupo/listra/atualizar"
-            class="listra-edit-form"
-            data-listra-edit-form
-            data-listra-frase-form
-            hidden
-            autocomplete="off"
-          >
-            <input type="hidden" name="frase_id" value="{{ f.id }}" />
-            <div class="listra-frase-row">
-              <div class="listra-field listra-field-emoji">
-                <label for="listra-edit-emoji-{{ f.id }}">Emoji</label>
-                <input
-                  id="listra-edit-emoji-{{ f.id }}"
-                  name="emoji"
-                  class="listra-input listra-emoji-input"
-                  type="text"
-                  maxlength="16"
-                  value="{{ emoji_item }}"
-                  placeholder="📺"
-                  data-listra-emoji
-                  autocomplete="off"
-                  spellcheck="false"
-                  aria-label="Emoji da frase"
-                />
-              </div>
-              <div class="listra-field listra-field-frase">
-                <label for="listra-edit-texto-{{ f.id }}">Frase (contexto na Listra)</label>
-                <textarea
-                  id="listra-edit-texto-{{ f.id }}"
-                  name="texto"
-                  class="listra-input"
-                  rows="3"
-                  maxlength="2000"
-                  required
-                  data-listra-texto
-                >{{ texto_ctx }}</textarea>
-              </div>
-            </div>
-            <div class="listra-field">
-              <label for="listra-edit-destaque-{{ f.id }}">Trecho compartilhável</label>
-              <input
-                id="listra-edit-destaque-{{ f.id }}"
-                name="destaque"
-                class="listra-input"
-                type="text"
-                maxlength="500"
-                value="{{ f.destaque or '' }}"
-                placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
-                data-listra-destaque
-              />
-              <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
-            </div>
-            <div class="listra-field" data-listra-meliante-field>
-              <label for="listra-edit-meliante-{{ f.id }}">Nome do meliante</label>
-              {% set meliante_atual = f.responsavel or '' %}
-              {% set meliante_edit_na_lista = meliante_atual and meliante_atual in (listra_meliantes|default([])) %}
-              <select
-                id="listra-edit-meliante-{{ f.id }}"
-                class="listra-input"
-                data-listra-meliante-select
-                data-listra-custom-select
-                aria-label="Selecionar meliante"
-              >
-                <option value="">Selecione o meliante…</option>
-                {% for nome in listra_meliantes|default([]) %}
-                <option value="{{ nome }}"{% if nome == meliante_atual %} selected{% endif %}>{{ nome }}</option>
-                {% endfor %}
-                <option value="__novo__"{% if meliante_atual and not meliante_edit_na_lista %} selected{% endif %}>＋ Outro nome…</option>
-              </select>
-              <input
-                id="listra-edit-resp-{{ f.id }}"
-                name="responsavel"
-                class="listra-input listra-meliante-novo"
-                type="text"
-                maxlength="30"
-                value="{{ meliante_atual }}"
-                placeholder="Digite o nome do meliante"
-                autocomplete="off"
-                data-listra-meliante-input
-                {% if not meliante_atual or meliante_edit_na_lista %}hidden{% endif %}
-              />
-            </div>
-            <div class="listra-edit-actions">
-              <button
-                type="button"
-                class="listra-icon-action listra-edit-cancel"
-                data-listra-edit-cancel
-                title="Cancelar"
-                aria-label="Cancelar edição"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M18 6 6 18"/>
-                  <path d="m6 6 12 12"/>
-                </svg>
-              </button>
-              <button
-                type="submit"
-                class="listra-icon-action listra-save-btn"
-                title="Salvar"
-                aria-label="Salvar frase"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                  <polyline points="17 21 17 13 7 13 7 21"/>
-                  <polyline points="7 3 7 8 15 8"/>
-                </svg>
-              </button>
-            </div>
-          </form>
-          {% endif %}
-        </li>
-        {% else %}
-        <li class="listra-empty">A Listra {{ l.ano }} ainda está vazia.</li>
-        {% endfor %}
-      </ol>
+      <p class="listra-ano-loading" data-listra-loading hidden>Carregando frases…</p>
+      <p class="listra-ano-erro" data-listra-erro hidden>Não deu para carregar a Listra. Tente abrir de novo.</p>
+      <ol
+        class="listra-list"
+        data-listra-lista="{{ l.ano }}"
+        data-listra-lazy-src="/grupo/listra/{{ l.ano }}.json"
+      ></ol>
     </details>
     {% endfor %}
   </div>
+
+  {% if is_admin %}
+  <template id="listra-edit-template">
+    <form
+      method="post"
+      action="/grupo/listra/atualizar"
+      class="listra-edit-form"
+      data-listra-edit-form
+      data-listra-frase-form
+      hidden
+      autocomplete="off"
+    >
+      <input type="hidden" name="frase_id" value="" data-listra-edit-id />
+      <div class="listra-frase-row">
+        <div class="listra-field listra-field-emoji">
+          <label>Emoji</label>
+          <input
+            name="emoji"
+            class="listra-input listra-emoji-input"
+            type="text"
+            maxlength="16"
+            placeholder="📺"
+            data-listra-emoji
+            data-listra-edit-emoji
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Emoji da frase"
+          />
+        </div>
+        <div class="listra-field listra-field-frase">
+          <label>Frase (contexto na Listra)</label>
+          <textarea
+            name="texto"
+            class="listra-input"
+            rows="3"
+            maxlength="2000"
+            required
+            data-listra-texto
+            data-listra-edit-texto
+          ></textarea>
+        </div>
+      </div>
+      <div class="listra-field">
+        <label>Trecho compartilhável</label>
+        <input
+          name="destaque"
+          class="listra-input"
+          type="text"
+          maxlength="500"
+          placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+          data-listra-destaque
+          data-listra-edit-destaque
+        />
+        <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
+      </div>
+      <div class="listra-field" data-listra-meliante-field>
+        <label>Nome do meliante</label>
+        <select
+          class="listra-input"
+          data-listra-meliante-select
+          data-listra-custom-select
+          data-listra-edit-meliante-select
+          aria-label="Selecionar meliante"
+        >
+          <option value="">Selecione o meliante…</option>
+          {% for nome in listra_meliantes|default([]) %}
+          <option value="{{ nome }}">{{ nome }}</option>
+          {% endfor %}
+          <option value="__novo__">＋ Outro nome…</option>
+        </select>
+        <input
+          name="responsavel"
+          class="listra-input listra-meliante-novo"
+          type="text"
+          maxlength="30"
+          placeholder="Digite o nome do meliante"
+          autocomplete="off"
+          data-listra-meliante-input
+          data-listra-edit-resp
+          hidden
+        />
+      </div>
+      <div class="listra-edit-actions">
+        <button
+          type="button"
+          class="listra-icon-action listra-edit-cancel"
+          data-listra-edit-cancel
+          title="Cancelar"
+          aria-label="Cancelar edição"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
+        </button>
+        <button
+          type="submit"
+          class="listra-icon-action listra-save-btn"
+          title="Salvar"
+          aria-label="Salvar frase"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </template>
+  {% endif %}
 
   <button
     type="button"
@@ -411,6 +355,247 @@
     </svg>
   </button>
 </section>
+
+<script type="application/json" id="listra-boot-json">{{ {"is_admin": is_admin, "meliantes": listra_meliantes|default([]) }|tojson }}</script>
+<script>
+(function () {
+  var bootEl = document.getElementById("listra-boot-json");
+  var boot = { is_admin: false, meliantes: [] };
+  try { boot = JSON.parse(bootEl && bootEl.textContent || "{}"); } catch (e) {}
+  var isAdmin = !!boot.is_admin;
+  var cache = Object.create(null);
+  var loading = Object.create(null);
+
+  function escAttr(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function fmtQuando(criado) {
+    if (!criado || criado.length < 10) return "";
+    var out = criado.slice(8, 10) + "/" + criado.slice(5, 7) + "/" + criado.slice(0, 4);
+    if (criado.length >= 16) out += " · " + criado.slice(11, 16);
+    return out;
+  }
+
+  function dtAttr(criado) {
+    if (!criado || criado.length < 10) return "";
+    return criado.slice(0, 10) + (criado.length >= 16 ? "T" + criado.slice(11, 16) : "");
+  }
+
+  function wireMeliante(form) {
+    var melianteSelect = form.querySelector("[data-listra-meliante-select]");
+    var melianteInput = form.querySelector("[data-listra-meliante-input]");
+    if (!melianteSelect || !melianteInput) return;
+    function sync() {
+      var v = melianteSelect.value || "";
+      if (v === "__novo__") {
+        melianteInput.hidden = false;
+        melianteInput.required = true;
+      } else if (v) {
+        melianteInput.value = v;
+        melianteInput.hidden = true;
+        melianteInput.required = false;
+      } else {
+        melianteInput.value = "";
+        melianteInput.hidden = true;
+        melianteInput.required = false;
+      }
+    }
+    melianteSelect.addEventListener("change", sync);
+    sync();
+  }
+
+  function attachEditForm(item, f) {
+    var tpl = document.getElementById("listra-edit-template");
+    if (!tpl || !isAdmin) return;
+    var form = tpl.content.firstElementChild.cloneNode(true);
+    form.querySelector("[data-listra-edit-id]").value = String(f.id);
+    form.querySelector("[data-listra-edit-emoji]").value = f.emoji_efetivo || "";
+    form.querySelector("[data-listra-edit-texto]").value = f.texto_contexto || "";
+    form.querySelector("[data-listra-edit-destaque]").value = f.destaque || "";
+    var sel = form.querySelector("[data-listra-edit-meliante-select]");
+    var resp = form.querySelector("[data-listra-edit-resp]");
+    var meliante = f.responsavel || "";
+    if (sel) {
+      var found = false;
+      Array.prototype.forEach.call(sel.options, function (opt) {
+        if (opt.value && opt.value === meliante) {
+          opt.selected = true;
+          found = true;
+        }
+      });
+      if (meliante && !found) {
+        sel.value = "__novo__";
+        if (resp) resp.value = meliante;
+      } else if (resp) {
+        resp.value = meliante;
+      }
+    }
+    wireMeliante(form);
+    var emojiInput = form.querySelector("[data-listra-emoji]");
+    if (emojiInput) {
+      emojiInput.addEventListener("input", function () {
+        var s = (emojiInput.value || "").replace(/\s+/g, "").replace(/[A-Za-z]/g, "");
+        s = s.replace(/[^\d#*\u0080-\uFFFF]/g, "");
+        if (s.length > 16) s = s.slice(0, 16);
+        if (s !== emojiInput.value) emojiInput.value = s;
+      });
+    }
+    item.appendChild(form);
+  }
+
+  function renderItem(f, index) {
+    var li = document.createElement("li");
+    li.className = "listra-item" + (f.destaque ? " has-destaque" : "");
+    li.id = "listra-frase-" + f.id;
+    li.setAttribute("data-listra-item", String(f.id));
+    li.setAttribute("data-meliante", f.responsavel || "");
+    li.setAttribute("data-criado", f.criado_em || "");
+    li.setAttribute("data-listra-share", f.linha_share || "");
+
+    var emojiHtml = f.emoji_efetivo
+      ? '<span class="listra-item-emoji" aria-hidden="true"></span>'
+      : "";
+    var quando = fmtQuando(f.criado_em);
+    var adminActions = "";
+    if (isAdmin) {
+      adminActions =
+        '<div class="listra-item-actions">' +
+        '<button type="button" class="listra-editar-btn" data-listra-edit-open title="Editar" aria-label="Editar frase">' +
+        '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+        "</button>" +
+        '<form method="post" action="/grupo/listra/apagar" class="listra-item-apagar" onsubmit="return confirm(\'Apagar esta frase da Listra?\');">' +
+        '<input type="hidden" name="frase_id" value="' + escAttr(String(f.id)) + '" />' +
+        '<button type="submit" class="listra-apagar-btn" title="Apagar" aria-label="Apagar frase">×</button>' +
+        "</form></div>";
+    }
+
+    li.innerHTML =
+      '<div class="listra-item-view">' +
+      '<div class="listra-item-main">' +
+      '<span class="listra-item-bullet" aria-hidden="true">' + (index + 1) + ".</span>" +
+      emojiHtml +
+      '<p class="listra-item-texto"></p>' +
+      "</div>" +
+      '<div class="listra-item-meta">' +
+      '<div class="listra-item-meta-text">' +
+      '<span class="listra-item-resp' + (f.responsavel ? "" : " listra-item-resp--vazio") + '">' +
+      "Nome do meliante: " +
+      (f.responsavel ? "" : "—") +
+      "</span>" +
+      (quando
+        ? '<time class="listra-item-quando" datetime="' + escAttr(dtAttr(f.criado_em)) + '" title="Registrado em ' + escAttr(f.criado_em) + '"></time>'
+        : "") +
+      "</div>" +
+      adminActions +
+      "</div></div>";
+
+    var emojiEl = li.querySelector(".listra-item-emoji");
+    if (emojiEl) emojiEl.textContent = f.emoji_efetivo || "";
+    var textoEl = li.querySelector(".listra-item-texto");
+    if (textoEl) textoEl.innerHTML = f.texto_html || "";
+    var respEl = li.querySelector(".listra-item-resp");
+    if (respEl && f.responsavel) {
+      respEl.appendChild(document.createTextNode(f.responsavel));
+    }
+    var timeEl = li.querySelector(".listra-item-quando");
+    if (timeEl) timeEl.textContent = quando;
+
+    if (isAdmin) attachEditForm(li, f);
+    return li;
+  }
+
+  function setUi(card, state) {
+    var loading = card.querySelector("[data-listra-loading]");
+    var erro = card.querySelector("[data-listra-erro]");
+    if (loading) loading.hidden = state !== "loading";
+    if (erro) erro.hidden = state !== "erro";
+  }
+
+  function renderAno(card, data) {
+    var lista = card.querySelector("[data-listra-lista]");
+    if (!lista) return;
+    lista.replaceChildren();
+    var frases = data.frases || [];
+    if (!frases.length) {
+      var empty = document.createElement("li");
+      empty.className = "listra-empty";
+      empty.textContent = "A Listra " + (data.ano || "") + " ainda está vazia.";
+      lista.appendChild(empty);
+      return;
+    }
+    frases.forEach(function (f, i) {
+      lista.appendChild(renderItem(f, i));
+    });
+    if (window.listraInitCustomSelects) window.listraInitCustomSelects(lista);
+  }
+
+  function carregarAno(card, force) {
+    if (!card || !card.hasAttribute("data-listra-lazy")) return Promise.resolve();
+    var ano = card.getAttribute("data-ano");
+    if (!ano) return Promise.resolve();
+    if (!force && cache[ano]) {
+      if (!card.querySelector(".listra-item, .listra-empty")) renderAno(card, cache[ano]);
+      return Promise.resolve(cache[ano]);
+    }
+    if (loading[ano]) return loading[ano];
+    var lista = card.querySelector("[data-listra-lista]");
+    var src = lista && lista.getAttribute("data-listra-lazy-src");
+    if (!src) return Promise.resolve();
+    setUi(card, "loading");
+    loading[ano] = fetch(src, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        cache[ano] = data;
+        renderAno(card, data);
+        setUi(card, "ok");
+        delete loading[ano];
+        return data;
+      })
+      .catch(function () {
+        delete loading[ano];
+        setUi(card, "erro");
+      });
+    return loading[ano];
+  }
+
+  window.listraCarregarAno = carregarAno;
+  window.listraEnsureFrase = function (fraseId) {
+    var existing = document.getElementById("listra-frase-" + fraseId);
+    if (existing) return Promise.resolve(existing);
+    return fetch("/grupo/listra/frase/" + encodeURIComponent(fraseId) + ".json", {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("missing");
+        return r.json();
+      })
+      .then(function (f) {
+        var card = document.getElementById("listra-ano-" + f.ano);
+        if (!card) throw new Error("ano");
+        card.open = true;
+        return carregarAno(card).then(function () {
+          return document.getElementById("listra-frase-" + fraseId);
+        });
+      });
+  };
+
+  document.querySelectorAll("details.listra-ano-card[data-listra-lazy]").forEach(function (card) {
+    card.addEventListener("toggle", function () {
+      if (card.open) carregarAno(card);
+    });
+    if (card.open) carregarAno(card);
+  });
+})();
+</script>
 
 <script>
 (function () {
@@ -610,20 +795,11 @@
 
   if (!hash || hash.indexOf("#listra-") !== 0) return;
   var id = hash.slice(1);
-  var el = document.getElementById(id);
-  if (!el) {
-    limparUrlListra();
-    return;
-  }
-
-  // Evita o salto nativo do #hash (topo do item) antes de centralizar.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   limparUrlListra();
 
-  var card = el.closest("details.listra-ano-card");
-  if (card) card.open = true;
-
-  function centralizarItem() {
+  function centralizarItem(el) {
+    if (!el) return;
     var rect = el.getBoundingClientRect();
     var absTop = rect.top + (window.pageYOffset || document.documentElement.scrollTop || 0);
     var alvo = absTop - window.innerHeight / 2 + rect.height / 2;
@@ -631,8 +807,9 @@
     window.scrollTo(0, Math.round(alvo));
   }
 
-  function destacar() {
-    centralizarItem();
+  function destacar(el) {
+    if (!el) return;
+    centralizarItem(el);
     if (el.classList.contains("listra-item")) {
       el.classList.add("listra-item--flash");
       window.setTimeout(function () {
@@ -641,13 +818,33 @@
     }
   }
 
-  // Abre o <details> e espera o layout estabilizar antes de centralizar.
-  requestAnimationFrame(function () {
+  function focar(el) {
     requestAnimationFrame(function () {
-      destacar();
-      window.setTimeout(centralizarItem, 50);
+      requestAnimationFrame(function () {
+        destacar(el);
+        window.setTimeout(function () { centralizarItem(el); }, 50);
+      });
     });
-  });
+  }
+
+  if (id.indexOf("listra-ano-") === 0) {
+    var cardAno = document.getElementById(id);
+    if (cardAno) {
+      cardAno.open = true;
+      if (window.listraCarregarAno) window.listraCarregarAno(cardAno);
+    }
+    return;
+  }
+
+  if (id.indexOf("listra-frase-") === 0) {
+    var fraseId = id.replace("listra-frase-", "");
+    var ready = window.listraEnsureFrase
+      ? window.listraEnsureFrase(fraseId)
+      : Promise.resolve(document.getElementById(id));
+    ready.then(function (el) {
+      if (el) focar(el);
+    }).catch(function () {});
+  }
 })();
 </script>
 
@@ -961,11 +1158,12 @@
     });
   }
 
-  document.querySelectorAll("[data-listra-edit-open]").forEach(function (btn) {
-    btn.addEventListener("click", function (ev) {
+  document.addEventListener("click", function (ev) {
+    var openBtn = ev.target.closest && ev.target.closest("[data-listra-edit-open]");
+    if (openBtn) {
       ev.preventDefault();
       ev.stopPropagation();
-      var item = btn.closest("[data-listra-item]");
+      var item = openBtn.closest("[data-listra-item]");
       if (!item) return;
       fecharTodos();
       var view = item.querySelector(".listra-item-view");
@@ -976,31 +1174,26 @@
         item.classList.add("listra-item--editing");
         var ta = form.querySelector("textarea[name='texto']");
         if (ta) {
-          try {
-            ta.focus({ preventScroll: true });
-          } catch (e) {
-            ta.focus();
-          }
+          try { ta.focus({ preventScroll: true }); }
+          catch (e) { ta.focus(); }
         }
       }
-    });
-  });
-
-  document.querySelectorAll("[data-listra-edit-cancel]").forEach(function (btn) {
-    btn.addEventListener("click", function (ev) {
+      return;
+    }
+    var cancelBtn = ev.target.closest && ev.target.closest("[data-listra-edit-cancel]");
+    if (cancelBtn) {
       ev.preventDefault();
       ev.stopPropagation();
       fecharTodos();
-    });
+    }
   });
 
-  document.querySelectorAll("[data-listra-edit-form]").forEach(function (form) {
-    form.addEventListener("click", function (ev) {
-      ev.stopPropagation();
-    });
+  document.addEventListener("click", function (ev) {
+    var form = ev.target.closest && ev.target.closest("[data-listra-edit-form]");
+    if (form) ev.stopPropagation();
   });
 })();
 </script>
 {% endif %}
-<script src="/static/listra-custom-select.js?v=185"></script>
+<script src="/static/listra-custom-select.js?v=186"></script>
 {% endblock %}
