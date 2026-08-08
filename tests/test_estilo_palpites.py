@@ -125,12 +125,13 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
         encoding="utf-8"
     ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=237" in r.text
+    assert "/static/style.css?v=238" in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
     assert perfil["n_casa"] >= 1
     assert perfil["n"] >= 1
+    assert all(b["id"] != "arqui_inimigos" for b in perfil.get("badges") or [])
 
     # JSON da ficha traz resumo de pontuação (ao vivo no mínimo)
     assert '"resumo_rodadas"' in r.text
@@ -138,6 +139,8 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert '"rotulo"' in r.text
     assert '"jogos"' in r.text
     assert '"avatar_url"' in r.text
+    assert '"casa_emblema"' in r.text
+    assert "ficha-perfil-grid" in r.text
 
 
 def test_empate_muitos_nomes_resume_lista(client):
@@ -195,6 +198,10 @@ def test_resumo_rodadas_na_ficha(client):
     assert hist2["numero"] == 3
     assert hist2["janela"] == "volta"
 
+    # Segunda confirmação em Volta (duplicata) — não deve criar outra linha Oit·Volta
+    fantasma_volta = confirmar_rodada()
+    assert fantasma_volta["numero"] == 4
+
     resumo = resumo_pontuacao_por_participante()
     assert a["id"] in resumo
     entradas = resumo[a["id"]]
@@ -206,6 +213,7 @@ def test_resumo_rodadas_na_ficha(client):
     assert entradas[0]["fase_label_curta"] == "Oit"
     assert entradas[0]["jogos"]
     assert any(j.get("palpite_m") is not None for j in entradas[0]["jogos"])
+    assert any(j.get("casa_emblema") for j in entradas[0]["jogos"])
     assert entradas[1]["janela"] == "volta"
     assert entradas[1]["janela_label"] == "Volta"
     assert entradas[1]["jogos"]
@@ -213,6 +221,8 @@ def test_resumo_rodadas_na_ficha(client):
     assert entradas[2]["ao_vivo"] is True
     assert entradas[2]["rod"] == 0
     assert entradas[0]["posicao"] is not None
+    # Só uma Volta das Oitavas (sem R3/R4 duplicada)
+    assert sum(1 for e in entradas if e.get("janela") == "volta" and not e["ao_vivo"]) == 1
 
     r = client.get("/classificacao")
     assert r.status_code == 200
@@ -220,14 +230,18 @@ def test_resumo_rodadas_na_ficha(client):
     assert "ficha-rodadas-lista" in r.text
     assert "ficha-rodadas-head" in r.text
     assert "ficha-rodada-toggle" in r.text
+    assert "ficha-perfil-grid" in r.text
+    assert "ficha-jogo-embl" in r.text
+    assert 'aria-expanded="false"' in r.text
     assert "Rodada 1" in r.text
     assert "Palpite" in r.text
     assert "Seu palpite" not in r.text
-    assert "/static/style.css?v=237" in r.text
+    assert "/static/style.css?v=238" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".ficha-rodada-rotulo-short" in css
     assert ".ficha-rodadas-head" in css
-    assert ".ficha-jogo" in css
+    assert ".ficha-jogo-embl" in css
+    assert ".ficha-perfil-grid" in css
 
 
 def test_perfil_nao_zera_ao_avancar_fase(client):

@@ -564,11 +564,15 @@ def trofeus_hall(fase: str | None = None) -> dict[str, Any]:
         for pid in ids_w:
             badges_por_id[pid].append(nick_id)
 
+    # Na ficha, badges de grupo (Arqui-inimigos etc.) poluem e são irrelevantes.
+    _BADGES_FICHA_IGNORAR = frozenset(
+        {"arqui_inimigos", "casalzinho", "triangulo", "quarteto", "placar_visto"}
+    )
     for p in perfis:
         p["badges"] = [
             {"id": b, "titulo": EXPLICACOES_NICK[b][0], "explicacao": EXPLICACOES_NICK[b][1]}
             for b in badges_por_id.get(p["participante_id"], [])
-            if b in EXPLICACOES_NICK
+            if b in EXPLICACOES_NICK and b not in _BADGES_FICHA_IGNORAR
         ]
         # ficha não precisa da assinatura crua no HTML
         p.pop("assinatura", None)

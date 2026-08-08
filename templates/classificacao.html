@@ -397,6 +397,7 @@
   const render = (p) => {
     if (!p) return "<p>Sem dados de palpites ainda.</p>";
     const badges = (p.badges || [])
+      .filter((b) => b && b.id !== "arqui_inimigos")
       .map((b) => `<span class="ficha-badge" title="${(b.explicacao || "").replace(/"/g, "&quot;")}">${b.titulo}</span>`)
       .join(" ");
     const assinatura = p.placar_assinatura
@@ -421,6 +422,11 @@
       ? `<img class="ficha-rodadas-avatar" src="${esc(p.avatar_url)}" alt="" />`
       : `<span class="ficha-rodadas-avatar ficha-rodadas-avatar-fallback">${esc(iniciais(p.nome))}</span>`;
 
+    const met = (label, value, wide) =>
+      `<div class="ficha-perfil-met${wide ? " is-wide" : ""}">` +
+      `<span class="ficha-perfil-lab">${label}</span>` +
+      `<b class="ficha-perfil-val">${value}</b></div>`;
+
     const jogosHtml = (jogos) => {
       if (!jogos || !jogos.length) {
         return `<p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>`;
@@ -432,6 +438,14 @@
         else tip = `Palpite ${j.palpite_m}×${j.palpite_v}`;
         const ptsCls = Number(j.pts) > 0 ? "" : " is-zero";
         const ptsLab = Number(j.pts) > 0 ? fmtPts(j.pts) : "0";
+        const casa = esc(j.casa_curto || j.casa);
+        const fora = esc(j.fora_curto || j.fora);
+        const emCasa = j.casa_emblema
+          ? `<img class="ficha-jogo-embl" src="${esc(j.casa_emblema)}" alt="" />`
+          : "";
+        const emFora = j.fora_emblema
+          ? `<img class="ficha-jogo-embl" src="${esc(j.fora_emblema)}" alt="" />`
+          : "";
         const br = j.sem_palpite
           ? ""
           : `<div class="ficha-jogo-breakdown">` +
@@ -443,7 +457,11 @@
         return (
           `<div class="ficha-jogo">` +
           `<div class="ficha-jogo-times">` +
-          `<span class="ficha-jogo-placar">${esc(j.casa)} ${real} ${esc(j.fora)}</span>` +
+          `<span class="ficha-jogo-placar">` +
+          `${emCasa}<span>${casa}</span>` +
+          `<span class="ficha-jogo-score">${real}</span>` +
+          `${emFora}<span>${fora}</span>` +
+          `</span>` +
           `<small>${esc(tip)}</small>` +
           `</div>` +
           `<span class="ficha-jogo-pts${ptsCls}">${ptsLab}</span>` +
@@ -454,7 +472,7 @@
     };
 
     const rodadas = (p.resumo_rodadas || [])
-      .map((r, idx) => {
+      .map((r) => {
         const meta = [r.fase_label_curta || r.fase_label, r.janela_label].filter(Boolean).join(" · ");
         const pos = r.posicao != null ? `${r.posicao}º` : "—";
         let mov = "";
@@ -465,11 +483,9 @@
             : `<span class="ficha-rodada-mov down">▼${Math.abs(m)}</span>`;
         }
         const rotulo = r.rotulo_curto || r.rotulo || "Rodada";
-        const open = idx === 0 ? " is-open" : "";
-        const expanded = idx === 0 ? "true" : "false";
         return (
-          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}${open}" data-ficha-rodada>` +
-          `<button type="button" class="ficha-rodada-toggle" aria-expanded="${expanded}">` +
+          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}" data-ficha-rodada>` +
+          `<button type="button" class="ficha-rodada-toggle" aria-expanded="false">` +
           `<span class="ficha-rodada-titulo">` +
           `<span class="ficha-rodada-rotulo-line">` +
           `<span class="ficha-rodada-chev" aria-hidden="true"></span>` +
@@ -508,23 +524,23 @@
     return `
       ${badges ? `<div class="ficha-badges">${badges}</div>` : ""}
       ${resumo}
-      <section class="planilha-metricas-bloco" aria-label="Métricas do participante">
-        <h3 class="planilha-metricas-bloco-title">Perfil</h3>
-        <div class="planilha-metricas">
-          ${tile("Vitórias casa", `${p.n_casa} <small>(${pct(p.pct_casa)})</small>`)}
-          ${tile("Empates", `${p.n_empate} <small>(${pct(p.pct_empate)})</small>`)}
-          ${tile("Vitórias fora", `${p.n_fora} <small>(${pct(p.pct_fora)})</small>`)}
-          ${tile("Placar assinatura", assinatura, true)}
-          ${tile("Média de gols", p.media_gols == null ? "—" : p.media_gols)}
-          ${tile("Média do placar", p.media_placar || "—")}
-          ${tile("No favorito do grupo", pct(p.pct_favorito))}
-          ${tile("Goleadas (diff ≥ 3)", p.goleadas)}
-          ${tile("Placares baixos", p.placares_baixos)}
-          ${tile("Jogos com palpite", `${p.n} / ${p.n_jogos_fase}`)}
-          ${tile("Boquinhas", p.boquinhas)}
-          ${tile("Zebras que pagaram", p.zebra_ok)}
-          ${tile("Acertos vencedor", p.acertos_vencedor)}
-          ${tile("Acertos placar", p.acertos_placar)}
+      <section class="ficha-perfil" aria-label="Métricas do participante">
+        <h3 class="ficha-rodadas-resumo-title">Perfil</h3>
+        <div class="ficha-perfil-grid">
+          ${met("Vitórias casa", `${p.n_casa} <small>(${pct(p.pct_casa)})</small>`)}
+          ${met("Empates", `${p.n_empate} <small>(${pct(p.pct_empate)})</small>`)}
+          ${met("Vitórias fora", `${p.n_fora} <small>(${pct(p.pct_fora)})</small>`)}
+          ${met("Placar assinatura", assinatura, true)}
+          ${met("Média de gols", p.media_gols == null ? "—" : p.media_gols)}
+          ${met("Média do placar", p.media_placar || "—")}
+          ${met("No favorito do grupo", pct(p.pct_favorito))}
+          ${met("Goleadas (diff ≥ 3)", p.goleadas)}
+          ${met("Placares baixos", p.placares_baixos)}
+          ${met("Jogos com palpite", `${p.n} / ${p.n_jogos_fase}`)}
+          ${met("Boquinhas", p.boquinhas)}
+          ${met("Zebras que pagaram", p.zebra_ok)}
+          ${met("Acertos vencedor", p.acertos_vencedor)}
+          ${met("Acertos placar", p.acertos_placar)}
         </div>
       </section>
     `;
