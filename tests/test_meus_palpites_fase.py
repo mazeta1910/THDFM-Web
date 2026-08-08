@@ -25,6 +25,19 @@ def test_meus_palpites_mostra_avatar_no_ola(client):
     assert "Olá, Mazeta Avatar!" in r.text
 
 
+def test_css_avatar_miniatura_e_grade_admin_centralizada():
+    from pathlib import Path
+
+    from src.config import ROOT_DIR
+
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "img.palpites-hello-avatar" in css
+    assert "width: 1.35rem" in css
+    assert "max-width: 1.35rem" in css
+    assert "repeat(auto-fit, minmax(200px, 220px))" in css
+    assert ".admin-match-grid.locked-grid.match-grid" in css
+
+
 def test_ida_oitavas_bloqueada_apos_avancar_fase(client):
     login_admin(client)
     confrontos = db.list_confrontos_completos("oitavas")

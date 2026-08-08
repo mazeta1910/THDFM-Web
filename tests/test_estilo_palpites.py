@@ -122,7 +122,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
         encoding="utf-8"
     ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=234" in r.text
+    assert "/static/style.css?v=235" in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
@@ -198,7 +198,7 @@ def test_resumo_rodadas_na_ficha(client):
     assert "ficha-rodada-lab" in r.text
     assert "Rodada 1" in r.text
     assert "Palpites por jogo" not in r.text
-    assert "/static/style.css?v=234" in r.text
+    assert "/static/style.css?v=235" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".ficha-rodada-rotulo-short" in css
     assert "ficha-rodada-lab" in css
