@@ -145,3 +145,38 @@ def test_palpites_usa_partial_match_cell(client):
     assert "match-cell" in r.text
     assert "JOGO (" in r.text
     assert 'aria-label="Gols' in r.text
+
+
+def test_avancar_fase_fecha_oitavas_e_libera_quartas(client):
+    login_admin(client)
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_resultado_jogo(ida["id"], 1, 0, None)
+        db.set_resultado_jogo(volta["id"], 0, 0, None)
+    r = client.post("/admin/avancar-fase", follow_redirects=False)
+    assert r.status_code == 303
+    assert db.get_fase_atual() == "quartas"
+    ida0 = next(j for j in confrontos[0]["jogos"] if j["perna"] == "ida")
+    assert db.jogo_confirmado(db.get_jogo(ida0["id"]))
+
+    # Oitavas fica somente leitura
+    bad = client.post(
+        "/admin/resultados?format=json",
+        data={
+            "fase": "oitavas",
+            "perna": "ida",
+            f"jogo_{ida0['id']}_m": "9",
+            f"jogo_{ida0['id']}_v": "9",
+        },
+    )
+    assert bad.status_code == 400
+    assert db.get_jogo(ida0["id"])["gols_mandante"] == 1
+
+    admin = client.get("/admin?sec=resultados")
+    assert admin.status_code == 200
+    assert "Liberar Semi" in admin.text or "proxima" in admin.text.lower()
+    assert "admin-match-grid" in admin.text
+    assert "fase encerrada" in admin.text.lower() or "encerrada" in admin.text
+    assert "A definir" in admin.text  # esqueleto das quartas

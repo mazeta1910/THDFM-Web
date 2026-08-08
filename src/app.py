@@ -2254,6 +2254,7 @@ def admin_home(request: Request):
         {
             **f,
             "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "encerrada": FASE_IDS.index(f["id"]) < fase_idx,
             "ativa": f["id"] == fase_atual,
         }
         for f in FASES
@@ -2267,6 +2268,10 @@ def admin_home(request: Request):
         for f in FASES
     }
     perna_default = perna_default_por_fase.get(fase_atual, "ida")
+    proxima_fase = None
+    if fase_idx + 1 < len(FASE_IDS):
+        pid = FASE_IDS[fase_idx + 1]
+        proxima_fase = next((f for f in FASES if f["id"] == pid), None)
     arvore_fases = []
     for f in FASES:
         if f["id"] == "oitavas":
@@ -2300,6 +2305,7 @@ def admin_home(request: Request):
         confrontos_por_fase=confrontos_por_fase,
         perna_default=perna_default,
         perna_default_por_fase=perna_default_por_fase,
+        proxima_fase=proxima_fase,
         arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         participantes=db.list_participantes(),
@@ -2762,6 +2768,30 @@ def admin_resultado(
     return RedirectResponse("/admin?msg=Resultado+salvo", status_code=303)
 
 
+@app.post("/admin/avancar-fase")
+def admin_avancar_fase(request: Request):
+    """Fecha a fase atual (confirma placares) e libera a próxima."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from urllib.parse import quote
+
+    atual = db.get_fase_atual()
+    if atual not in FASE_IDS:
+        return RedirectResponse("/admin?erro=Fase+atual+invalida", status_code=303)
+    idx = FASE_IDS.index(atual)
+    if idx + 1 >= len(FASE_IDS):
+        return RedirectResponse("/admin?erro=Nao+ha+proxima+fase", status_code=303)
+    proxima = FASE_IDS[idx + 1]
+    n = db.confirmar_jogos_da_fase(atual)
+    db.set_fase_atual(proxima)
+    db.set_janela("ida")
+    label = next((f["label"] for f in FASES if f["id"] == proxima), proxima)
+    return RedirectResponse(
+        f"/admin?msg={quote(f'{atual} fechada ({n} jogos). {label} liberada')}",
+        status_code=303,
+    )
+
+
 @app.post("/admin/resultados")
 async def admin_resultados(request: Request):
     if not admin_ok(request):
@@ -2777,6 +2807,13 @@ async def admin_resultados(request: Request):
         if _admin_wants_json(request):
             return JSONResponse({"ok": False, "erro": "Fase inválida"}, status_code=400)
         return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
+    fase_atual = db.get_fase_atual()
+    if fase in FASE_IDS and fase_atual in FASE_IDS:
+        if FASE_IDS.index(fase) < FASE_IDS.index(fase_atual):
+            erro = "Fase encerrada — avance só pela próxima ou desfaça o avanço"
+            if _admin_wants_json(request):
+                return JSONResponse({"ok": False, "erro": erro}, status_code=400)
+            return RedirectResponse(f"/admin?erro={quote(erro)}", status_code=303)
     if perna and perna not in ("ida", "volta"):
         if _admin_wants_json(request):
             return JSONResponse({"ok": False, "erro": "Perna inválida"}, status_code=400)
@@ -2846,6 +2883,26 @@ async def admin_resultados(request: Request):
     return RedirectResponse(f"/admin?msg={quote(msg)}", status_code=303)
 
 
+def _fase_do_jogo(jogo_id: int) -> str | None:
+    jogo = db.get_jogo(jogo_id)
+    if not jogo:
+        return None
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT fase FROM confrontos WHERE id = ?", (jogo["confronto_id"],)
+        ).fetchone()
+        return str(row["fase"]) if row else None
+
+
+def _fase_admin_encerrada(fase: str | None) -> bool:
+    if not fase or fase not in FASE_IDS:
+        return False
+    atual = db.get_fase_atual()
+    if atual not in FASE_IDS:
+        return False
+    return FASE_IDS.index(fase) < FASE_IDS.index(atual)
+
+
 @app.post("/admin/jogo/{jogo_id}/confirmar")
 def admin_confirmar_jogo(request: Request, jogo_id: int):
     if not admin_ok(request):
@@ -2853,6 +2910,11 @@ def admin_confirmar_jogo(request: Request, jogo_id: int):
     from fastapi.responses import JSONResponse
     from urllib.parse import quote
 
+    if _fase_admin_encerrada(_fase_do_jogo(jogo_id)):
+        erro = "Fase encerrada"
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": erro}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(erro)}", status_code=303)
     try:
         db.confirmar_jogo(jogo_id)
     except ValueError as e:
@@ -2871,6 +2933,11 @@ def admin_desfazer_confirmacao_jogo(request: Request, jogo_id: int):
     from fastapi.responses import JSONResponse
     from urllib.parse import quote
 
+    if _fase_admin_encerrada(_fase_do_jogo(jogo_id)):
+        erro = "Fase encerrada"
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": erro}, status_code=400)
+        return RedirectResponse(f"/admin?erro={quote(erro)}", status_code=303)
     try:
         db.desfazer_confirmacao_jogo(jogo_id)
     except ValueError as e:
