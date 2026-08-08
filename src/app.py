@@ -1151,14 +1151,44 @@ def grupo_cardapio(request: Request):
 
 @app.get("/xonhometro", response_class=HTMLResponse)
 def xonhometro(request: Request):
-    eventos = db.list_xonha_eventos()
+    # Página pública: stats + cascas dos anos. A timeline completa só carrega
+    # ao abrir o <details> (evita ~1,5k nós / ~2MB de HTML no first paint).
+    eventos = db.list_xonha_eventos(com_motivo=False)
     return render(
         request,
         "xonhometro.html",
-        eventos=eventos,
-        timeline_anos=db.agrupar_xonha_eventos_por_ano(eventos),
-        stats=db.xonha_stats(),
+        total_eventos=len(eventos),
+        timeline_anos=db.resumo_xonha_anos(eventos),
+        stats=db.xonha_stats(eventos),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/xonhometro/timeline.json")
+def xonhometro_timeline_json(request: Request):
+    """Payload da linha do tempo — consumido sob demanda pelo front."""
+    eventos = db.list_xonha_eventos(com_motivo=True)
+    anos = db.agrupar_xonha_eventos_por_ano(eventos)
+    payload = [
+        {
+            "ano": g["ano"],
+            "quantidade": g["quantidade"],
+            "eventos": [
+                {
+                    "id": e["id"],
+                    "tipo": e["tipo"],
+                    "data": e["data"],
+                    "hora": e.get("hora"),
+                    "motivo": e.get("motivo") or "",
+                }
+                for e in g["eventos"]
+            ],
+        }
+        for g in anos
+    ]
+    return JSONResponse(
+        payload,
+        headers={"Cache-Control": "private, max-age=60"},
     )
 
 
@@ -1173,11 +1203,12 @@ def admin_xonhometro(request: Request):
         _, import_meta = carregar_eventos_import()
     except Exception:
         import_meta = None
+    eventos = db.list_xonha_eventos()
     return render(
         request,
         "admin_xonhometro.html",
-        eventos=db.list_xonha_eventos(),
-        stats=db.xonha_stats(),
+        eventos=eventos,
+        stats=db.xonha_stats(eventos),
         import_meta=import_meta,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),

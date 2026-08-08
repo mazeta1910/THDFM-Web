@@ -7213,6 +7213,18 @@ html[data-theme="light"] .xonha-weekday-bar {
   font-weight: 700;
   color: var(--muted);
 }
+.xonha-timeline-loading,
+.xonha-timeline-erro {
+  margin: 0.65rem 0 0.35rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.xonha-timeline-erro {
+  color: #e03131;
+}
+.xonha-timeline-year-body:empty {
+  min-height: 0;
+}
 .xonha-timeline-toggle {
   width: 1.8rem;
   height: 1.8rem;

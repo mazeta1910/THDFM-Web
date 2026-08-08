@@ -1966,10 +1966,18 @@ def _xonha_sort_key(e: dict[str, Any]) -> tuple:
     return (e.get("data") or "", e.get("hora") or "", e.get("id") or 0)
 
 
-def list_xonha_eventos() -> list[dict[str, Any]]:
+def list_xonha_eventos(*, com_motivo: bool = True) -> list[dict[str, Any]]:
+    """Lista eventos do Xonhômetro (mais recente primeiro).
+
+    ``com_motivo=False`` evita carregar textos longos — útil para stats/resumo
+    da página pública (a timeline completa vem sob demanda).
+    """
+    cols = "id, tipo, data, hora, criado_em"
+    if com_motivo:
+        cols += ", motivo"
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT id, tipo, data, hora, motivo, criado_em "
+            f"SELECT {cols} "
             "FROM xonha_eventos "
             "ORDER BY data DESC, COALESCE(hora, '') DESC, id DESC"
         ).fetchall()
@@ -2005,6 +2013,16 @@ def agrupar_xonha_eventos_por_ano(
             }
         )
     return grupos
+
+
+def resumo_xonha_anos(
+    eventos: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Só ano + quantidade (HTML inicial leve, sem montar a timeline)."""
+    return [
+        {"ano": g["ano"], "quantidade": g["quantidade"]}
+        for g in agrupar_xonha_eventos_por_ano(eventos)
+    ]
 
 
 def get_xonha_evento(evento_id: int) -> dict[str, Any] | None:
@@ -2200,11 +2218,16 @@ def _xonha_evento_dt(e: dict[str, Any]) -> datetime | None:
         return None
 
 
-def xonha_stats() -> dict[str, Any]:
-    """Totais, médias, recorde do dia/mês e dias da semana mais frequentes."""
+def xonha_stats(eventos: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Totais, médias, recorde do dia/mês e dias da semana mais frequentes.
+
+    Aceita ``eventos`` já carregados para evitar um segundo SELECT na mesma
+    request (motivos não são necessários para as estatísticas).
+    """
     from datetime import date as date_cls
 
-    eventos = list_xonha_eventos()
+    if eventos is None:
+        eventos = list_xonha_eventos(com_motivo=False)
     saidas = [e for e in eventos if e.get("tipo") == "saida"]
     voltas = [e for e in eventos if e.get("tipo") == "volta"]
     banimentos = [e for e in eventos if e.get("tipo") == "banimento"]
