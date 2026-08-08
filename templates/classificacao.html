@@ -422,51 +422,72 @@
       ? `<img class="ficha-rodadas-avatar" src="${esc(p.avatar_url)}" alt="" />`
       : `<span class="ficha-rodadas-avatar ficha-rodadas-avatar-fallback">${esc(iniciais(p.nome))}</span>`;
 
+    const markIcon = (kind) => {
+      if (kind === "ok") {
+        return `<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M3.2 8.2l3 3 6.6-6.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+      if (kind === "miss") {
+        return `<svg viewBox="0 0 16 16" width="9" height="9" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+      }
+      return `<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M4 8h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+    };
+    const statusMark = (pts, semPalpite, label) => {
+      const kind = semPalpite ? "na" : (Number(pts) > 0 ? "ok" : "miss");
+      const title = semPalpite
+        ? `${label}: sem palpite`
+        : (kind === "ok" ? `${label}: acertou (+${Number(pts) || 0})` : `${label}: errou`);
+      return (
+        `<span class="ficha-jogo-mark is-${kind}" title="${esc(title)}">` +
+        markIcon(kind) +
+        `<span class="visually-hidden">${esc(title)}</span>` +
+        `</span>`
+      );
+    };
     const jogosHtml = (jogos) => {
       if (!jogos || !jogos.length) {
         return `<p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>`;
       }
-      return jogos.map((j) => {
+      const head =
+        `<div class="ficha-jogos-cols" aria-hidden="true">` +
+        `<span>Jogo</span><span>Palpite</span><span>Plc</span><span>Ven</span>` +
+        `<span>Gc</span><span>Gf</span><span>Pts</span>` +
+        `</div>`;
+      const rows = jogos.map((j) => {
         const real = `${j.real_m}×${j.real_v}`;
-        let tip;
-        if (j.sem_palpite) tip = "Sem palpite";
-        else {
-          tip = `Palpite ${j.palpite_m}×${j.palpite_v}`;
-          if (j.resultado_label) tip += ` · ${j.resultado_label}`;
-        }
+        const sem = !!j.sem_palpite;
+        const palpiteScore = sem ? "—" : `${j.palpite_m}×${j.palpite_v}`;
+        const palpiteLab = esc((j.resultado_label || (sem ? "Sem palpite" : "")).toUpperCase());
         const ptsCls = Number(j.pts) > 0 ? "" : " is-zero";
         const ptsLab = Number(j.pts) > 0 ? fmtPts(j.pts) : "0";
-        const casa = esc(j.casa_curto || j.casa);
-        const fora = esc(j.fora_curto || j.fora);
         const emCasa = j.casa_emblema
           ? `<img class="ficha-jogo-embl" src="${esc(j.casa_emblema)}" alt="" />`
-          : "";
+          : `<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>`;
         const emFora = j.fora_emblema
           ? `<img class="ficha-jogo-embl" src="${esc(j.fora_emblema)}" alt="" />`
-          : "";
-        const br = j.sem_palpite
-          ? ""
-          : `<div class="ficha-jogo-breakdown">` +
-            `<span>Plc <b>${j.placar || 0}</b></span>` +
-            `<span>Ven <b>${j.vencedor || 0}</b></span>` +
-            `<span>GC <b>${j.gols_casa || 0}</b></span>` +
-            `<span>GF <b>${j.gols_fora || 0}</b></span>` +
-            `</div>`;
+          : `<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>`;
+        const gcCls = Number(j.gols_casa) > 0 ? " is-hit" : "";
+        const gfCls = Number(j.gols_fora) > 0 ? " is-hit" : "";
         return (
-          `<div class="ficha-jogo">` +
-          `<div class="ficha-jogo-times">` +
-          `<span class="ficha-jogo-placar">` +
-          `${emCasa}<span>${casa}</span>` +
-          `<span class="ficha-jogo-score">${real}</span>` +
-          `${emFora}<span>${fora}</span>` +
+          `<div class="ficha-jogo" role="row">` +
+          `<div class="ficha-jogo-oficial" title="${esc(j.casa_curto || j.casa)} ${real} ${esc(j.fora_curto || j.fora)}">` +
+          `<span class="ficha-jogo-scoreline">` +
+          `${emCasa}<span class="ficha-jogo-score">${real}</span>${emFora}` +
           `</span>` +
-          `<small>${esc(tip)}</small>` +
+          `<small>Oficial</small>` +
           `</div>` +
+          `<div class="ficha-jogo-palpite">` +
+          `<span class="ficha-jogo-palpite-score">${esc(palpiteScore)}</span>` +
+          `<small>${palpiteLab}</small>` +
+          `</div>` +
+          statusMark(j.placar, sem, "Plc") +
+          statusMark(j.vencedor, sem, "Ven") +
+          `<span class="ficha-jogo-num${gcCls}" title="Gols casa: ${j.gols_casa || 0}">${j.gols_casa || 0}</span>` +
+          `<span class="ficha-jogo-num${gfCls}" title="Gols fora: ${j.gols_fora || 0}">${j.gols_fora || 0}</span>` +
           `<span class="ficha-jogo-pts${ptsCls}">${ptsLab}</span>` +
-          br +
           `</div>`
         );
       }).join("");
+      return head + rows;
     };
 
     const rodadas = (p.resumo_rodadas || [])
