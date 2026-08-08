@@ -54,15 +54,15 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "LISTRA THDFM 2026" in body
     assert "LISTRA THDFM 2025" in body
     assert "LISTRA THDFM 2024" in body
-    assert LISTRA_SEED_FRASES[0] in body
-    # 2025: emoji separado do texto na página (coluna dedicada).
-    assert "📺" in body
-    assert "Progama" in body
-    assert listra_seed_por_ano(2024)[0] in body
+    # First paint leve: frases do seed não vão no HTML inicial.
+    assert LISTRA_SEED_FRASES[0] not in body
+    assert listra_seed_por_ano(2024)[0] not in body
+    assert 'data-listra-lazy="1"' in body
+    assert 'data-listra-lazy-src="/grupo/listra/2026.json"' in body
+    assert "listraCarregarAno" in body
     assert "Nova frase" not in body
     assert "data-listra-enviar" not in body
     assert "data-listra-ordenar" in body
-    assert "Nome do meliante:" in body
     assert 'id="listra-toast-host"' in body
     assert 'id="listra-scroll-fab"' in body
     assert "listra-scroll-fab" in body
@@ -72,9 +72,29 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=228" in body
+    assert "/static/style.css?v=230" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
+    assert len(body) < 250_000
+
+    j2026 = client.get("/grupo/listra/2026.json")
+    assert j2026.status_code == 200
+    assert "private, max-age=60" in (j2026.headers.get("cache-control") or "")
+    payload = j2026.json()
+    assert payload["ano"] == 2026
+    assert payload["total"] >= 1
+    textos = [f["texto"] for f in payload["frases"]]
+    assert LISTRA_SEED_FRASES[0] in textos
+
+    j2025 = client.get("/grupo/listra/2025.json")
+    assert j2025.status_code == 200
+    blob = j2025.text
+    assert "📺" in blob
+    assert "Progama" in blob
+
+    j2024 = client.get("/grupo/listra/2024.json")
+    assert j2024.status_code == 200
+    assert listra_seed_por_ano(2024)[0] in j2024.text
 
 
 def test_admin_adiciona_com_emoji_e_destaque(client: TestClient):
@@ -107,9 +127,20 @@ def test_admin_adiciona_com_emoji_e_destaque(client: TestClient):
     assert "XPTO SILVA" in frase["texto"]
 
     pub = client.get("/grupo/listra")
-    assert frase_longa in pub.text
-    assert 'class="listra-destaque"' in pub.text
-    assert "XPTO SILVA" in pub.text
+    assert frase_longa not in pub.text
+    assert "listraCarregarAno" in pub.text
+
+    ano_json = client.get(f"/grupo/listra/{LISTRA_ANO_ATUAL}.json")
+    assert ano_json.status_code == 200
+    payload = ano_json.json()
+    hit = next(f for f in payload["frases"] if f.get("destaque") == "XPTO SILVA")
+    assert frase_longa in hit["texto"]
+    assert "listra-destaque" in hit["texto_html"]
+    assert "XPTO SILVA" in hit["texto_html"]
+
+    frase_json = client.get(f"/grupo/listra/frase/{frase['id']}.json")
+    assert frase_json.status_code == 200
+    assert frase_json.json()["id"] == frase["id"]
 
     export = client.get(f"/grupo/listra/export.txt?ano={LISTRA_ANO_ATUAL}")
     assert export.status_code == 200
@@ -198,19 +229,23 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     assert frase["criado_em"][10] == " "
     assert "Mazeta" in db.list_listra_meliantes()
     pub = client.get("/grupo/listra")
-    assert "Nova pérola do teste" in pub.text
-    assert "Mazeta" in pub.text
+    assert "Nova pérola do teste" not in pub.text
+    assert "Mazeta" in pub.text  # opção do select / template de edição
     assert 'data-listra-meliante-select' in pub.text
     assert "listra-save-btn" in pub.text
     assert "Selecione o meliante" in pub.text
     assert "Usar seleção" not in pub.text
-    assert "Nome do meliante:" in pub.text
-    # Exibe data · hora no card
-    import re
-
-    assert re.search(r"\d{2}/\d{2}/\d{4}\s*·\s*\d{2}:\d{2}", pub.text)
+    assert "listraCarregarAno" in pub.text
     assert "listra-editar-btn" in pub.text
     assert "/grupo/listra/atualizar" in pub.text
+    assert 'id="listra-edit-template"' in pub.text
+
+    ano_json = client.get(f"/grupo/listra/{LISTRA_ANO_ATUAL}.json")
+    assert ano_json.status_code == 200
+    hit = next(f for f in ano_json.json()["frases"] if f["texto"] == "Nova pérola do teste")
+    assert hit["responsavel"] == "Mazeta"
+    assert hit["criado_em"]
+    assert len(hit["criado_em"]) >= 16
 
 
 def test_admin_edita_frase(client: TestClient):
@@ -243,13 +278,18 @@ def test_admin_edita_frase(client: TestClient):
     pub = client.get(
         f"/grupo/listra?msg=Edi%C3%A7%C3%A3o+feita+com+sucesso#listra-frase-{criada['id']}"
     )
-    assert "Texto editado" in pub.text
-    assert "Ciclano" in pub.text
-    assert f'id="listra-frase-{criada["id"]}"' in pub.text
+    assert "Texto editado" not in pub.text
+    assert "Ciclano" in pub.text  # meliante no select
+    assert "listraEnsureFrase" in pub.text
     assert 'id="listra-toast-host"' in pub.text
     assert "feita com sucesso" in pub.text
     assert "showToast(" in pub.text
     assert 'class="msg"' not in pub.text
+
+    frase_json = client.get(f"/grupo/listra/frase/{criada['id']}.json")
+    assert frase_json.status_code == 200
+    assert frase_json.json()["texto"] == "Texto editado"
+    assert frase_json.json()["responsavel"] == "Ciclano"
 
 
 def test_visitante_nao_edita(client: TestClient):
@@ -478,8 +518,11 @@ def test_reembolsos_itens_separados_no_seed(client: TestClient):
     part = _criar_liberado(nome="Leitor Reembolso", username="leitor.reemb", celular="11990003333")
     _login_participante(client, part)
     pub = client.get("/grupo/listra")
-    assert "lista dos reembilos" in pub.text
-    assert "blodo de notas" in pub.text
+    assert "lista dos reembilos" not in pub.text
+    j = client.get("/grupo/listra/2026.json")
+    assert j.status_code == 200
+    assert "lista dos reembilos" in j.text
+    assert "blodo de notas" in j.text
 
 
 def test_seed_2026_emojis_a_partir_do_38(client: TestClient):
@@ -501,7 +544,7 @@ def test_seed_2026_emojis_a_partir_do_38(client: TestClient):
     part = _criar_liberado(nome="Leitor Emoji", username="leitor.emoji", celular="11990004444")
     _login_participante(client, part)
     pub = client.get("/grupo/listra")
-    assert "🧬" in pub.text
+    assert "🧬" not in pub.text
     frases = db.list_listra_frases(2026)
     por_ordem = {int(f["ordem"]): f for f in frases}
     assert por_ordem[37]["texto"] == "Ronovava"
@@ -510,9 +553,10 @@ def test_seed_2026_emojis_a_partir_do_38(client: TestClient):
     assert por_ordem[286]["emoji"]
     assert "roca" in por_ordem[286]["texto"].lower()
 
-    pub = client.get("/grupo/listra")
-    assert "🧬" in pub.text
-    assert "Nem evoluir os pijemin evolui po" in pub.text
+    j = client.get("/grupo/listra/2026.json")
+    assert j.status_code == 200
+    assert "🧬" in j.text
+    assert "Nem evoluir os pijemin evolui po" in j.text
 
 
 def test_migrar_emojis_do_seed_nao_sobrescreve(client: TestClient):

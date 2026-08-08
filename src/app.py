@@ -186,23 +186,9 @@ TEMPLATES.env.filters["wa_chat"] = db.url_whatsapp_chat
 
 def _listra_marcar_destaque(texto: str, destaque: str) -> str:
     """Marca o trecho compartilhável dentro do texto (HTML escapado)."""
-    from markupsafe import Markup, escape
+    from markupsafe import Markup
 
-    base = texto or ""
-    dest = (destaque or "").strip()
-    if not dest or dest not in base:
-        return Markup(str(escape(base)))
-    out: list[str] = []
-    cursor = 0
-    while True:
-        idx = base.find(dest, cursor)
-        if idx < 0:
-            out.append(str(escape(base[cursor:])))
-            break
-        out.append(str(escape(base[cursor:idx])))
-        out.append(f'<mark class="listra-destaque">{escape(dest)}</mark>')
-        cursor = idx + len(dest)
-    return Markup("".join(out))
+    return Markup(db.listra_marcar_destaque_html(texto, destaque))
 
 
 TEMPLATES.env.filters["listra_marcar_destaque"] = _listra_marcar_destaque
@@ -852,7 +838,9 @@ def grupo_listra(request: Request):
     from src.listra_seed import LISTRA_ANO_ATUAL
 
     caps = _listra_caps(request)
-    listras = db.list_listra_por_anos()
+    # First paint leve: só cascas dos anos. Frases vêm de /grupo/listra/{ano}.json
+    # ao abrir cada <details> (ano atual carrega sozinho por já nascer aberto).
+    listras = db.resumo_listra_anos()
     return render(
         request,
         "listra.html",
@@ -866,6 +854,37 @@ def grupo_listra(request: Request):
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/grupo/listra/{ano}.json")
+def grupo_listra_ano_json(request: Request, ano: int):
+    """Frases de um ano — consumidas sob demanda pelo front."""
+    from src.listra_seed import LISTRA_ANOS, listra_titulo
+
+    if ano not in LISTRA_ANOS:
+        raise HTTPException(status_code=404, detail="Ano da Listra não encontrado.")
+    frases = db.list_listra_frases(ano)
+    return JSONResponse(
+        {
+            "ano": ano,
+            "titulo": listra_titulo(ano),
+            "total": len(frases),
+            "frases": [db.listra_frase_api(f) for f in frases],
+        },
+        headers={"Cache-Control": "private, max-age=60"},
+    )
+
+
+@app.get("/grupo/listra/frase/{frase_id}.json")
+def grupo_listra_frase_json(request: Request, frase_id: int):
+    """Lookup de uma frase (deep-link #listra-frase-ID)."""
+    frase = db.get_listra_frase(frase_id)
+    if not frase:
+        raise HTTPException(status_code=404, detail="Frase não encontrada.")
+    return JSONResponse(
+        db.listra_frase_api(frase),
+        headers={"Cache-Control": "private, max-age=60"},
     )
 
 
