@@ -4,10 +4,10 @@
 {% block title %}Palpites — {{ participante.nome }}{% endblock %}
 {% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
-<div class="palpites-hello-row">
+<h1 class="palpites-hello">
   {{ avatar(participante.avatar_path, participante.nome, class_prefix="palpites-hello-avatar", alt="") }}
-  <h1 class="palpites-hello">Olá, {{ participante.nome }}!</h1>
-</div>
+  <span class="palpites-hello-text">Olá, {{ participante.nome }}!</span>
+</h1>
 <p class="palpites-lead">Faça aqui os seus palpites. <strong class="palpites-save-hint">Lembre de salvar</strong> antes de sair da página.</p>
 {% if janela != 'fechado' %}
 <p class="palpites-trava-aviso" role="note">

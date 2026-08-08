@@ -20,20 +20,23 @@ def test_meus_palpites_mostra_avatar_no_ola(client):
     part = _login_participante(client, "Mazeta Avatar", "mazetaavatar1")
     r = client.get("/bolao/meus-palpites")
     assert r.status_code == 200
-    assert "palpites-hello-row" in r.text
+    assert 'class="palpites-hello"' in r.text
     assert "palpites-hello-avatar" in r.text
+    assert "palpites-hello-text" in r.text
     assert "Olá, Mazeta Avatar!" in r.text
+    # Avatar vem antes do texto (à esquerda), dentro do mesmo h1
+    i_av = r.text.index("palpites-hello-avatar")
+    i_txt = r.text.index("palpites-hello-text")
+    assert i_av < i_txt
 
 
 def test_css_avatar_miniatura_e_grade_admin_centralizada():
-    from pathlib import Path
-
     from src.config import ROOT_DIR
 
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
-    assert "img.palpites-hello-avatar" in css
-    assert "width: 1.35rem" in css
-    assert "max-width: 1.35rem" in css
+    assert "--palpites-hello-size: 1.2rem" in css
+    assert "width: var(--palpites-hello-size" in css
+    assert "flex-direction: row" in css
     assert "repeat(auto-fit, minmax(200px, 220px))" in css
     assert ".admin-match-grid.locked-grid.match-grid" in css
 
