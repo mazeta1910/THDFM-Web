@@ -172,9 +172,12 @@
     });
   }
 
-  function init() {
-    document.querySelectorAll("select[data-listra-custom-select]").forEach(aprimorar);
+  function init(root) {
+    var escopo = root && root.querySelectorAll ? root : document;
+    escopo.querySelectorAll("select[data-listra-custom-select]").forEach(aprimorar);
   }
+
+  window.listraInitCustomSelects = init;
 
   document.addEventListener("click", function (ev) {
     var alvo = ev.target;
@@ -199,7 +202,7 @@
   });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", function () { init(); });
   } else {
     init();
   }

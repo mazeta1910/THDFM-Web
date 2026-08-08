@@ -2604,6 +2604,48 @@ def listra_linha_compartilhar(frase: dict[str, Any]) -> str:
     return emoji or trecho
 
 
+def listra_marcar_destaque_html(texto: str, destaque: str) -> str:
+    """HTML escapado com o trecho compartilhável em <mark>."""
+    import html as html_mod
+
+    base = texto or ""
+    dest = (destaque or "").strip()
+    if not dest or dest not in base:
+        return html_mod.escape(base)
+    out: list[str] = []
+    cursor = 0
+    while True:
+        idx = base.find(dest, cursor)
+        if idx < 0:
+            out.append(html_mod.escape(base[cursor:]))
+            break
+        out.append(html_mod.escape(base[cursor:idx]))
+        out.append(f'<mark class="listra-destaque">{html_mod.escape(dest)}</mark>')
+        cursor = idx + len(dest)
+    return "".join(out)
+
+
+def listra_frase_api(frase: dict[str, Any]) -> dict[str, Any]:
+    """Payload JSON de uma frase (campos crus + derivados para o front)."""
+    emoji = listra_emoji_efetivo(frase)
+    texto_ctx = listra_texto_contexto(frase)
+    destaque = (frase.get("destaque") or "").strip()
+    return {
+        "id": int(frase["id"]),
+        "ano": int(frase["ano"]) if frase.get("ano") is not None else None,
+        "texto": frase.get("texto") or "",
+        "emoji": (frase.get("emoji") or "").strip(),
+        "destaque": destaque,
+        "responsavel": (frase.get("responsavel") or "").strip(),
+        "criado_em": frase.get("criado_em") or "",
+        "ordem": frase.get("ordem"),
+        "emoji_efetivo": emoji,
+        "texto_contexto": texto_ctx,
+        "linha_share": listra_linha_compartilhar(frase),
+        "texto_html": listra_marcar_destaque_html(texto_ctx, destaque),
+    }
+
+
 def _migrar_listra_emoji_destaque(conn: sqlite3.Connection) -> None:
     cols = {
         row[1] for row in conn.execute("PRAGMA table_info(listra_frases)").fetchall()
@@ -3023,9 +3065,15 @@ def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def list_listra_por_anos() -> list[dict[str, Any]]:
-    """Cards por ano: atual primeiro, depois os anteriores."""
+def list_listra_por_anos(*, com_frases: bool = True) -> list[dict[str, Any]]:
+    """Cards por ano: atual primeiro, depois os anteriores.
+
+    ``com_frases=False`` devolve só cascas (ano/título/total) — first paint leve.
+    """
     from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS, listra_titulo
+
+    if not com_frases:
+        return resumo_listra_anos()
 
     out: list[dict[str, Any]] = []
     for ano in LISTRA_ANOS:
@@ -3040,6 +3088,27 @@ def list_listra_por_anos() -> list[dict[str, Any]]:
             }
         )
     return out
+
+
+def resumo_listra_anos() -> list[dict[str, Any]]:
+    """Só ano + título + quantidade (sem embutir as frases no HTML)."""
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS, listra_titulo
+
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT ano, COUNT(*) AS total FROM listra_frases GROUP BY ano"
+        ).fetchall()
+    counts = {int(r["ano"]): int(r["total"]) for r in rows}
+    return [
+        {
+            "ano": ano,
+            "titulo": listra_titulo(ano),
+            "frases": [],
+            "total": counts.get(int(ano), 0),
+            "atual": ano == LISTRA_ANO_ATUAL,
+        }
+        for ano in LISTRA_ANOS
+    ]
 
 
 def listra_texto_whatsapp(
