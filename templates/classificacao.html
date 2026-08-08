@@ -471,7 +471,7 @@
 
     const rodadas = (p.resumo_rodadas || [])
       .map((r) => {
-        const meta = [r.fase_label_curta || r.fase_label, r.janela_label].filter(Boolean).join(" · ");
+        const meta = [r.fase_label || r.fase_label_curta, r.janela_label].filter(Boolean).join(" · ");
         const pos = r.posicao != null ? `${r.posicao}º` : "—";
         let mov = "";
         if (r.movimento != null && Number(r.movimento) !== 0) {
