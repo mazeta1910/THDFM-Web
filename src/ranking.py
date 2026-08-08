@@ -368,6 +368,7 @@ def _jogos_detalhe_participante(
 ) -> list[dict]:
     """Pontos jogo a jogo do participante na fase/perna (resultados oficiais)."""
     from src.db import list_confrontos_completos, palpites_do_participante
+    from src.seed_data import emblema_url, nome_clube_curto
 
     if perna not in ("ida", "volta") or not fase:
         return []
@@ -389,13 +390,20 @@ def _jogos_detalhe_participante(
             casa_nome = c.get("clube_a") or "?"
             fora_nome = c.get("clube_b") or "?"
         pj = palpites["jogos"].get(jogo["id"])
+        base = {
+            "casa": casa_nome,
+            "fora": fora_nome,
+            "casa_curto": nome_clube_curto(casa_nome),
+            "fora_curto": nome_clube_curto(fora_nome),
+            "casa_emblema": emblema_url(casa_nome),
+            "fora_emblema": emblema_url(fora_nome),
+            "real_m": real_m,
+            "real_v": real_v,
+        }
         if not pj:
             out.append(
                 {
-                    "casa": casa_nome,
-                    "fora": fora_nome,
-                    "real_m": real_m,
-                    "real_v": real_v,
+                    **base,
                     "palpite_m": None,
                     "palpite_v": None,
                     "pts": 0,
@@ -420,10 +428,7 @@ def _jogos_detalhe_participante(
         )
         out.append(
             {
-                "casa": casa_nome,
-                "fora": fora_nome,
-                "real_m": real_m,
-                "real_v": real_v,
+                **base,
                 "palpite_m": int(pj["gols_mandante"]),
                 "palpite_v": int(pj["gols_visitante"]),
                 "pts": int(det.total),
@@ -488,6 +493,19 @@ def resumo_pontuacao_por_participante(
         indice_na_fase[int(rod["id"])] = contagem_fase.get(f, 0)
         contagem_fase[f] = contagem_fase.get(f, 0) + 1
 
+    # Uma entrada por (fase, Ida/Volta): evita R3 fantasma duplicando Oit·Volta.
+    rodadas_unicas: list[tuple[dict, str, str]] = []
+    vistos: set[tuple[str, str]] = set()
+    for rod in rodadas:
+        fase_r = rod.get("fase") or ""
+        idx = indice_na_fase.get(int(rod["id"]), 0)
+        janela_r = _janela_inferida_na_fase(fase_r, idx, rod.get("janela") or "")
+        key = (fase_r, janela_r)
+        if key in vistos:
+            continue
+        vistos.add(key)
+        rodadas_unicas.append((rod, fase_r, janela_r))
+
     fase_atual = get_meta("fase_atual", "oitavas") or "oitavas"
     janela_atual = get_janela()
     if janela_atual not in ("ida", "volta"):
@@ -502,15 +520,12 @@ def resumo_pontuacao_por_participante(
         pid = int(pid)
         nome = row.get("participante")
         entradas: list[dict] = []
-        for rod in rodadas:
+        for rod, fase_r, janela_r in rodadas_unicas:
             linha = _linha_do_participante(
                 rod.get("linhas") or [],
                 participante_id=pid,
                 nome=nome,
             )
-            fase_r = rod.get("fase") or ""
-            idx = indice_na_fase.get(int(rod["id"]), 0)
-            janela_r = _janela_inferida_na_fase(fase_r, idx, rod.get("janela") or "")
             entradas.append(
                 _entrada_resumo_rodada(
                     rotulo=rod.get("rotulo") or f"Rodada {rod.get('numero')}",

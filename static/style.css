@@ -5983,7 +5983,23 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   line-height: 1.25;
 }
 .ficha-jogo-placar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.22rem 0.28rem;
   font-weight: 650;
+  color: var(--text);
+  min-width: 0;
+}
+.ficha-jogo-embl {
+  width: 1.05rem;
+  height: 1.05rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.ficha-jogo-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
   color: var(--text);
 }
 .ficha-jogo-times small {
@@ -6009,13 +6025,51 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.64rem;
 }
 .ficha-jogo-breakdown b {
-  color: var(--text);
+  color: var(--accent);
   font-weight: 700;
 }
 .ficha-jogo-vazio {
   margin: 0;
   padding: 0.25rem 0.15rem 0.1rem;
   font-size: 0.72rem;
+  color: var(--muted);
+}
+.ficha-perfil {
+  margin: 0.85rem 0 0;
+  min-width: 0;
+}
+.ficha-perfil-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+.ficha-perfil-met {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  min-width: 0;
+}
+.ficha-perfil-met.is-wide { grid-column: 1 / -1; }
+.ficha-perfil-lab {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ficha-perfil-val {
+  font-size: 0.92rem;
+  font-weight: 750;
+  color: var(--text);
+  line-height: 1.2;
+}
+.ficha-perfil-val small {
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--muted);
 }
 @media (max-width: 520px) {
