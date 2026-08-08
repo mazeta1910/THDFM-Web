@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import src.db as db
+from src.config import ROOT_DIR
 from tests.conftest import login_admin
 
 
@@ -125,6 +126,10 @@ def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
     assert 'action="/p/' + part["token"] + '/conta"' in r2.text
     assert "data-avatar-edit" in r2.text
     assert "avatar-edit-camera" in r2.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".avatar-edit-trigger {" in css
+    assert "width: 88px;" in css
+    assert "max-width: 88px;" in css
     assert 'id="conta-drawer-file-name"' not in r2.text
     assert "conta-file-pick" not in r2.text
     assert "Quero mudar o meu username" not in r2.text

@@ -1213,6 +1213,10 @@ nav.site-nav-desktop {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 88px;
+  height: 88px;
+  max-width: 88px;
+  flex: 0 0 88px;
   padding: 0;
   border: none;
   background: transparent;
@@ -1220,9 +1224,13 @@ nav.site-nav-desktop {
   overflow: hidden;
   border-radius: 50%;
   isolation: isolate;
+  box-sizing: border-box;
 }
 .avatar-edit-trigger.avatar-preview {
-  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  max-width: 88px;
+  flex: 0 0 88px;
 }
 .avatar-edit-camera {
   position: absolute;
