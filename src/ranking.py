@@ -53,7 +53,8 @@ def _acertou_vencedor_jogo(
 
 
 def calcular_classificacao() -> list[dict]:
-    fase = get_meta("fase_atual", "oitavas") or "oitavas"
+    from collections import defaultdict
+
     confrontos = list_confrontos_completos()
     participantes = [p for p in list_participantes() if p.get("status") == "liberado"]
     snapshot = load_snapshot() or {}
@@ -63,11 +64,21 @@ def calcular_classificacao() -> list[dict]:
     for p in participantes:
         pts = PontosParticipante(participante=p["nome"])
         palpites = palpites_do_participante(p["id"])
-        prev_casa = prev_fora = real_casa = real_fora = 0
-        acertos_venc = jogos_realizados = 0
+        # Acumula fidelidade por fase do confronto (não pela fase atual do meta).
+        fid_acc: dict[str, dict] = defaultdict(
+            lambda: {
+                "prev_casa": 0,
+                "prev_fora": 0,
+                "real_casa": 0,
+                "real_fora": 0,
+                "acertos_venc": 0,
+                "jogos": 0,
+            }
+        )
         detalhe_fid: FidelidadeDetalhe | None = None
 
         for c in confrontos:
+            fase_c = c.get("fase") or "oitavas"
             ida = _jogo_por_perna(c, "ida")
             volta = _jogo_por_perna(c, "volta")
             if not ida or not volta:
@@ -77,25 +88,24 @@ def calcular_classificacao() -> list[dict]:
             for jogo in (ida, volta):
                 if jogo["gols_mandante"] is None or jogo["gols_visitante"] is None:
                     continue
-                jogos_realizados += 1
-                real_casa += jogo["gols_mandante"]
-                real_fora += jogo["gols_visitante"]
+                acc = fid_acc[fase_c]
+                acc["jogos"] += 1
+                acc["real_casa"] += int(jogo["gols_mandante"])
+                acc["real_fora"] += int(jogo["gols_visitante"])
 
                 pj = palpites["jogos"].get(jogo["id"])
                 if not pj:
                     continue
-                prev_casa += pj["gols_mandante"]
-                prev_fora += pj["gols_visitante"]
+                acc["prev_casa"] += int(pj["gols_mandante"])
+                acc["prev_fora"] += int(pj["gols_visitante"])
 
-                pen_p = None
-                pen_r = None
-                # pênaltis só entram no desfecho agregado, não no 90 min da perna
+                # Pesos da fase do confronto — evita inflar Oitavas com pesos de Quartas.
                 det = pontos_detalhados(
                     pj["gols_mandante"],
                     pj["gols_visitante"],
                     jogo["gols_mandante"],
                     jogo["gols_visitante"],
-                    fase=fase,
+                    fase=fase_c,
                     clube_casa_id=jogo["mandante_clube_id"],
                     palpite_penaltis=None,
                     real_penaltis=None,
@@ -112,7 +122,7 @@ def calcular_classificacao() -> list[dict]:
                     real_pen=None,
                     permite_empate=True,
                 ):
-                    acertos_venc += 1
+                    acc["acertos_venc"] += 1
 
             # Desfecho agregado com pênaltis (estilo WC): 1x vencedor se aplicável
             if (
@@ -149,21 +159,30 @@ def calcular_classificacao() -> list[dict]:
                             penaltis_clube_id=pen_palpite,
                         )
                         if palpite_cls == real_cls:
-                            pesos = pesos_para_fase(fase)
+                            pesos = pesos_para_fase(fase_c)
                             pts.vencedor += pesos.vencedor
 
-        if jogos_realizados:
-            detalhe_fid = calcular_fidelidade(
-                previsto_casa=prev_casa,
-                real_casa=real_casa,
-                previsto_fora=prev_fora,
-                real_fora=real_fora,
-                acertos_vencedor=acertos_venc,
-                jogos=jogos_realizados,
-                fase=fase,
+        fid_bonus = 0
+        fid_indice = 0.0
+        fid_jogos = 0
+        for fase_f, acc in fid_acc.items():
+            if not acc["jogos"]:
+                continue
+            d = calcular_fidelidade(
+                previsto_casa=acc["prev_casa"],
+                real_casa=acc["real_casa"],
+                previsto_fora=acc["prev_fora"],
+                real_fora=acc["real_fora"],
+                acertos_vencedor=acc["acertos_venc"],
+                jogos=acc["jogos"],
+                fase=fase_f,
             )
-            pts.fidelidade = detalhe_fid.bonus
-            pts.indice_fidelidade = detalhe_fid.indice
+            fid_bonus += d.bonus
+            fid_indice += d.indice * acc["jogos"]
+            fid_jogos += acc["jogos"]
+            detalhe_fid = d
+        pts.fidelidade = fid_bonus
+        pts.indice_fidelidade = (fid_indice / fid_jogos) if fid_jogos else 0.0
 
         soma_base = baseline.get(p["nome"], 0)
         rod = pts.soma - soma_base
@@ -320,10 +339,11 @@ def _entrada_resumo_rodada(
     numero: int | None = None,
     jogos: list[dict] | None = None,
 ) -> dict:
-    if ao_vivo:
-        rotulo_curto = "Ao vivo"
-    elif numero is not None:
+    # Ao vivo também vira "Rodada N" (ex.: Quartas Ida = Rodada 3).
+    if numero is not None:
         rotulo_curto = f"R{numero}"
+    elif ao_vivo:
+        rotulo_curto = "Ao vivo"
     else:
         rotulo_curto = rotulo
     return {
@@ -368,6 +388,7 @@ def _jogos_detalhe_participante(
 ) -> list[dict]:
     """Pontos jogo a jogo do participante na fase/perna (resultados oficiais)."""
     from src.db import list_confrontos_completos, palpites_do_participante
+    from src.scoring import classificar_palpite
     from src.seed_data import emblema_url, nome_clube_curto
 
     if perna not in ("ida", "volta") or not fase:
@@ -412,20 +433,40 @@ def _jogos_detalhe_participante(
                     "gols_casa": 0,
                     "gols_fora": 0,
                     "sem_palpite": True,
+                    "resultado_label": "Sem palpite",
                 }
             )
             continue
+        fase_jogo = c.get("fase") or fase
         det = pontos_detalhados(
             int(pj["gols_mandante"]),
             int(pj["gols_visitante"]),
             real_m,
             real_v,
-            fase=fase,
+            fase=fase_jogo,
             clube_casa_id=jogo.get("mandante_clube_id") or "a",
             palpite_penaltis=None,
             real_penaltis=None,
             permite_empate=True,
         )
+        categoria, acertou_venc = classificar_palpite(
+            int(pj["gols_mandante"]),
+            int(pj["gols_visitante"]),
+            real_m,
+            real_v,
+            clube_casa_id=jogo.get("mandante_clube_id") or "a",
+            permite_empate=True,
+        )
+        if categoria == "Placar":
+            resultado_label = "Placar exato"
+        elif acertou_venc:
+            resultado_label = "Vencedor"
+        elif categoria == "Gols Casa":
+            resultado_label = "Gols casa"
+        elif categoria == "Gols fora":
+            resultado_label = "Gols fora"
+        else:
+            resultado_label = "Errou"
         out.append(
             {
                 **base,
@@ -437,6 +478,7 @@ def _jogos_detalhe_participante(
                 "gols_casa": int(det.gols_casa),
                 "gols_fora": int(det.gols_fora),
                 "sem_palpite": False,
+                "resultado_label": resultado_label,
             }
         )
     return out
@@ -539,13 +581,15 @@ def resumo_pontuacao_por_participante(
                     ),
                 )
             )
+        n_ao_vivo = len(rodadas_unicas) + 1
         entradas.append(
             _entrada_resumo_rodada(
-                rotulo="Ao vivo",
+                rotulo=f"Rodada {n_ao_vivo}",
                 fase=fase_atual,
                 janela=janela_atual,
                 linha=row,
                 ao_vivo=True,
+                numero=n_ao_vivo,
                 jogos=_jogos_detalhe_participante(
                     pid, fase=fase_atual, perna=janela_atual
                 ),

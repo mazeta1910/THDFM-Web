@@ -1625,7 +1625,15 @@ def classificacao(request: Request):
     if not admin_ok(request) and not request.session.get("participante_token"):
         return RedirectResponse("/?acesso=entrar", status_code=303)
 
-    historico = db.list_rodadas_historico()
+    from src.ranking import _rodada_historico_vazia
+
+    historico_all = db.list_rodadas_historico()
+    # Esconde fechamentos fantasma (ninguém pontuou) na nav da Classificação.
+    historico = []
+    for h in historico_all:
+        full = db.get_rodada_historico(int(h["id"]))
+        if full and not _rodada_historico_vazia(full):
+            historico.append(h)
     rodada_param = (request.query_params.get("rodada") or "atual").strip()
     rodada_sel = None
     modo_historico = False
@@ -1637,7 +1645,7 @@ def classificacao(request: Request):
             rid = None
         if rid is not None:
             rodada_sel = db.get_rodada_historico(rid)
-        if not rodada_sel:
+        if not rodada_sel or _rodada_historico_vazia(rodada_sel):
             return RedirectResponse("/classificacao", status_code=303)
         linhas = rodada_sel["linhas"]
         modo_historico = True
