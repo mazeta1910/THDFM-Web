@@ -1823,11 +1823,14 @@ def _render_meus_palpites(request: Request, part: dict):
         {
             **f,
             "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "encerrada": FASE_IDS.index(f["id"]) < fase_idx,
             "ativa": f["id"] == fase_atual,
         }
         for f in FASES
     ]
     janela = db.get_janela()
+    # Ida só editável na fase atual e quando a janela ainda é ida.
+    perna_default = "volta" if janela == "volta" else "ida"
     return render(
         request,
         "palpites.html",
@@ -1835,6 +1838,7 @@ def _render_meus_palpites(request: Request, part: dict):
         janela=janela,
         fase_atual=fase_atual,
         fases=fases_ui,
+        perna_default=perna_default,
         confrontos=_enrich_confrontos(
             db.list_confrontos_completos(fase_atual), janela=janela
         ),
@@ -2105,7 +2109,9 @@ async def salvar_palpites(request: Request, token: str):
         return RedirectResponse(f"/p/{token}?erro=Janela+fechada", status_code=303)
 
     form = await request.form()
-    confrontos = db.list_confrontos_completos()
+    fase_atual = db.get_fase_atual()
+    # Só aceita palpites da fase liberada atual (fases anteriores ficam fechadas).
+    confrontos = db.list_confrontos_completos(fase_atual)
     from src.seed_data import jogo_palpite_travado
 
     faltando_penaltis: list[int] = []
