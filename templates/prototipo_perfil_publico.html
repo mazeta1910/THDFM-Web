@@ -1,61 +1,110 @@
 {% extends "base.html" %}
 {% block title %}Protótipo · Perfil público — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
+{% block body_class %}proto-orkut-body {% endblock %}
 
 {% block content %}
-<article class="proto-perfil proto-perfil--publico" id="proto-perfil-publico" data-proto-perfil-publico>
-  <header class="proto-perfil-head">
-    <p class="xonha-kicker">Protótipo · visão pública</p>
-    <div class="proto-perfil-actions">
-      <a class="btn secondary" href="/prototipo/perfil">Voltar ao meu perfil</a>
-    </div>
-  </header>
+<div class="proto-orkut" id="proto-perfil-publico" data-proto-perfil-publico>
+  <p class="proto-orkut-kicker">Protótipo · visão pública · local neste navegador</p>
 
-  <div class="proto-perfil-public-hero">
-    <div class="proto-perfil-avatar proto-perfil-avatar--lg" aria-hidden="true">
-      {% if participante_nav %}
-        {% set av = avatar_url(participante_nav.avatar_path) %}
-        {% if av %}
-        <img src="{{ av }}" alt="" data-public-avatar />
+  <div class="proto-orkut-grid">
+    <aside class="proto-orkut-left">
+      <div class="proto-orkut-photo" aria-hidden="true">
+        {% if participante_nav %}
+          {% set av = avatar_url(participante_nav.avatar_path) %}
+          {% if av %}
+          <img src="{{ av }}" alt="" width="160" height="160" data-public-avatar />
+          {% else %}
+          <span class="proto-orkut-photo-fallback" data-public-avatar-fallback>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+          {% endif %}
         {% else %}
-        <span data-public-avatar-fallback>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+        <span class="proto-orkut-photo-fallback" data-public-avatar-fallback>TH</span>
         {% endif %}
-      {% else %}
-      <span data-public-avatar-fallback>TH</span>
-      {% endif %}
-    </div>
-    <div>
-      {# TEXTOS PARA REESCREVER — começo #}
-      <h1 class="proto-perfil-title" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
-      <p class="proto-perfil-lead" data-public-tagline>Perfil na THDFM</p>
-      {# TEXTOS PARA REESCREVER — fim #}
-      <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
-    </div>
-  </div>
+      </div>
+      <p class="proto-orkut-name" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</p>
+      <p class="proto-orkut-meta" data-public-meta>—</p>
+      <ul class="proto-orkut-side-links">
+        <li><a href="/prototipo/perfil">editar perfil</a></li>
+        <li><span class="proto-orkut-side-current">perfil</span></li>
+        <li><a href="#depoimentos">depoimentos</a></li>
+        <li><a href="#amigos">amigos</a></li>
+      </ul>
+    </aside>
 
-  <section class="proto-perfil-panel">
-    <h2 class="proto-perfil-panel-title">Times</h2>
-    <ul class="proto-public-times" id="public-times"></ul>
-    <p class="proto-times-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
-  </section>
+    <main class="proto-orkut-main">
+      <header class="proto-orkut-main-head">
+        <h1 class="proto-orkut-h1" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
+        <p class="proto-orkut-crumb">Início › Perfil</p>
+      </header>
 
-  <section class="proto-perfil-panel">
-    <h2 class="proto-perfil-panel-title">Karma</h2>
-    <ul class="proto-karma-list proto-karma-list--readonly" id="public-karma">
-      {% for k in karma_cats %}
-      <li class="proto-karma-row" data-karma="{{ k.id }}">
-        <div class="proto-karma-label">
-          <strong>{{ k.nome }}</strong>
-          <span>{{ k.hint }}</span>
+      <div class="proto-orkut-frase-box proto-orkut-frase-box--view">
+        <p class="proto-orkut-frase" data-public-frase>Sem frase ainda.</p>
+      </div>
+
+      <div class="proto-orkut-karma" id="public-karma" aria-label="Karma">
+        {% for k in karma_cats %}
+        <div class="proto-orkut-karma-row" data-karma="{{ k.id }}" data-icon="{{ k.icon }}" data-labels="{{ k.labels | join('|') }}">
+          <span class="proto-orkut-icons" data-karma-icons aria-hidden="true"></span>
+          <span class="proto-orkut-karma-label" data-karma-label>{{ k.nome|lower }}</span>
         </div>
-        <div class="proto-karma-meter" aria-hidden="true"><i data-karma-bar style="width: {{ k.demo_pct }}%"></i></div>
-        <span class="proto-karma-val" data-karma-val>{{ k.demo }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    <p class="conta-hint">No app real, aqui entram os botões para você votar neste perfil.</p>
-  </section>
-</article>
+        {% endfor %}
+      </div>
+
+      <section class="proto-orkut-box" id="social">
+        <h2 class="proto-orkut-box-title">social</h2>
+        <table class="proto-orkut-table">
+          <tr>
+            <th scope="row">aniversário</th>
+            <td data-public-aniversario>—</td>
+          </tr>
+          <tr>
+            <th scope="row">relacionamento</th>
+            <td data-public-relacionamento>—</td>
+          </tr>
+          <tr>
+            <th scope="row">quem sou eu</th>
+            <td data-public-quem>—</td>
+          </tr>
+          <tr>
+            <th scope="row">times do coração</th>
+            <td>
+              <ul class="proto-orkut-times" id="public-times"></ul>
+              <p class="proto-orkut-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
+              <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section class="proto-orkut-box" id="depoimentos">
+        <h2 class="proto-orkut-box-title">depoimentos <span id="public-deps-count">(0)</span></h2>
+        <ul class="proto-orkut-deps" id="public-deps-list"></ul>
+        <p class="proto-orkut-empty" id="public-deps-empty">Nenhum depoimento ainda.</p>
+      </section>
+    </main>
+
+    <aside class="proto-orkut-right" id="amigos">
+      <section class="proto-orkut-box">
+        <h2 class="proto-orkut-box-title">meus amigos <span id="public-amigos-count">(0)</span></h2>
+        <ul class="proto-orkut-amigos" id="public-amigos-list"></ul>
+        <p class="proto-orkut-empty" id="public-amigos-empty">Nenhum amigo no protótipo.</p>
+      </section>
+
+      <section class="proto-orkut-box">
+        <h2 class="proto-orkut-box-title">esquema de amizade</h2>
+        <ul class="proto-orkut-amizade" id="public-amizade-list">
+          {% for n in amizade_niveis %}
+          <li data-amizade="{{ n.id }}">
+            <span class="proto-orkut-amizade-icone" aria-hidden="true">{{ n.icone }}</span>
+            <span class="proto-orkut-amizade-nome">{{ n.nome }}</span>
+            <span class="proto-orkut-amizade-pct" data-amizade-pct>0%</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
 
 <script type="application/json" id="proto-clubes-data">{{ clubes_json | safe }}</script>
 {% endblock %}

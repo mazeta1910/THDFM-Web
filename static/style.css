@@ -10160,238 +10160,471 @@ html[data-theme="light"] .listra-perm-table th {
   color: var(--accent);
   font-weight: 700;
 }
-.proto-perfil-head {
-  margin-bottom: 1.1rem;
+/* ——— Protótipo perfil estilo Orkut (layout denso em 3 colunas) ——— */
+body.proto-orkut-body {
+  --orkut-bg: #d4e2f1;
+  --orkut-panel: #ffffff;
+  --orkut-ink: #1a2a3a;
+  --orkut-muted: #4a6070;
+  --orkut-link: #2a5db0;
+  --orkut-head: #3b6ea5;
+  --orkut-row: #eaf2fa;
+  --orkut-border: #b7c8da;
+  --orkut-soft: #f0f4f8;
 }
-.proto-perfil-title {
-  margin: 0.2rem 0 0.4rem;
-  font-size: clamp(1.45rem, 3vw, 1.85rem);
-  letter-spacing: -0.02em;
+body.proto-orkut-body .wrap.wide {
+  max-width: 980px;
 }
-.proto-perfil-lead {
-  margin: 0 0 0.85rem;
-  color: var(--muted);
-  max-width: 42rem;
-  line-height: 1.45;
+.proto-orkut {
+  color: var(--orkut-ink);
+  font-family: Tahoma, Verdana, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
 }
-.proto-perfil-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.proto-perfil-actions .btn {
-  width: auto;
-  min-width: 0;
-  padding: 0.65rem 0.95rem;
-}
-.proto-perfil-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0 0 1.25rem;
-  position: sticky;
-  top: calc(var(--site-header-offset) + 0.35rem);
-  z-index: 3;
-  padding: 0.35rem 0;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(6px);
-}
-.proto-perfil-tab {
-  text-decoration: none;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 0.45rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-}
-.proto-perfil-tab.is-on,
-.proto-perfil-tab:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-.proto-perfil-tab.is-on {
-  background: color-mix(in srgb, var(--accent) 18%, var(--bg2));
-}
-.proto-perfil-panel {
-  margin-bottom: 2rem;
-  scroll-margin-top: 5.5rem;
-}
-.proto-perfil-panel-title {
+.proto-orkut-kicker {
   margin: 0 0 0.55rem;
-  font-size: 1.05rem;
+  color: #c45a12;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
-.proto-perfil-card {
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
+.proto-orkut-grid {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) 200px;
+  gap: 10px;
+  align-items: start;
 }
-.proto-perfil-identity {
-  display: flex;
-  gap: 0.9rem;
-  align-items: flex-start;
-}
-.proto-perfil-identity-text {
-  flex: 1;
+.proto-orkut-left,
+.proto-orkut-main,
+.proto-orkut-right {
   min-width: 0;
 }
-.proto-perfil-avatar {
-  width: 5.5rem;
-  height: 5.5rem;
-  border-radius: 50%;
+.proto-orkut-left,
+.proto-orkut-main > .proto-orkut-box,
+.proto-orkut-main > .proto-orkut-main-head,
+.proto-orkut-frase-box,
+.proto-orkut-karma,
+.proto-orkut-right .proto-orkut-box,
+.proto-orkut-main {
+  background: var(--orkut-panel);
+  border: 1px solid var(--orkut-border);
+  border-radius: 10px;
+}
+.proto-orkut-left {
+  padding: 8px;
+}
+.proto-orkut-main {
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 10px;
+}
+.proto-orkut-main > .proto-orkut-box,
+.proto-orkut-main > .proto-orkut-main-head,
+.proto-orkut-frase-box,
+.proto-orkut-karma {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.proto-orkut-photo {
+  width: 160px;
+  height: 160px;
+  max-width: 100%;
+  margin: 0 auto;
   overflow: hidden;
-  flex: 0 0 auto;
+  border: 1px solid var(--orkut-border);
+  background: var(--orkut-soft);
   display: grid;
   place-items: center;
-  background: #151515;
-  border: 2px solid var(--border);
-  font-weight: 800;
-  font-size: 1.35rem;
-  color: var(--muted);
 }
-.proto-perfil-avatar img {
+.proto-orkut-photo img {
+  width: 160px !important;
+  height: 160px !important;
+  max-width: 160px !important;
+  max-height: 160px !important;
+  object-fit: cover;
+  display: block;
+}
+.proto-orkut-photo-fallback {
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--orkut-muted);
+  background: linear-gradient(180deg, #eef4fb, #d9e6f4);
 }
-.proto-perfil-avatar--lg {
-  width: 6.5rem;
-  height: 6.5rem;
-  font-size: 1.6rem;
+.proto-orkut-name {
+  margin: 0.45rem 0 0.15rem;
+  color: var(--orkut-link);
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  word-break: break-word;
 }
-.proto-perfil-public-hero {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
+.proto-orkut-meta {
+  margin: 0 0 0.45rem;
+  color: var(--orkut-muted);
+  font-size: 11px;
+  text-align: center;
 }
-.proto-times--embedded {
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-}
-.proto-times-head--compact {
-  margin-bottom: 0.85rem;
-}
-.proto-karma-list {
+.proto-orkut-side-links {
   list-style: none;
-  margin: 0;
+  margin: 0.4rem 0 0;
   padding: 0;
-  display: grid;
-  gap: 0.65rem;
+  border-top: 1px solid var(--orkut-border);
 }
-.proto-karma-row {
-  display: grid;
-  grid-template-columns: minmax(7rem, 1.1fr) 1.4fr auto;
-  gap: 0.75rem;
-  align-items: center;
-  padding: 0.75rem 0.85rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
+.proto-orkut-side-links li {
+  border-bottom: 1px solid #e4ebf3;
 }
-.proto-karma-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.proto-karma-label strong {
-  font-size: 0.95rem;
-}
-.proto-karma-label span {
-  font-size: 0.75rem;
-  color: var(--muted);
-  line-height: 1.3;
-}
-.proto-karma-meter {
-  height: 0.55rem;
-  border-radius: 999px;
-  background: var(--hover-bg);
-  overflow: hidden;
-}
-.proto-karma-meter i {
+.proto-orkut-side-links a,
+.proto-orkut-side-current {
   display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  border-radius: inherit;
+  padding: 0.35rem 0.2rem;
+  color: var(--orkut-link);
+  text-decoration: none;
+  font-size: 11px;
 }
-.proto-karma-controls {
+.proto-orkut-side-links a:hover {
+  text-decoration: underline;
+  background: var(--orkut-row);
+}
+.proto-orkut-side-current {
+  color: var(--orkut-ink);
+  font-weight: 700;
+}
+.proto-orkut-main-head {
+  padding-bottom: 0.2rem;
+}
+.proto-orkut-h1 {
+  margin: 0;
+  color: var(--orkut-head);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.proto-orkut-crumb {
+  margin: 0.15rem 0 0;
+  color: var(--orkut-muted);
+  font-size: 11px;
+}
+.proto-orkut-frase-box {
+  background: var(--orkut-soft) !important;
+  border: 1px solid var(--orkut-border) !important;
+  border-radius: 6px !important;
+  padding: 0.45rem 0.55rem !important;
+}
+.proto-orkut-frase-input {
+  width: 100%;
+  margin: 0;
+  padding: 0.2rem 0.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--orkut-ink);
+  font: italic 12px/1.35 Georgia, "Times New Roman", serif;
+}
+.proto-orkut-frase-input:focus {
+  outline: none;
+}
+.proto-orkut-frase {
+  margin: 0;
+  font: italic 12px/1.35 Georgia, "Times New Roman", serif;
+  color: #333;
+}
+.proto-orkut-karma {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  padding: 0.15rem 0 0.35rem !important;
+  border-bottom: 1px solid var(--orkut-border) !important;
+}
+.proto-orkut-karma-row {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-width: 9.5rem;
 }
-.proto-karma-btn {
-  width: 2rem;
-  height: 2rem;
+.proto-orkut-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
   margin: 0;
   padding: 0;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font-size: 1.1rem;
-  font-weight: 800;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 14px;
+}
+button.proto-orkut-icons:hover .proto-orkut-icon {
+  filter: brightness(1.08);
+}
+.proto-orkut-icon {
+  width: 1.1em;
+  text-align: center;
+  opacity: 0.28;
+  filter: grayscale(1);
+}
+.proto-orkut-icon.is-on {
+  opacity: 1;
+  filter: none;
+}
+.proto-orkut-karma-label {
+  color: var(--orkut-ink);
+  font-size: 11px;
+}
+.proto-orkut-box {
+  padding: 0;
+}
+.proto-orkut-right {
+  display: grid;
+  gap: 10px;
+}
+.proto-orkut-right .proto-orkut-box {
+  padding: 8px 10px 10px;
+}
+.proto-orkut-box-title {
+  margin: 0 0 0.45rem;
+  color: var(--orkut-head);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+.proto-orkut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.proto-orkut-table th,
+.proto-orkut-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #dce6f0;
+  vertical-align: top;
+  text-align: left;
+}
+.proto-orkut-table tr:nth-child(odd) th,
+.proto-orkut-table tr:nth-child(odd) td {
+  background: var(--orkut-row);
+}
+.proto-orkut-table th {
+  width: 7.5rem;
+  color: var(--orkut-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.proto-orkut-field {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid var(--orkut-border);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--orkut-ink);
+  font: inherit;
+}
+.proto-orkut-textarea {
+  resize: vertical;
+  min-height: 3.2rem;
+}
+.proto-orkut-btn {
+  margin: 0.25rem 0 0;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #8aa6c4;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f7fbff, #d9e7f5);
+  color: var(--orkut-ink);
+  font: inherit;
+  font-weight: 700;
   cursor: pointer;
 }
-.proto-karma-val {
-  min-width: 1.6rem;
-  text-align: center;
-  font-weight: 800;
+.proto-orkut-btn:hover {
+  background: linear-gradient(180deg, #ffffff, #cfe0f2);
 }
-.proto-karma-list--readonly .proto-karma-row {
-  grid-template-columns: minmax(7rem, 1.1fr) 1.4fr auto;
-}
-.proto-public-times {
+.proto-orkut-deps,
+.proto-orkut-amigos,
+.proto-orkut-amizade,
+.proto-orkut-times {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 0.45rem;
 }
-.proto-public-time {
+.proto-orkut-dep {
+  padding: 0.45rem 0.5rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid var(--orkut-border);
+  border-radius: 6px;
+  background: var(--orkut-soft);
+}
+.proto-orkut-dep-texto {
+  margin: 0;
+  color: #222;
+}
+.proto-orkut-dep-autor {
+  margin: 0.25rem 0 0;
+  color: var(--orkut-muted);
+  font-size: 11px;
+}
+.proto-orkut-dep-del,
+.proto-orkut-amigo-del {
+  margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a33;
+  font: inherit;
+  cursor: pointer;
+}
+.proto-orkut-dep-form,
+.proto-orkut-amigo-form {
   display: grid;
-  grid-template-columns: 2.75rem 1fr auto;
-  gap: 0.55rem;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+.proto-orkut-amigo {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 0.35rem;
   align-items: center;
-  padding: 0.5rem 0.65rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #e4ebf3;
 }
-.proto-public-time img {
-  width: 2.75rem;
-  height: 2.75rem;
-  object-fit: contain;
-  background: #0e0e0e;
-  border-radius: 8px;
-}
-.proto-public-time-nome {
-  font-size: 0.88rem;
-  font-weight: 650;
-}
-.proto-public-time-uf {
-  font-size: 0.72rem;
+.proto-orkut-amigo-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  background: #c9d8ea;
+  color: #234;
+  font-size: 10px;
   font-weight: 800;
-  color: var(--muted);
+}
+.proto-orkut-amigo-nome {
+  font-weight: 700;
+  color: var(--orkut-link);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.proto-orkut-amigo-nivel {
+  color: var(--orkut-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.proto-orkut-amizade li {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.22rem 0;
+  border-bottom: 1px solid #e4ebf3;
+  color: var(--orkut-ink);
+}
+.proto-orkut-amizade-pct {
+  font-weight: 700;
+  color: var(--orkut-head);
+}
+.proto-orkut-times {
+  display: grid;
+  gap: 0.25rem;
+}
+.proto-orkut-time {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+.proto-orkut-time img {
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--orkut-border);
+  border-radius: 3px;
+}
+.proto-orkut-time-uf {
+  color: var(--orkut-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.proto-orkut-empty {
+  margin: 0.25rem 0 0;
+  color: var(--orkut-muted);
+}
+.proto-orkut .proto-times--embedded {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.proto-orkut .proto-times-head--compact {
+  margin-bottom: 0.55rem;
+}
+.proto-orkut .proto-times-section-title,
+.proto-orkut .proto-times-picked-title {
+  color: var(--orkut-head);
+}
+.proto-orkut .proto-times-misto {
+  background: #fff3c4;
+  color: #7a5a00;
+  border: 1px solid #e2c86a;
+}
+body.proto-orkut-body {
+  background: var(--orkut-bg) !important;
+}
+body.proto-orkut-body .wrap {
+  background: transparent;
+}
+@media (max-width: 900px) {
+  .proto-orkut-grid {
+    grid-template-columns: 148px minmax(0, 1fr);
+  }
+  .proto-orkut-right {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+  }
+  .proto-orkut-photo,
+  .proto-orkut-photo img {
+    width: 140px !important;
+    height: 140px !important;
+    max-width: 140px !important;
+    max-height: 140px !important;
+  }
 }
 @media (max-width: 640px) {
-  .proto-karma-row {
+  .proto-orkut-grid {
     grid-template-columns: 1fr;
-    gap: 0.45rem;
   }
-  .proto-perfil-identity {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  .proto-orkut-right {
+    grid-template-columns: 1fr;
   }
-  .proto-perfil-public-hero {
-    flex-direction: column;
-    text-align: center;
+  .proto-orkut-left {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0.55rem;
+    align-items: start;
+  }
+  .proto-orkut-photo,
+  .proto-orkut-photo img {
+    width: 120px !important;
+    height: 120px !important;
+    max-width: 120px !important;
+    max-height: 120px !important;
+  }
+  .proto-orkut-name,
+  .proto-orkut-meta {
+    text-align: left;
+  }
+  .proto-orkut-side-links {
+    grid-column: 1 / -1;
+  }
+  .proto-orkut-table th {
+    width: 6rem;
   }
 }

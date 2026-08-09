@@ -841,36 +841,47 @@ def regras(request: Request):
 
 
 def _karma_cats_demo() -> list[dict]:
-    """Categorias de karma (protótipo). Textos para o usuário reescrever."""
+    """Karma estilo Orkut (1–3 ícones). Textos para o usuário reescrever."""
     return [
         {
             "id": "confiavel",
             "nome": "Confiável",
-            "hint": "Dá para confiar no papo e no palpite",
-            "demo": 12,
-            "demo_pct": 100,
+            "icon": "😊",
+            "labels": ["confiável", "muito confiável", "super confiável"],
+            "demo": 2,
         },
         {
             "id": "legal",
             "nome": "Legal",
-            "hint": "Boa onda no grupo",
-            "demo": 9,
-            "demo_pct": 75,
+            "icon": "🧊",
+            "labels": ["legal", "muito legal", "super legal"],
+            "demo": 3,
         },
         {
             "id": "sexy",
             "nome": "Sexy",
-            "hint": "O clássico — sem explicação",
-            "demo": 4,
-            "demo_pct": 33,
+            "icon": "❤️",
+            "labels": ["sexy", "muito sexy", "super sexy"],
+            "demo": 1,
         },
         {
             "id": "burro",
             "nome": "Burro",
-            "hint": "Tomou decisão questionável (com carinho)",
-            "demo": 2,
-            "demo_pct": 17,
+            "icon": "🐴",
+            "labels": ["burro", "muito burro", "super burro"],
+            "demo": 1,
         },
+    ]
+
+
+def _amizade_niveis_demo() -> list[dict]:
+    """Esquema de amizade clássico do Orkut (protótipo)."""
+    return [
+        {"id": "nao_conheco", "nome": "não conheço", "icone": "·"},
+        {"id": "conhecido", "nome": "conhecido", "icone": "○"},
+        {"id": "amigo", "nome": "amigo", "icone": "◐"},
+        {"id": "bom_amigo", "nome": "bom amigo", "icone": "●"},
+        {"id": "melhor_amigo", "nome": "melhor amigo", "icone": "★"},
     ]
 
 
@@ -902,6 +913,7 @@ def _prototipo_times_ctx() -> dict:
         "clubes_json": json.dumps(clubes, ensure_ascii=False),
         "n_clubes": len(clubes),
         "karma_cats": _karma_cats_demo(),
+        "amizade_niveis": _amizade_niveis_demo(),
     }
 
 
