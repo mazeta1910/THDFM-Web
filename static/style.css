@@ -10572,40 +10572,87 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   color: var(--steam-muted);
 }
 .proto-steam-nutela {
+  --nutela: 50%;
   display: grid;
-  grid-template-columns: auto 1fr auto;
   gap: 0.4rem;
-  align-items: center;
-  margin-top: 0.35rem;
-  padding-top: 0.45rem;
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.15rem 0.15rem;
   border-top: 1px solid var(--border);
+}
+.proto-steam-nutela-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 .proto-steam-nutela-end {
   font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: lowercase;
-  color: var(--muted);
 }
-.proto-steam-nutela-range {
-  width: 100%;
-  margin: 0;
-  accent-color: var(--accent);
-  cursor: pointer;
+.proto-steam-nutela-end.is-nutela {
+  color: #e2b48a;
+}
+.proto-steam-nutela-end.is-raiz {
+  color: #c56a2d;
+}
+.proto-steam-nutela-meter {
+  position: relative;
+  height: 1.35rem;
+  display: grid;
+  align-items: center;
 }
 .proto-steam-nutela-track {
   position: relative;
-  height: 0.45rem;
+  height: 0.72rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 70%, var(--bg));
-  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, #7a4a28);
+  background:
+    linear-gradient(
+      90deg,
+      #f3d2b0 0%,
+      #e2a56a 38%,
+      #c56a2d 72%,
+      #6b3416 100%
+    );
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  overflow: visible;
 }
-.proto-steam-nutela-track i {
-  display: block;
+.proto-steam-nutela-marker {
+  position: absolute;
+  top: 50%;
+  left: var(--nutela);
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  border: 2px solid #111;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff6, transparent 45%),
+    #f4efe8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.proto-steam-nutela-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  width: 50%;
-  background: linear-gradient(90deg, #f0c4a0, var(--accent));
-  border-radius: inherit;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.proto-steam-nutela--votavel .proto-steam-nutela-track {
+  cursor: pointer;
+}
+.proto-steam-nutela--votavel:hover .proto-steam-nutela-marker {
+  transform: translate(-50%, -50%) scale(1.06);
+  border-color: #1a1a1a;
 }
 .proto-steam-btn {
   display: none;

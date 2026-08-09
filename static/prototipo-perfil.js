@@ -154,10 +154,11 @@
 
   function paintNutela(root, value) {
     if (!root) return;
+    const v = Math.max(0, Math.min(100, Number(value) || 0));
+    const wrap = root.querySelector("[data-nutela]") || root;
     const range = root.querySelector("[data-proto-nutela]");
-    const fill = root.querySelector("[data-nutela-fill]");
-    if (range) range.value = String(value);
-    if (fill) fill.style.width = `${value}%`;
+    wrap.style.setProperty("--nutela", `${v}%`);
+    if (range) range.value = String(v);
   }
 
   function loadPosts(key) {
@@ -766,6 +767,7 @@
       if (nutelaRange) {
         nutelaRange.addEventListener("input", () => {
           nutela = Number(nutelaRange.value) || 0;
+          paintNutela(pubRoot, nutela);
           if (!fixado) saveStr(NUTELA_KEY, String(nutela));
         });
       }

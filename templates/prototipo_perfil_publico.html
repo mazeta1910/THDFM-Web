@@ -113,23 +113,28 @@
               <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
             </div>
             {% endfor %}
-            <div class="proto-steam-nutela" data-nutela>
-              <span class="proto-steam-nutela-end">nutela</span>
-              {% if is_own_view %}
-              <div class="proto-steam-nutela-track" aria-hidden="true"><i data-nutela-fill></i></div>
-              {% else %}
-              <input
-                class="proto-steam-nutela-range"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value="50"
-                aria-label="Medidor nutela a raíz"
-                data-proto-nutela
-              />
-              {% endif %}
-              <span class="proto-steam-nutela-end">raíz</span>
+            <div class="proto-steam-nutela {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}" data-nutela style="--nutela: 50%">
+              <div class="proto-steam-nutela-head">
+                <span class="proto-steam-nutela-end is-nutela">nutela</span>
+                <span class="proto-steam-nutela-end is-raiz">raíz</span>
+              </div>
+              <div class="proto-steam-nutela-meter">
+                <div class="proto-steam-nutela-track" aria-hidden="true">
+                  <span class="proto-steam-nutela-marker" data-nutela-marker></span>
+                </div>
+                {% if not is_own_view %}
+                <input
+                  class="proto-steam-nutela-range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                  aria-label="Medidor nutela a raíz"
+                  data-proto-nutela
+                />
+                {% endif %}
+              </div>
             </div>
           </div>
         </div>
@@ -298,5 +303,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=12" defer></script>
+<script src="/static/prototipo-perfil.js?v=13" defer></script>
 {% endblock %}
