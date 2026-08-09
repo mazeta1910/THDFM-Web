@@ -529,34 +529,38 @@
     }
   }
 
-  function paintPublicTimes(selected) {
+  function renderTeamFlags(items) {
     const list = document.getElementById("public-times");
     const empty = document.getElementById("public-times-empty");
     const misto = document.getElementById("public-misto");
-    if (misto) misto.hidden = selected.length < 2;
-    if (!selected.length) {
+    const rows = Array.isArray(items) ? items : [];
+    if (misto) misto.hidden = rows.length < 2;
+    if (!rows.length) {
       if (list) list.innerHTML = "";
       if (empty) empty.hidden = false;
       return;
     }
+    if (empty) empty.hidden = true;
+    if (!list) return;
+    list.innerHTML = rows
+      .map(
+        (c) => `
+      <li class="proto-steam-flag" title="${escapeHtml(c.nome)} ${escapeHtml(c.uf || "")}">
+        <img src="${escapeHtml(c.emblema)}" alt="" width="20" height="20" loading="lazy" />
+        <span>${escapeHtml(c.nome)}</span>
+      </li>`
+      )
+      .join("");
+  }
+
+  function paintPublicTimes(selected) {
+    if (!selected.length) {
+      renderTeamFlags([]);
+      return;
+    }
     fetchClubes().then((clubes) => {
       const items = selected.map((id) => clubes.find((c) => c.id === id)).filter(Boolean);
-      if (!items.length) {
-        if (list) list.innerHTML = "";
-        if (empty) empty.hidden = false;
-        return;
-      }
-      if (empty) empty.hidden = true;
-      list.innerHTML = items
-        .map(
-          (c) => `
-        <li class="proto-steam-time">
-          <img src="${escapeHtml(c.emblema)}" alt="" width="28" height="28" loading="lazy" />
-          <span>${escapeHtml(c.nome)}</span>
-          <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
-        </li>`
-        )
-        .join("");
+      renderTeamFlags(items);
     });
   }
 
@@ -571,10 +575,19 @@
     const fraseInput = editRoot.querySelector("[data-proto-frase]");
     const anivInput = editRoot.querySelector("[data-proto-aniversario]");
     const relInput = editRoot.querySelector("[data-proto-relacionamento]");
-    const quemInput = editRoot.querySelector("[data-proto-quem]");
     const avatarNome = document.getElementById("proto-avatar-nome");
     let dirty = false;
     let banner = loadBanner();
+
+    // Migra "quem sou eu" antigo para o status único, se ainda houver
+    if (fraseInput) {
+      const fraseSaved = loadStr(FRASE_KEY, null);
+      const quemSaved = loadStr(QUEM_KEY, null);
+      if ((fraseSaved == null || !String(fraseSaved).trim()) && quemSaved && String(quemSaved).trim()) {
+        fraseInput.value = String(quemSaved).trim();
+        saveStr(FRASE_KEY, fraseInput.value);
+      }
+    }
 
     const setSaveStatus = (text, state) => {
       if (!saveStatus) return;
@@ -601,7 +614,6 @@
       saveStr(FRASE_KEY, ((fraseInput && fraseInput.value) || "").trim());
       saveStr(ANIV_KEY, ((anivInput && anivInput.value) || "").trim());
       saveStr(REL_KEY, ((relInput && relInput.value) || "").trim());
-      saveStr(QUEM_KEY, ((quemInput && quemInput.value) || "").trim());
       save(BANNER_KEY, banner);
       syncAvatarNome();
       dirty = false;
@@ -647,7 +659,6 @@
     bindTextField(fraseInput, FRASE_KEY, markDirty);
     bindTextField(anivInput, ANIV_KEY, markDirty);
     bindTextField(relInput, REL_KEY, markDirty);
-    bindTextField(quemInput, QUEM_KEY, markDirty);
 
     applyBanner(editRoot, banner);
     editRoot.querySelectorAll("[data-banner-preset]").forEach((btn) => {
@@ -708,27 +719,7 @@
   }
 
   function paintFixadoTimes(times) {
-    const list = document.getElementById("public-times");
-    const empty = document.getElementById("public-times-empty");
-    const misto = document.getElementById("public-misto");
-    const items = Array.isArray(times) ? times : [];
-    if (misto) misto.hidden = items.length < 2;
-    if (!items.length) {
-      if (list) list.innerHTML = "";
-      if (empty) empty.hidden = false;
-      return;
-    }
-    if (empty) empty.hidden = true;
-    list.innerHTML = items
-      .map(
-        (c) => `
-      <li class="proto-steam-time">
-        <img src="${escapeHtml(c.emblema)}" alt="" width="28" height="28" loading="lazy" />
-        <span>${escapeHtml(c.nome)}</span>
-        <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
-      </li>`
-      )
-      .join("");
+    renderTeamFlags(Array.isArray(times) ? times : []);
   }
 
   // ——— Perfil (dono ou visitante) ———
@@ -785,15 +776,13 @@
     });
 
     if (!fixado) {
-      const frase = loadStr(FRASE_KEY, "");
+      const frase = (loadStr(FRASE_KEY, "") || "").trim();
+      const quem = (loadStr(QUEM_KEY, "") || "").trim();
       const aniv = loadStr(ANIV_KEY, "");
       const rel = loadStr(REL_KEY, "");
-      const quem = loadStr(QUEM_KEY, "");
       const fraseEl = pubRoot.querySelector("[data-public-frase]");
       const metaEl = pubRoot.querySelector("[data-public-meta]");
-      const quemEl = pubRoot.querySelector("[data-public-quem]");
-      if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
-      if (quemEl) quemEl.textContent = quem || "—";
+      if (fraseEl) fraseEl.textContent = frase || quem || "Sem status ainda.";
       if (metaEl) {
         metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
       }

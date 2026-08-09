@@ -957,7 +957,6 @@ def _perfil_demo_benevides() -> dict:
         "nome": "Benevides",
         # TEXTOS PARA REESCREVER — começo
         "frase": "Porco até o fim.",
-        "quem": "Benevides · Palmeiras.",
         # TEXTOS PARA REESCREVER — fim
         "relacionamento": "",
         "aniversario": "",

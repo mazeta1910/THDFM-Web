@@ -128,25 +128,16 @@
         </div>
       </div>
       <div class="proto-edit-field">
-        <label for="proto-frase">Frasezinha</label>
-        <input
-          id="proto-frase"
-          class="proto-edit-input"
-          type="text"
-          maxlength="120"
-          placeholder="Uma frase curta no topo do perfil"
-          data-proto-frase
-        />
-      </div>
-      <div class="proto-edit-field">
-        <label for="proto-quem">Quem sou eu</label>
+        {# TEXTOS PARA REESCREVER — começo #}
+        <label for="proto-frase">Status / sobre</label>
+        {# TEXTOS PARA REESCREVER — fim #}
         <textarea
-          id="proto-quem"
+          id="proto-frase"
           class="proto-edit-input proto-edit-textarea"
           rows="3"
-          maxlength="400"
-          placeholder="Conte um pouco sobre você"
-          data-proto-quem
+          maxlength="280"
+          placeholder="Uma frase ou texto curto no perfil"
+          data-proto-frase
         ></textarea>
       </div>
     </section>
@@ -206,6 +197,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=11" defer></script>
-<script src="/static/prototipo-perfil.js?v=11" defer></script>
+<script src="/static/prototipo-times.js?v=12" defer></script>
+<script src="/static/prototipo-perfil.js?v=12" defer></script>
 {% endblock %}

@@ -10363,43 +10363,60 @@ body.proto-steam-body .wrap.wide {
   background: var(--bg);
   outline: none;
 }
+.proto-steam-flags {
+  list-style: none;
+  margin: 0.05rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.85rem;
+}
+.proto-steam-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--steam-text, var(--text));
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.proto-steam-flag img {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+}
+.proto-steam-flag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 11rem;
+}
+.proto-steam-flags-empty {
+  margin: 0.05rem 0 0;
+  font-size: 0.78rem;
+}
+.proto-steam-summary {
+  margin: 0.15rem 0 0;
+  color: var(--steam-text, var(--text));
+  font-size: 0.92rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
 .proto-steam-frase,
-.proto-steam-frase--view {
-  margin: 0;
-  width: 100%;
-  padding: 0.4rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg);
-  color: var(--text);
-  font: italic 0.92rem/1.35 Georgia, "Times New Roman", serif;
-}
-.proto-steam-frase:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+.proto-steam-frase--view,
 .proto-steam-bio,
 .proto-steam-bio--view {
   margin: 0;
   width: 100%;
-  padding: 0.4rem 0.45rem;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--steam-text);
+  color: var(--steam-text, var(--text));
   font: inherit;
   line-height: 1.4;
-  resize: vertical;
-}
-.proto-steam-bio:hover,
-.proto-steam-bio:focus {
-  border-color: var(--border);
-  background: var(--bg);
-  outline: none;
-}
-.proto-steam-bio--view {
-  color: var(--steam-muted);
-  white-space: pre-wrap;
 }
 .proto-steam-hero-aside {
   display: grid;
@@ -10486,32 +10503,11 @@ a.proto-ico-btn,
   cursor: pointer;
   font-size: 0;
 }
-.proto-steam-hero-times {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
 .proto-steam-mini-title {
   margin: 0 0 0.45rem;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--muted);
-}
-.proto-steam-hero-times .proto-times--embedded {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.proto-steam-hero-times .proto-times-picked {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-}
-.proto-steam-hero-times .proto-times-picked-top {
-  display: none;
-}
-.proto-steam-hero-times #proto-times-open {
-  margin-top: 0.35rem;
 }
 .proto-steam-karma {
   display: grid;

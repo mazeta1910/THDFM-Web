@@ -53,9 +53,11 @@
             <h1 class="proto-steam-name" data-public-nome>{% if fixado %}{{ fixado.nome }}{% else %}{{ viewer_nome }}{% endif %}</h1>
             <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
           </div>
+          {# Emblemas no lugar da bandeira Steam #}
+          <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
+          <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
           <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
-          <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem frase ainda.{% endif %}</p>
-          <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>{% if fixado %}{{ fixado.quem }}{% else %}—{% endif %}</p>
+          <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
         </div>
 
         <div class="proto-steam-hero-aside">
@@ -113,12 +115,6 @@
           </div>
         </div>
       </div>
-
-      <section class="proto-steam-hero-times" id="times">
-        <h2 class="proto-steam-mini-title">Times do coração</h2>
-        <ul class="proto-steam-times" id="public-times"></ul>
-        <p class="proto-steam-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
-      </section>
     </header>
   </article>
 
@@ -190,5 +186,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=11" defer></script>
+<script src="/static/prototipo-perfil.js?v=12" defer></script>
 {% endblock %}
