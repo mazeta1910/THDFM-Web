@@ -967,6 +967,125 @@ def _perfil_demo_benevides() -> dict:
     }
 
 
+_ZONA_LABEL_PERFIL = {
+    "campeao": "Campeão",
+    "podio": "Zona de cima",
+    "meio": "Meio de tabela",
+    "risco": "Zona de risco",
+}
+
+
+def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
+    """Recorte seguro do bolão para o perfil público (posição, pts, estilo)."""
+    if not participante_id:
+        return None
+    try:
+        pid = int(participante_id)
+    except (TypeError, ValueError):
+        return None
+
+    part = db.get_participante(pid)
+    if not part:
+        return None
+    if part.get("status") != "liberado":
+        return {
+            "disponivel": False,
+            "motivo": "pendente",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    try:
+        linhas = calcular_classificacao()
+    except Exception:
+        return {
+            "disponivel": False,
+            "motivo": "erro",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    linha = next((r for r in linhas if int(r.get("participante_id") or 0) == pid), None)
+    if not linha:
+        return {
+            "disponivel": False,
+            "motivo": "fora",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    estilo = None
+    try:
+        from src.estilo_palpites import perfil_participante
+
+        estilo = perfil_participante(pid)
+    except Exception:
+        estilo = None
+
+    rodadas: list[dict] = []
+    try:
+        hist = resumo_pontuacao_por_participante(linhas).get(pid) or []
+        for entrada in hist[-6:]:
+            rodadas.append(
+                {
+                    "rotulo": entrada.get("rotulo_curto") or entrada.get("rotulo") or "",
+                    "fase_label": entrada.get("fase_label_curta")
+                    or entrada.get("fase_label")
+                    or "",
+                    "janela_label": entrada.get("janela_label") or "",
+                    "pts": entrada.get("rod") or 0,
+                    "soma": entrada.get("soma") or 0,
+                    "posicao": entrada.get("posicao"),
+                    "ao_vivo": bool(entrada.get("ao_vivo")),
+                }
+            )
+    except Exception:
+        rodadas = []
+
+    badges = []
+    if estilo and isinstance(estilo.get("badges"), list):
+        badges = [
+            {
+                "id": b.get("id"),
+                "titulo": b.get("titulo") or "",
+                "explicacao": b.get("explicacao") or "",
+            }
+            for b in estilo["badges"][:4]
+            if isinstance(b, dict) and b.get("titulo")
+        ]
+
+    zona = linha.get("zona") or ""
+    mov = linha.get("movimento")
+    return {
+        "disponivel": True,
+        "participante_id": pid,
+        "nome": linha.get("participante") or part.get("nome") or "",
+        "username": (part.get("username") or "").strip() or None,
+        "posicao": linha.get("posicao"),
+        "total": len(linhas),
+        "soma": linha.get("soma") or 0,
+        "rod": linha.get("rod") or 0,
+        "placar": linha.get("placar") or 0,
+        "vencedor": linha.get("vencedor") or 0,
+        "gols": linha.get("gols") or 0,
+        "fidelidade": linha.get("fidelidade") or 0,
+        "zona": zona,
+        "zona_label": _ZONA_LABEL_PERFIL.get(zona, ""),
+        "movimento": mov,
+        "badges": badges,
+        "palpites": (estilo or {}).get("n") or 0,
+        "pct_casa": (estilo or {}).get("pct_casa"),
+        "pct_empate": (estilo or {}).get("pct_empate"),
+        "pct_fora": (estilo or {}).get("pct_fora"),
+        "media_gols": (estilo or {}).get("media_gols"),
+        "placar_assinatura": (estilo or {}).get("placar_assinatura"),
+        "acertos_vencedor": (estilo or {}).get("acertos_vencedor") or 0,
+        "acertos_placar": (estilo or {}).get("acertos_placar") or 0,
+        "rodadas": rodadas,
+        "classificacao_url": "/classificacao",
+    }
+
+
 @app.get("/prototipo/times", response_class=HTMLResponse)
 def prototipo_times(request: Request):
     """Atalho legado: seletor isolado (preferir /prototipo/perfil#times)."""
@@ -996,6 +1115,7 @@ def prototipo_perfil_publico(request: Request):
         return neg
     como = (request.query_params.get("como") or "").strip().lower()
     is_own_view = como != "visitante"
+    part = _participante_sessao(request)
     return render(
         request,
         "prototipo_perfil_publico.html",
@@ -1003,6 +1123,7 @@ def prototipo_perfil_publico(request: Request):
         **_taxa_ctx(),
         is_own_view=is_own_view,
         perfil_fixado=None,
+        bolao_perfil=_bolao_resumo_perfil(part["id"] if part else None),
     )
 
 
@@ -1015,6 +1136,7 @@ def prototipo_perfil_benevides(request: Request):
     if neg:
         return neg
     fixado = _perfil_demo_benevides()
+    part_b = db.get_participante_por_nome("Benevides")
     return render(
         request,
         "prototipo_perfil_publico.html",
@@ -1023,6 +1145,7 @@ def prototipo_perfil_benevides(request: Request):
         is_own_view=False,
         perfil_fixado=fixado,
         perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
+        bolao_perfil=_bolao_resumo_perfil(part_b["id"] if part_b else None),
     )
 
 

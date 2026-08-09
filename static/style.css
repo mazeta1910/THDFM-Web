@@ -10640,6 +10640,144 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 .proto-steam-panel-head .proto-steam-panel-title {
   margin: 0;
 }
+.proto-steam-panel-link {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.proto-steam-panel-link:hover {
+  text-decoration: underline;
+}
+.proto-steam-bolao-line {
+  margin: 0.1rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.proto-steam-bolao-rod.is-up {
+  color: #8fbf8f;
+}
+.proto-steam-bolao-rod.is-down {
+  color: #c47a7a;
+}
+.proto-steam-bolao-zona {
+  color: var(--muted);
+  font-weight: 650;
+}
+.proto-steam-bolao-zona.is-campeao {
+  color: #e6c200;
+}
+.proto-steam-bolao-zona.is-podio {
+  color: #7cbf7c;
+}
+.proto-steam-bolao-zona.is-risco {
+  color: #c47a7a;
+}
+.proto-bolao-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0 0 0.75rem;
+}
+.proto-bolao-stat {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  min-width: 0;
+}
+.proto-bolao-stat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proto-bolao-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+}
+.proto-bolao-stat-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.proto-bolao-estilo {
+  margin: 0 0 0.65rem;
+  color: var(--steam-muted, var(--muted));
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.proto-bolao-badges {
+  list-style: none;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.proto-bolao-badge {
+  padding: 0.22rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.proto-bolao-rodadas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+.proto-bolao-rodada {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.4rem 2.6rem 2.8rem;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.78rem;
+}
+.proto-bolao-rodada.is-live {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.proto-bolao-rodada-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-weight: 650;
+}
+.proto-bolao-rodada-pos,
+.proto-bolao-rodada-pts,
+.proto-bolao-rodada-soma {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.proto-bolao-rodada-pts {
+  color: var(--accent);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .proto-bolao-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .proto-steam-compose {
   display: grid;
   grid-template-columns: 1fr auto;

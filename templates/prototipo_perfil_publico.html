@@ -57,6 +57,23 @@
           <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
           <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
           <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
+          {% if bolao_perfil and bolao_perfil.disponivel %}
+          <p class="proto-steam-bolao-line">
+            <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ bolao_perfil.soma }} pts</span>
+            {% if bolao_perfil.rod %}
+            <span aria-hidden="true">·</span>
+            <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
+              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
+            </span>
+            {% endif %}
+            {% if bolao_perfil.zona_label %}
+            <span aria-hidden="true">·</span>
+            <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
+            {% endif %}
+          </p>
+          {% endif %}
           <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
         </div>
 
@@ -120,6 +137,99 @@
 
   <div class="proto-steam-layout">
     <div class="proto-steam-main">
+      {# TEXTOS PARA REESCREVER — começo #}
+      <section class="proto-steam-panel" id="bolao">
+        <div class="proto-steam-panel-head">
+          <h2 class="proto-steam-panel-title">No bolão</h2>
+          {% if bolao_perfil and bolao_perfil.classificacao_url %}
+          <a class="proto-steam-panel-link" href="{{ bolao_perfil.classificacao_url }}">Ver classificação</a>
+          {% endif %}
+        </div>
+
+        {% if bolao_perfil and bolao_perfil.disponivel %}
+        <div class="proto-bolao-stats">
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Posição</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.posicao }}º</strong>
+            <span class="proto-bolao-stat-sub">de {{ bolao_perfil.total }}</span>
+          </div>
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Pontos</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.soma }}</strong>
+            <span class="proto-bolao-stat-sub">
+              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} na rodada
+            </span>
+          </div>
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Placar exato</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.placar }}</strong>
+            <span class="proto-bolao-stat-sub">pts</span>
+          </div>
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Vencedor</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.vencedor }}</strong>
+            <span class="proto-bolao-stat-sub">pts</span>
+          </div>
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Gols</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.gols }}</strong>
+            <span class="proto-bolao-stat-sub">pts</span>
+          </div>
+          <div class="proto-bolao-stat">
+            <span class="proto-bolao-stat-label">Fidelidade</span>
+            <strong class="proto-bolao-stat-value">{{ bolao_perfil.fidelidade }}</strong>
+            <span class="proto-bolao-stat-sub">pts</span>
+          </div>
+        </div>
+
+        {% if bolao_perfil.palpites %}
+        <p class="proto-bolao-estilo">
+          {{ bolao_perfil.palpites }} palpites
+          {% if bolao_perfil.pct_casa is not none %} · {{ bolao_perfil.pct_casa }}% casa{% endif %}
+          {% if bolao_perfil.pct_empate is not none %} · {{ bolao_perfil.pct_empate }}% empate{% endif %}
+          {% if bolao_perfil.pct_fora is not none %} · {{ bolao_perfil.pct_fora }}% fora{% endif %}
+          {% if bolao_perfil.media_gols is not none %} · média {{ bolao_perfil.media_gols }} gols{% endif %}
+          {% if bolao_perfil.placar_assinatura %} · assinatura {{ bolao_perfil.placar_assinatura }}{% endif %}
+          · {{ bolao_perfil.acertos_vencedor }} acertos de vencedor
+          · {{ bolao_perfil.acertos_placar }} placares exatos
+        </p>
+        {% endif %}
+
+        {% if bolao_perfil.badges %}
+        <ul class="proto-bolao-badges">
+          {% for b in bolao_perfil.badges %}
+          <li class="proto-bolao-badge" title="{{ b.explicacao }}">{{ b.titulo }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if bolao_perfil.rodadas %}
+        <ul class="proto-bolao-rodadas" aria-label="Pontuação por rodada">
+          {% for r in bolao_perfil.rodadas %}
+          <li class="proto-bolao-rodada {% if r.ao_vivo %}is-live{% endif %}">
+            <span class="proto-bolao-rodada-label">{{ r.rotulo }}{% if r.fase_label %} · {{ r.fase_label }}{% endif %}</span>
+            <span class="proto-bolao-rodada-pos">{% if r.posicao %}{{ r.posicao }}º{% else %}—{% endif %}</span>
+            <span class="proto-bolao-rodada-pts">{% if r.pts > 0 %}+{% endif %}{{ r.pts }}</span>
+            <span class="proto-bolao-rodada-soma">{{ r.soma }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% elif bolao_perfil %}
+        <p class="proto-steam-empty">
+          {% if bolao_perfil.motivo == 'pendente' %}
+          Ainda não está liberado no bolão.
+          {% else %}
+          Sem dados de classificação por enquanto.
+          {% endif %}
+        </p>
+        {% else %}
+        <p class="proto-steam-empty">Sem vínculo com o bolão nesta demo.</p>
+        {% endif %}
+      </section>
+      {# TEXTOS PARA REESCREVER — fim #}
+
       <section class="proto-steam-panel" id="feed">
         <div class="proto-steam-panel-head">
           <h2 class="proto-steam-panel-title">Feed <span id="public-feed-count">(0)</span></h2>
