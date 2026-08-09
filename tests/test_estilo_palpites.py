@@ -125,7 +125,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
         encoding="utf-8"
     ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=277" in r.text
+    assert "/static/style.css?v=278" in r.text
     assert "ficha-rodadas-who-link" in r.text
     assert "/prototipo/perfil/benevides" in r.text
 
@@ -240,7 +240,7 @@ def test_resumo_rodadas_na_ficha(client):
     assert "Palpite" in r.text
     assert "Placar exato" in r.text or "resultado_label" in r.text
     assert "Seu palpite" not in r.text
-    assert "/static/style.css?v=277" in r.text
+    assert "/static/style.css?v=278" in r.text
     assert "ficha-jogos-cols" in r.text
     assert "ficha-jogo-mark" in r.text
     assert "ficha-jogo-oficial" in r.text

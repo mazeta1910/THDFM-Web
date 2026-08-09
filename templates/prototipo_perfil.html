@@ -28,9 +28,6 @@
     <nav class="proto-edit-nav" aria-label="Atalhos do protótipo">
       <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil/publico">Ver meu perfil</a>
       <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
-      {% if is_dono %}
-      <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
-      {% endif %}
       {% if participante_nav %}
       <a class="proto-text-btn" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
       {% endif %}

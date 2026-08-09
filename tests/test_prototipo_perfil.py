@@ -56,10 +56,10 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "banner-crop-modal" in r.text
     assert 'id="proto-feed-form"' not in r.text
     assert "depoimentos" not in r.text.lower()
-    assert 'href="/prototipo/perfil/benevides"' in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text
     assert "Ver meu perfil" in r.text
     assert "Ver como visitante" in r.text
-    assert "Perfil do Benevides" in r.text
+    assert "Perfil do Benevides" not in r.text
     assert 'id="proto-avatar-edit"' in r.text
     assert 'id="proto-avatar-form"' in r.text
     assert 'name="next"' in r.text
@@ -81,7 +81,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "/prototipo/perfil/publico" in r.text
     assert "/static/prototipo-perfil.js?v=21" in r.text
     assert "/static/prototipo-times.js?v=13" in r.text
-    assert "/static/style.css?v=277" in r.text
+    assert "/static/style.css?v=278" in r.text
     assert 'id="proto-dindao"' in r.text
     assert "Dindão" in r.text
     assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(
@@ -138,6 +138,10 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert "{'placar':" not in r.text
     assert 'id="public-dindao"' in r.text
     assert "Dindão" in r.text
+    assert "Perfil do Benevides" not in r.text
+    assert 'aria-label="Editar perfil"' in r.text
+    assert "proto-text-btn--icon" in r.text
+    assert 'href="/prototipo/perfil"' in r.text
     # Bolão em card próprio abaixo do hero, antes dos recados
     assert 'proto-steam-hero-bolao' not in r.text
     assert r.text.index('class="proto-steam-card"') < r.text.index('id="bolao"')

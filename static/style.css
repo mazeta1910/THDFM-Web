@@ -10255,6 +10255,18 @@ body.proto-steam-body .wrap.wide {
   border-color: color-mix(in srgb, var(--accent) 75%, rgba(255, 255, 255, 0.25));
   color: #fff;
 }
+.proto-steam-banner-nav .proto-text-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.proto-steam-banner-nav .proto-text-btn--icon svg {
+  display: block;
+}
 .proto-steam-banner-nav .proto-text-btn:hover {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.5);
@@ -11472,6 +11484,11 @@ button.proto-text-btn:hover,
   .proto-steam-banner-nav .proto-text-btn {
     font-size: 0.72rem;
     padding: 0.3rem 0.55rem;
+  }
+  .proto-steam-banner-nav .proto-text-btn--icon {
+    width: 1.95rem;
+    height: 1.95rem;
+    padding: 0;
   }
 }
 .proto-edit-title {
