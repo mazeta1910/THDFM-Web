@@ -31,6 +31,7 @@ from src.config import (
     AVATAR_MAX_BYTES,
     AVATAR_PADRAO_STEM,
     AVATARES_DIR,
+    BANDEIRAS_UF_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
     COMPROVANTES_DIR,
@@ -78,7 +79,7 @@ def _path_publico(path: str) -> bool:
     """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
     if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
         return True
-    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/"):
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
         return True
     # Link mágico do participante
     if path.startswith("/p/"):
@@ -123,11 +124,13 @@ TEMPLATES = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
 STATIC = ROOT_DIR / "static"
 STATIC.mkdir(exist_ok=True)
 EMBLEMAS_DIR.mkdir(parents=True, exist_ok=True)
+BANDEIRAS_UF_DIR.mkdir(parents=True, exist_ok=True)
 COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
+app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="bandeiras_uf")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 
 # Rate limit em memória: chave → timestamps de tentativas

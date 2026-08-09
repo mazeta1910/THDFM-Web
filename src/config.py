@@ -30,6 +30,7 @@ INSCRICAO_FECHA_EM = datetime(2026, 8, 1, 13, 30, tzinfo=_TZ_SP)
 DATA_DIR = ROOT_DIR / "data"
 DB_PATH = DATA_DIR / "bolao.db"
 EMBLEMAS_DIR = DATA_DIR / "emblemas"
+BANDEIRAS_UF_DIR = DATA_DIR / "bandeiras-uf"
 COMPROVANTES_DIR = DATA_DIR / "comprovantes"
 AVATARES_DIR = DATA_DIR / "avatars"
 
