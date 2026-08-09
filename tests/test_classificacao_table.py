@@ -25,7 +25,7 @@ def test_classificacao_tem_coluna_pos_e_ordenacao(client: TestClient):
     assert "Alesson Evangelista Longo" in r.text
     assert "th-sort" in r.text
     assert "is-sortable" in r.text
-    assert "/static/style.css?v=280" in r.text
+    assert "/static/style.css?v=281" in r.text
     assert "th-sort-up" in r.text
     assert "th-sort-down" in r.text
     assert 'viewBox="0 0 12 16"' in r.text
