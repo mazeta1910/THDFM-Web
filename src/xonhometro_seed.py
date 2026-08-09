@@ -15,6 +15,31 @@ def caminho_import_padrao() -> Path:
     return _DATA_PATH
 
 
+def meta_eventos_import(path: Path | None = None) -> dict[str, Any]:
+    """Só metadados do JSON (sem montar a lista de eventos).
+
+    Usado no GET do admin — evita parsear ~1,5k itens só para mostrar
+    a quantidade no card de importação.
+    """
+    arquivo = path or _DATA_PATH
+    if not arquivo.is_file():
+        raise FileNotFoundError(f"Arquivo de importação não encontrado: {arquivo}")
+    raw = json.loads(arquivo.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("JSON inválido: esperado objeto.")
+    eventos_raw = raw.get("eventos") or []
+    qtd = len(eventos_raw) if isinstance(eventos_raw, list) else 0
+    totais = raw.get("totais") if isinstance(raw.get("totais"), dict) else {}
+    return {
+        "gerado_em": raw.get("gerado_em"),
+        "fonte": raw.get("fonte"),
+        "versao": raw.get("versao"),
+        "totais": totais or {},
+        "arquivo": str(arquivo),
+        "quantidade": qtd,
+    }
+
+
 def carregar_eventos_import(
     path: Path | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:

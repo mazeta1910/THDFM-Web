@@ -8269,6 +8269,53 @@ textarea.xonha-input {
   gap: 0.55rem;
 }
 .xonha-admin-list > h2 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+.xonha-admin-list-hint {
+  margin: 0 0 0.35rem !important;
+  font-size: 0.85rem;
+}
+.xonha-admin-year {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+}
+.xonha-admin-year-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-weight: 700;
+}
+.xonha-admin-year-summary::-webkit-details-marker { display: none; }
+.xonha-admin-year-label { color: var(--text); font-size: 1rem; }
+.xonha-admin-year-count {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.xonha-admin-year-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0 0.65rem 0.75rem;
+}
+.xonha-admin-year-loading,
+.xonha-admin-year-erro {
+  margin: 0;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.xonha-admin-year-erro { color: var(--danger, #e03131); }
+.xonha-admin-year-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
 .xonha-admin-details {
   border: 1px solid var(--border);
   border-radius: 14px;
