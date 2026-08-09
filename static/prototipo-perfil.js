@@ -726,15 +726,9 @@
       save(BANNER_KEY, banner);
       syncAvatarNome();
       dirty = false;
-      setSaveStatus("Salvo neste navegador", "saved");
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        const prev = saveBtn.textContent;
-        saveBtn.textContent = "Salvo!";
-        window.setTimeout(() => {
-          if (saveBtn.textContent === "Salvo!") saveBtn.textContent = prev || "Salvar alterações";
-        }, 1400);
-      }
+      setSaveStatus("Salvo · abrindo seu perfil…", "saved");
+      if (saveBtn) saveBtn.disabled = true;
+      window.location.assign("/prototipo/perfil/publico");
     };
 
     if (nomeInput) {
@@ -790,6 +784,10 @@
       });
     });
     const bannerFile = document.getElementById("proto-banner-file");
+    const bannerEdit = document.getElementById("proto-banner-edit");
+    if (bannerEdit && bannerFile) {
+      bannerEdit.addEventListener("click", () => bannerFile.click());
+    }
     if (bannerFile) {
       bannerFile.addEventListener("change", () => {
         const file = bannerFile.files && bannerFile.files[0];
@@ -806,7 +804,9 @@
     }
     const bannerClear = document.getElementById("proto-banner-clear");
     if (bannerClear) {
-      bannerClear.addEventListener("click", () => {
+      bannerClear.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         banner = { kind: "preset", id: "padrao" };
         applyBanner(editRoot, banner);
         markDirty();

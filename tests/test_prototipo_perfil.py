@@ -46,6 +46,9 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'name="next"' in r.text
     assert "Tema do banner" in r.text
     assert "avatar-edit-camera" in r.text
+    assert 'id="proto-banner-edit"' in r.text
+    assert "proto-edit-banner-camera" in r.text
+    assert "proto-edit-cover-actions" not in r.text
     assert "Salvar alterações" in r.text
     assert 'id="proto-edit-save"' in r.text
     assert 'id="proto-aniv"' in r.text
@@ -56,7 +59,9 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'id="proto-senha-atual"' in r.text
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
-    assert "/static/style.css?v=272" in r.text
+    assert "/prototipo/perfil/publico" in r.text
+    assert "/static/prototipo-perfil.js?v=19" in r.text
+    assert "/static/style.css?v=273" in r.text
 
 
 def test_prototipo_perfil_alterar_senha_volta_ao_editar(client: TestClient):

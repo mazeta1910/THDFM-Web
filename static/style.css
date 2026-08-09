@@ -11452,34 +11452,80 @@ button.proto-text-btn:hover,
   overflow: visible;
 }
 .proto-edit-cover-media {
+  position: relative;
   height: 168px;
   border-radius: 14px 14px 0 0;
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
-.proto-edit-cover-actions {
+.proto-edit-banner-trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+}
+.proto-edit-banner-camera {
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  opacity: 0.92;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+.proto-edit-banner-trigger:hover .proto-edit-banner-camera,
+.proto-edit-banner-trigger:focus-visible .proto-edit-banner-camera {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.58);
+  transform: scale(1.04);
+}
+.proto-edit-banner-trigger:focus-visible {
+  outline: none;
+}
+.proto-edit-banner-trigger:focus-visible .proto-edit-banner-camera {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, #fff);
+  outline-offset: 2px;
+}
+.proto-edit-banner-clear {
   position: absolute;
   top: 0.65rem;
   right: 0.65rem;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.proto-edit-cover-actions .proto-ico-btn {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(0, 0, 0, 0.58);
+  z-index: 3;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  margin: 0;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
-.proto-edit-cover-actions .proto-ico-btn--accent {
-  background: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.55));
-  border-color: color-mix(in srgb, var(--accent) 75%, rgba(255, 255, 255, 0.25));
-  color: #fff;
+.proto-edit-banner-clear[hidden] {
+  display: none !important;
 }
-.proto-edit-cover-actions .proto-ico-btn:hover {
-  color: #fff;
+.proto-edit-banner-clear:hover {
+  filter: brightness(1.1);
   border-color: rgba(255, 255, 255, 0.5);
-  filter: brightness(1.08);
+}
+.proto-edit-banner-clear svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
 }
 button.proto-edit-avatar,
 .proto-edit-avatar {

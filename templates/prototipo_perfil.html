@@ -21,7 +21,7 @@
       <p class="proto-steam-kicker">Protótipo · privado · Mazeta</p>
       {# TEXTOS PARA REESCREVER — começo #}
       <h1 class="proto-edit-title">Editar perfil</h1>
-      <p class="proto-edit-lead">Toque na foto para trocar. Use Salvar no fim da página para gravar textos e detalhes.</p>
+      <p class="proto-edit-lead">Toque na capa ou na foto para trocar. Ao salvar, você volta para o seu perfil.</p>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
     {# TEXTOS PARA REESCREVER — começo #}
@@ -52,15 +52,24 @@
   {% endif %}
 
   <section class="proto-edit-cover" id="banner">
-    <div class="proto-edit-cover-media proto-steam-banner" data-proto-banner data-banner="padrao"></div>
-    <div class="proto-edit-cover-actions">
-      <label class="proto-ico-btn proto-ico-btn--accent proto-ico-btn--file" title="Enviar e recortar banner" aria-label="Enviar e recortar banner">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 .01 6.01A3 3 0 0 0 12 10z"/></svg>
-        <input type="file" id="proto-banner-file" accept="image/*" />
-      </label>
-      <button type="button" class="proto-ico-btn" id="proto-banner-clear" hidden title="Remover banner" aria-label="Remover banner">
+    <div class="proto-edit-cover-media proto-steam-banner" data-proto-banner data-banner="padrao">
+      <button
+        type="button"
+        class="proto-edit-banner-trigger"
+        id="proto-banner-edit"
+        aria-label="Alterar foto do banner"
+      >
+        <span class="proto-edit-banner-camera" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </span>
+      </button>
+      <button type="button" class="proto-edit-banner-clear" id="proto-banner-clear" hidden title="Remover banner" aria-label="Remover banner">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
+      <input type="file" id="proto-banner-file" class="visually-hidden" accept="image/*" tabindex="-1" />
     </div>
     {% if participante_nav %}
     <button
@@ -279,5 +288,5 @@
 
 {% block scripts %}
 <script src="/static/prototipo-times.js?v=12" defer></script>
-<script src="/static/prototipo-perfil.js?v=18" defer></script>
+<script src="/static/prototipo-perfil.js?v=19" defer></script>
 {% endblock %}
