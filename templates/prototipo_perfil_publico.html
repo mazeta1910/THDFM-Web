@@ -71,28 +71,10 @@
           {# Emblemas no lugar da bandeira Steam #}
           <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
           <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
-          <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
-          {% if bolao_perfil and bolao_perfil.disponivel %}
-          <p class="proto-steam-bolao-line">
-            <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
-            <span aria-hidden="true">·</span>
-            <span>{{ bolao_perfil.soma }} pts</span>
-            {% if bolao_perfil.rod %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
-              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
-            </span>
-            {% endif %}
-            {% if bolao_perfil.zona_label %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
-            {% endif %}
-          </p>
-          {% endif %}
-          <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
 
           {# TEXTOS PARA REESCREVER — começo #}
-          <div class="proto-steam-karma-bar">
+          <div class="proto-steam-meta-row">
+            <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
             <div
               class="proto-steam-karma proto-steam-karma--line {% if not is_own_view %}proto-steam-karma--votavel{% endif %}"
               id="public-karma"
@@ -157,6 +139,25 @@
             {% endif %}
           </div>
           {# TEXTOS PARA REESCREVER — fim #}
+
+          {% if bolao_perfil and bolao_perfil.disponivel %}
+          <p class="proto-steam-bolao-line">
+            <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ bolao_perfil.soma }} pts</span>
+            {% if bolao_perfil.rod %}
+            <span aria-hidden="true">·</span>
+            <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
+              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
+            </span>
+            {% endif %}
+            {% if bolao_perfil.zona_label %}
+            <span aria-hidden="true">·</span>
+            <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
+            {% endif %}
+          </p>
+          {% endif %}
+          <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
         </div>
       </div>
     </header>
