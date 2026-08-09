@@ -10413,10 +10413,17 @@ body.proto-steam-body .wrap.wide {
   gap: 0.35rem;
   justify-content: flex-end;
 }
+button.proto-ico-btn,
+label.proto-ico-btn,
+a.proto-ico-btn,
 .proto-ico-btn {
   width: 2rem;
   height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  max-width: 2rem;
   margin: 0;
+  margin-bottom: 0;
   padding: 0;
   display: inline-grid;
   place-items: center;
@@ -10427,11 +10434,21 @@ body.proto-steam-body .wrap.wide {
   text-decoration: none;
   cursor: pointer;
   flex: 0 0 auto;
+  box-sizing: border-box;
+  line-height: 0;
+  font-size: 0;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+  appearance: none;
+  -webkit-appearance: none;
 }
 .proto-ico-btn svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   display: block;
+  flex-shrink: 0;
+  pointer-events: none;
 }
 .proto-ico-btn:hover {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
@@ -10445,6 +10462,9 @@ body.proto-steam-body .wrap.wide {
 .proto-ico-btn--tiny {
   width: 1.65rem;
   height: 1.65rem;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+  max-width: 1.65rem;
   border-radius: 6px;
 }
 .proto-ico-btn--tiny svg {
@@ -10458,8 +10478,13 @@ body.proto-steam-body .wrap.wide {
 .proto-ico-btn--file input {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   opacity: 0;
   cursor: pointer;
+  font-size: 0;
 }
 .proto-steam-hero-times {
   padding-top: 0.75rem;
@@ -11094,7 +11119,24 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   right: 0.65rem;
   z-index: 2;
   display: inline-flex;
+  align-items: center;
   gap: 0.35rem;
+}
+.proto-edit-cover-actions .proto-ico-btn {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.proto-edit-cover-actions .proto-ico-btn--accent {
+  background: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.55));
+  border-color: color-mix(in srgb, var(--accent) 75%, rgba(255, 255, 255, 0.25));
+  color: #fff;
+}
+.proto-edit-cover-actions .proto-ico-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+  filter: brightness(1.08);
 }
 .proto-edit-avatar {
   position: absolute;
