@@ -21,7 +21,7 @@
       <p class="proto-steam-kicker">Protótipo · privado · Mazeta</p>
       {# TEXTOS PARA REESCREVER — começo #}
       <h1 class="proto-edit-title">Editar perfil</h1>
-      <p class="proto-edit-lead">Toque na foto para trocar. Banner, textos e times ficam neste protótipo.</p>
+      <p class="proto-edit-lead">Toque na foto para trocar. Use Salvar no fim da página para gravar textos e detalhes.</p>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
     {# TEXTOS PARA REESCREVER — começo #}
@@ -185,6 +185,20 @@
       {% set seletor_embedded = true %}
       {% include "partials/seletor_times.html" %}
     </section>
+
+    {# TEXTOS PARA REESCREVER — começo #}
+    <div class="proto-edit-savebar">
+      <p class="proto-edit-save-status" id="proto-edit-save-status" data-proto-save-status>
+        Sem alterações novas
+      </p>
+      <div class="proto-edit-save-actions">
+        <a class="proto-text-btn" href="/prototipo/perfil/publico">Ver perfil</a>
+        <button type="submit" class="proto-text-btn proto-text-btn--accent" id="proto-edit-save" data-proto-save>
+          Salvar alterações
+        </button>
+      </div>
+    </div>
+    {# TEXTOS PARA REESCREVER — fim #}
   </form>
 </div>
 
@@ -192,6 +206,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=10" defer></script>
-<script src="/static/prototipo-perfil.js?v=10" defer></script>
+<script src="/static/prototipo-times.js?v=11" defer></script>
+<script src="/static/prototipo-perfil.js?v=11" defer></script>
 {% endblock %}

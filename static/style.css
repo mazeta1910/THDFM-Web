@@ -11420,6 +11420,44 @@ button.proto-edit-preset,
 .proto-edit-grid-2 .proto-edit-field {
   margin-bottom: 0;
 }
+.proto-edit-savebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-top: 0.15rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 3;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.28);
+}
+.proto-edit-save-status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.proto-edit-save-status[data-state="dirty"] {
+  color: color-mix(in srgb, var(--accent) 70%, #fff);
+}
+.proto-edit-save-status[data-state="saved"] {
+  color: #8fbf8f;
+}
+.proto-edit-save-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+button.proto-text-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
 .proto-edit .proto-times--embedded {
   padding: 0;
   border: 0;

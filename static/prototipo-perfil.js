@@ -320,13 +320,15 @@
     });
   }
 
-  function bindTextField(el, key) {
+  function bindTextField(el, key, onDirty) {
     if (!el) return;
     const saved = loadStr(key, null);
     if (saved != null) el.value = saved;
-    const sync = () => saveStr(key, (el.value || "").trim());
-    el.addEventListener("input", sync);
-    el.addEventListener("change", sync);
+    const mark = () => {
+      if (typeof onDirty === "function") onDirty();
+    };
+    el.addEventListener("input", mark);
+    el.addEventListener("change", mark);
   }
 
   function loadBanner() {
@@ -562,22 +564,66 @@
   const editRoot = document.getElementById("proto-perfil");
   if (editRoot) {
     const bannerCrop = initBannerCrop();
+    const formEl = document.getElementById("proto-edit-form");
+    const saveStatus = editRoot.querySelector("[data-proto-save-status]");
+    const saveBtn = editRoot.querySelector("[data-proto-save]");
     const nomeInput = editRoot.querySelector("[data-proto-nome]");
+    const fraseInput = editRoot.querySelector("[data-proto-frase]");
+    const anivInput = editRoot.querySelector("[data-proto-aniversario]");
+    const relInput = editRoot.querySelector("[data-proto-relacionamento]");
+    const quemInput = editRoot.querySelector("[data-proto-quem]");
     const avatarNome = document.getElementById("proto-avatar-nome");
+    let dirty = false;
+    let banner = loadBanner();
+
+    const setSaveStatus = (text, state) => {
+      if (!saveStatus) return;
+      saveStatus.textContent = text;
+      saveStatus.dataset.state = state || "";
+    };
+
+    const markDirty = () => {
+      dirty = true;
+      setSaveStatus("Alterações não salvas", "dirty");
+      if (saveBtn) saveBtn.disabled = false;
+    };
+
     const syncAvatarNome = () => {
       if (!avatarNome) return;
       const fromField = nomeInput && nomeInput.value.trim();
       avatarNome.value = fromField || editRoot.getAttribute("data-viewer-nome") || "Visitante THDFM";
     };
+
+    const persistProfile = () => {
+      const nome = (nomeInput && nomeInput.value.trim()) || "Visitante THDFM";
+      if (nomeInput) nomeInput.value = nome;
+      saveStr(NOME_KEY, nome);
+      saveStr(FRASE_KEY, ((fraseInput && fraseInput.value) || "").trim());
+      saveStr(ANIV_KEY, ((anivInput && anivInput.value) || "").trim());
+      saveStr(REL_KEY, ((relInput && relInput.value) || "").trim());
+      saveStr(QUEM_KEY, ((quemInput && quemInput.value) || "").trim());
+      save(BANNER_KEY, banner);
+      syncAvatarNome();
+      dirty = false;
+      setSaveStatus("Salvo neste navegador", "saved");
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        const prev = saveBtn.textContent;
+        saveBtn.textContent = "Salvo!";
+        window.setTimeout(() => {
+          if (saveBtn.textContent === "Salvo!") saveBtn.textContent = prev || "Salvar alterações";
+        }, 1400);
+      }
+    };
+
     if (nomeInput) {
       const saved = loadStr(NOME_KEY, null);
       if (saved) nomeInput.value = saved;
-      const push = () => {
-        saveStr(NOME_KEY, nomeInput.value.trim() || "Visitante THDFM");
+      nomeInput.addEventListener("input", () => {
         syncAvatarNome();
-      };
-      nomeInput.addEventListener("input", push);
-      nomeInput.addEventListener("change", push);
+        markDirty();
+      });
+      nomeInput.addEventListener("change", markDirty);
       syncAvatarNome();
     }
 
@@ -598,18 +644,17 @@
       }
     }
 
-    bindTextField(editRoot.querySelector("[data-proto-frase]"), FRASE_KEY);
-    bindTextField(editRoot.querySelector("[data-proto-aniversario]"), ANIV_KEY);
-    bindTextField(editRoot.querySelector("[data-proto-relacionamento]"), REL_KEY);
-    bindTextField(editRoot.querySelector("[data-proto-quem]"), QUEM_KEY);
+    bindTextField(fraseInput, FRASE_KEY, markDirty);
+    bindTextField(anivInput, ANIV_KEY, markDirty);
+    bindTextField(relInput, REL_KEY, markDirty);
+    bindTextField(quemInput, QUEM_KEY, markDirty);
 
-    let banner = loadBanner();
     applyBanner(editRoot, banner);
     editRoot.querySelectorAll("[data-banner-preset]").forEach((btn) => {
       btn.addEventListener("click", () => {
         banner = { kind: "preset", id: btn.getAttribute("data-banner-preset") || "padrao" };
-        save(BANNER_KEY, banner);
         applyBanner(editRoot, banner);
+        markDirty();
       });
     });
     const bannerFile = document.getElementById("proto-banner-file");
@@ -620,8 +665,8 @@
         bannerCrop.open(file, {
           onApply: (dataUrl) => {
             banner = { kind: "custom", dataUrl };
-            save(BANNER_KEY, banner);
             applyBanner(editRoot, banner);
+            markDirty();
           },
         });
         bannerFile.value = "";
@@ -631,10 +676,24 @@
     if (bannerClear) {
       bannerClear.addEventListener("click", () => {
         banner = { kind: "preset", id: "padrao" };
-        save(BANNER_KEY, banner);
         applyBanner(editRoot, banner);
+        markDirty();
       });
     }
+
+    if (formEl) {
+      formEl.addEventListener("submit", (e) => {
+        e.preventDefault();
+        persistProfile();
+      });
+    }
+    setSaveStatus("Sem alterações novas", "idle");
+
+    window.addEventListener("beforeunload", (e) => {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
   }
 
   function loadPerfilFixado() {
