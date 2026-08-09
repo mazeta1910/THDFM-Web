@@ -9737,6 +9737,41 @@ html[data-theme="light"] .listra-perm-table th {
   font-size: 0.95rem;
   font-weight: 700;
 }
+.proto-times-ufs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.15rem;
+}
+.proto-times-ufs-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.proto-times-ufs-toggle:hover,
+.proto-times-ufs-toggle:focus-visible {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.proto-times-ufs-toggle svg {
+  display: block;
+  transition: transform 0.15s ease;
+}
+.proto-times-ufs.is-collapsed .proto-times-ufs-toggle svg {
+  transform: rotate(-90deg);
+}
 .proto-times-tools {
   display: flex;
   flex-wrap: wrap;

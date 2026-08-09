@@ -76,8 +76,12 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
-    assert "/static/prototipo-times.js?v=14" in r.text
+    assert "/static/prototipo-perfil.js?v=22" in r.text
+    assert "/static/prototipo-times.js?v=15" in r.text
     assert "/static/style.css?v=280" in r.text
+    assert 'id="proto-ufs-toggle"' in r.text
+    assert 'class="proto-times-ufs is-collapsed"' in r.text
+    assert 'id="proto-uf-grid" hidden' in r.text
     assert 'id="proto-dindao"' in r.text
     assert "Dindão" in r.text
     assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(
