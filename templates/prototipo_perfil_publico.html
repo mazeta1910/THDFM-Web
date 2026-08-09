@@ -22,7 +22,10 @@
     </div>
 
     <div class="proto-steam-hero-main">
-      <h1 class="proto-steam-name" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
+      <div class="proto-steam-name-row">
+        <h1 class="proto-steam-name" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
+        <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+      </div>
       <p class="proto-steam-meta" data-public-meta>—</p>
       <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>Sem frase ainda.</p>
       <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>—</p>
@@ -54,7 +57,6 @@
         <h2 class="proto-steam-panel-title">Times do coração</h2>
         <ul class="proto-steam-times" id="public-times"></ul>
         <p class="proto-steam-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
-        <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
       </section>
 
       <section class="proto-steam-panel" id="recados">
@@ -111,5 +113,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=2" defer></script>
+<script src="/static/prototipo-perfil.js?v=3" defer></script>
 {% endblock %}

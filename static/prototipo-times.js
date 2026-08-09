@@ -90,11 +90,11 @@
     if (!items.length) {
       pickedWrap.hidden = true;
       chipsEl.innerHTML = "";
-      mistoEl.hidden = true;
+      if (mistoEl) mistoEl.hidden = true;
       return;
     }
     pickedWrap.hidden = false;
-    mistoEl.hidden = items.length < 2;
+    if (mistoEl) mistoEl.hidden = items.length < 2;
     chipsEl.innerHTML = items
       .map(
         (c) => `

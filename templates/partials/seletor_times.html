@@ -19,7 +19,9 @@
   <div class="proto-times-picked" id="proto-picked" hidden>
     <div class="proto-times-picked-top">
       <h3 class="proto-times-picked-title">Selecionados</h3>
+      {% if not seletor_embedded %}
       <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+      {% endif %}
     </div>
     <ul class="proto-times-chips" id="proto-chips"></ul>
     <button type="button" class="btn secondary proto-times-clear" id="proto-clear">Limpar seleção</button>

@@ -23,15 +23,18 @@
     </div>
 
     <div class="proto-steam-hero-main">
-      <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
-      <input
-        id="proto-perfil-nome"
-        class="proto-steam-name-input"
-        type="text"
-        maxlength="30"
-        value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
-        data-proto-nome
-      />
+      <div class="proto-steam-name-row">
+        <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
+        <input
+          id="proto-perfil-nome"
+          class="proto-steam-name-input"
+          type="text"
+          maxlength="30"
+          value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
+          data-proto-nome
+        />
+        <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+      </div>
       <p class="proto-steam-meta">
         <label class="visually-hidden" for="proto-rel">Relacionamento</label>
         <select id="proto-rel" class="proto-steam-inline-select" data-proto-relacionamento>
@@ -174,6 +177,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=2" defer></script>
-<script src="/static/prototipo-perfil.js?v=2" defer></script>
+<script src="/static/prototipo-times.js?v=3" defer></script>
+<script src="/static/prototipo-perfil.js?v=3" defer></script>
 {% endblock %}

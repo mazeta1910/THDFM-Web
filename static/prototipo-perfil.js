@@ -14,11 +14,11 @@
   const KARMA_DEFAULT = { confiavel: 2, legal: 3, sexy: 1, burro: 1 };
   const AMIZADE_IDS = ["nao_conheco", "conhecido", "amigo", "bom_amigo", "melhor_amigo"];
   const AMIZADE_NOMES = {
-    nao_conheco: "não conheço",
+    nao_conheco: "quem é vc",
     conhecido: "conhecido",
     amigo: "amigo",
     bom_amigo: "bom amigo",
-    melhor_amigo: "melhor amigo",
+    melhor_amigo: "mais que amigos, irmãos",
   };
 
   function escapeHtml(s) {

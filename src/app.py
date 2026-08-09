@@ -875,13 +875,13 @@ def _karma_cats_demo() -> list[dict]:
 
 
 def _amizade_niveis_demo() -> list[dict]:
-    """Esquema de amizade clássico do Orkut (protótipo)."""
+    """Esquema de amizade do protótipo (textos para reescrever)."""
     return [
-        {"id": "nao_conheco", "nome": "não conheço", "icone": "·"},
+        {"id": "nao_conheco", "nome": "quem é vc", "icone": "·"},
         {"id": "conhecido", "nome": "conhecido", "icone": "○"},
         {"id": "amigo", "nome": "amigo", "icone": "◐"},
         {"id": "bom_amigo", "nome": "bom amigo", "icone": "●"},
-        {"id": "melhor_amigo", "nome": "melhor amigo", "icone": "★"},
+        {"id": "melhor_amigo", "nome": "mais que amigos, irmãos", "icone": "★"},
     ]
 
 
