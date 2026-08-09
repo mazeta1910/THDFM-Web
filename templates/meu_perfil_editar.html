@@ -16,6 +16,7 @@
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
 >
+  <script type="application/json" id="proto-perfil-soft">{{ perfil_soft_json | default('null') | safe }}</script>
   <header class="proto-edit-top">
     <div>
       <p class="proto-steam-kicker">Meu perfil</p>
@@ -289,6 +290,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=15" defer></script>
-<script src="/static/prototipo-perfil.js?v=22" defer></script>
+<script src="/static/prototipo-times.js?v=16" defer></script>
+<script src="/static/prototipo-perfil.js?v=25" defer></script>
 {% endblock %}
