@@ -890,7 +890,7 @@
     if (!fixado) {
       const frase = (loadStr(FRASE_KEY, "") || "").trim();
       const quem = (loadStr(QUEM_KEY, "") || "").trim();
-      const aniv = loadStr(ANIV_KEY, "");
+      const aniv = formatAnivDisplay(loadStr(ANIV_KEY, ""));
       const rel = loadStr(REL_KEY, "");
       const fraseEl = pubRoot.querySelector("[data-public-frase]");
       const metaEl = pubRoot.querySelector("[data-public-meta]");

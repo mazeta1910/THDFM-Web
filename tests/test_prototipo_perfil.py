@@ -43,7 +43,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'id="proto-aniv"' in r.text
     assert 'type="date"' in r.text
     assert 'data-proto-aniversario' in r.text
-    assert "/static/style.css?v=269" in r.text
+    assert "/static/style.css?v=270" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
@@ -58,16 +58,15 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert "depoimentos" not in r.text.lower()
     assert "mais que amigos, irmães" in r.text.lower()
     assert 'id="bolao"' in r.text
-    assert 'class="proto-steam-hero-bolao"' in r.text
+    assert 'class="proto-steam-panel"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
     assert "assinatura {" not in r.text
     assert "{'placar':" not in r.text
-    # Bolão fica sob o status, na coluna da identidade (não coluna do meio)
-    main = r.text.split('class="proto-steam-hero-main"', 1)[1].split('class="proto-steam-hero-aside"', 1)[0]
-    assert 'id="bolao"' in main
-    assert "data-public-frase" in main
-    assert main.index("data-public-frase") < main.index('id="bolao"')
+    # Bolão em card próprio abaixo do hero, antes do feed
+    assert 'proto-steam-hero-bolao' not in r.text
+    assert r.text.index('class="proto-steam-card"') < r.text.index('id="bolao"')
+    assert r.text.index('id="bolao"') < r.text.index('id="feed"')
 
 
 def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):

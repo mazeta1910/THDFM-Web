@@ -7,22 +7,6 @@
 </div>
 
 {% if bolao_perfil and bolao_perfil.disponivel %}
-{% if bolao_perfil.zona_label %}
-<p class="proto-steam-bolao-line proto-steam-bolao-line--hero">
-  <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
-  <span aria-hidden="true">·</span>
-  <span>{{ bolao_perfil.soma }} pts</span>
-  {% if bolao_perfil.rod %}
-  <span aria-hidden="true">·</span>
-  <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
-    {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} na rodada
-  </span>
-  {% endif %}
-  <span aria-hidden="true">·</span>
-  <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
-</p>
-{% endif %}
-
 <div class="proto-bolao-stats">
   <div class="proto-bolao-stat">
     <span class="proto-bolao-stat-label">Posição</span>
