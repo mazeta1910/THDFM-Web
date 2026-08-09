@@ -40,6 +40,9 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "avatar-edit-camera" in r.text
     assert "Salvar alterações" in r.text
     assert 'id="proto-edit-save"' in r.text
+    assert 'id="proto-aniv"' in r.text
+    assert 'type="date"' in r.text
+    assert 'data-proto-aniversario' in r.text
     assert "/static/style.css?v=268" in r.text
 
 

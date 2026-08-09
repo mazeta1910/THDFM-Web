@@ -36,6 +36,43 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** Aceita só data ISO (calendário) ou dd/mm[/aaaa]; descarta asneira. */
+  function normalizeAnivIso(raw) {
+    const s = String(raw || "").trim();
+    if (!s) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const dt = new Date(`${s}T12:00:00`);
+      if (Number.isNaN(dt.getTime())) return "";
+      return s;
+    }
+    const dm = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/.exec(s);
+    if (!dm) return "";
+    const day = Number(dm[1]);
+    const month = Number(dm[2]);
+    const year = Number(dm[3] || 2000);
+    if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) return "";
+    const iso = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dt = new Date(`${iso}T12:00:00`);
+    if (Number.isNaN(dt.getTime())) return "";
+    if (dt.getFullYear() !== year || dt.getMonth() + 1 !== month || dt.getDate() !== day) return "";
+    return iso;
+  }
+
+  function formatAnivDisplay(raw) {
+    const iso = normalizeAnivIso(raw);
+    if (!iso) return "";
+    const [, y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function todayIsoDate() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
   function normLoad(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
@@ -664,7 +701,7 @@
       if (nomeInput) nomeInput.value = nome;
       saveStr(NOME_KEY, nome);
       saveStr(FRASE_KEY, ((fraseInput && fraseInput.value) || "").trim());
-      saveStr(ANIV_KEY, ((anivInput && anivInput.value) || "").trim());
+      saveStr(ANIV_KEY, normalizeAnivIso((anivInput && anivInput.value) || ""));
       saveStr(REL_KEY, ((relInput && relInput.value) || "").trim());
       save(BANNER_KEY, banner);
       syncAvatarNome();
@@ -709,8 +746,20 @@
     }
 
     bindTextField(fraseInput, FRASE_KEY, markDirty);
-    bindTextField(anivInput, ANIV_KEY, markDirty);
     bindTextField(relInput, REL_KEY, markDirty);
+
+    if (anivInput) {
+      anivInput.max = todayIsoDate();
+      const savedAniv = normalizeAnivIso(loadStr(ANIV_KEY, ""));
+      anivInput.value = savedAniv;
+      if (loadStr(ANIV_KEY, "") && !savedAniv) saveStr(ANIV_KEY, "");
+      const markAniv = () => {
+        anivInput.value = normalizeAnivIso(anivInput.value);
+        markDirty();
+      };
+      anivInput.addEventListener("input", markAniv);
+      anivInput.addEventListener("change", markAniv);
+    }
 
     applyBanner(editRoot, banner);
     editRoot.querySelectorAll("[data-banner-preset]").forEach((btn) => {

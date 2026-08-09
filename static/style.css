@@ -11723,6 +11723,15 @@ button.proto-edit-preset,
   min-height: 2.75rem;
   padding: 0 0.75rem;
 }
+.proto-edit input.proto-edit-input[type="date"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+.proto-edit input.proto-edit-input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.85;
+  filter: invert(1);
+}
 .proto-edit select.proto-edit-input {
   padding-right: 2.25rem;
   cursor: pointer;

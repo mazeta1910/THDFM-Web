@@ -162,9 +162,9 @@
           <input
             id="proto-aniv"
             class="proto-edit-input"
-            type="text"
-            maxlength="40"
-            placeholder="dd/mm"
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
             data-proto-aniversario
           />
         </div>
@@ -198,5 +198,5 @@
 
 {% block scripts %}
 <script src="/static/prototipo-times.js?v=12" defer></script>
-<script src="/static/prototipo-perfil.js?v=16" defer></script>
+<script src="/static/prototipo-perfil.js?v=17" defer></script>
 {% endblock %}
