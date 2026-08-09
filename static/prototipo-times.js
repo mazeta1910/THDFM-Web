@@ -14,6 +14,7 @@
   const pickedWrap = document.getElementById("proto-picked");
   const chipsEl = document.getElementById("proto-chips");
   const mistoEl = document.getElementById("proto-misto");
+  const dindaoEl = document.getElementById("proto-dindao");
   const clearBtn = document.getElementById("proto-clear");
   const allUfsBtn = document.getElementById("proto-all-ufs");
   const browserEl = document.getElementById("proto-times-browser");
@@ -133,11 +134,13 @@
       pickedWrap.hidden = true;
       chipsEl.innerHTML = "";
       if (mistoEl) mistoEl.hidden = true;
+      if (dindaoEl) dindaoEl.hidden = true;
       if (openBtn) openBtn.setAttribute("title", "Escolher times");
       return;
     }
     pickedWrap.hidden = false;
     if (mistoEl) mistoEl.hidden = selected.length < 2;
+    if (dindaoEl) dindaoEl.hidden = selected.length < 4;
     if (openBtn) openBtn.setAttribute("title", "Editar times");
     chipsEl.innerHTML = items
       .map((c) => {

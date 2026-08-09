@@ -642,8 +642,10 @@
     const list = document.getElementById("public-times");
     const empty = document.getElementById("public-times-empty");
     const misto = document.getElementById("public-misto");
+    const dindao = document.getElementById("public-dindao");
     const rows = Array.isArray(items) ? items : [];
     if (misto) misto.hidden = rows.length < 2;
+    if (dindao) dindao.hidden = rows.length < 4;
     if (!rows.length) {
       if (list) list.innerHTML = "";
       if (empty) empty.hidden = false;

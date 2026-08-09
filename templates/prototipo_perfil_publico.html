@@ -85,7 +85,10 @@
               {% endif %}
             </p>
             {% endif %}
-            <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+            <span class="proto-times-badges">
+              <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+              <span class="proto-times-misto proto-times-dindao" id="public-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+            </span>
           </div>
           {# Emblemas no lugar da bandeira Steam #}
           <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
@@ -191,5 +194,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=20" defer></script>
+<script src="/static/prototipo-perfil.js?v=21" defer></script>
 {% endblock %}

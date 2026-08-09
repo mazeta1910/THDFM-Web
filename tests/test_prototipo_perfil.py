@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from src.config import ROOT_DIR
 from tests.conftest import login_admin
 
 
@@ -78,8 +79,14 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert "/prototipo/perfil/publico" in r.text
-    assert "/static/prototipo-perfil.js?v=20" in r.text
-    assert "/static/style.css?v=276" in r.text
+    assert "/static/prototipo-perfil.js?v=21" in r.text
+    assert "/static/prototipo-times.js?v=13" in r.text
+    assert "/static/style.css?v=277" in r.text
+    assert 'id="proto-dindao"' in r.text
+    assert "Dindão" in r.text
+    assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_prototipo_perfil_alterar_senha_volta_ao_editar(client: TestClient):
@@ -129,6 +136,8 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert 'href="/classificacao"' in r.text
     assert "assinatura {" not in r.text
     assert "{'placar':" not in r.text
+    assert 'id="public-dindao"' in r.text
+    assert "Dindão" in r.text
     # Bolão em card próprio abaixo do hero, antes dos recados
     assert 'proto-steam-hero-bolao' not in r.text
     assert r.text.index('class="proto-steam-card"') < r.text.index('id="bolao"')

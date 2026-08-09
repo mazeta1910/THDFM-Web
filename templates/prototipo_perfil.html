@@ -135,7 +135,10 @@
             value="{{ viewer_nome }}"
             data-proto-nome
           />
-          <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+          <span class="proto-times-badges">
+            <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+            <span class="proto-times-misto proto-times-dindao" id="proto-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+          </span>
         </div>
       </div>
       <div class="proto-edit-field">
@@ -289,6 +292,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=12" defer></script>
-<script src="/static/prototipo-perfil.js?v=20" defer></script>
+<script src="/static/prototipo-times.js?v=13" defer></script>
+<script src="/static/prototipo-perfil.js?v=21" defer></script>
 {% endblock %}

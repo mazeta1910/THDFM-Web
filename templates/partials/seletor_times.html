@@ -25,7 +25,10 @@
       <div class="proto-times-picked-top">
         <h3 class="proto-times-picked-title">Selecionados</h3>
         {% if not seletor_embedded %}
-        <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+        <span class="proto-times-badges">
+          <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+          <span class="proto-times-misto proto-times-dindao" id="proto-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+        </span>
         {% endif %}
       </div>
       <ul class="proto-times-chips" id="proto-chips"></ul>

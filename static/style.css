@@ -10093,6 +10093,13 @@ html[data-theme="light"] .listra-perm-table th {
   margin: 0;
   font-size: 0.95rem;
 }
+.proto-times-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
 .proto-times-misto {
   font-size: 0.72rem;
   font-weight: 800;
@@ -10102,6 +10109,10 @@ html[data-theme="light"] .listra-perm-table th {
   background: var(--accent);
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
+}
+.proto-times-dindao {
+  color: #1a1208;
+  background: color-mix(in srgb, #e8b84a 88%, #fff);
 }
 .proto-times-chips {
   list-style: none;
@@ -10374,13 +10385,15 @@ body.proto-steam-body .wrap.wide {
   font-size: 0.82rem;
   line-height: 1.2;
 }
-.proto-steam-name-row .proto-times-misto {
+.proto-steam-name-row .proto-times-badges {
   flex: 0 0 auto;
   margin-left: 0;
+}
+.proto-steam-name-row .proto-times-misto {
   white-space: nowrap;
 }
-/* Sem resumo do bolão, o misto continua à direita */
-.proto-steam-name-row:not(:has(.proto-steam-bolao-line--name)) .proto-times-misto {
+/* Sem resumo do bolão, as badges ficam à direita */
+.proto-steam-name-row:not(:has(.proto-steam-bolao-line--name)) .proto-times-badges {
   margin-left: auto;
 }
 .proto-steam-name,
@@ -11785,8 +11798,11 @@ button.proto-edit-preset,
   flex: 1 1 12rem;
   min-width: 0;
 }
-.proto-edit-name-line .proto-times-misto {
+.proto-edit-name-line .proto-times-badges {
   flex: 0 0 auto;
+}
+.proto-edit-name-line .proto-times-misto {
+  white-space: nowrap;
 }
 .proto-edit-grid-2 {
   display: grid;
