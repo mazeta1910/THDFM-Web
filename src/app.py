@@ -946,10 +946,29 @@ def _require_perfil(request: Request) -> RedirectResponse | None:
     return None
 
 
-def _perfil_publico_payload(part: dict) -> dict:
+def _voter_sessao(request: Request) -> dict | None:
+    """Participante da sessão (libera admin sem token via vínculo estável)."""
+    part = _participante_sessao(request)
+    if part:
+        return part
+    if not admin_ok(request):
+        return None
+    login = (request.session.get("admin_login") or "").strip().lower()
+    if not login:
+        return None
+    try:
+        part = db.garantir_participante_admin(login, admin_nome(request))
+        _remember_participante(request, part["token"])
+        return part
+    except Exception:
+        return None
+
+
+def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
     """Dados públicos de um participante para a página de perfil."""
     nome = (part.get("nome") or "").strip() or "Participante"
     iniciais = (nome[:2] if nome else "??").upper()
+    karma = db.karma_resumo(part["id"], voter_id=voter_id)
     return {
         "slug": str(part["id"]),
         "nome": nome,
@@ -959,7 +978,9 @@ def _perfil_publico_payload(part: dict) -> dict:
         "relacionamento": "",
         "aniversario": "",
         "times": [],
-        "karma": {"confiavel": 2, "legal": 3, "sexy": 1, "burro": 1},
+        "karma": karma["medias"],
+        "karma_counts": karma["counts"],
+        "karma_meu_voto": karma["meu_voto"],
         "nutela": 50,
         "iniciais": iniciais,
     }
@@ -1103,12 +1124,15 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
 @app.get("/meu-perfil", response_class=HTMLResponse)
 def meu_perfil(request: Request):
     """Visão pública do próprio perfil. Use ?como=visitante para simular outro usuário."""
+    import json
+
     neg = _require_perfil(request)
     if neg:
         return neg
     como = (request.query_params.get("como") or "").strip().lower()
     is_own_view = como != "visitante"
-    part = _participante_sessao(request)
+    part = _voter_sessao(request)
+    karma = db.karma_resumo(part["id"], voter_id=part["id"]) if part else None
     return render(
         request,
         "meu_perfil.html",
@@ -1117,6 +1141,10 @@ def meu_perfil(request: Request):
         is_own_view=is_own_view,
         perfil_fixado=None,
         bolao_perfil=_bolao_resumo_perfil(part["id"] if part else None),
+        perfil_target_id=part["id"] if part else None,
+        karma_resumo=karma,
+        karma_resumo_json=json.dumps(karma, ensure_ascii=False) if karma else "null",
+        pode_votar_karma=False,
     )
 
 
@@ -1140,10 +1168,12 @@ def perfil_participante(request: Request, participante_id: int):
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse("/classificacao", status_code=303)
-    sess = _participante_sessao(request)
+    sess = _voter_sessao(request)
     if sess and int(sess["id"]) == int(participante_id):
         return RedirectResponse("/meu-perfil", status_code=303)
-    fixado = _perfil_publico_payload(part)
+    voter_id = int(sess["id"]) if sess else None
+    fixado = _perfil_publico_payload(part, voter_id=voter_id)
+    karma = db.karma_resumo(part["id"], voter_id=voter_id)
     return render(
         request,
         "meu_perfil.html",
@@ -1153,7 +1183,49 @@ def perfil_participante(request: Request, participante_id: int):
         perfil_fixado=fixado,
         perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
         bolao_perfil=_bolao_resumo_perfil(part["id"]),
+        perfil_target_id=part["id"],
+        karma_resumo=karma,
+        karma_resumo_json=json.dumps(karma, ensure_ascii=False),
+        pode_votar_karma=bool(karma.get("pode_votar")),
     )
+
+
+@app.get("/perfil/{participante_id:int}/karma")
+def perfil_karma_get(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    return JSONResponse(db.karma_resumo(participante_id, voter_id=voter["id"] if voter else None))
+
+
+@app.put("/perfil/{participante_id:int}/karma")
+async def perfil_karma_put(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    if not voter:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    if int(voter["id"]) == int(participante_id):
+        return JSONResponse({"erro": "Não pode votar no próprio karma"}, status_code=403)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    categoria = (body or {}).get("categoria")
+    nivel = (body or {}).get("nivel")
+    try:
+        db.salvar_karma_voto(voter["id"], participante_id, categoria, nivel)
+    except (TypeError, ValueError) as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(db.karma_resumo(participante_id, voter_id=voter["id"]))
 
 
 @app.get("/meu-perfil/clubes.json")
