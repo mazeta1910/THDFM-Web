@@ -151,10 +151,28 @@
     };
   }
 
-  function perfilHref(autorId) {
+  function perfilHref(autorId, viewerId) {
     const n = Number(autorId);
     if (!Number.isFinite(n) || n <= 0) return "";
+    const selfId = Number(viewerId);
+    if (Number.isFinite(selfId) && selfId > 0 && n === selfId) return "/meu-perfil";
     return `/perfil/${n}`;
+  }
+
+  function sameNome(a, b) {
+    return String(a || "")
+      .trim()
+      .toLocaleLowerCase("pt-BR")
+      .localeCompare(String(b || "").trim().toLocaleLowerCase("pt-BR"), "pt-BR") === 0;
+  }
+
+  function resolveAutorId(d, viewer, owner) {
+    const raw = Number(d && d.autor_id);
+    if (Number.isFinite(raw) && raw > 0) return raw;
+    const nome = (d && d.autor) || "";
+    if (viewer && viewer.id && sameNome(nome, viewer.nome)) return viewer.id;
+    if (owner && owner.id && sameNome(nome, owner.nome)) return owner.id;
+    return null;
   }
 
   function avatarHtml(person) {
@@ -323,7 +341,13 @@
       }));
   }
 
-  function renderPosts(listEl, emptyEl, countEl, items, { canDelete, onDelete, authorFallback } = {}) {
+  function renderPosts(
+    listEl,
+    emptyEl,
+    countEl,
+    items,
+    { canDelete, onDelete, authorFallback, viewer, owner } = {}
+  ) {
     if (countEl) countEl.textContent = `(${items.length})`;
     if (!listEl) return;
     if (!items.length) {
@@ -340,7 +364,8 @@
           iniciais: d.iniciais || (d.autor || authorFallback || "?").slice(0, 2),
         };
         const when = d.at ? formatWhen(d.at) : "";
-        const href = perfilHref(d.autor_id);
+        const autorId = resolveAutorId(d, viewer, owner);
+        const href = perfilHref(autorId, viewer && viewer.id);
         const av = avatarHtml(person);
         const nome = escapeHtml(person.nome);
         const avBlock = href
@@ -958,7 +983,23 @@
       }
     }
 
+    const ownerIdNum = Number(targetId);
+    const owner = {
+      id: Number.isFinite(ownerIdNum) && ownerIdNum > 0 ? ownerIdNum : null,
+      nome: ownerNome,
+    };
+
     let recados = loadPosts(RECADOS_KEY);
+    let recadosDirty = false;
+    recados = recados.map((d) => {
+      const resolved = resolveAutorId(d, viewer, owner);
+      if (resolved && !d.autor_id) {
+        recadosDirty = true;
+        return { ...d, autor_id: resolved };
+      }
+      return d;
+    });
+    if (recadosDirty) save(RECADOS_KEY, recados);
 
     function refreshRecados() {
       renderPosts(
@@ -968,6 +1009,8 @@
         recados,
         {
           canDelete: isOwn,
+          viewer,
+          owner,
           onDelete: (id) => {
             recados = recados.filter((x) => x.id !== id);
             save(RECADOS_KEY, recados);
@@ -985,11 +1028,15 @@
         e.preventDefault();
         const texto = ((recadoForm.querySelector("textarea") || {}).value || "").trim();
         if (!texto) return;
+        const autorId =
+          viewer.id ||
+          resolveAutorId({ autor: viewer.nome, autor_id: null }, viewer, owner);
+        if (!autorId) return;
         recados.unshift({
           id: uid(),
           texto: texto.slice(0, 280),
           autor: viewer.nome,
-          autor_id: viewer.id,
+          autor_id: autorId,
           avatar: viewer.avatar,
           iniciais: viewer.iniciais,
           at: new Date().toISOString(),

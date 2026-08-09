@@ -9,6 +9,7 @@
 {% set viewer_ini = (participante_nav.nome or admin_nome or '??')[:2]|upper if (participante_nav or is_dono) else 'TH' %}
 {% set fixado = perfil_fixado %}
 {% set target_id = perfil_target_id if perfil_target_id is defined else (fixado.participante_id if fixado else (participante_nav.id if participante_nav else '')) %}
+{% set viewer_id = perfil_viewer_id if perfil_viewer_id is defined and perfil_viewer_id else (participante_nav.id if participante_nav else '') %}
 {% set pode_votar = pode_votar_karma if pode_votar_karma is defined else (not is_own_view and fixado) %}
 
 <div
@@ -19,7 +20,7 @@
   data-fixado="{{ 1 if fixado else 0 }}"
   data-target-id="{{ target_id }}"
   data-pode-votar="{{ 1 if pode_votar else 0 }}"
-  data-viewer-id="{{ participante_nav.id if participante_nav else '' }}"
+  data-viewer-id="{{ viewer_id }}"
   data-viewer-nome="{{ viewer_nome }}"
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
@@ -202,5 +203,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=23" defer></script>
+<script src="/static/prototipo-perfil.js?v=24" defer></script>
 {% endblock %}
