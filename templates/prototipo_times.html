@@ -3,72 +3,13 @@
 {% block wrap_class %}wide{% endblock %}
 
 {% block content %}
-<section class="proto-times" id="proto-times" data-proto-times>
-  <header class="proto-times-head">
-    <p class="xonha-kicker">Protótipo · não salva no perfil</p>
-    {# TEXTOS PARA REESCREVER — começo #}
-    <h1 class="proto-times-title">Escolha seus times</h1>
-    <p class="proto-times-lead">
-      Toque num estado ou busque pelo nome. Dá para marcar vários —
-      com dois ou mais você vira <strong>Torcedor Misto</strong>.
-    </p>
-    {# TEXTOS PARA REESCREVER — fim #}
-  </header>
-
-  <div class="proto-times-picked" id="proto-picked" hidden>
-    <div class="proto-times-picked-top">
-      <h2 class="proto-times-picked-title">Selecionados</h2>
-      <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
-    </div>
-    <ul class="proto-times-chips" id="proto-chips"></ul>
-    <button type="button" class="btn secondary proto-times-clear" id="proto-clear">Limpar seleção</button>
-  </div>
-
-  <div class="proto-times-tools">
-    <label class="proto-times-search">
-      <span class="visually-hidden">Buscar time</span>
-      <input
-        type="search"
-        id="proto-search"
-        placeholder="Buscar time… ex.: Palmeiras, Remo, ABC"
-        autocomplete="off"
-        enterkeyhint="search"
-      />
-    </label>
-    <button type="button" class="btn secondary proto-times-allufs" id="proto-all-ufs">Todos os estados</button>
-  </div>
-
-  <section class="proto-times-ufs" aria-label="Estados">
-    <h2 class="proto-times-section-title">Por estado</h2>
-    <div class="proto-times-uf-grid" id="proto-uf-grid">
-      {% for u in ufs %}
-      <button
-        type="button"
-        class="proto-uf"
-        data-uf="{{ u.uf }}"
-        data-nome="{{ u.nome }}"
-        {% if not u.n_clubes %}disabled{% endif %}
-        aria-pressed="false"
-      >
-        <img class="proto-uf-flag" src="{{ u.bandeira }}" alt="" width="48" height="32" loading="lazy" />
-        <span class="proto-uf-code">{{ u.uf }}</span>
-        <span class="proto-uf-count">{{ u.n_clubes }}</span>
-      </button>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="proto-times-list-wrap" aria-label="Times">
-    <div class="proto-times-list-head">
-      <h2 class="proto-times-section-title" id="proto-list-title">Times</h2>
-      <p class="proto-times-meta" id="proto-list-meta">{{ n_clubes }} clubes</p>
-    </div>
-    <div class="proto-times-list" id="proto-list" role="list"></div>
-    <p class="proto-times-empty" id="proto-empty" hidden>Nenhum time encontrado.</p>
-  </section>
-</section>
-
-<script type="application/json" id="proto-clubes-data">{{ clubes_json | safe }}</script>
+<p class="proto-redirect-hint">
+  O seletor agora vive no
+  <a href="/prototipo/perfil#times">protótipo de perfil</a>.
+  Esta página continua só para teste isolado.
+</p>
+{% set seletor_embedded = false %}
+{% include "partials/seletor_times.html" %}
 {% endblock %}
 
 {% block scripts %}

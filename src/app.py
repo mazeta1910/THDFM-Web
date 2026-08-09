@@ -83,8 +83,8 @@ def _path_publico(path: str) -> bool:
         return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
         return True
-    # Protótipo do seletor de times (avaliação pública)
-    if path == "/prototipo/times" or path.startswith("/prototipo/times/"):
+    # Protótipos de perfil / times (avaliação pública)
+    if path.startswith("/prototipo/"):
         return True
     # Link mágico do participante
     if path.startswith("/p/"):
@@ -840,15 +840,51 @@ def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
 
 
-@app.get("/prototipo/times", response_class=HTMLResponse)
-def prototipo_times(request: Request):
-    """Protótipo do seletor de times do coração (UF + busca + multi)."""
+def _karma_cats_demo() -> list[dict]:
+    """Categorias de karma (protótipo). Textos para o usuário reescrever."""
+    return [
+        {
+            "id": "confiavel",
+            "nome": "Confiável",
+            "hint": "Dá para confiar no papo e no palpite",
+            "demo": 12,
+            "demo_pct": 100,
+        },
+        {
+            "id": "legal",
+            "nome": "Legal",
+            "hint": "Boa onda no grupo",
+            "demo": 9,
+            "demo_pct": 75,
+        },
+        {
+            "id": "sexy",
+            "nome": "Sexy",
+            "hint": "O clássico — sem explicação",
+            "demo": 4,
+            "demo_pct": 33,
+        },
+        {
+            "id": "burro",
+            "nome": "Burro",
+            "hint": "Tomou decisão questionável (com carinho)",
+            "demo": 2,
+            "demo_pct": 17,
+        },
+    ]
+
+
+def _prototipo_times_ctx() -> dict:
     import json
 
     from src.clubes_catalogo import carregar_clubes, contagem_por_uf
 
     ufs_meta_path = BANDEIRAS_UF_DIR / "ufs.json"
-    ufs_meta = json.loads(ufs_meta_path.read_text(encoding="utf-8")) if ufs_meta_path.is_file() else {"ufs": []}
+    ufs_meta = (
+        json.loads(ufs_meta_path.read_text(encoding="utf-8"))
+        if ufs_meta_path.is_file()
+        else {"ufs": []}
+    )
     por_uf = contagem_por_uf()
     ufs = []
     for u in ufs_meta.get("ufs", []):
@@ -861,12 +897,33 @@ def prototipo_times(request: Request):
             }
         )
     clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
+    return {
+        "ufs": ufs,
+        "clubes_json": json.dumps(clubes, ensure_ascii=False),
+        "n_clubes": len(clubes),
+        "karma_cats": _karma_cats_demo(),
+    }
+
+
+@app.get("/prototipo/times", response_class=HTMLResponse)
+def prototipo_times(request: Request):
+    """Atalho legado: seletor isolado (preferir /prototipo/perfil#times)."""
+    return render(request, "prototipo_times.html", **_prototipo_times_ctx(), **_taxa_ctx())
+
+
+@app.get("/prototipo/perfil", response_class=HTMLResponse)
+def prototipo_perfil(request: Request):
+    """Protótipo do perfil editável (sobre + times + karma)."""
+    return render(request, "prototipo_perfil.html", **_prototipo_times_ctx(), **_taxa_ctx())
+
+
+@app.get("/prototipo/perfil/publico", response_class=HTMLResponse)
+def prototipo_perfil_publico(request: Request):
+    """Protótipo da visão pública do perfil."""
     return render(
         request,
-        "prototipo_times.html",
-        ufs=ufs,
-        clubes_json=json.dumps(clubes, ensure_ascii=False),
-        n_clubes=len(clubes),
+        "prototipo_perfil_publico.html",
+        **_prototipo_times_ctx(),
         **_taxa_ctx(),
     )
 

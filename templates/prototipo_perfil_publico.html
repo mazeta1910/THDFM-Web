@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Protótipo · Perfil público — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+
+{% block content %}
+<article class="proto-perfil proto-perfil--publico" id="proto-perfil-publico" data-proto-perfil-publico>
+  <header class="proto-perfil-head">
+    <p class="xonha-kicker">Protótipo · visão pública</p>
+    <div class="proto-perfil-actions">
+      <a class="btn secondary" href="/prototipo/perfil">Voltar ao meu perfil</a>
+    </div>
+  </header>
+
+  <div class="proto-perfil-public-hero">
+    <div class="proto-perfil-avatar proto-perfil-avatar--lg" aria-hidden="true">
+      {% if participante_nav %}
+        {% set av = avatar_url(participante_nav.avatar_path) %}
+        {% if av %}
+        <img src="{{ av }}" alt="" data-public-avatar />
+        {% else %}
+        <span data-public-avatar-fallback>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+        {% endif %}
+      {% else %}
+      <span data-public-avatar-fallback>TH</span>
+      {% endif %}
+    </div>
+    <div>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <h1 class="proto-perfil-title" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
+      <p class="proto-perfil-lead" data-public-tagline>Perfil na THDFM</p>
+      {# TEXTOS PARA REESCREVER — fim #}
+      <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+    </div>
+  </div>
+
+  <section class="proto-perfil-panel">
+    <h2 class="proto-perfil-panel-title">Times</h2>
+    <ul class="proto-public-times" id="public-times"></ul>
+    <p class="proto-times-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
+  </section>
+
+  <section class="proto-perfil-panel">
+    <h2 class="proto-perfil-panel-title">Karma</h2>
+    <ul class="proto-karma-list proto-karma-list--readonly" id="public-karma">
+      {% for k in karma_cats %}
+      <li class="proto-karma-row" data-karma="{{ k.id }}">
+        <div class="proto-karma-label">
+          <strong>{{ k.nome }}</strong>
+          <span>{{ k.hint }}</span>
+        </div>
+        <div class="proto-karma-meter" aria-hidden="true"><i data-karma-bar style="width: {{ k.demo_pct }}%"></i></div>
+        <span class="proto-karma-val" data-karma-val>{{ k.demo }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="conta-hint">No app real, aqui entram os botões para você votar neste perfil.</p>
+  </section>
+</article>
+
+<script type="application/json" id="proto-clubes-data">{{ clubes_json | safe }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/prototipo-perfil.js" defer></script>
+{% endblock %}

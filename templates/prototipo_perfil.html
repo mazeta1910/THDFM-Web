@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Protótipo · Meu perfil — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+
+{% block content %}
+<article class="proto-perfil" id="proto-perfil" data-proto-perfil>
+  <header class="proto-perfil-head">
+    <p class="xonha-kicker">Protótipo · não grava no servidor</p>
+    {# TEXTOS PARA REESCREVER — começo #}
+    <h1 class="proto-perfil-title">Meu perfil</h1>
+    <p class="proto-perfil-lead">
+      Aqui você monta como a galera te vê: foto, times do coração e o karma estilo Orkut.
+      Nada disso ainda salva de verdade — é só para a gente acertar o fluxo.
+    </p>
+    {# TEXTOS PARA REESCREVER — fim #}
+    <div class="proto-perfil-actions">
+      <a class="btn secondary" href="/prototipo/perfil/publico">Ver como os outros veem</a>
+      {% if participante_nav %}
+      <a class="btn secondary" href="/p/{{ participante_nav.token }}/conta?page=1">Abrir Minha conta real</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <nav class="proto-perfil-tabs" aria-label="Seções do perfil">
+    <a class="proto-perfil-tab is-on" href="#sobre">Sobre</a>
+    <a class="proto-perfil-tab" href="#times">Times</a>
+    <a class="proto-perfil-tab" href="#karma">Karma</a>
+  </nav>
+
+  <section class="proto-perfil-panel" id="sobre">
+    <h2 class="proto-perfil-panel-title">Sobre você</h2>
+    <div class="proto-perfil-card">
+      <div class="proto-perfil-identity">
+        <div class="proto-perfil-avatar" aria-hidden="true">
+          {% if participante_nav %}
+            {% set av = avatar_url(participante_nav.avatar_path) %}
+            {% if av %}
+            <img src="{{ av }}" alt="" />
+            {% else %}
+            <span>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+            {% endif %}
+          {% else %}
+          <span>TH</span>
+          {% endif %}
+        </div>
+        <div class="proto-perfil-identity-text">
+          <label class="conta-label" for="proto-perfil-nome">Nome de exibição</label>
+          <input
+            id="proto-perfil-nome"
+            class="conta-input"
+            type="text"
+            maxlength="30"
+            value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
+            data-proto-nome
+          />
+          <p class="conta-hint">No protótipo fica só neste navegador. Depois isso vem da Minha conta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proto-perfil-panel" id="times">
+    {% set seletor_embedded = true %}
+    {% include "partials/seletor_times.html" %}
+  </section>
+
+  <section class="proto-perfil-panel" id="karma">
+    {# TEXTOS PARA REESCREVER — começo #}
+    <h2 class="proto-perfil-panel-title">Karma</h2>
+    <p class="proto-perfil-lead">
+      Quatro selos que a galera pode te dar. No protótipo você simula os votos;
+      na versão real, cada pessoa vota no perfil dos outros.
+    </p>
+    {# TEXTOS PARA REESCREVER — fim #}
+    <ul class="proto-karma-list" id="proto-karma-edit">
+      {% for k in karma_cats %}
+      <li class="proto-karma-row" data-karma="{{ k.id }}">
+        <div class="proto-karma-label">
+          <strong>{{ k.nome }}</strong>
+          <span>{{ k.hint }}</span>
+        </div>
+        <div class="proto-karma-meter" aria-hidden="true"><i style="width: {{ k.demo_pct }}%"></i></div>
+        <div class="proto-karma-controls">
+          <button type="button" class="proto-karma-btn" data-karma-delta="-1" aria-label="Menos {{ k.nome }}">−</button>
+          <span class="proto-karma-val" data-karma-val>{{ k.demo }}</span>
+          <button type="button" class="proto-karma-btn" data-karma-delta="1" aria-label="Mais {{ k.nome }}">+</button>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/prototipo-times.js" defer></script>
+<script src="/static/prototipo-perfil.js" defer></script>
+{% endblock %}
