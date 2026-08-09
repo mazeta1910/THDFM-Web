@@ -17,19 +17,20 @@ def test_prototipo_perfil_pagina(client: TestClient):
     login_admin(client)
     r = client.get("/prototipo/perfil")
     assert r.status_code == 200
-    assert "Meu perfil" in r.text
-    assert 'class="proto-steam-card"' in r.text
+    assert "Editar perfil" in r.text
+    assert 'class="proto-edit"' in r.text
     assert 'id="proto-times"' in r.text
     assert 'id="times"' in r.text
     assert 'data-clubes-src="/prototipo/times/clubes.json"' in r.text
-    assert 'id="proto-karma-edit"' in r.text
-    assert "nutela" in r.text.lower()
+    assert 'id="proto-karma-edit"' not in r.text
+    assert "data-karma-cycle" not in r.text
+    assert "nutela" not in r.text.lower()
     assert 'id="banner"' in r.text
     assert "banner-crop-modal" in r.text
     assert 'id="proto-feed-form"' not in r.text
     assert "depoimentos" not in r.text.lower()
     assert 'href="/prototipo/perfil/benevides"' in r.text
-    assert "/static/style.css?v=251" in r.text
+    assert "/static/style.css?v=252" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
@@ -55,6 +56,18 @@ def test_prototipo_perfil_publico_visitante(client: TestClient):
     assert 'id="public-recado-form"' in r.text
     assert 'id="public-feed-form"' not in r.text
     assert 'id="pedidos"' not in r.text
+    assert "data-karma-cycle" in r.text
+    assert "proto-steam-karma--votavel" in r.text
+
+
+def test_prototipo_perfil_publico_dono_nao_vota_karma(client: TestClient):
+    login_admin(client)
+    r = client.get("/prototipo/perfil/publico")
+    assert r.status_code == 200
+    assert 'data-own="1"' in r.text
+    assert "data-karma-cycle" not in r.text
+    assert "proto-steam-karma--votavel" not in r.text
+    assert "Karma da galera" in r.text
 
 
 def test_prototipo_perfil_benevides_privado(client: TestClient):

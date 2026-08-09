@@ -558,7 +558,7 @@
     });
   }
 
-  // ——— Edição ———
+  // ——— Edição (sem karma — voto só de terceiros) ———
   const editRoot = document.getElementById("proto-perfil");
   if (editRoot) {
     const bannerCrop = initBannerCrop();
@@ -607,26 +607,6 @@
         save(BANNER_KEY, banner);
         applyBanner(editRoot, banner);
       });
-    }
-
-    let karma = loadKarma();
-    const karmaRoot = document.getElementById("proto-karma-edit");
-    paintKarmaRoot(karmaRoot, karma);
-    paintNutela(editRoot, loadNutela());
-    if (karmaRoot) {
-      karmaRoot.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-karma-cycle]");
-        if (!btn) return;
-        const row = btn.closest("[data-karma]");
-        const id = row.getAttribute("data-karma");
-        karma[id] = ((karma[id] || 0) % 3) + 1;
-        save(KARMA_KEY, karma);
-        paintKarmaRoot(karmaRoot, karma);
-      });
-    }
-    const nutelaRange = editRoot.querySelector("[data-proto-nutela]");
-    if (nutelaRange) {
-      nutelaRange.addEventListener("input", () => saveStr(NUTELA_KEY, String(nutelaRange.value)));
     }
   }
 
@@ -677,20 +657,41 @@
         (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||
         "Visitante THDFM";
 
+    const karmaRoot = document.getElementById("public-karma");
+    let karma = fixado
+      ? { ...KARMA_DEFAULT, ...(fixado.karma || {}) }
+      : loadKarma();
+    let nutela = fixado ? Number(fixado.nutela) || 50 : loadNutela();
+
     if (fixado) {
       applyBanner(pubRoot, { kind: "preset", id: "gramado" });
-      paintKarmaRoot(document.getElementById("public-karma"), {
-        ...KARMA_DEFAULT,
-        ...(fixado.karma || {}),
-      });
-      paintNutela(pubRoot, Number(fixado.nutela) || 50);
       paintFixadoTimes(fixado.times || []);
     } else {
       applyBanner(pubRoot, loadBanner());
-      paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
-      paintNutela(pubRoot, loadNutela());
       const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
       paintPublicTimes(selected);
+    }
+    paintKarmaRoot(karmaRoot, karma);
+    paintNutela(pubRoot, nutela);
+
+    // Visitante vota; dono só visualiza
+    if (!isOwn && karmaRoot) {
+      karmaRoot.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-karma-cycle]");
+        if (!btn) return;
+        const row = btn.closest("[data-karma]");
+        const id = row.getAttribute("data-karma");
+        karma[id] = ((karma[id] || 0) % 3) + 1;
+        if (!fixado) save(KARMA_KEY, karma);
+        paintKarmaRoot(karmaRoot, karma);
+      });
+      const nutelaRange = pubRoot.querySelector("[data-proto-nutela]");
+      if (nutelaRange) {
+        nutelaRange.addEventListener("input", () => {
+          nutela = Number(nutelaRange.value) || 0;
+          if (!fixado) saveStr(NUTELA_KEY, String(nutela));
+        });
+      }
     }
 
     pubRoot.querySelectorAll("[data-public-nome]").forEach((el) => {

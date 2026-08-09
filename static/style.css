@@ -10495,6 +10495,26 @@ body.proto-steam-body .wrap.wide {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
+  width: 100%;
+  max-width: 16rem;
+}
+.proto-steam-karma-caption {
+  margin: 0 0 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proto-steam-karma--votavel {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.proto-steam-karma--votavel .proto-steam-icons {
+  border-radius: 6px;
+  padding: 0.1rem 0.15rem;
+}
+.proto-steam-karma--votavel .proto-steam-icons:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .proto-steam-karma-row {
   display: flex;
@@ -11022,5 +11042,224 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   }
   .proto-steam-compose .proto-ico-btn {
     justify-self: end;
+  }
+}
+
+/* ——— Editar perfil (layout tipo settings / rede social) ——— */
+.proto-edit {
+  --proto-edit-max: 42rem;
+  max-width: var(--proto-edit-max);
+  margin: 0 auto;
+  padding: 0 0 2.5rem;
+}
+.proto-edit-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.proto-edit-title {
+  margin: 0.15rem 0 0.25rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.15;
+}
+.proto-edit-lead {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.proto-edit-cover {
+  position: relative;
+  margin: 0 0 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: visible;
+}
+.proto-edit-cover-media {
+  height: 168px;
+  border-radius: 14px 14px 0 0;
+  border-bottom: 1px solid var(--border);
+}
+.proto-edit-cover-actions {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+.proto-edit-avatar {
+  position: absolute;
+  left: 1rem;
+  bottom: -40px;
+  z-index: 2;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--card);
+  box-shadow: 0 0 0 1px var(--border);
+  background: var(--bg);
+  overflow: hidden;
+}
+.proto-edit-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+.proto-edit-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.35rem;
+  padding: 2.6rem 0 0;
+}
+.proto-edit-preset {
+  width: 3.1rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  overflow: hidden;
+}
+.proto-edit-preset .proto-steam-banner-swatch {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.proto-edit-preset.is-on,
+.proto-edit-preset[aria-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.proto-edit-preset:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.proto-edit-form {
+  display: grid;
+  gap: 0.85rem;
+}
+.proto-edit-section {
+  padding: 1rem 1.05rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+.proto-edit-section-title {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proto-edit-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+.proto-edit-field:last-child {
+  margin-bottom: 0;
+}
+.proto-edit-field > label {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--steam-text, var(--text));
+}
+.proto-edit-input {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+.proto-edit-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.proto-edit-textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+.proto-edit-name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+}
+.proto-edit-name-line .proto-edit-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.proto-edit-name-line .proto-times-misto {
+  flex: 0 0 auto;
+}
+.proto-edit-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+.proto-edit-grid-2 .proto-edit-field {
+  margin-bottom: 0;
+}
+.proto-edit .proto-times--embedded {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.proto-edit .proto-times-picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+.proto-edit .proto-times-picked-top {
+  display: none;
+}
+.proto-edit #proto-times-open {
+  margin-top: 0.15rem;
+}
+@media (max-width: 640px) {
+  .proto-edit-cover-media {
+    height: 132px;
+  }
+  .proto-edit-avatar {
+    width: 76px;
+    height: 76px;
+    bottom: -34px;
+    left: 0.75rem;
+  }
+  .proto-edit-presets {
+    padding-top: 2.2rem;
+  }
+  .proto-edit-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .proto-edit-section {
+    padding: 0.85rem 0.85rem 0.95rem;
   }
 }

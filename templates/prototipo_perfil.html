@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Protótipo · Meu perfil — THDFM{% endblock %}
+{% block title %}Protótipo · Editar perfil — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block body_class %}proto-steam-body {% endblock %}
 
@@ -9,177 +9,157 @@
 {% set viewer_ini = (participante_nav.nome or '??')[:2]|upper if participante_nav else 'TH' %}
 
 <div
-  class="proto-steam"
+  class="proto-edit"
   id="proto-perfil"
   data-proto-perfil
   data-viewer-nome="{{ viewer_nome }}"
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
 >
-  <p class="proto-steam-kicker">Protótipo · editar perfil · local neste navegador</p>
-
-  <article class="proto-steam-card">
-    <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
-
-    <header class="proto-steam-hero">
-      <div class="proto-steam-hero-top">
-        <div class="proto-steam-avatar" aria-hidden="true">
-          {% if viewer_av %}
-          <img src="{{ viewer_av }}" alt="" width="112" height="112" />
-          {% else %}
-          <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
-          {% endif %}
-        </div>
-
-        <div class="proto-steam-hero-main">
-          <div class="proto-steam-name-row">
-            <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
-            <input
-              id="proto-perfil-nome"
-              class="proto-steam-name-input"
-              type="text"
-              maxlength="30"
-              value="{{ viewer_nome }}"
-              data-proto-nome
-            />
-            <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
-          </div>
-          <p class="proto-steam-meta">
-            <label class="visually-hidden" for="proto-rel">Relacionamento</label>
-            <select id="proto-rel" class="proto-steam-inline-select" data-proto-relacionamento>
-              <option value="">relacionamento</option>
-              <option>solteiro(a)</option>
-              <option>namorando</option>
-              <option>noivo(a)</option>
-              <option>casado(a)</option>
-              <option>é complicado</option>
-              <option>chegando junto com o VAR</option>
-            </select>
-            <span aria-hidden="true">·</span>
-            <label class="visually-hidden" for="proto-aniv">Aniversário</label>
-            <input
-              id="proto-aniv"
-              class="proto-steam-inline-input"
-              type="text"
-              maxlength="40"
-              placeholder="aniversário (dd/mm)"
-              data-proto-aniversario
-            />
-          </p>
-          {# TEXTOS PARA REESCREVER — começo #}
-          <label class="visually-hidden" for="proto-frase">Frase do perfil</label>
-          <input
-            id="proto-frase"
-            class="proto-steam-frase"
-            type="text"
-            maxlength="120"
-            placeholder="Sua frasezinha aparece aqui…"
-            data-proto-frase
-          />
-          <label class="visually-hidden" for="proto-quem">Quem sou eu</label>
-          <textarea
-            id="proto-quem"
-            class="proto-steam-bio"
-            rows="2"
-            maxlength="400"
-            placeholder="Quem sou eu…"
-            data-proto-quem
-          ></textarea>
-          {# TEXTOS PARA REESCREVER — fim #}
-        </div>
-
-        <div class="proto-steam-hero-aside">
-          <div class="proto-steam-toolbar">
-            <a class="proto-ico-btn" href="/prototipo/perfil/publico" title="Ver meu perfil" aria-label="Ver meu perfil">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 .001 6.001A3 3 0 0 0 12 9z"/></svg>
-            </a>
-            <a class="proto-ico-btn" href="/prototipo/perfil/publico?como=visitante" title="Ver como visitante" aria-label="Ver como visitante">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
-            </a>
-            <a class="proto-ico-btn" href="/prototipo/perfil/benevides" title="Ver Benevides" aria-label="Ver Benevides">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            </a>
-            {% if participante_nav %}
-            <a class="proto-ico-btn" href="/p/{{ participante_nav.token }}/conta?page=1" title="Minha conta" aria-label="Minha conta">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94a7.14 7.14 0 0 0 .05-.94 7.14 7.14 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 7.48a.5.5 0 0 0 .12.64L4.85 9.7a7.14 7.14 0 0 0-.05.94 7.14 7.14 0 0 0 .05.94L2.82 14.16a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.8a.5.5 0 0 0 .5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg>
-            </a>
-            {% endif %}
-          </div>
-          <div class="proto-steam-karma" id="proto-karma-edit" aria-label="Karma">
-            {% for k in karma_cats %}
-            <div
-              class="proto-steam-karma-row"
-              data-karma="{{ k.id }}"
-              data-icon="{{ k.icon }}"
-              data-labels="{{ k.labels | join('|') }}"
-            >
-              <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="{{ k.nome }}">
-                <span data-karma-icons></span>
-              </button>
-              <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
-            </div>
-            {% endfor %}
-            <div class="proto-steam-nutela" data-nutela>
-              <span class="proto-steam-nutela-end">nutela</span>
-              <input
-                class="proto-steam-nutela-range"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value="50"
-                aria-label="Medidor nutela a raíz"
-                data-proto-nutela
-              />
-              <span class="proto-steam-nutela-end">raíz</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section class="proto-steam-hero-times" id="times">
-        {% set seletor_embedded = true %}
-        {% include "partials/seletor_times.html" %}
-      </section>
-    </header>
-  </article>
-
-  <section class="proto-steam-panel proto-steam-banner-panel" id="banner">
-    <div class="proto-steam-banner-panel-head">
+  <header class="proto-edit-top">
+    <div>
+      <p class="proto-steam-kicker">Protótipo · privado · Mazeta</p>
       {# TEXTOS PARA REESCREVER — começo #}
-      <h2 class="proto-steam-panel-title">Banner</h2>
+      <h1 class="proto-edit-title">Editar perfil</h1>
+      <p class="proto-edit-lead">Banner, foto, textos e times. Alterações ficam só neste protótipo.</p>
       {# TEXTOS PARA REESCREVER — fim #}
-      <div class="proto-steam-banner-actions">
-        <label class="proto-ico-btn proto-ico-btn--file" title="Enviar e recortar" aria-label="Enviar e recortar imagem">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 5h4l2-2h6l2 2h4v14H5zm7 3a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 2a3 3 0 1 1-3 3 3 3 0 0 1 3-3z"/></svg>
-          <input type="file" id="proto-banner-file" accept="image/*" />
-        </label>
-        <button type="button" class="proto-ico-btn" id="proto-banner-clear" hidden title="Remover imagem" aria-label="Remover imagem">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h5v2H3V5h5zm1 6h2v9h-2zm4 0h2v9h-2zM6 9h2v9H6z"/></svg>
-        </button>
-      </div>
     </div>
-    <div class="proto-steam-banner-grid" role="listbox" aria-label="Banners prontos">
-      {% for b in banner_presets %}
-      <button
-        type="button"
-        class="proto-steam-banner-opt"
-        data-banner-preset="{{ b.id }}"
-        title="{{ b.nome }}"
-        aria-label="{{ b.nome }}"
-      >
-        <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
-        <span class="proto-steam-banner-opt-name">{{ b.nome }}</span>
+    <div class="proto-steam-toolbar">
+      <a class="proto-ico-btn" href="/prototipo/perfil/publico" title="Ver meu perfil" aria-label="Ver meu perfil">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+      </a>
+      <a class="proto-ico-btn" href="/prototipo/perfil/publico?como=visitante" title="Ver como visitante" aria-label="Ver como visitante">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+      </a>
+      <a class="proto-ico-btn" href="/prototipo/perfil/benevides" title="Ver Benevides" aria-label="Ver Benevides">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </a>
+      {% if participante_nav %}
+      <a class="proto-ico-btn" href="/p/{{ participante_nav.token }}/conta?page=1" title="Minha conta" aria-label="Minha conta">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94a7.14 7.14 0 0 0 .05-.94 7.14 7.14 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 7.48a.5.5 0 0 0 .12.64L4.85 9.7a7.14 7.14 0 0 0-.05.94 7.14 7.14 0 0 0 .05.94L2.82 14.16a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.8a.5.5 0 0 0 .5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="proto-edit-cover" id="banner">
+    <div class="proto-edit-cover-media proto-steam-banner" data-proto-banner data-banner="padrao"></div>
+    <div class="proto-edit-cover-actions">
+      <label class="proto-ico-btn proto-ico-btn--accent proto-ico-btn--file" title="Enviar e recortar banner" aria-label="Enviar e recortar banner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 5h4l2-2h6l2 2h4v14H5zm7 3a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 2a3 3 0 1 1-3 3 3 3 0 0 1 3-3z"/></svg>
+        <input type="file" id="proto-banner-file" accept="image/*" />
+      </label>
+      <button type="button" class="proto-ico-btn" id="proto-banner-clear" hidden title="Remover banner" aria-label="Remover banner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h5v2H3V5h5zm1 6h2v9h-2zm4 0h2v9h-2zM6 9h2v9H6z"/></svg>
       </button>
-      {% endfor %}
+    </div>
+    <div class="proto-edit-avatar" aria-hidden="true">
+      {% if viewer_av %}
+      <img src="{{ viewer_av }}" alt="" width="96" height="96" />
+      {% else %}
+      <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
+      {% endif %}
     </div>
   </section>
+
+  <div class="proto-edit-presets" role="listbox" aria-label="Banners prontos">
+    {% for b in banner_presets %}
+    <button
+      type="button"
+      class="proto-edit-preset"
+      data-banner-preset="{{ b.id }}"
+      title="{{ b.nome }}"
+      aria-label="{{ b.nome }}"
+    >
+      <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+    </button>
+    {% endfor %}
+  </div>
+
+  <form class="proto-edit-form" id="proto-edit-form" onsubmit="return false;">
+    <section class="proto-edit-section">
+      {# TEXTOS PARA REESCREVER — começo #}
+      <h2 class="proto-edit-section-title">Sobre você</h2>
+      {# TEXTOS PARA REESCREVER — fim #}
+      <div class="proto-edit-field">
+        <label for="proto-perfil-nome">Nome de exibição</label>
+        <div class="proto-edit-name-line">
+          <input
+            id="proto-perfil-nome"
+            class="proto-edit-input"
+            type="text"
+            maxlength="30"
+            value="{{ viewer_nome }}"
+            data-proto-nome
+          />
+          <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+        </div>
+      </div>
+      <div class="proto-edit-field">
+        <label for="proto-frase">Frasezinha</label>
+        <input
+          id="proto-frase"
+          class="proto-edit-input"
+          type="text"
+          maxlength="120"
+          placeholder="Uma frase curta no topo do perfil"
+          data-proto-frase
+        />
+      </div>
+      <div class="proto-edit-field">
+        <label for="proto-quem">Quem sou eu</label>
+        <textarea
+          id="proto-quem"
+          class="proto-edit-input proto-edit-textarea"
+          rows="3"
+          maxlength="400"
+          placeholder="Conte um pouco sobre você"
+          data-proto-quem
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="proto-edit-section">
+      <h2 class="proto-edit-section-title">Detalhes</h2>
+      <div class="proto-edit-grid-2">
+        <div class="proto-edit-field">
+          <label for="proto-rel">Relacionamento</label>
+          <select id="proto-rel" class="proto-edit-input" data-proto-relacionamento>
+            <option value="">—</option>
+            <option>solteiro(a)</option>
+            <option>namorando</option>
+            <option>noivo(a)</option>
+            <option>casado(a)</option>
+            <option>é complicado</option>
+            <option>chegando junto com o VAR</option>
+          </select>
+        </div>
+        <div class="proto-edit-field">
+          <label for="proto-aniv">Aniversário</label>
+          <input
+            id="proto-aniv"
+            class="proto-edit-input"
+            type="text"
+            maxlength="40"
+            placeholder="dd/mm"
+            data-proto-aniversario
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="proto-edit-section" id="times">
+      <h2 class="proto-edit-section-title">Times do coração</h2>
+      {% set seletor_embedded = true %}
+      {% include "partials/seletor_times.html" %}
+    </section>
+  </form>
 </div>
 
 {% include "partials/banner_crop_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=7" defer></script>
-<script src="/static/prototipo-perfil.js?v=7" defer></script>
+<script src="/static/prototipo-times.js?v=9" defer></script>
+<script src="/static/prototipo-perfil.js?v=9" defer></script>
 {% endblock %}

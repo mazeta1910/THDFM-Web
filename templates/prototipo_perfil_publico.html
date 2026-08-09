@@ -79,7 +79,10 @@
             </a>
             {% endif %}
           </div>
-          <div class="proto-steam-karma" id="public-karma" aria-label="Karma">
+          <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
+            {# TEXTOS PARA REESCREVER — começo #}
+            <p class="proto-steam-karma-caption">{% if is_own_view %}Karma da galera{% else %}Toque nos ícones para votar{% endif %}</p>
+            {# TEXTOS PARA REESCREVER — fim #}
             {% for k in karma_cats %}
             <div
               class="proto-steam-karma-row"
@@ -87,13 +90,32 @@
               data-icon="{{ k.icon }}"
               data-labels="{{ k.labels | join('|') }}"
             >
+              {% if is_own_view %}
               <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
+              {% else %}
+              <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="Votar {{ k.nome }}">
+                <span data-karma-icons></span>
+              </button>
+              {% endif %}
               <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
             </div>
             {% endfor %}
             <div class="proto-steam-nutela" data-nutela>
               <span class="proto-steam-nutela-end">nutela</span>
+              {% if is_own_view %}
               <div class="proto-steam-nutela-track" aria-hidden="true"><i data-nutela-fill></i></div>
+              {% else %}
+              <input
+                class="proto-steam-nutela-range"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="50"
+                aria-label="Medidor nutela a raíz"
+                data-proto-nutela
+              />
+              {% endif %}
               <span class="proto-steam-nutela-end">raíz</span>
             </div>
           </div>
@@ -176,5 +198,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=7" defer></script>
+<script src="/static/prototipo-perfil.js?v=9" defer></script>
 {% endblock %}
