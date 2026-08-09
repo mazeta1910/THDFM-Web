@@ -1,8 +1,6 @@
 (function () {
   const TIMES_KEY = "thdfm-proto-times";
   const NOME_KEY = "thdfm-proto-perfil-nome";
-  const NUTELA_KEY = "thdfm-proto-nutela";
-  const NUTELA_VOTE_KEY = "thdfm-proto-nutela-voto";
   const FRASE_KEY = "thdfm-proto-frase";
   const ANIV_KEY = "thdfm-proto-aniversario";
   const REL_KEY = "thdfm-proto-relacionamento";
@@ -198,10 +196,30 @@
     return data;
   }
 
-  function loadNutela() {
-    const n = Number(loadStr(NUTELA_KEY, "50"));
-    if (!Number.isFinite(n)) return 50;
-    return Math.max(0, Math.min(100, Math.round(n)));
+  function loadNutelaResumoEmbedded() {
+    const el = document.getElementById("proto-nutela-resumo");
+    if (!el) return null;
+    try {
+      const data = JSON.parse(el.textContent || "null");
+      return data && typeof data === "object" ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function putNutelaVote(targetId, valor) {
+    const r = await fetch(`/perfil/${encodeURIComponent(targetId)}/nutela`, {
+      method: "PUT",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ valor }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao votar nutela");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
   }
 
   function labelsFor(row) {
@@ -881,21 +899,23 @@
     const targetId = (pubRoot.getAttribute("data-target-id") || "").trim();
     const podeVotar =
       pubRoot.getAttribute("data-pode-votar") === "1" && !!targetId;
-    const profileKey = fixado ? fixado.slug || "fixado" : "meu";
     const karmaBoot = loadKarmaResumoEmbedded();
     let karma = {
       ...emptyKarmaMedias(),
       ...((karmaBoot && karmaBoot.medias) || (fixado && fixado.karma) || {}),
     };
     let votos = { ...((karmaBoot && karmaBoot.meu_voto) || {}) };
-    let nutela = fixado ? Number(fixado.nutela) || 50 : loadNutela();
+    const nutelaBoot = loadNutelaResumoEmbedded();
+    let nutela = 50;
+    if (nutelaBoot && Number.isFinite(Number(nutelaBoot.media))) {
+      nutela = Math.max(0, Math.min(100, Math.round(Number(nutelaBoot.media))));
+    } else if (fixado && Number.isFinite(Number(fixado.nutela))) {
+      nutela = Math.max(0, Math.min(100, Math.round(Number(fixado.nutela))));
+    }
     let nutelaVoto = null;
-    if (podeVotar) {
-      const rawVoto = loadStr(`${NUTELA_VOTE_KEY}:${profileKey}`, null);
-      if (rawVoto != null && rawVoto !== "") {
-        const n = Number(rawVoto);
-        if (Number.isFinite(n)) nutelaVoto = Math.max(0, Math.min(100, Math.round(n)));
-      }
+    if (podeVotar && nutelaBoot && nutelaBoot.meu_voto != null && nutelaBoot.meu_voto !== "") {
+      const n = Number(nutelaBoot.meu_voto);
+      if (Number.isFinite(n)) nutelaVoto = Math.max(0, Math.min(100, Math.round(n)));
     }
 
     if (fixado) {
@@ -936,7 +956,25 @@
         nutelaRange.addEventListener("input", () => {
           nutelaVoto = Number(nutelaRange.value) || 0;
           paintNutela(pubRoot, nutela, nutelaVoto);
-          saveStr(`${NUTELA_VOTE_KEY}:${profileKey}`, String(nutelaVoto));
+        });
+        nutelaRange.addEventListener("change", () => {
+          const valor = Math.max(0, Math.min(100, Math.round(Number(nutelaRange.value) || 0)));
+          nutelaRange.disabled = true;
+          putNutelaVote(targetId, valor)
+            .then((data) => {
+              nutela = Math.max(0, Math.min(100, Math.round(Number(data.media) || 50)));
+              nutelaVoto =
+                data.meu_voto == null || data.meu_voto === ""
+                  ? null
+                  : Math.max(0, Math.min(100, Math.round(Number(data.meu_voto))));
+              paintNutela(pubRoot, nutela, nutelaVoto);
+            })
+            .catch(() => {
+              /* mantém UI anterior */
+            })
+            .finally(() => {
+              nutelaRange.disabled = false;
+            });
         });
       }
     }

@@ -133,7 +133,7 @@ def test_meu_perfil_publico(client: TestClient):
     assert 'id="bolao"' in r.text
     assert 'id="recados"' in r.text
     assert 'data-viewer-id="' in r.text
-    assert "/static/prototipo-perfil.js?v=23" in r.text
+    assert "/static/prototipo-perfil.js?v=24" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-post-nome" in js
     assert "proto-steam-post-av-link" in js
@@ -193,7 +193,7 @@ def test_meu_perfil_visitante(client: TestClient):
     assert "data-karma-cycle" not in r.text
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
-    assert "/static/prototipo-perfil.js?v=23" in r.text
+    assert "/static/prototipo-perfil.js?v=24" in r.text
 
 
 def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
@@ -206,7 +206,7 @@ def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
     assert 'id="proto-karma-resumo"' in r.text
-    assert "/static/prototipo-perfil.js?v=23" in r.text
+    assert "/static/prototipo-perfil.js?v=24" in r.text
 
 
 def test_perfil_outro_usuario(client: TestClient):
