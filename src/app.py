@@ -867,7 +867,7 @@ def _karma_cats_demo() -> list[dict]:
         {
             "id": "burro",
             "nome": "Burro",
-            "icon": "🐴",
+            "icon": "🫏",
             "labels": ["burro", "muito burro", "super burro"],
             "demo": 1,
         },

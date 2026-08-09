@@ -43,7 +43,6 @@
         <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
         <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
         {% else %}
-        <button type="button" class="proto-text-btn proto-text-btn--accent" id="public-amigo-pedir">Pedir amizade</button>
         <a class="proto-text-btn" href="/prototipo/perfil/publico">Meu perfil</a>
         {% endif %}
       </nav>
@@ -96,7 +95,7 @@
         <div class="proto-steam-hero-aside">
           <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
             {# TEXTOS PARA REESCREVER — começo #}
-            <p class="proto-steam-karma-caption">{% if is_own_view %}Karma da galera{% else %}Toque nos ícones para votar{% endif %}</p>
+            <p class="proto-steam-karma-caption">Karma da galera</p>
             {# TEXTOS PARA REESCREVER — fim #}
             {% for k in karma_cats %}
             <div
@@ -105,24 +104,31 @@
               data-icon="{{ k.icon }}"
               data-labels="{{ k.labels | join('|') }}"
             >
-              {% if is_own_view %}
-              <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
-              {% else %}
-              <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="Votar {{ k.nome }}">
-                <span data-karma-icons></span>
-              </button>
+              <div class="proto-steam-karma-media">
+                <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
+                <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+              </div>
+              {% if not is_own_view %}
+              <div class="proto-steam-karma-voto">
+                <span class="proto-steam-karma-voto-lab">seu voto</span>
+                <button type="button" class="proto-steam-icons proto-steam-icons--voto" data-karma-cycle aria-label="Votar {{ k.nome }}">
+                  <span data-karma-vote-icons></span>
+                </button>
+              </div>
               {% endif %}
-              <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
             </div>
             {% endfor %}
-            <div class="proto-steam-nutela {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}" data-nutela style="--nutela: 50%">
+            <div class="proto-steam-nutela {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}" data-nutela style="--nutela: 50%; --nutela-voto: 50%">
               <div class="proto-steam-nutela-head">
                 <span class="proto-steam-nutela-end is-nutela">nutela</span>
                 <span class="proto-steam-nutela-end is-raiz">raíz</span>
               </div>
               <div class="proto-steam-nutela-meter">
                 <div class="proto-steam-nutela-track" aria-hidden="true">
-                  <span class="proto-steam-nutela-marker" data-nutela-marker></span>
+                  <span class="proto-steam-nutela-marker" data-nutela-marker title="Média da galera"></span>
+                  {% if not is_own_view %}
+                  <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" hidden></span>
+                  {% endif %}
                 </div>
                 {% if not is_own_view %}
                 <input
@@ -132,13 +138,21 @@
                   max="100"
                   step="1"
                   value="50"
-                  aria-label="Medidor nutela a raíz"
+                  aria-label="Seu voto no medidor nutela a raíz"
                   data-proto-nutela
                 />
                 {% endif %}
               </div>
+              {% if not is_own_view %}
+              <p class="proto-steam-nutela-hint" data-nutela-hint>Arraste para votar · o marcador claro é a média</p>
+              {% endif %}
             </div>
           </div>
+          {% if not is_own_view %}
+          {# TEXTOS PARA REESCREVER — começo #}
+          <button type="button" class="proto-text-btn proto-text-btn--accent proto-steam-amigo-btn" id="public-amigo-pedir">Pedir amizade</button>
+          {# TEXTOS PARA REESCREVER — fim #}
+          {% endif %}
         </div>
       </div>
     </header>
@@ -383,5 +397,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=14" defer></script>
+<script src="/static/prototipo-perfil.js?v=15" defer></script>
 {% endblock %}

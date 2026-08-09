@@ -2,7 +2,9 @@
   const TIMES_KEY = "thdfm-proto-times";
   const NOME_KEY = "thdfm-proto-perfil-nome";
   const KARMA_KEY = "thdfm-proto-karma";
+  const KARMA_VOTE_KEY = "thdfm-proto-karma-voto";
   const NUTELA_KEY = "thdfm-proto-nutela";
+  const NUTELA_VOTE_KEY = "thdfm-proto-nutela-voto";
   const FRASE_KEY = "thdfm-proto-frase";
   const ANIV_KEY = "thdfm-proto-aniversario";
   const REL_KEY = "thdfm-proto-relacionamento";
@@ -126,39 +128,76 @@
     return parts.length === 3 ? parts : ["", "", ""];
   }
 
-  function paintKarmaRow(row, level) {
+  function paintIcons(el, icon, level) {
+    if (!el) return;
+    const n = Math.max(0, Math.min(3, level | 0));
+    let html = "";
+    for (let i = 1; i <= 3; i++) {
+      const on = i <= n;
+      html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${
+        on ? escapeHtml(icon) : "·"
+      }</span>`;
+    }
+    el.innerHTML = html;
+  }
+
+  function paintKarmaRow(row, mediaLevel, voteLevel) {
     const icon = row.getAttribute("data-icon") || "★";
     const iconsEl = row.querySelector("[data-karma-icons]");
+    const voteEl = row.querySelector("[data-karma-vote-icons]");
     const labelEl = row.querySelector("[data-karma-label]");
     const labels = labelsFor(row);
-    const n = Math.max(0, Math.min(3, level | 0));
-    if (iconsEl) {
-      let html = "";
-      for (let i = 1; i <= 3; i++) {
-        const on = i <= n;
-        html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${
-          on ? escapeHtml(icon) : "·"
-        }</span>`;
-      }
-      iconsEl.innerHTML = html;
-    }
+    const n = Math.max(0, Math.min(3, mediaLevel | 0));
+    const v = voteLevel == null ? null : Math.max(0, Math.min(3, voteLevel | 0));
+    paintIcons(iconsEl, icon, n);
+    if (voteEl) paintIcons(voteEl, icon, v || 0);
     if (labelEl) labelEl.textContent = n === 0 ? "—" : labels[n - 1] || "—";
   }
 
-  function paintKarmaRoot(root, karma) {
+  function paintKarmaRoot(root, karma, votos) {
     if (!root) return;
     root.querySelectorAll("[data-karma]").forEach((row) => {
-      paintKarmaRow(row, karma[row.getAttribute("data-karma")] || 0);
+      const id = row.getAttribute("data-karma");
+      const vote = votos && Object.prototype.hasOwnProperty.call(votos, id) ? votos[id] : null;
+      paintKarmaRow(row, karma[id] || 0, vote);
     });
   }
 
-  function paintNutela(root, value) {
+  function loadKarmaVotes(profileKey) {
+    const key = profileKey ? `${KARMA_VOTE_KEY}:${profileKey}` : KARMA_VOTE_KEY;
+    const stored = normLoad(key, null);
+    const out = {};
+    if (!stored || typeof stored !== "object") return out;
+    for (const id of KARMA_IDS) {
+      const n = Number(stored[id]);
+      if (!Number.isFinite(n) || n < 1) continue;
+      out[id] = Math.max(1, Math.min(3, Math.floor(n)));
+    }
+    return out;
+  }
+
+  function saveKarmaVotes(profileKey, votos) {
+    const key = profileKey ? `${KARMA_VOTE_KEY}:${profileKey}` : KARMA_VOTE_KEY;
+    save(key, votos);
+  }
+
+  function paintNutela(root, mediaValue, voteValue) {
     if (!root) return;
-    const v = Math.max(0, Math.min(100, Number(value) || 0));
+    const media = Math.max(0, Math.min(100, Number(mediaValue) || 0));
     const wrap = root.querySelector("[data-nutela]") || root;
     const range = root.querySelector("[data-proto-nutela]");
-    wrap.style.setProperty("--nutela", `${v}%`);
-    if (range) range.value = String(v);
+    const votoMarker = root.querySelector("[data-nutela-voto-marker]");
+    wrap.style.setProperty("--nutela", `${media}%`);
+    if (voteValue == null || voteValue === "") {
+      wrap.style.setProperty("--nutela-voto", `${media}%`);
+      if (votoMarker) votoMarker.hidden = true;
+      if (range) range.value = String(media);
+      return;
+    }
+    const voto = Math.max(0, Math.min(100, Number(voteValue) || 0));
+    wrap.style.setProperty("--nutela-voto", `${voto}%`);
+    if (votoMarker) votoMarker.hidden = false;
+    if (range) range.value = String(voto);
   }
 
   function loadPosts(key) {
@@ -736,10 +775,20 @@
         "Visitante THDFM";
 
     const karmaRoot = document.getElementById("public-karma");
+    const profileKey = fixado ? fixado.slug || "fixado" : "meu";
     let karma = fixado
       ? { ...KARMA_DEFAULT, ...(fixado.karma || {}) }
       : loadKarma();
     let nutela = fixado ? Number(fixado.nutela) || 50 : loadNutela();
+    let votos = isOwn ? {} : loadKarmaVotes(profileKey);
+    let nutelaVoto = null;
+    if (!isOwn) {
+      const rawVoto = loadStr(`${NUTELA_VOTE_KEY}:${profileKey}`, null);
+      if (rawVoto != null && rawVoto !== "") {
+        const n = Number(rawVoto);
+        if (Number.isFinite(n)) nutelaVoto = Math.max(0, Math.min(100, Math.round(n)));
+      }
+    }
 
     if (fixado) {
       applyBanner(pubRoot, { kind: "preset", id: "gramado" });
@@ -749,26 +798,26 @@
       const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
       paintPublicTimes(selected);
     }
-    paintKarmaRoot(karmaRoot, karma);
-    paintNutela(pubRoot, nutela);
+    paintKarmaRoot(karmaRoot, karma, isOwn ? null : votos);
+    paintNutela(pubRoot, nutela, isOwn ? null : nutelaVoto);
 
-    // Visitante vota; dono só visualiza
+    // Visitante vota sem apagar a média da galera
     if (!isOwn && karmaRoot) {
       karmaRoot.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-karma-cycle]");
         if (!btn) return;
         const row = btn.closest("[data-karma]");
         const id = row.getAttribute("data-karma");
-        karma[id] = ((karma[id] || 0) % 3) + 1;
-        if (!fixado) save(KARMA_KEY, karma);
-        paintKarmaRoot(karmaRoot, karma);
+        votos[id] = ((votos[id] || 0) % 3) + 1;
+        saveKarmaVotes(profileKey, votos);
+        paintKarmaRoot(karmaRoot, karma, votos);
       });
       const nutelaRange = pubRoot.querySelector("[data-proto-nutela]");
       if (nutelaRange) {
         nutelaRange.addEventListener("input", () => {
-          nutela = Number(nutelaRange.value) || 0;
-          paintNutela(pubRoot, nutela);
-          if (!fixado) saveStr(NUTELA_KEY, String(nutela));
+          nutelaVoto = Number(nutelaRange.value) || 0;
+          paintNutela(pubRoot, nutela, nutelaVoto);
+          saveStr(`${NUTELA_VOTE_KEY}:${profileKey}`, String(nutelaVoto));
         });
       }
     }
