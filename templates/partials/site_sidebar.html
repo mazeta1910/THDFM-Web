@@ -1,6 +1,7 @@
 {% set acesso_q = request.query_params.get('acesso') or '' %}
 {% set on_conta = participante_nav and '/conta' in path %}
 {% set on_home = path == '/' or path == '/home' %}
+{% set on_proto_times = path.startswith('/prototipo/times') %}
 {% set on_entrar = path.startswith('/entrar') or acesso_q == 'entrar' %}
 {% set on_login = (path.startswith('/login') and not path.startswith('/loguin')) or acesso_q in ('recuperar', 'login') %}
 {% set on_loguin = path.startswith('/loguin') or acesso_q == 'loguin' %}
@@ -57,6 +58,7 @@
         <div class="site-menu-items">
           <a class="site-side-link {% if on_home and not on_entrar and not on_login and not on_loguin %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
           <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
+          <a class="site-side-link {% if on_proto_times %}active{% endif %}" href="/prototipo/times">{{ ico('competicao') }}<span>Protótipo: times</span></a>
           <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
         </div>
       </details>

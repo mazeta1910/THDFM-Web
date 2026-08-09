@@ -32,10 +32,12 @@ from src.config import (
     AVATAR_PADRAO_STEM,
     AVATARES_DIR,
     BANDEIRAS_UF_DIR,
+    CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
     COMPROVANTES_DIR,
     EMBLEMAS_DIR,
+    EMBLEMAS_FM_DIR,
     FASES,
     FASE_IDS,
     ADSENSE_CLIENT,
@@ -79,7 +81,10 @@ def _path_publico(path: str) -> bool:
     """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
     if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
         return True
-    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
+        return True
+    # Protótipo do seletor de times (avaliação pública)
+    if path == "/prototipo/times" or path.startswith("/prototipo/times/"):
         return True
     # Link mágico do participante
     if path.startswith("/p/"):
@@ -125,11 +130,14 @@ STATIC = ROOT_DIR / "static"
 STATIC.mkdir(exist_ok=True)
 EMBLEMAS_DIR.mkdir(parents=True, exist_ok=True)
 BANDEIRAS_UF_DIR.mkdir(parents=True, exist_ok=True)
+CLUBES_DIR.mkdir(parents=True, exist_ok=True)
+EMBLEMAS_FM_DIR.mkdir(parents=True, exist_ok=True)
 COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
+app.mount("/emblemas-fm", StaticFiles(directory=str(EMBLEMAS_FM_DIR)), name="emblemas_fm")
 app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="bandeiras_uf")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 
@@ -830,6 +838,45 @@ async def login_post(request: Request, celular: str = Form(...)):
 @app.get("/regras", response_class=HTMLResponse)
 def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
+
+
+@app.get("/prototipo/times", response_class=HTMLResponse)
+def prototipo_times(request: Request):
+    """Protótipo do seletor de times do coração (UF + busca + multi)."""
+    import json
+
+    from src.clubes_catalogo import carregar_clubes, contagem_por_uf
+
+    ufs_meta_path = BANDEIRAS_UF_DIR / "ufs.json"
+    ufs_meta = json.loads(ufs_meta_path.read_text(encoding="utf-8")) if ufs_meta_path.is_file() else {"ufs": []}
+    por_uf = contagem_por_uf()
+    ufs = []
+    for u in ufs_meta.get("ufs", []):
+        code = u.get("uf") or ""
+        ufs.append(
+            {
+                **u,
+                "n_clubes": por_uf.get(code, 0),
+                "bandeira": f"/bandeiras-uf/{u.get('arquivo') or (code + '.svg')}",
+            }
+        )
+    clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
+    return render(
+        request,
+        "prototipo_times.html",
+        ufs=ufs,
+        clubes_json=json.dumps(clubes, ensure_ascii=False),
+        n_clubes=len(clubes),
+        **_taxa_ctx(),
+    )
+
+
+@app.get("/prototipo/times/clubes.json")
+def prototipo_times_clubes_json(request: Request):
+    from src.clubes_catalogo import carregar_clubes
+
+    clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
+    return JSONResponse({"clubes": clubes, "total": len(clubes)})
 
 
 def _pagina_em_breve(request: Request, *, titulo: str, secao: str, lead: str | None = None):

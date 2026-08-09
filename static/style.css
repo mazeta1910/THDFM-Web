@@ -9880,3 +9880,268 @@ html[data-theme="light"] .listra-perm-table th {
   min-width: 2.4rem;
   padding: 0 0.45rem;
 }
+
+/* ——— Protótipo seletor de times ——— */
+.proto-times {
+  padding-bottom: 2.5rem;
+}
+.proto-times-head {
+  margin-bottom: 1.25rem;
+}
+.proto-times-title {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  letter-spacing: -0.02em;
+}
+.proto-times-lead {
+  margin: 0;
+  color: var(--muted);
+  max-width: 40rem;
+  line-height: 1.45;
+}
+.proto-times-lead strong {
+  color: var(--text);
+}
+.proto-times-section-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.proto-times-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 1.25rem;
+  align-items: center;
+}
+.proto-times-search {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+.proto-times-search input {
+  width: 100%;
+  margin: 0;
+}
+.proto-times-allufs {
+  width: auto;
+  min-width: 0;
+  padding: 0.65rem 0.9rem;
+  white-space: nowrap;
+}
+.proto-times-uf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
+  gap: 0.45rem;
+  margin: 0.65rem 0 1.5rem;
+}
+.proto-uf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.45rem 0.3rem;
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+.proto-uf:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.proto-uf.is-on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.proto-uf:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.proto-uf-flag {
+  width: 2.4rem;
+  height: 1.6rem;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+  background: #111;
+}
+.proto-uf-code {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.proto-uf-count {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.proto-times-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.proto-times-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.proto-times-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.45rem;
+}
+.proto-club {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.proto-club:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.proto-club.is-on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg2));
+}
+.proto-club-emblema {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  background: #0e0e0e;
+  border-radius: 8px;
+}
+.proto-club-nome {
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.25;
+  min-width: 0;
+}
+.proto-club-uf {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.proto-club-check {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--muted);
+  background: var(--hover-bg);
+}
+.proto-club.is-on .proto-club-check {
+  color: #111;
+  background: var(--accent);
+}
+.proto-times-empty {
+  margin: 1rem 0 0;
+  color: var(--muted);
+}
+.proto-times-picked {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.proto-times-picked-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.proto-times-picked-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.proto-times-misto {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #111;
+  background: var(--accent);
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+}
+.proto-times-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.proto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.3rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+.proto-chip img {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #0e0e0e;
+}
+.proto-chip-uf {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.7rem;
+}
+.proto-chip-x {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.proto-chip-x:hover {
+  color: var(--text);
+  background: var(--hover-bg);
+}
+.proto-times-clear {
+  width: auto;
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.85rem;
+}
+@media (max-width: 560px) {
+  .proto-times-list {
+    grid-template-columns: 1fr;
+  }
+  .proto-times-allufs {
+    width: 100%;
+  }
+}
