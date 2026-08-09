@@ -141,11 +141,20 @@
   }
 
   function viewerFrom(root) {
+    const rawId = (root.getAttribute("data-viewer-id") || "").trim();
+    const idNum = Number(rawId);
     return {
+      id: Number.isFinite(idNum) && idNum > 0 ? idNum : null,
       nome: root.getAttribute("data-viewer-nome") || "Visitante THDFM",
       avatar: root.getAttribute("data-viewer-avatar") || "",
       iniciais: root.getAttribute("data-viewer-iniciais") || "TH",
     };
+  }
+
+  function perfilHref(autorId) {
+    const n = Number(autorId);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    return `/perfil/${n}`;
   }
 
   function avatarHtml(person) {
@@ -272,14 +281,18 @@
     if (!Array.isArray(list)) return [];
     return list
       .filter((d) => d && d.texto)
-      .map((d) => ({
-        id: d.id || uid(),
-        texto: String(d.texto).slice(0, 280),
-        autor: d.autor || "",
-        avatar: d.avatar || "",
-        iniciais: d.iniciais || "",
-        at: d.at || null,
-      }));
+      .map((d) => {
+        const autorId = Number(d.autor_id);
+        return {
+          id: d.id || uid(),
+          texto: String(d.texto).slice(0, 280),
+          autor: d.autor || "",
+          autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
+          avatar: d.avatar || "",
+          iniciais: d.iniciais || "",
+          at: d.at || null,
+        };
+      });
   }
 
   function loadAmigos() {
@@ -327,12 +340,21 @@
           iniciais: d.iniciais || (d.autor || authorFallback || "?").slice(0, 2),
         };
         const when = d.at ? formatWhen(d.at) : "";
+        const href = perfilHref(d.autor_id);
+        const av = avatarHtml(person);
+        const nome = escapeHtml(person.nome);
+        const avBlock = href
+          ? `<a class="proto-steam-post-av-link" href="${escapeHtml(href)}" title="Ver perfil de ${nome}">${av}</a>`
+          : av;
+        const nomeBlock = href
+          ? `<a class="proto-steam-post-nome" href="${escapeHtml(href)}">${nome}</a>`
+          : `<strong>${nome}</strong>`;
         return `
       <li class="proto-steam-post" data-id="${escapeHtml(d.id)}">
-        ${avatarHtml(person)}
+        ${avBlock}
         <div class="proto-steam-post-body">
           <div class="proto-steam-post-head">
-            <strong>${escapeHtml(person.nome)}</strong>
+            ${nomeBlock}
             ${when ? `<time datetime="${escapeHtml(d.at)}">${escapeHtml(when)}</time>` : ""}
             ${
               canDelete
@@ -967,6 +989,7 @@
           id: uid(),
           texto: texto.slice(0, 280),
           autor: viewer.nome,
+          autor_id: viewer.id,
           avatar: viewer.avatar,
           iniciais: viewer.iniciais,
           at: new Date().toISOString(),

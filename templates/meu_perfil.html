@@ -19,6 +19,7 @@
   data-fixado="{{ 1 if fixado else 0 }}"
   data-target-id="{{ target_id }}"
   data-pode-votar="{{ 1 if pode_votar else 0 }}"
+  data-viewer-id="{{ participante_nav.id if participante_nav else '' }}"
   data-viewer-nome="{{ viewer_nome }}"
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
