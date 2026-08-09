@@ -34,6 +34,16 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
     assert "loguin-drawer-root" in text
+    assert "pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" in text
+    assert "ca-pub-9141284700785025" in text
+
+
+def test_ads_txt_publico(client: TestClient):
+    r = client.get("/ads.txt")
+    assert r.status_code == 200
+    assert "text/plain" in r.headers.get("content-type", "")
+    assert "google.com, pub-9141284700785025, DIRECT, f08c47fec0942fa0" in r.text
+
 
 def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
     part = db.criar_participante("CtaLogado", status="liberado", celular="11990004455")

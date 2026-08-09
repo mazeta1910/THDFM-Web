@@ -37,6 +37,7 @@ from src.config import (
     EMBLEMAS_DIR,
     FASES,
     FASE_IDS,
+    ADSENSE_CLIENT,
     INSCRICAO_FECHA_EM,
     JANELAS,
     NOME_MAX_LEN,
@@ -75,7 +76,7 @@ app = FastAPI(title="Bolão THDFM — Copa do Brasil")
 
 def _path_publico(path: str) -> bool:
     """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
-    if path in ("/", "/home", "/favicon.ico"):
+    if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
         return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/"):
         return True
@@ -179,6 +180,7 @@ TEMPLATES.env.globals["avatar_padrao_url"] = avatar_padrao_url
 TEMPLATES.env.globals["listra_emoji_efetivo"] = db.listra_emoji_efetivo
 TEMPLATES.env.globals["listra_texto_contexto"] = db.listra_texto_contexto
 TEMPLATES.env.globals["listra_linha_compartilhar"] = db.listra_linha_compartilhar
+TEMPLATES.env.globals["ADSENSE_CLIENT"] = ADSENSE_CLIENT
 TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
 TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 TEMPLATES.env.filters["wa_chat"] = db.url_whatsapp_chat
@@ -548,6 +550,17 @@ def home(request: Request):
     if dest:
         return RedirectResponse(dest, status_code=303)
     return _render_home(request)
+
+
+@app.get("/ads.txt", response_class=PlainTextResponse)
+def ads_txt():
+    """Autorização de vendedores para o Google AdSense."""
+    if not ADSENSE_CLIENT:
+        return PlainTextResponse("", status_code=404)
+    pub = ADSENSE_CLIENT.removeprefix("ca-")
+    # ID de certificação do Google AdSense (padrão ads.txt).
+    body = f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n"
+    return PlainTextResponse(body, media_type="text/plain; charset=utf-8")
 
 
 def _redirect_acesso(

@@ -69,6 +69,11 @@ WHATSAPP_GROUP_URL = os.environ.get(
     "https://chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz",
 ).strip()
 
+# Google AdSense (ca-pub-…). Vazio desliga o script no <head>.
+ADSENSE_CLIENT = os.environ.get(
+    "ADSENSE_CLIENT", "ca-pub-9141284700785025"
+).strip()
+
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
 
