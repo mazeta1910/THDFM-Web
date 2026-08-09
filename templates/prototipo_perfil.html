@@ -1,167 +1,169 @@
 {% extends "base.html" %}
 {% block title %}Protótipo · Meu perfil — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
-{% block body_class %}proto-orkut-body {% endblock %}
+{% block body_class %}proto-steam-body {% endblock %}
 
 {% block content %}
-<div class="proto-orkut" id="proto-perfil" data-proto-perfil>
-  <p class="proto-orkut-kicker">Protótipo · local neste navegador</p>
+<div class="proto-steam" id="proto-perfil" data-proto-perfil>
+  <p class="proto-steam-kicker">Protótipo · local neste navegador · não grava no servidor</p>
 
-  <div class="proto-orkut-grid">
-    {# ——— Coluna esquerda ——— #}
-    <aside class="proto-orkut-left">
-      <div class="proto-orkut-photo" aria-hidden="true">
-        {% if participante_nav %}
-          {% set av = avatar_url(participante_nav.avatar_path) %}
-          {% if av %}
-          <img src="{{ av }}" alt="" width="160" height="160" />
-          {% else %}
-          <span class="proto-orkut-photo-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
-          {% endif %}
+  {# Header compacto (inspirado na Steam): avatar + identidade + karma #}
+  <header class="proto-steam-hero">
+    <div class="proto-steam-avatar" aria-hidden="true">
+      {% if participante_nav %}
+        {% set av = avatar_url(participante_nav.avatar_path) %}
+        {% if av %}
+        <img src="{{ av }}" alt="" width="128" height="128" />
         {% else %}
-        <span class="proto-orkut-photo-fallback">TH</span>
+        <span class="proto-steam-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
         {% endif %}
-      </div>
-      <p class="proto-orkut-name" data-proto-nome-label>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</p>
-      <ul class="proto-orkut-side-links">
-        <li><a href="/prototipo/perfil/publico">ver perfil público</a></li>
-        {% if participante_nav %}
-        <li><a href="/p/{{ participante_nav.token }}/conta?page=1">minha conta</a></li>
-        {% endif %}
-        <li><a href="#times">times do coração</a></li>
-        <li><a href="#depoimentos">depoimentos</a></li>
-        <li><a href="#amigos">amigos</a></li>
-      </ul>
-    </aside>
+      {% else %}
+      <span class="proto-steam-avatar-fallback">TH</span>
+      {% endif %}
+    </div>
 
-    {# ——— Coluna centro ——— #}
-    <main class="proto-orkut-main">
-      <header class="proto-orkut-main-head">
-        <h1 class="proto-orkut-h1" data-proto-nome-label>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
-        <p class="proto-orkut-crumb">Início › Meu perfil</p>
-      </header>
-
-      <div class="proto-orkut-frase-box">
-        {# TEXTOS PARA REESCREVER — começo #}
-        <label class="visually-hidden" for="proto-frase">Frase do perfil</label>
+    <div class="proto-steam-hero-main">
+      <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
+      <input
+        id="proto-perfil-nome"
+        class="proto-steam-name-input"
+        type="text"
+        maxlength="30"
+        value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
+        data-proto-nome
+      />
+      <p class="proto-steam-meta">
+        <label class="visually-hidden" for="proto-rel">Relacionamento</label>
+        <select id="proto-rel" class="proto-steam-inline-select" data-proto-relacionamento>
+          <option value="">relacionamento</option>
+          <option>solteiro(a)</option>
+          <option>namorando</option>
+          <option>noivo(a)</option>
+          <option>casado(a)</option>
+          <option>é complicado</option>
+          <option>chegando junto com o VAR</option>
+        </select>
+        <span aria-hidden="true">·</span>
+        <label class="visually-hidden" for="proto-aniv">Aniversário</label>
         <input
-          id="proto-frase"
-          class="proto-orkut-frase-input"
+          id="proto-aniv"
+          class="proto-steam-inline-input"
           type="text"
-          maxlength="120"
-          placeholder="Sua frasezinha aparece aqui…"
-          data-proto-frase
+          maxlength="40"
+          placeholder="aniversário (dd/mm)"
+          data-proto-aniversario
         />
-        {# TEXTOS PARA REESCREVER — fim #}
-      </div>
+      </p>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <label class="visually-hidden" for="proto-frase">Frase do perfil</label>
+      <input
+        id="proto-frase"
+        class="proto-steam-frase"
+        type="text"
+        maxlength="120"
+        placeholder="Sua frasezinha aparece aqui…"
+        data-proto-frase
+      />
+      <label class="visually-hidden" for="proto-quem">Quem sou eu</label>
+      <textarea
+        id="proto-quem"
+        class="proto-steam-bio"
+        rows="2"
+        maxlength="400"
+        placeholder="Quem sou eu…"
+        data-proto-quem
+      ></textarea>
+      {# TEXTOS PARA REESCREVER — fim #}
+    </div>
 
-      <div class="proto-orkut-karma" id="proto-karma-edit" aria-label="Karma">
+    <div class="proto-steam-hero-aside">
+      <div class="proto-steam-karma" id="proto-karma-edit" aria-label="Karma">
         {% for k in karma_cats %}
         <div
-          class="proto-orkut-karma-row"
+          class="proto-steam-karma-row"
           data-karma="{{ k.id }}"
           data-icon="{{ k.icon }}"
           data-labels="{{ k.labels | join('|') }}"
         >
-          <button type="button" class="proto-orkut-icons" data-karma-cycle aria-label="{{ k.nome }}">
+          <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="{{ k.nome }}">
             <span data-karma-icons></span>
           </button>
-          <span class="proto-orkut-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+          <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
         </div>
         {% endfor %}
       </div>
+      <div class="proto-steam-hero-actions">
+        <a class="proto-steam-btn" href="/prototipo/perfil/publico">Ver como os outros veem</a>
+        {% if participante_nav %}
+        <a class="proto-steam-btn proto-steam-btn--ghost" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
 
-      <section class="proto-orkut-box" id="social">
-        <h2 class="proto-orkut-box-title">social</h2>
-        <table class="proto-orkut-table">
-          <tr>
-            <th scope="row">nome</th>
-            <td>
-              <input
-                id="proto-perfil-nome"
-                class="proto-orkut-field"
-                type="text"
-                maxlength="30"
-                value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
-                data-proto-nome
-              />
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">aniversário</th>
-            <td><input class="proto-orkut-field" type="text" maxlength="40" placeholder="dd/mm" data-proto-aniversario /></td>
-          </tr>
-          <tr>
-            <th scope="row">relacionamento</th>
-            <td>
-              <select class="proto-orkut-field" data-proto-relacionamento>
-                <option value="">—</option>
-                <option>solteiro(a)</option>
-                <option>namorando</option>
-                <option>noivo(a)</option>
-                <option>casado(a)</option>
-                <option>é complicado</option>
-                <option>chegando junto com o VAR</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">quem sou eu</th>
-            <td>
-              <textarea
-                class="proto-orkut-field proto-orkut-textarea"
-                rows="3"
-                maxlength="400"
-                placeholder="Conta um pouco de você…"
-                data-proto-quem
-              ></textarea>
-            </td>
-          </tr>
-        </table>
-      </section>
-
-      <section class="proto-orkut-box" id="times">
+  <div class="proto-steam-layout">
+    <div class="proto-steam-main">
+      <section class="proto-steam-panel" id="times">
         {% set seletor_embedded = true %}
         {% include "partials/seletor_times.html" %}
       </section>
 
-      <section class="proto-orkut-box" id="depoimentos">
-        <h2 class="proto-orkut-box-title">depoimentos</h2>
-        <ul class="proto-orkut-deps" id="proto-deps-list"></ul>
-        <form class="proto-orkut-dep-form" id="proto-dep-form">
-          <label class="visually-hidden" for="proto-dep-autor">De</label>
-          <input id="proto-dep-autor" class="proto-orkut-field" type="text" maxlength="30" placeholder="De (nome)" required />
-          <label class="visually-hidden" for="proto-dep-texto">Depoimento</label>
-          <textarea id="proto-dep-texto" class="proto-orkut-field proto-orkut-textarea" rows="2" maxlength="280" placeholder="Escreva um depoimento…" required></textarea>
-          <button type="submit" class="proto-orkut-btn">adicionar</button>
+      <section class="proto-steam-panel" id="recados">
+        <h2 class="proto-steam-panel-title">Recados <span id="proto-recados-count">(0)</span></h2>
+        <form class="proto-steam-form" id="proto-recado-form">
+          <input class="proto-steam-field" type="text" id="proto-recado-autor" maxlength="30" placeholder="De (nome)" required />
+          <textarea class="proto-steam-field" id="proto-recado-texto" rows="2" maxlength="280" placeholder="Deixe um recado…" required></textarea>
+          <button type="submit" class="proto-steam-btn">Postar recado</button>
         </form>
+        <ul class="proto-steam-feed" id="proto-recados-list"></ul>
+        <p class="proto-steam-empty" id="proto-recados-empty">Nenhum recado ainda.</p>
       </section>
-    </main>
 
-    {# ——— Coluna direita ——— #}
-    <aside class="proto-orkut-right" id="amigos">
-      <section class="proto-orkut-box">
-        <h2 class="proto-orkut-box-title">meus amigos <span id="proto-amigos-count">(0)</span></h2>
-        <ul class="proto-orkut-amigos" id="proto-amigos-list"></ul>
-        <form class="proto-orkut-amigo-form" id="proto-amigo-form">
-          <input class="proto-orkut-field" type="text" id="proto-amigo-nome" maxlength="30" placeholder="Nome do amigo" required />
-          <select class="proto-orkut-field" id="proto-amigo-nivel" aria-label="Esquema de amizade">
+      <section class="proto-steam-panel" id="depoimentos">
+        <h2 class="proto-steam-panel-title">Depoimentos <span id="proto-deps-count">(0)</span></h2>
+        <form class="proto-steam-form" id="proto-dep-form">
+          <input class="proto-steam-field" type="text" id="proto-dep-autor" maxlength="30" placeholder="De (nome)" required />
+          <textarea class="proto-steam-field" id="proto-dep-texto" rows="2" maxlength="280" placeholder="Escreva um depoimento…" required></textarea>
+          <button type="submit" class="proto-steam-btn">Adicionar depoimento</button>
+        </form>
+        <ul class="proto-steam-feed" id="proto-deps-list"></ul>
+        <p class="proto-steam-empty" id="proto-deps-empty" hidden>Nenhum depoimento ainda.</p>
+      </section>
+    </div>
+
+    <aside class="proto-steam-side" id="amigos">
+      <section class="proto-steam-panel">
+        <h2 class="proto-steam-panel-title">Neste perfil</h2>
+        <ul class="proto-steam-stats">
+          <li><a href="#recados">Recados</a><span data-stat="recados">0</span></li>
+          <li><a href="#depoimentos">Depoimentos</a><span data-stat="deps">0</span></li>
+          <li><a href="#amigos">Amigos</a><span data-stat="amigos">0</span></li>
+          <li><a href="#times">Times</a><span data-stat="times">0</span></li>
+        </ul>
+      </section>
+
+      <section class="proto-steam-panel">
+        <h2 class="proto-steam-panel-title">Amigos <span id="proto-amigos-count">(0)</span></h2>
+        <ul class="proto-steam-amigos" id="proto-amigos-list"></ul>
+        <form class="proto-steam-form" id="proto-amigo-form">
+          <input class="proto-steam-field" type="text" id="proto-amigo-nome" maxlength="30" placeholder="Nome do amigo" required />
+          <select class="proto-steam-field" id="proto-amigo-nivel" aria-label="Esquema de amizade">
             {% for n in amizade_niveis %}
             <option value="{{ n.id }}">{{ n.nome }}</option>
             {% endfor %}
           </select>
-          <button type="submit" class="proto-orkut-btn">adicionar</button>
+          <button type="submit" class="proto-steam-btn">Adicionar</button>
         </form>
       </section>
 
-      <section class="proto-orkut-box">
-        <h2 class="proto-orkut-box-title">esquema de amizade</h2>
-        <ul class="proto-orkut-amizade" id="proto-amizade-list">
+      <section class="proto-steam-panel">
+        <h2 class="proto-steam-panel-title">Esquema de amizade</h2>
+        <ul class="proto-steam-amizade" id="proto-amizade-list">
           {% for n in amizade_niveis %}
           <li data-amizade="{{ n.id }}">
-            <span class="proto-orkut-amizade-icone" aria-hidden="true">{{ n.icone }}</span>
-            <span class="proto-orkut-amizade-nome">{{ n.nome }}</span>
-            <span class="proto-orkut-amizade-pct" data-amizade-pct>0%</span>
+            <span class="proto-steam-amizade-icone" aria-hidden="true">{{ n.icone }}</span>
+            <span>{{ n.nome }}</span>
+            <span class="proto-steam-amizade-pct" data-amizade-pct>0%</span>
           </li>
           {% endfor %}
         </ul>
@@ -172,6 +174,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js" defer></script>
-<script src="/static/prototipo-perfil.js" defer></script>
+<script src="/static/prototipo-times.js?v=2" defer></script>
+<script src="/static/prototipo-perfil.js?v=2" defer></script>
 {% endblock %}

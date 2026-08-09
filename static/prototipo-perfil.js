@@ -7,6 +7,7 @@
   const REL_KEY = "thdfm-proto-relacionamento";
   const QUEM_KEY = "thdfm-proto-quem";
   const DEPS_KEY = "thdfm-proto-depoimentos";
+  const RECADOS_KEY = "thdfm-proto-recados";
   const AMIGOS_KEY = "thdfm-proto-amigos";
 
   const KARMA_IDS = ["confiavel", "legal", "sexy", "burro"];
@@ -65,7 +66,6 @@
     for (const id of KARMA_IDS) {
       const n = Number(stored[id]);
       if (!Number.isFinite(n)) continue;
-      // migra votos antigos (contagem) para níveis 0–3
       if (n > 3) base[id] = Math.min(3, Math.max(1, Math.ceil(n / 4)));
       else base[id] = Math.max(0, Math.min(3, Math.floor(n)));
     }
@@ -88,27 +88,24 @@
       let html = "";
       for (let i = 1; i <= 3; i++) {
         const on = i <= n;
-        html += `<span class="proto-orkut-icon${on ? " is-on" : ""}" aria-hidden="true">${
-          on ? escapeHtml(icon) : "○"
+        html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${
+          on ? escapeHtml(icon) : "·"
         }</span>`;
       }
       iconsEl.innerHTML = html;
     }
-    if (labelEl) {
-      labelEl.textContent = n === 0 ? "—" : labels[n - 1] || "—";
-    }
+    if (labelEl) labelEl.textContent = n === 0 ? "—" : labels[n - 1] || "—";
   }
 
   function paintKarmaRoot(root, karma) {
     if (!root) return;
     root.querySelectorAll("[data-karma]").forEach((row) => {
-      const id = row.getAttribute("data-karma");
-      paintKarmaRow(row, karma[id] || 0);
+      paintKarmaRow(row, karma[row.getAttribute("data-karma")] || 0);
     });
   }
 
-  function loadDeps() {
-    const list = normLoad(DEPS_KEY, []);
+  function loadPosts(key) {
+    const list = normLoad(key, []);
     return Array.isArray(list) ? list.filter((d) => d && d.autor && d.texto) : [];
   }
 
@@ -123,22 +120,26 @@
       }));
   }
 
-  function renderDeps(listEl, emptyEl, countEl, deps) {
-    if (countEl) countEl.textContent = `(${deps.length})`;
+  function renderFeed(listEl, emptyEl, countEl, items, { editable } = {}) {
+    if (countEl) countEl.textContent = `(${items.length})`;
     if (!listEl) return;
-    if (!deps.length) {
+    if (!items.length) {
       listEl.innerHTML = "";
       if (emptyEl) emptyEl.hidden = false;
       return;
     }
     if (emptyEl) emptyEl.hidden = true;
-    listEl.innerHTML = deps
+    listEl.innerHTML = items
       .map(
         (d, i) => `
-      <li class="proto-orkut-dep" data-dep-idx="${i}">
-        <p class="proto-orkut-dep-texto">“${escapeHtml(d.texto)}”</p>
-        <p class="proto-orkut-dep-autor">— ${escapeHtml(d.autor)}</p>
-        <button type="button" class="proto-orkut-dep-del" data-dep-del="${i}" hidden>remover</button>
+      <li class="proto-steam-feed-item" data-idx="${i}">
+        <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
+        <p class="proto-steam-feed-meta">— ${escapeHtml(d.autor)}</p>
+        ${
+          editable
+            ? `<button type="button" class="proto-steam-feed-del" data-del="${i}">remover</button>`
+            : ""
+        }
       </li>`
       )
       .join("");
@@ -169,15 +170,15 @@
     listEl.innerHTML = amigos
       .map(
         (a, i) => `
-      <li class="proto-orkut-amigo" data-amigo-idx="${i}">
-        <span class="proto-orkut-amigo-avatar" aria-hidden="true">${escapeHtml(
+      <li class="proto-steam-amigo" data-amigo-idx="${i}">
+        <span class="proto-steam-amigo-avatar" aria-hidden="true">${escapeHtml(
           (a.nome || "?").slice(0, 2).toUpperCase()
         )}</span>
-        <span class="proto-orkut-amigo-nome">${escapeHtml(a.nome)}</span>
-        <span class="proto-orkut-amigo-nivel">${escapeHtml(AMIZADE_NOMES[a.nivel] || a.nivel)}</span>
+        <span class="proto-steam-amigo-nome">${escapeHtml(a.nome)}</span>
+        <span class="proto-steam-amigo-nivel">${escapeHtml(AMIZADE_NOMES[a.nivel] || a.nivel)}</span>
         ${
           editable
-            ? `<button type="button" class="proto-orkut-amigo-del" data-amigo-del="${i}" aria-label="Remover">×</button>`
+            ? `<button type="button" class="proto-steam-amigo-del" data-amigo-del="${i}" aria-label="Remover">×</button>`
             : ""
         }
       </li>`
@@ -185,46 +186,62 @@
       .join("");
   }
 
-  function bindTextField(el, key, onChange) {
-    if (!el) return;
-    const saved = loadStr(key, null);
-    if (saved != null) {
-      if (el.tagName === "SELECT" || el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-        el.value = saved;
-      }
-    }
-    const sync = () => {
-      const v = (el.value || "").trim();
-      saveStr(key, v);
-      if (onChange) onChange(v);
-    };
-    el.addEventListener("input", sync);
-    el.addEventListener("change", sync);
-    if (onChange) onChange((el.value || "").trim());
+  function setStat(root, key, n) {
+    const el = root.querySelector(`[data-stat="${key}"]`);
+    if (el) el.textContent = String(n);
   }
 
-  // ——— Página de edição ———
+  function bindTextField(el, key) {
+    if (!el) return;
+    const saved = loadStr(key, null);
+    if (saved != null) el.value = saved;
+    const sync = () => saveStr(key, (el.value || "").trim());
+    el.addEventListener("input", sync);
+    el.addEventListener("change", sync);
+  }
+
+  function wirePostForm(form, key, refresh) {
+    if (!form) return;
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const autorEl = form.querySelector("input");
+      const textoEl = form.querySelector("textarea");
+      const autor = (autorEl && autorEl.value || "").trim();
+      const texto = (textoEl && textoEl.value || "").trim();
+      if (!autor || !texto) return;
+      let items = loadPosts(key);
+      items.unshift({ autor: autor.slice(0, 30), texto: texto.slice(0, 280) });
+      items = items.slice(0, 40);
+      save(key, items);
+      form.reset();
+      refresh();
+    });
+  }
+
+  function wireFeedDelete(listEl, key, refresh) {
+    if (!listEl) return;
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-del]");
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-del"));
+      if (!Number.isFinite(idx)) return;
+      const items = loadPosts(key);
+      items.splice(idx, 1);
+      save(key, items);
+      refresh();
+    });
+  }
+
+  // ——— Edição ———
   const editRoot = document.getElementById("proto-perfil");
   if (editRoot) {
-    const nomeLabels = editRoot.querySelectorAll("[data-proto-nome-label]");
     const nomeInput = editRoot.querySelector("[data-proto-nome]");
-    const syncNome = (v) => {
-      const name = v || "Visitante THDFM";
-      nomeLabels.forEach((el) => {
-        el.textContent = name;
-      });
-    };
     if (nomeInput) {
       const saved = loadStr(NOME_KEY, null);
       if (saved) nomeInput.value = saved;
-      const push = () => {
-        const v = nomeInput.value.trim() || "Visitante THDFM";
-        saveStr(NOME_KEY, v);
-        syncNome(v);
-      };
+      const push = () => saveStr(NOME_KEY, nomeInput.value.trim() || "Visitante THDFM");
       nomeInput.addEventListener("input", push);
       nomeInput.addEventListener("change", push);
-      syncNome(nomeInput.value.trim());
     }
 
     bindTextField(editRoot.querySelector("[data-proto-frase]"), FRASE_KEY);
@@ -241,48 +258,41 @@
         if (!btn) return;
         const row = btn.closest("[data-karma]");
         const id = row.getAttribute("data-karma");
-        karma[id] = ((karma[id] || 0) % 3) + 1; // 1 → 2 → 3 → 1
+        karma[id] = ((karma[id] || 0) % 3) + 1;
         save(KARMA_KEY, karma);
         paintKarmaRoot(karmaRoot, karma);
       });
     }
 
-    let deps = loadDeps();
-    const depsList = document.getElementById("proto-deps-list");
-    const depsForm = document.getElementById("proto-dep-form");
+    function refreshRecados() {
+      const items = loadPosts(RECADOS_KEY);
+      renderFeed(
+        document.getElementById("proto-recados-list"),
+        document.getElementById("proto-recados-empty"),
+        document.getElementById("proto-recados-count"),
+        items,
+        { editable: true }
+      );
+      setStat(editRoot, "recados", items.length);
+    }
     function refreshDeps() {
-      renderDeps(depsList, null, null, deps);
-      if (depsList) {
-        depsList.querySelectorAll("[data-dep-del]").forEach((btn) => {
-          btn.hidden = false;
-        });
-      }
+      const items = loadPosts(DEPS_KEY);
+      renderFeed(
+        document.getElementById("proto-deps-list"),
+        document.getElementById("proto-deps-empty"),
+        document.getElementById("proto-deps-count"),
+        items,
+        { editable: true }
+      );
+      setStat(editRoot, "deps", items.length);
     }
+
+    refreshRecados();
     refreshDeps();
-    if (depsForm) {
-      depsForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const autor = (document.getElementById("proto-dep-autor").value || "").trim();
-        const texto = (document.getElementById("proto-dep-texto").value || "").trim();
-        if (!autor || !texto) return;
-        deps.unshift({ autor: autor.slice(0, 30), texto: texto.slice(0, 280) });
-        deps = deps.slice(0, 20);
-        save(DEPS_KEY, deps);
-        depsForm.reset();
-        refreshDeps();
-      });
-    }
-    if (depsList) {
-      depsList.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-dep-del]");
-        if (!btn) return;
-        const idx = Number(btn.getAttribute("data-dep-del"));
-        if (!Number.isFinite(idx)) return;
-        deps.splice(idx, 1);
-        save(DEPS_KEY, deps);
-        refreshDeps();
-      });
-    }
+    wirePostForm(document.getElementById("proto-recado-form"), RECADOS_KEY, refreshRecados);
+    wirePostForm(document.getElementById("proto-dep-form"), DEPS_KEY, refreshDeps);
+    wireFeedDelete(document.getElementById("proto-recados-list"), RECADOS_KEY, refreshRecados);
+    wireFeedDelete(document.getElementById("proto-deps-list"), DEPS_KEY, refreshDeps);
 
     let amigos = loadAmigos();
     const amigosList = document.getElementById("proto-amigos-list");
@@ -293,6 +303,7 @@
     function refreshAmigos() {
       renderAmigos(amigosList, amigosCount, null, amigos, { editable: true });
       paintAmizade(amizadeRoot, amigos);
+      setStat(editRoot, "amigos", amigos.length);
     }
     refreshAmigos();
 
@@ -323,9 +334,27 @@
         refreshAmigos();
       });
     }
+
+    const timesSel = normLoad(TIMES_KEY, []);
+    setStat(editRoot, "times", Array.isArray(timesSel) ? timesSel.length : 0);
+    window.addEventListener("storage", (e) => {
+      if (e.key === TIMES_KEY) {
+        const t = normLoad(TIMES_KEY, []);
+        setStat(editRoot, "times", Array.isArray(t) ? t.length : 0);
+      }
+    });
+    // atualiza contagem quando o seletor muda no mesmo documento
+    const chips = document.getElementById("proto-chips");
+    if (chips) {
+      const obs = new MutationObserver(() => {
+        const t = normLoad(TIMES_KEY, []);
+        setStat(editRoot, "times", Array.isArray(t) ? t.length : 0);
+      });
+      obs.observe(chips, { childList: true });
+    }
   }
 
-  // ——— Página pública ———
+  // ——— Público ———
   const pubRoot = document.getElementById("proto-perfil-publico");
   if (pubRoot) {
     const nome =
@@ -337,16 +366,15 @@
     });
 
     const frase = loadStr(FRASE_KEY, "");
-    const fraseEl = pubRoot.querySelector("[data-public-frase]");
-    if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
-
     const aniv = loadStr(ANIV_KEY, "");
     const rel = loadStr(REL_KEY, "");
     const quem = loadStr(QUEM_KEY, "");
+    const fraseEl = pubRoot.querySelector("[data-public-frase]");
     const anivEl = pubRoot.querySelector("[data-public-aniversario]");
     const relEl = pubRoot.querySelector("[data-public-relacionamento]");
     const quemEl = pubRoot.querySelector("[data-public-quem]");
     const metaEl = pubRoot.querySelector("[data-public-meta]");
+    if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
     if (anivEl) anivEl.textContent = aniv || "—";
     if (relEl) relEl.textContent = rel || "—";
     if (quemEl) quemEl.textContent = quem || "—";
@@ -372,33 +400,44 @@
       list.innerHTML = items
         .map(
           (c) => `
-        <li class="proto-orkut-time">
-          <img src="${escapeHtml(c.emblema)}" alt="" width="28" height="28" loading="lazy" />
+        <li class="proto-steam-time">
+          <img src="${escapeHtml(c.emblema)}" alt="" width="32" height="32" loading="lazy" />
           <span>${escapeHtml(c.nome)}</span>
-          <span class="proto-orkut-time-uf">${escapeHtml(c.uf)}</span>
+          <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
         </li>`
         )
         .join("");
     }
+    setStat(pubRoot, "times", items.length);
 
     paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
 
-    const deps = loadDeps();
-    renderDeps(
+    const recados = loadPosts(RECADOS_KEY);
+    renderFeed(
+      document.getElementById("public-recados-list"),
+      document.getElementById("public-recados-empty"),
+      document.getElementById("public-recados-count"),
+      recados
+    );
+    setStat(pubRoot, "recados", recados.length);
+
+    const deps = loadPosts(DEPS_KEY);
+    renderFeed(
       document.getElementById("public-deps-list"),
       document.getElementById("public-deps-empty"),
       document.getElementById("public-deps-count"),
       deps
     );
+    setStat(pubRoot, "deps", deps.length);
 
     const amigos = loadAmigos();
     renderAmigos(
       document.getElementById("public-amigos-list"),
       document.getElementById("public-amigos-count"),
       document.getElementById("public-amigos-empty"),
-      amigos,
-      { editable: false }
+      amigos
     );
     paintAmizade(document.getElementById("public-amizade-list"), amigos);
+    setStat(pubRoot, "amigos", amigos.length);
   }
 })();
