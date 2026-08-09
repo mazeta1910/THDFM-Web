@@ -34,7 +34,21 @@
   {% endif %}
 
   <article class="proto-steam-card">
-    <div class="proto-steam-banner" data-proto-banner data-banner="{% if fixado %}gramado{% else %}padrao{% endif %}" aria-hidden="true"></div>
+    <div class="proto-steam-banner-wrap">
+      <div class="proto-steam-banner" data-proto-banner data-banner="{% if fixado %}gramado{% else %}padrao{% endif %}" aria-hidden="true"></div>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <nav class="proto-steam-banner-nav" aria-label="Atalhos do perfil">
+        {% if is_own_view %}
+        <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil">Editar perfil</a>
+        <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
+        <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
+        {% else %}
+        <button type="button" class="proto-text-btn proto-text-btn--accent" id="public-amigo-pedir">Pedir amizade</button>
+        <a class="proto-text-btn" href="/prototipo/perfil/publico">Meu perfil</a>
+        {% endif %}
+      </nav>
+      {# TEXTOS PARA REESCREVER — fim #}
+    </div>
 
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
@@ -80,18 +94,6 @@
         </div>
 
         <div class="proto-steam-hero-aside">
-          {# TEXTOS PARA REESCREVER — começo #}
-          <nav class="proto-edit-nav proto-edit-nav--compact" aria-label="Atalhos do perfil">
-            {% if is_own_view %}
-            <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil">Editar perfil</a>
-            <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
-            <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
-            {% else %}
-            <button type="button" class="proto-text-btn proto-text-btn--accent" id="public-amigo-pedir">Pedir amizade</button>
-            <a class="proto-text-btn" href="/prototipo/perfil/publico">Meu perfil</a>
-            {% endif %}
-          </nav>
-          {# TEXTOS PARA REESCREVER — fim #}
           <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
             {# TEXTOS PARA REESCREVER — começo #}
             <p class="proto-steam-karma-caption">{% if is_own_view %}Karma da galera{% else %}Toque nos ícones para votar{% endif %}</p>

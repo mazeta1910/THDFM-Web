@@ -10189,6 +10189,9 @@ body.proto-steam-body .wrap.wide {
   background: var(--card);
   overflow: hidden;
 }
+.proto-steam-banner-wrap {
+  position: relative;
+}
 .proto-steam-banner {
   height: 220px;
   border: 0;
@@ -10198,6 +10201,34 @@ body.proto-steam-body .wrap.wide {
   background-size: cover;
   background-position: center;
   overflow: hidden;
+}
+.proto-steam-banner-nav {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  max-width: min(100% - 1.3rem, 22rem);
+}
+.proto-steam-banner-nav .proto-text-btn {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+.proto-steam-banner-nav .proto-text-btn--accent {
+  background: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.55));
+  border-color: color-mix(in srgb, var(--accent) 75%, rgba(255, 255, 255, 0.25));
+  color: #fff;
+}
+.proto-steam-banner-nav .proto-text-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+  filter: brightness(1.08);
 }
 .proto-steam-banner--padrao,
 .proto-steam-banner[data-banner="padrao"] {
@@ -11319,6 +11350,17 @@ button.proto-text-btn:hover,
 }
 .proto-steam-hero-aside .proto-edit-nav {
   justify-self: end;
+}
+@media (max-width: 640px) {
+  .proto-steam-banner-nav {
+    top: 0.45rem;
+    right: 0.45rem;
+    max-width: calc(100% - 0.9rem);
+  }
+  .proto-steam-banner-nav .proto-text-btn {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.55rem;
+  }
 }
 .proto-edit-title {
   margin: 0.15rem 0 0.25rem;
