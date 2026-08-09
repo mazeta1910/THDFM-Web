@@ -1,8 +1,6 @@
 (function () {
   const TIMES_KEY = "thdfm-proto-times";
   const NOME_KEY = "thdfm-proto-perfil-nome";
-  const KARMA_KEY = "thdfm-proto-karma";
-  const KARMA_VOTE_KEY = "thdfm-proto-karma-voto";
   const NUTELA_KEY = "thdfm-proto-nutela";
   const NUTELA_VOTE_KEY = "thdfm-proto-nutela-voto";
   const FRASE_KEY = "thdfm-proto-frase";
@@ -17,7 +15,6 @@
   const CLUBES_URL = "/meu-perfil/clubes.json";
 
   const KARMA_IDS = ["confiavel", "legal", "sexy", "burro"];
-  const KARMA_DEFAULT = { confiavel: 2, legal: 3, sexy: 1, burro: 1 };
   const AMIZADE_IDS = ["nao_conheco", "conhecido", "amigo", "bom_amigo", "melhor_amigo"];
   const AMIZADE_NOMES = {
     nao_conheco: "quem é vc",
