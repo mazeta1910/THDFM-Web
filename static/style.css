@@ -10187,7 +10187,7 @@ body.proto-steam-body .wrap.wide {
   margin-bottom: 0.85rem;
 }
 .proto-steam-banner {
-  height: 168px;
+  height: 240px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background-color: var(--card);
@@ -10251,7 +10251,7 @@ body.proto-steam-body .wrap.wide {
   grid-template-columns: 128px minmax(0, 1fr) minmax(12rem, 16rem);
   gap: 1rem 1.15rem;
   padding: 1.1rem 1.15rem;
-  margin: -52px 0.75rem 0;
+  margin: -64px 0.85rem 0;
   position: relative;
   z-index: 1;
   border: 1px solid var(--border);
@@ -10296,14 +10296,16 @@ body.proto-steam-body .wrap.wide {
 }
 .proto-steam-name-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.55rem 0.75rem;
   min-width: 0;
+  width: 100%;
 }
 .proto-steam-name-row .proto-times-misto {
   flex: 0 0 auto;
   margin-left: auto;
+  white-space: nowrap;
 }
 .proto-steam-name,
 .proto-steam-name-input {
@@ -10438,6 +10440,42 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   font-size: 0.78rem;
   color: var(--steam-muted);
 }
+.proto-steam-nutela {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border);
+}
+.proto-steam-nutela-end {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  color: var(--muted);
+}
+.proto-steam-nutela-range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.proto-steam-nutela-track {
+  position: relative;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, var(--bg));
+  overflow: hidden;
+}
+.proto-steam-nutela-track i {
+  display: block;
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, #f0c4a0, var(--accent));
+  border-radius: inherit;
+}
 .proto-steam-hero-actions {
   display: grid;
   gap: 0.35rem;
@@ -10467,6 +10505,26 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   border-color: var(--border);
   color: var(--steam-text);
 }
+.proto-steam-banner-panel {
+  margin-bottom: 0.85rem;
+}
+.proto-steam-banner-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.35rem;
+}
+.proto-steam-banner-panel-head .proto-steam-panel-title {
+  margin: 0;
+}
+.proto-steam-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
 .proto-steam-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(15rem, 0.9fr);
@@ -10478,6 +10536,12 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   display: grid;
   gap: 0.85rem;
   min-width: 0;
+  align-content: start;
+}
+.proto-steam-side > .proto-steam-panel,
+.proto-steam-main > .proto-steam-panel {
+  margin: 0;
+  width: 100%;
 }
 .proto-steam-panel {
   padding: 1rem;
@@ -10673,9 +10737,62 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 }
 .proto-steam-banner-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.45rem;
-  margin: 0.65rem 0 0.75rem;
+  margin: 0.35rem 0 0.75rem;
+}
+.banner-crop-modal.is-open {
+  display: grid;
+}
+.banner-crop-dialog {
+  max-width: 520px;
+  width: min(96vw, 520px);
+}
+.banner-crop-stage {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 0.75rem;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #111;
+  cursor: grab;
+  touch-action: none;
+}
+.banner-crop-stage:active { cursor: grabbing; }
+.banner-crop-stage canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.banner-crop-mask {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 2px rgba(232, 93, 4, 0.65);
+}
+.proto-times--embedded .proto-times-browser {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.proto-times--embedded .proto-times-uf-grid {
+  max-height: 9.5rem;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+.proto-times--embedded .proto-times-list {
+  max-height: 18rem;
+  overflow: auto;
+}
+.proto-chip-ph {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.85rem;
 }
 .proto-steam-banner-opt {
   display: grid;
@@ -10732,11 +10849,14 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 }
 @media (max-width: 900px) {
   .proto-steam-banner {
-    height: 140px;
+    height: 180px;
+  }
+  .proto-steam-banner-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .proto-steam-hero {
     grid-template-columns: 112px minmax(0, 1fr);
-    margin-top: -40px;
+    margin-top: -48px;
   }
   .proto-steam-hero-aside {
     grid-column: 1 / -1;
@@ -10753,11 +10873,20 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   }
 }
 @media (max-width: 560px) {
+  .proto-steam-banner {
+    height: 150px;
+  }
+  .proto-steam-banner-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .proto-steam-hero {
     grid-template-columns: 1fr;
     justify-items: start;
     margin-left: 0.4rem;
     margin-right: 0.4rem;
+  }
+  .proto-steam-name-row {
+    flex-wrap: wrap;
   }
   .proto-steam-avatar {
     margin: 0 auto;

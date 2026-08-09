@@ -2,14 +2,17 @@
   const TIMES_KEY = "thdfm-proto-times";
   const NOME_KEY = "thdfm-proto-perfil-nome";
   const KARMA_KEY = "thdfm-proto-karma";
+  const NUTELA_KEY = "thdfm-proto-nutela";
   const FRASE_KEY = "thdfm-proto-frase";
   const ANIV_KEY = "thdfm-proto-aniversario";
   const REL_KEY = "thdfm-proto-relacionamento";
   const QUEM_KEY = "thdfm-proto-quem";
   const DEPS_KEY = "thdfm-proto-depoimentos";
   const RECADOS_KEY = "thdfm-proto-recados";
+  const FEED_KEY = "thdfm-proto-feed";
   const AMIGOS_KEY = "thdfm-proto-amigos";
   const BANNER_KEY = "thdfm-proto-banner";
+  const CLUBES_URL = "/prototipo/times/clubes.json";
 
   const KARMA_IDS = ["confiavel", "legal", "sexy", "burro"];
   const KARMA_DEFAULT = { confiavel: 2, legal: 3, sexy: 1, burro: 1 };
@@ -19,7 +22,7 @@
     conhecido: "conhecido",
     amigo: "amigo",
     bom_amigo: "bom amigo",
-    melhor_amigo: "mais que amigos, irmãos",
+    melhor_amigo: "mais que amigos, irmães",
   };
   const BANNER_PRESETS = ["padrao", "laranja", "gramado", "noite", "carbono", "ouro"];
 
@@ -74,6 +77,12 @@
     return base;
   }
 
+  function loadNutela() {
+    const n = Number(loadStr(NUTELA_KEY, "50"));
+    if (!Number.isFinite(n)) return 50;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
   function labelsFor(row) {
     const raw = row.getAttribute("data-labels") || "";
     const parts = raw.split("|").map((s) => s.trim()).filter(Boolean);
@@ -106,9 +115,17 @@
     });
   }
 
+  function paintNutela(root, value) {
+    if (!root) return;
+    const range = root.querySelector("[data-proto-nutela]");
+    const fill = root.querySelector("[data-nutela-fill]");
+    if (range) range.value = String(value);
+    if (fill) fill.style.width = `${value}%`;
+  }
+
   function loadPosts(key) {
     const list = normLoad(key, []);
-    return Array.isArray(list) ? list.filter((d) => d && d.autor && d.texto) : [];
+    return Array.isArray(list) ? list.filter((d) => d && d.texto) : [];
   }
 
   function loadAmigos() {
@@ -122,7 +139,7 @@
       }));
   }
 
-  function renderFeed(listEl, emptyEl, countEl, items, { editable } = {}) {
+  function renderFeed(listEl, emptyEl, countEl, items, { editable, authorFallback } = {}) {
     if (countEl) countEl.textContent = `(${items.length})`;
     if (!listEl) return;
     if (!items.length) {
@@ -132,18 +149,19 @@
     }
     if (emptyEl) emptyEl.hidden = true;
     listEl.innerHTML = items
-      .map(
-        (d, i) => `
+      .map((d, i) => {
+        const autor = d.autor || authorFallback || "alguém";
+        return `
       <li class="proto-steam-feed-item" data-idx="${i}">
         <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
-        <p class="proto-steam-feed-meta">— ${escapeHtml(d.autor)}</p>
+        <p class="proto-steam-feed-meta">— ${escapeHtml(autor)}</p>
         ${
           editable
             ? `<button type="button" class="proto-steam-feed-del" data-del="${i}">remover</button>`
             : ""
         }
-      </li>`
-      )
+      </li>`;
+      })
       .join("");
   }
 
@@ -160,7 +178,7 @@
     });
   }
 
-  function renderAmigos(listEl, countEl, emptyEl, amigos, { editable } = {}) {
+  function renderAmigos(listEl, countEl, emptyEl, amigos) {
     if (countEl) countEl.textContent = `(${amigos.length})`;
     if (!listEl) return;
     if (!amigos.length) {
@@ -171,18 +189,13 @@
     if (emptyEl) emptyEl.hidden = true;
     listEl.innerHTML = amigos
       .map(
-        (a, i) => `
-      <li class="proto-steam-amigo" data-amigo-idx="${i}">
+        (a) => `
+      <li class="proto-steam-amigo">
         <span class="proto-steam-amigo-avatar" aria-hidden="true">${escapeHtml(
           (a.nome || "?").slice(0, 2).toUpperCase()
         )}</span>
         <span class="proto-steam-amigo-nome">${escapeHtml(a.nome)}</span>
         <span class="proto-steam-amigo-nivel">${escapeHtml(AMIZADE_NOMES[a.nivel] || a.nivel)}</span>
-        ${
-          editable
-            ? `<button type="button" class="proto-steam-amigo-del" data-amigo-del="${i}" aria-label="Remover">×</button>`
-            : ""
-        }
       </li>`
       )
       .join("");
@@ -202,17 +215,22 @@
     el.addEventListener("change", sync);
   }
 
-  function wirePostForm(form, key, refresh) {
+  function wirePostForm(form, key, refresh, { withAutor } = {}) {
     if (!form) return;
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const autorEl = form.querySelector("input");
       const textoEl = form.querySelector("textarea");
-      const autor = (autorEl && autorEl.value || "").trim();
-      const texto = (textoEl && textoEl.value || "").trim();
-      if (!autor || !texto) return;
+      const autorEl = form.querySelector('input[type="text"]');
+      const texto = ((textoEl && textoEl.value) || "").trim();
+      if (!texto) return;
       let items = loadPosts(key);
-      items.unshift({ autor: autor.slice(0, 30), texto: texto.slice(0, 280) });
+      const row = { texto: texto.slice(0, 280) };
+      if (withAutor) {
+        const autor = ((autorEl && autorEl.value) || "").trim();
+        if (!autor) return;
+        row.autor = autor.slice(0, 30);
+      }
+      items.unshift(row);
       items = items.slice(0, 40);
       save(key, items);
       form.reset();
@@ -250,7 +268,7 @@
     if (!el) return;
     if (banner.kind === "custom" && banner.dataUrl) {
       el.setAttribute("data-banner", "custom");
-      el.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45)), url("${banner.dataUrl}")`;
+      el.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.5)), url("${banner.dataUrl}")`;
     } else {
       el.style.backgroundImage = "";
       el.setAttribute("data-banner", banner.id || "padrao");
@@ -264,34 +282,185 @@
     if (clearBtn) clearBtn.hidden = banner.kind !== "custom";
   }
 
-  function compressImageFile(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("read"));
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const maxW = 1400;
-          const scale = Math.min(1, maxW / Math.max(1, img.width));
-          const w = Math.max(1, Math.round(img.width * scale));
-          const h = Math.max(1, Math.round(img.height * scale));
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL("image/jpeg", 0.72));
-        };
-        img.onerror = () => reject(new Error("img"));
-        img.src = reader.result;
+  function initBannerCrop() {
+    const modal = document.getElementById("banner-crop-modal");
+    const canvas = document.getElementById("banner-crop-canvas");
+    const zoomEl = document.getElementById("banner-crop-zoom");
+    const btnApply = document.getElementById("banner-crop-apply");
+    const btnCancel = document.getElementById("banner-crop-cancel");
+    const zoomOutBtn = document.getElementById("banner-crop-zoom-out");
+    const zoomInBtn = document.getElementById("banner-crop-zoom-in");
+    if (!modal || !canvas || !zoomEl || !btnApply || !btnCancel) {
+      return { open() {} };
+    }
+
+    const ctx = canvas.getContext("2d");
+    const VIEW_W = canvas.width;
+    const VIEW_H = canvas.height;
+    const ASPECT = VIEW_W / VIEW_H;
+    let img = null;
+    let scale = 1;
+    let ox = 0;
+    let oy = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let onApply = null;
+    let objectUrl = null;
+
+    const syncZoomFill = () => {
+      const min = Number(zoomEl.min) || 1;
+      const max = Number(zoomEl.max) || 3;
+      const val = Number(zoomEl.value) || min;
+      const pct = ((val - min) / (max - min)) * 100;
+      zoomEl.style.setProperty("--zoom-pct", pct + "%");
+      if (zoomOutBtn) zoomOutBtn.disabled = val <= min + 0.001;
+      if (zoomInBtn) zoomInBtn.disabled = val >= max - 0.001;
+    };
+
+    const cropBox = () => {
+      if (!img) return { w: 1, h: 1 };
+      const baseW = img.naturalWidth;
+      const baseH = img.naturalHeight;
+      let w = baseW / scale;
+      let h = w / ASPECT;
+      if (h > baseH / scale) {
+        h = baseH / scale;
+        w = h * ASPECT;
+      }
+      return { w, h };
+    };
+
+    const clamp = () => {
+      if (!img) return;
+      const { w, h } = cropBox();
+      ox = Math.min(Math.max(ox, w / 2), img.naturalWidth - w / 2);
+      oy = Math.min(Math.max(oy, h / 2), img.naturalHeight - h / 2);
+    };
+
+    const draw = () => {
+      if (!img || !ctx) return;
+      clamp();
+      const { w, h } = cropBox();
+      ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      ctx.drawImage(img, ox - w / 2, oy - h / 2, w, h, 0, 0, VIEW_W, VIEW_H);
+    };
+
+    const setZoom = (next) => {
+      const min = Number(zoomEl.min) || 1;
+      const max = Number(zoomEl.max) || 3;
+      scale = Math.max(min, Math.min(max, next));
+      zoomEl.value = String(scale);
+      syncZoomFill();
+      draw();
+    };
+
+    const close = () => {
+      modal.classList.remove("is-open");
+      modal.setAttribute("hidden", "");
+      dragging = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      img = null;
+      onApply = null;
+    };
+
+    const open = (file, handlers = {}) => {
+      onApply = handlers.onApply || null;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      const next = new Image();
+      next.onload = () => {
+        img = next;
+        scale = 1;
+        zoomEl.value = "1";
+        syncZoomFill();
+        ox = img.naturalWidth / 2;
+        oy = img.naturalHeight / 2;
+        draw();
+        modal.hidden = false;
+        modal.classList.add("is-open");
       };
-      reader.readAsDataURL(file);
+      next.onerror = () => close();
+      next.src = objectUrl;
+    };
+
+    zoomEl.addEventListener("input", () => setZoom(Number(zoomEl.value) || 1));
+    if (zoomOutBtn) zoomOutBtn.addEventListener("click", (ev) => { ev.preventDefault(); setZoom((Number(zoomEl.value) || 1) - 0.15); });
+    if (zoomInBtn) zoomInBtn.addEventListener("click", (ev) => { ev.preventDefault(); setZoom((Number(zoomEl.value) || 1) + 0.15); });
+    syncZoomFill();
+
+    const pointerDown = (e) => {
+      if (!img) return;
+      dragging = true;
+      const pt = e.touches ? e.touches[0] : e;
+      lastX = pt.clientX;
+      lastY = pt.clientY;
+      e.preventDefault();
+    };
+    const pointerMove = (e) => {
+      if (!dragging || !img) return;
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - lastX;
+      const dy = pt.clientY - lastY;
+      lastX = pt.clientX;
+      lastY = pt.clientY;
+      const { w, h } = cropBox();
+      ox -= (dx / VIEW_W) * w;
+      oy -= (dy / VIEW_H) * h;
+      draw();
+      e.preventDefault();
+    };
+    const pointerUp = () => { dragging = false; };
+
+    canvas.addEventListener("mousedown", pointerDown);
+    window.addEventListener("mousemove", pointerMove);
+    window.addEventListener("mouseup", pointerUp);
+    canvas.addEventListener("touchstart", pointerDown, { passive: false });
+    window.addEventListener("touchmove", pointerMove, { passive: false });
+    window.addEventListener("touchend", pointerUp);
+
+    btnCancel.addEventListener("click", () => close());
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) close();
     });
+
+    btnApply.addEventListener("click", () => {
+      if (!img) return;
+      const out = document.createElement("canvas");
+      out.width = 1200;
+      out.height = 400;
+      const octx = out.getContext("2d");
+      const { w, h } = cropBox();
+      octx.drawImage(img, ox - w / 2, oy - h / 2, w, h, 0, 0, 1200, 400);
+      const applyCb = onApply;
+      const dataUrl = out.toDataURL("image/jpeg", 0.82);
+      close();
+      if (typeof applyCb === "function") applyCb(dataUrl);
+    });
+
+    return { open };
+  }
+
+  async function fetchClubes() {
+    try {
+      const r = await fetch(CLUBES_URL, { headers: { Accept: "application/json" } });
+      const data = await r.json();
+      return Array.isArray(data.clubes) ? data.clubes : [];
+    } catch (_) {
+      return [];
+    }
   }
 
   // ——— Edição ———
   const editRoot = document.getElementById("proto-perfil");
   if (editRoot) {
+    const bannerCrop = initBannerCrop();
     const nomeInput = editRoot.querySelector("[data-proto-nome]");
     if (nomeInput) {
       const saved = loadStr(NOME_KEY, null);
@@ -317,15 +486,16 @@
     });
     const bannerFile = document.getElementById("proto-banner-file");
     if (bannerFile) {
-      bannerFile.addEventListener("change", async () => {
+      bannerFile.addEventListener("change", () => {
         const file = bannerFile.files && bannerFile.files[0];
         if (!file) return;
-        try {
-          const dataUrl = await compressImageFile(file);
-          banner = { kind: "custom", dataUrl };
-          save(BANNER_KEY, banner);
-          applyBanner(editRoot, banner);
-        } catch (_) {}
+        bannerCrop.open(file, {
+          onApply: (dataUrl) => {
+            banner = { kind: "custom", dataUrl };
+            save(BANNER_KEY, banner);
+            applyBanner(editRoot, banner);
+          },
+        });
         bannerFile.value = "";
       });
     }
@@ -341,6 +511,7 @@
     let karma = loadKarma();
     const karmaRoot = document.getElementById("proto-karma-edit");
     paintKarmaRoot(karmaRoot, karma);
+    paintNutela(editRoot, loadNutela());
     if (karmaRoot) {
       karmaRoot.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-karma-cycle]");
@@ -352,87 +523,33 @@
         paintKarmaRoot(karmaRoot, karma);
       });
     }
-
-    function refreshRecados() {
-      const items = loadPosts(RECADOS_KEY);
-      renderFeed(
-        document.getElementById("proto-recados-list"),
-        document.getElementById("proto-recados-empty"),
-        document.getElementById("proto-recados-count"),
-        items,
-        { editable: true }
-      );
-      setStat(editRoot, "recados", items.length);
-    }
-    function refreshDeps() {
-      const items = loadPosts(DEPS_KEY);
-      renderFeed(
-        document.getElementById("proto-deps-list"),
-        document.getElementById("proto-deps-empty"),
-        document.getElementById("proto-deps-count"),
-        items,
-        { editable: true }
-      );
-      setStat(editRoot, "deps", items.length);
-    }
-
-    refreshRecados();
-    refreshDeps();
-    wirePostForm(document.getElementById("proto-recado-form"), RECADOS_KEY, refreshRecados);
-    wirePostForm(document.getElementById("proto-dep-form"), DEPS_KEY, refreshDeps);
-    wireFeedDelete(document.getElementById("proto-recados-list"), RECADOS_KEY, refreshRecados);
-    wireFeedDelete(document.getElementById("proto-deps-list"), DEPS_KEY, refreshDeps);
-
-    let amigos = loadAmigos();
-    const amigosList = document.getElementById("proto-amigos-list");
-    const amigosCount = document.getElementById("proto-amigos-count");
-    const amizadeRoot = document.getElementById("proto-amizade-list");
-    const amigoForm = document.getElementById("proto-amigo-form");
-
-    function refreshAmigos() {
-      renderAmigos(amigosList, amigosCount, null, amigos, { editable: true });
-      paintAmizade(amizadeRoot, amigos);
-      setStat(editRoot, "amigos", amigos.length);
-    }
-    refreshAmigos();
-
-    if (amigoForm) {
-      amigoForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const nome = (document.getElementById("proto-amigo-nome").value || "").trim();
-        const nivel = document.getElementById("proto-amigo-nivel").value || "amigo";
-        if (!nome) return;
-        amigos.unshift({
-          nome: nome.slice(0, 30),
-          nivel: AMIZADE_IDS.includes(nivel) ? nivel : "amigo",
-        });
-        amigos = amigos.slice(0, 40);
-        save(AMIGOS_KEY, amigos);
-        amigoForm.reset();
-        refreshAmigos();
+    const nutelaRange = editRoot.querySelector("[data-proto-nutela]");
+    if (nutelaRange) {
+      nutelaRange.addEventListener("input", () => {
+        saveStr(NUTELA_KEY, String(nutelaRange.value));
       });
     }
-    if (amigosList) {
-      amigosList.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-amigo-del]");
-        if (!btn) return;
-        const idx = Number(btn.getAttribute("data-amigo-del"));
-        if (!Number.isFinite(idx)) return;
-        amigos.splice(idx, 1);
-        save(AMIGOS_KEY, amigos);
-        refreshAmigos();
-      });
+
+    function refreshFeed() {
+      const items = loadPosts(FEED_KEY);
+      const nome = loadStr(NOME_KEY, null) || (nomeInput && nomeInput.value) || "Visitante THDFM";
+      renderFeed(
+        document.getElementById("proto-feed-list"),
+        document.getElementById("proto-feed-empty"),
+        document.getElementById("proto-feed-count"),
+        items,
+        { editable: true, authorFallback: nome }
+      );
+      setStat(editRoot, "feed", items.length);
     }
+    refreshFeed();
+    wirePostForm(document.getElementById("proto-feed-form"), FEED_KEY, refreshFeed, { withAutor: false });
+    wireFeedDelete(document.getElementById("proto-feed-list"), FEED_KEY, refreshFeed);
 
     const timesSel = normLoad(TIMES_KEY, []);
     setStat(editRoot, "times", Array.isArray(timesSel) ? timesSel.length : 0);
-    window.addEventListener("storage", (e) => {
-      if (e.key === TIMES_KEY) {
-        const t = normLoad(TIMES_KEY, []);
-        setStat(editRoot, "times", Array.isArray(t) ? t.length : 0);
-      }
-    });
-    // atualiza contagem quando o seletor muda no mesmo documento
+    setStat(editRoot, "amigos", loadAmigos().length);
+    setStat(editRoot, "recados", loadPosts(RECADOS_KEY).length);
     const chips = document.getElementById("proto-chips");
     if (chips) {
       const obs = new MutationObserver(() => {
@@ -447,6 +564,8 @@
   const pubRoot = document.getElementById("proto-perfil-publico");
   if (pubRoot) {
     applyBanner(pubRoot, loadBanner());
+    paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
+    paintNutela(pubRoot, loadNutela());
 
     const nome =
       loadStr(NOME_KEY, null) ||
@@ -473,62 +592,105 @@
       metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
     }
 
-    let clubes = [];
-    try {
-      clubes = JSON.parse(document.getElementById("proto-clubes-data").textContent || "[]");
-    } catch (_) {}
     const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
-    const items = selected.map((id) => clubes.find((c) => c.id === id)).filter(Boolean);
     const list = document.getElementById("public-times");
     const empty = document.getElementById("public-times-empty");
     const misto = document.getElementById("public-misto");
-    if (misto) misto.hidden = items.length < 2;
-    if (!items.length) {
+    if (misto) misto.hidden = selected.length < 2;
+    setStat(pubRoot, "times", selected.length);
+    if (!selected.length) {
       if (list) list.innerHTML = "";
       if (empty) empty.hidden = false;
     } else {
-      if (empty) empty.hidden = true;
-      list.innerHTML = items
-        .map(
-          (c) => `
-        <li class="proto-steam-time">
-          <img src="${escapeHtml(c.emblema)}" alt="" width="32" height="32" loading="lazy" />
-          <span>${escapeHtml(c.nome)}</span>
-          <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
-        </li>`
-        )
-        .join("");
+      fetchClubes().then((clubes) => {
+        const items = selected.map((id) => clubes.find((c) => c.id === id)).filter(Boolean);
+        if (!items.length) {
+          if (list) list.innerHTML = "";
+          if (empty) empty.hidden = false;
+          return;
+        }
+        if (empty) empty.hidden = true;
+        list.innerHTML = items
+          .map(
+            (c) => `
+          <li class="proto-steam-time">
+            <img src="${escapeHtml(c.emblema)}" alt="" width="32" height="32" loading="lazy" />
+            <span>${escapeHtml(c.nome)}</span>
+            <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
+          </li>`
+          )
+          .join("");
+      });
     }
-    setStat(pubRoot, "times", items.length);
 
-    paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
+    function refreshPublicFeed() {
+      const items = loadPosts(FEED_KEY);
+      renderFeed(
+        document.getElementById("public-feed-list"),
+        document.getElementById("public-feed-empty"),
+        document.getElementById("public-feed-count"),
+        items,
+        { authorFallback: nome }
+      );
+      setStat(pubRoot, "feed", items.length);
+    }
+    function refreshPublicRecados() {
+      const items = loadPosts(RECADOS_KEY);
+      renderFeed(
+        document.getElementById("public-recados-list"),
+        document.getElementById("public-recados-empty"),
+        document.getElementById("public-recados-count"),
+        items
+      );
+      setStat(pubRoot, "recados", items.length);
+    }
+    function refreshPublicDeps() {
+      const items = loadPosts(DEPS_KEY);
+      renderFeed(
+        document.getElementById("public-deps-list"),
+        document.getElementById("public-deps-empty"),
+        document.getElementById("public-deps-count"),
+        items
+      );
+      setStat(pubRoot, "deps", items.length);
+    }
 
-    const recados = loadPosts(RECADOS_KEY);
-    renderFeed(
-      document.getElementById("public-recados-list"),
-      document.getElementById("public-recados-empty"),
-      document.getElementById("public-recados-count"),
-      recados
-    );
-    setStat(pubRoot, "recados", recados.length);
+    let amigos = loadAmigos();
+    function refreshAmigos() {
+      renderAmigos(
+        document.getElementById("public-amigos-list"),
+        document.getElementById("public-amigos-count"),
+        document.getElementById("public-amigos-empty"),
+        amigos
+      );
+      paintAmizade(document.getElementById("public-amizade-list"), amigos);
+      setStat(pubRoot, "amigos", amigos.length);
+    }
 
-    const deps = loadPosts(DEPS_KEY);
-    renderFeed(
-      document.getElementById("public-deps-list"),
-      document.getElementById("public-deps-empty"),
-      document.getElementById("public-deps-count"),
-      deps
-    );
-    setStat(pubRoot, "deps", deps.length);
+    refreshPublicFeed();
+    refreshPublicRecados();
+    refreshPublicDeps();
+    refreshAmigos();
 
-    const amigos = loadAmigos();
-    renderAmigos(
-      document.getElementById("public-amigos-list"),
-      document.getElementById("public-amigos-count"),
-      document.getElementById("public-amigos-empty"),
-      amigos
-    );
-    paintAmizade(document.getElementById("public-amizade-list"), amigos);
-    setStat(pubRoot, "amigos", amigos.length);
+    wirePostForm(document.getElementById("public-recado-form"), RECADOS_KEY, refreshPublicRecados, { withAutor: true });
+    wirePostForm(document.getElementById("public-dep-form"), DEPS_KEY, refreshPublicDeps, { withAutor: true });
+
+    const pedirBtn = document.getElementById("public-amigo-pedir");
+    if (pedirBtn) {
+      pedirBtn.addEventListener("click", () => {
+        const visitor = "Visitante";
+        if (amigos.some((a) => a.nome.toLowerCase() === visitor.toLowerCase())) {
+          pedirBtn.textContent = "Pedido já enviado";
+          pedirBtn.disabled = true;
+          return;
+        }
+        amigos.unshift({ nome: visitor, nivel: "conhecido" });
+        amigos = amigos.slice(0, 40);
+        save(AMIGOS_KEY, amigos);
+        refreshAmigos();
+        pedirBtn.textContent = "Pedido enviado";
+        pedirBtn.disabled = true;
+      });
+    }
   }
 })();

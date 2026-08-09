@@ -9,49 +9,57 @@
 
   <div class="proto-steam-stage">
     <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
-  <header class="proto-steam-hero">
-    <div class="proto-steam-avatar" aria-hidden="true">
-      {% if participante_nav %}
-        {% set av = avatar_url(participante_nav.avatar_path) %}
-        {% if av %}
-        <img src="{{ av }}" alt="" width="128" height="128" data-public-avatar />
+    <header class="proto-steam-hero">
+      <div class="proto-steam-avatar" aria-hidden="true">
+        {% if participante_nav %}
+          {% set av = avatar_url(participante_nav.avatar_path) %}
+          {% if av %}
+          <img src="{{ av }}" alt="" width="128" height="128" data-public-avatar />
+          {% else %}
+          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+          {% endif %}
         {% else %}
-        <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+        <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>TH</span>
         {% endif %}
-      {% else %}
-      <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>TH</span>
-      {% endif %}
-    </div>
-
-    <div class="proto-steam-hero-main">
-      <div class="proto-steam-name-row">
-        <h1 class="proto-steam-name" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
-        <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
       </div>
-      <p class="proto-steam-meta" data-public-meta>—</p>
-      <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>Sem frase ainda.</p>
-      <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>—</p>
-    </div>
 
-    <div class="proto-steam-hero-aside">
-      <div class="proto-steam-karma" id="public-karma" aria-label="Karma">
-        {% for k in karma_cats %}
-        <div
-          class="proto-steam-karma-row"
-          data-karma="{{ k.id }}"
-          data-icon="{{ k.icon }}"
-          data-labels="{{ k.labels | join('|') }}"
-        >
-          <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
-          <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+      <div class="proto-steam-hero-main">
+        <div class="proto-steam-name-row">
+          <h1 class="proto-steam-name" data-public-nome>{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}</h1>
+          <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
         </div>
-        {% endfor %}
+        <p class="proto-steam-meta" data-public-meta>—</p>
+        <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>Sem frase ainda.</p>
+        <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>—</p>
       </div>
-      <div class="proto-steam-hero-actions">
-        <a class="proto-steam-btn" href="/prototipo/perfil">Editar protótipo</a>
+
+      <div class="proto-steam-hero-aside">
+        <div class="proto-steam-karma" id="public-karma" aria-label="Karma">
+          {% for k in karma_cats %}
+          <div
+            class="proto-steam-karma-row"
+            data-karma="{{ k.id }}"
+            data-icon="{{ k.icon }}"
+            data-labels="{{ k.labels | join('|') }}"
+          >
+            <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
+            <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+          </div>
+          {% endfor %}
+          <div class="proto-steam-nutela" data-nutela>
+            <span class="proto-steam-nutela-end">nutela</span>
+            <div class="proto-steam-nutela-track" aria-hidden="true">
+              <i data-nutela-fill></i>
+            </div>
+            <span class="proto-steam-nutela-end">raíz</span>
+          </div>
+        </div>
+        <div class="proto-steam-hero-actions">
+          <button type="button" class="proto-steam-btn" id="public-amigo-pedir">Enviar pedido de amizade</button>
+          <a class="proto-steam-btn proto-steam-btn--ghost" href="/prototipo/perfil">Editar protótipo</a>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
   </div>
 
   <div class="proto-steam-layout">
@@ -62,14 +70,30 @@
         <p class="proto-steam-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
       </section>
 
+      <section class="proto-steam-panel" id="feed">
+        <h2 class="proto-steam-panel-title">Feed <span id="public-feed-count">(0)</span></h2>
+        <ul class="proto-steam-feed" id="public-feed-list"></ul>
+        <p class="proto-steam-empty" id="public-feed-empty">Nenhuma postagem ainda.</p>
+      </section>
+
       <section class="proto-steam-panel" id="recados">
         <h2 class="proto-steam-panel-title">Recados <span id="public-recados-count">(0)</span></h2>
+        <form class="proto-steam-form" id="public-recado-form">
+          <input class="proto-steam-field" type="text" id="public-recado-autor" maxlength="30" placeholder="Seu nome" required />
+          <textarea class="proto-steam-field" id="public-recado-texto" rows="2" maxlength="280" placeholder="Deixe um recado…" required></textarea>
+          <button type="submit" class="proto-steam-btn">Postar recado</button>
+        </form>
         <ul class="proto-steam-feed" id="public-recados-list"></ul>
         <p class="proto-steam-empty" id="public-recados-empty">Nenhum recado ainda.</p>
       </section>
 
       <section class="proto-steam-panel" id="depoimentos">
         <h2 class="proto-steam-panel-title">Depoimentos <span id="public-deps-count">(0)</span></h2>
+        <form class="proto-steam-form" id="public-dep-form">
+          <input class="proto-steam-field" type="text" id="public-dep-autor" maxlength="30" placeholder="Seu nome" required />
+          <textarea class="proto-steam-field" id="public-dep-texto" rows="2" maxlength="280" placeholder="Escreva um depoimento…" required></textarea>
+          <button type="submit" class="proto-steam-btn">Enviar depoimento</button>
+        </form>
         <ul class="proto-steam-feed" id="public-deps-list"></ul>
         <p class="proto-steam-empty" id="public-deps-empty">Nenhum depoimento ainda.</p>
       </section>
@@ -79,6 +103,7 @@
       <section class="proto-steam-panel">
         <h2 class="proto-steam-panel-title">Neste perfil</h2>
         <ul class="proto-steam-stats">
+          <li><a href="#feed">Feed</a><span data-stat="feed">0</span></li>
           <li><a href="#recados">Recados</a><span data-stat="recados">0</span></li>
           <li><a href="#depoimentos">Depoimentos</a><span data-stat="deps">0</span></li>
           <li><a href="#amigos">Amigos</a><span data-stat="amigos">0</span></li>
@@ -93,7 +118,7 @@
       <section class="proto-steam-panel">
         <h2 class="proto-steam-panel-title">Amigos <span id="public-amigos-count">(0)</span></h2>
         <ul class="proto-steam-amigos" id="public-amigos-list"></ul>
-        <p class="proto-steam-empty" id="public-amigos-empty">Nenhum amigo no protótipo.</p>
+        <p class="proto-steam-empty" id="public-amigos-empty">Nenhum amigo ainda. Use o pedido de amizade acima.</p>
       </section>
 
       <section class="proto-steam-panel">
@@ -111,10 +136,8 @@
     </aside>
   </div>
 </div>
-
-<script type="application/json" id="proto-clubes-data">{{ clubes_json | safe }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=4" defer></script>
+<script src="/static/prototipo-perfil.js?v=5" defer></script>
 {% endblock %}

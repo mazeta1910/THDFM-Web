@@ -881,7 +881,7 @@ def _amizade_niveis_demo() -> list[dict]:
         {"id": "conhecido", "nome": "conhecido", "icone": "○"},
         {"id": "amigo", "nome": "amigo", "icone": "◐"},
         {"id": "bom_amigo", "nome": "bom amigo", "icone": "●"},
-        {"id": "melhor_amigo", "nome": "mais que amigos, irmãos", "icone": "★"},
+        {"id": "melhor_amigo", "nome": "mais que amigos, irmães", "icone": "★"},
     ]
 
 

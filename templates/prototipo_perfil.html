@@ -9,103 +9,148 @@
 
   <div class="proto-steam-stage">
     <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
-  {# Header compacto (inspirado na Steam): avatar + identidade + karma #}
-  <header class="proto-steam-hero">
-    <div class="proto-steam-avatar" aria-hidden="true">
-      {% if participante_nav %}
-        {% set av = avatar_url(participante_nav.avatar_path) %}
-        {% if av %}
-        <img src="{{ av }}" alt="" width="128" height="128" />
-        {% else %}
-        <span class="proto-steam-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
-        {% endif %}
-      {% else %}
-      <span class="proto-steam-avatar-fallback">TH</span>
-      {% endif %}
-    </div>
-
-    <div class="proto-steam-hero-main">
-      <div class="proto-steam-name-row">
-        <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
-        <input
-          id="proto-perfil-nome"
-          class="proto-steam-name-input"
-          type="text"
-          maxlength="30"
-          value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
-          data-proto-nome
-        />
-        <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
-      </div>
-      <p class="proto-steam-meta">
-        <label class="visually-hidden" for="proto-rel">Relacionamento</label>
-        <select id="proto-rel" class="proto-steam-inline-select" data-proto-relacionamento>
-          <option value="">relacionamento</option>
-          <option>solteiro(a)</option>
-          <option>namorando</option>
-          <option>noivo(a)</option>
-          <option>casado(a)</option>
-          <option>é complicado</option>
-          <option>chegando junto com o VAR</option>
-        </select>
-        <span aria-hidden="true">·</span>
-        <label class="visually-hidden" for="proto-aniv">Aniversário</label>
-        <input
-          id="proto-aniv"
-          class="proto-steam-inline-input"
-          type="text"
-          maxlength="40"
-          placeholder="aniversário (dd/mm)"
-          data-proto-aniversario
-        />
-      </p>
-      {# TEXTOS PARA REESCREVER — começo #}
-      <label class="visually-hidden" for="proto-frase">Frase do perfil</label>
-      <input
-        id="proto-frase"
-        class="proto-steam-frase"
-        type="text"
-        maxlength="120"
-        placeholder="Sua frasezinha aparece aqui…"
-        data-proto-frase
-      />
-      <label class="visually-hidden" for="proto-quem">Quem sou eu</label>
-      <textarea
-        id="proto-quem"
-        class="proto-steam-bio"
-        rows="2"
-        maxlength="400"
-        placeholder="Quem sou eu…"
-        data-proto-quem
-      ></textarea>
-      {# TEXTOS PARA REESCREVER — fim #}
-    </div>
-
-    <div class="proto-steam-hero-aside">
-      <div class="proto-steam-karma" id="proto-karma-edit" aria-label="Karma">
-        {% for k in karma_cats %}
-        <div
-          class="proto-steam-karma-row"
-          data-karma="{{ k.id }}"
-          data-icon="{{ k.icon }}"
-          data-labels="{{ k.labels | join('|') }}"
-        >
-          <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="{{ k.nome }}">
-            <span data-karma-icons></span>
-          </button>
-          <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="proto-steam-hero-actions">
-        <a class="proto-steam-btn" href="/prototipo/perfil/publico">Ver como os outros veem</a>
+    <header class="proto-steam-hero">
+      <div class="proto-steam-avatar" aria-hidden="true">
         {% if participante_nav %}
-        <a class="proto-steam-btn proto-steam-btn--ghost" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
+          {% set av = avatar_url(participante_nav.avatar_path) %}
+          {% if av %}
+          <img src="{{ av }}" alt="" width="128" height="128" />
+          {% else %}
+          <span class="proto-steam-avatar-fallback">{{ (participante_nav.nome or '??')[:2]|upper }}</span>
+          {% endif %}
+        {% else %}
+        <span class="proto-steam-avatar-fallback">TH</span>
         {% endif %}
       </div>
-    </div>
-  </header>
+
+      <div class="proto-steam-hero-main">
+        <div class="proto-steam-name-row">
+          <label class="visually-hidden" for="proto-perfil-nome">Nome</label>
+          <input
+            id="proto-perfil-nome"
+            class="proto-steam-name-input"
+            type="text"
+            maxlength="30"
+            value="{{ participante_nav.nome if participante_nav else 'Visitante THDFM' }}"
+            data-proto-nome
+          />
+          <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+        </div>
+        <p class="proto-steam-meta">
+          <label class="visually-hidden" for="proto-rel">Relacionamento</label>
+          <select id="proto-rel" class="proto-steam-inline-select" data-proto-relacionamento>
+            <option value="">relacionamento</option>
+            <option>solteiro(a)</option>
+            <option>namorando</option>
+            <option>noivo(a)</option>
+            <option>casado(a)</option>
+            <option>é complicado</option>
+            <option>chegando junto com o VAR</option>
+          </select>
+          <span aria-hidden="true">·</span>
+          <label class="visually-hidden" for="proto-aniv">Aniversário</label>
+          <input
+            id="proto-aniv"
+            class="proto-steam-inline-input"
+            type="text"
+            maxlength="40"
+            placeholder="aniversário (dd/mm)"
+            data-proto-aniversario
+          />
+        </p>
+        {# TEXTOS PARA REESCREVER — começo #}
+        <label class="visually-hidden" for="proto-frase">Frase do perfil</label>
+        <input
+          id="proto-frase"
+          class="proto-steam-frase"
+          type="text"
+          maxlength="120"
+          placeholder="Sua frasezinha aparece aqui…"
+          data-proto-frase
+        />
+        <label class="visually-hidden" for="proto-quem">Quem sou eu</label>
+        <textarea
+          id="proto-quem"
+          class="proto-steam-bio"
+          rows="2"
+          maxlength="400"
+          placeholder="Quem sou eu…"
+          data-proto-quem
+        ></textarea>
+        {# TEXTOS PARA REESCREVER — fim #}
+      </div>
+
+      <div class="proto-steam-hero-aside">
+        <div class="proto-steam-karma" id="proto-karma-edit" aria-label="Karma">
+          {% for k in karma_cats %}
+          <div
+            class="proto-steam-karma-row"
+            data-karma="{{ k.id }}"
+            data-icon="{{ k.icon }}"
+            data-labels="{{ k.labels | join('|') }}"
+          >
+            <button type="button" class="proto-steam-icons" data-karma-cycle aria-label="{{ k.nome }}">
+              <span data-karma-icons></span>
+            </button>
+            <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+          </div>
+          {% endfor %}
+          <div class="proto-steam-nutela" data-nutela>
+            <span class="proto-steam-nutela-end">nutela</span>
+            <input
+              class="proto-steam-nutela-range"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+              aria-label="Medidor nutela a raíz"
+              data-proto-nutela
+            />
+            <span class="proto-steam-nutela-end">raíz</span>
+          </div>
+        </div>
+        <div class="proto-steam-hero-actions">
+          <a class="proto-steam-btn" href="/prototipo/perfil/publico">Ver como os outros veem</a>
+          {% if participante_nav %}
+          <a class="proto-steam-btn proto-steam-btn--ghost" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
   </div>
+
+  <section class="proto-steam-panel proto-steam-banner-panel" id="banner">
+    {# TEXTOS PARA REESCREVER — começo #}
+    <div class="proto-steam-banner-panel-head">
+      <h2 class="proto-steam-panel-title">Banner do perfil</h2>
+      <p class="proto-steam-empty">Escolha um fundo ou envie uma imagem para recortar.</p>
+    </div>
+    {# TEXTOS PARA REESCREVER — fim #}
+    <div class="proto-steam-banner-grid" role="listbox" aria-label="Banners prontos">
+      {% for b in banner_presets %}
+      <button
+        type="button"
+        class="proto-steam-banner-opt"
+        data-banner-preset="{{ b.id }}"
+        title="{{ b.nome }}"
+        aria-label="{{ b.nome }}"
+      >
+        <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+        <span class="proto-steam-banner-opt-name">{{ b.nome }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <div class="proto-steam-banner-actions">
+      <label class="proto-steam-banner-upload">
+        <span>Enviar e recortar imagem</span>
+        <input type="file" id="proto-banner-file" accept="image/*" />
+      </label>
+      <button type="button" class="proto-steam-btn proto-steam-btn--ghost" id="proto-banner-clear" hidden>
+        Remover imagem
+      </button>
+    </div>
+  </section>
 
   <div class="proto-steam-layout">
     <div class="proto-steam-main">
@@ -114,100 +159,38 @@
         {% include "partials/seletor_times.html" %}
       </section>
 
-      <section class="proto-steam-panel" id="recados">
-        <h2 class="proto-steam-panel-title">Recados <span id="proto-recados-count">(0)</span></h2>
-        <form class="proto-steam-form" id="proto-recado-form">
-          <input class="proto-steam-field" type="text" id="proto-recado-autor" maxlength="30" placeholder="De (nome)" required />
-          <textarea class="proto-steam-field" id="proto-recado-texto" rows="2" maxlength="280" placeholder="Deixe um recado…" required></textarea>
-          <button type="submit" class="proto-steam-btn">Postar recado</button>
+      <section class="proto-steam-panel" id="feed">
+        {# TEXTOS PARA REESCREVER — começo #}
+        <h2 class="proto-steam-panel-title">Feed <span id="proto-feed-count">(0)</span></h2>
+        <form class="proto-steam-form" id="proto-feed-form">
+          <textarea class="proto-steam-field" id="proto-feed-texto" rows="2" maxlength="280" placeholder="Poste algo no seu perfil…" required></textarea>
+          <button type="submit" class="proto-steam-btn">Publicar</button>
         </form>
-        <ul class="proto-steam-feed" id="proto-recados-list"></ul>
-        <p class="proto-steam-empty" id="proto-recados-empty">Nenhum recado ainda.</p>
-      </section>
-
-      <section class="proto-steam-panel" id="depoimentos">
-        <h2 class="proto-steam-panel-title">Depoimentos <span id="proto-deps-count">(0)</span></h2>
-        <form class="proto-steam-form" id="proto-dep-form">
-          <input class="proto-steam-field" type="text" id="proto-dep-autor" maxlength="30" placeholder="De (nome)" required />
-          <textarea class="proto-steam-field" id="proto-dep-texto" rows="2" maxlength="280" placeholder="Escreva um depoimento…" required></textarea>
-          <button type="submit" class="proto-steam-btn">Adicionar depoimento</button>
-        </form>
-        <ul class="proto-steam-feed" id="proto-deps-list"></ul>
-        <p class="proto-steam-empty" id="proto-deps-empty" hidden>Nenhum depoimento ainda.</p>
+        {# TEXTOS PARA REESCREVER — fim #}
+        <ul class="proto-steam-feed" id="proto-feed-list"></ul>
+        <p class="proto-steam-empty" id="proto-feed-empty">Nenhuma postagem ainda.</p>
       </section>
     </div>
 
-    <aside class="proto-steam-side" id="amigos">
-      <section class="proto-steam-panel" id="banner">
-        {# TEXTOS PARA REESCREVER — começo #}
-        <h2 class="proto-steam-panel-title">Banner do perfil</h2>
-        <p class="proto-steam-empty">Escolha um fundo ou envie uma imagem.</p>
-        {# TEXTOS PARA REESCREVER — fim #}
-        <div class="proto-steam-banner-grid" role="listbox" aria-label="Banners prontos">
-          {% for b in banner_presets %}
-          <button
-            type="button"
-            class="proto-steam-banner-opt"
-            data-banner-preset="{{ b.id }}"
-            title="{{ b.nome }}"
-            aria-label="{{ b.nome }}"
-          >
-            <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
-            <span class="proto-steam-banner-opt-name">{{ b.nome }}</span>
-          </button>
-          {% endfor %}
-        </div>
-        <label class="proto-steam-banner-upload">
-          <span>Enviar imagem</span>
-          <input type="file" id="proto-banner-file" accept="image/*" />
-        </label>
-        <button type="button" class="proto-steam-btn proto-steam-btn--ghost" id="proto-banner-clear" hidden>
-          Remover imagem
-        </button>
-      </section>
-
+    <aside class="proto-steam-side">
       <section class="proto-steam-panel">
         <h2 class="proto-steam-panel-title">Neste perfil</h2>
         <ul class="proto-steam-stats">
-          <li><a href="#recados">Recados</a><span data-stat="recados">0</span></li>
-          <li><a href="#depoimentos">Depoimentos</a><span data-stat="deps">0</span></li>
-          <li><a href="#amigos">Amigos</a><span data-stat="amigos">0</span></li>
+          <li><a href="#feed">Feed</a><span data-stat="feed">0</span></li>
           <li><a href="#times">Times</a><span data-stat="times">0</span></li>
+          <li><a href="/prototipo/perfil/publico#amigos">Amigos</a><span data-stat="amigos">0</span></li>
+          <li><a href="/prototipo/perfil/publico#recados">Recados</a><span data-stat="recados">0</span></li>
         </ul>
-      </section>
-
-      <section class="proto-steam-panel">
-        <h2 class="proto-steam-panel-title">Amigos <span id="proto-amigos-count">(0)</span></h2>
-        <ul class="proto-steam-amigos" id="proto-amigos-list"></ul>
-        <form class="proto-steam-form" id="proto-amigo-form">
-          <input class="proto-steam-field" type="text" id="proto-amigo-nome" maxlength="30" placeholder="Nome do amigo" required />
-          <select class="proto-steam-field" id="proto-amigo-nivel" aria-label="Esquema de amizade">
-            {% for n in amizade_niveis %}
-            <option value="{{ n.id }}">{{ n.nome }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="proto-steam-btn">Adicionar</button>
-        </form>
-      </section>
-
-      <section class="proto-steam-panel">
-        <h2 class="proto-steam-panel-title">Esquema de amizade</h2>
-        <ul class="proto-steam-amizade" id="proto-amizade-list">
-          {% for n in amizade_niveis %}
-          <li data-amizade="{{ n.id }}">
-            <span class="proto-steam-amizade-icone" aria-hidden="true">{{ n.icone }}</span>
-            <span>{{ n.nome }}</span>
-            <span class="proto-steam-amizade-pct" data-amizade-pct>0%</span>
-          </li>
-          {% endfor %}
-        </ul>
+        <p class="proto-steam-empty">Pedidos de amizade, recados e depoimentos ficam na visão pública.</p>
       </section>
     </aside>
   </div>
 </div>
+
+{% include "partials/banner_crop_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=4" defer></script>
-<script src="/static/prototipo-perfil.js?v=4" defer></script>
+<script src="/static/prototipo-times.js?v=5" defer></script>
+<script src="/static/prototipo-perfil.js?v=5" defer></script>
 {% endblock %}
