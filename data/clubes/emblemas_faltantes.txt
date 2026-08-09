@@ -1,0 +1,80 @@
+# 76 clubes sem emblema no pack FMG
+# Salve cada PNG com o nome em arquivo_esperado
+# Pasta sugerida: data/clubes/emblemas-faltantes/
+
+01. Águia de Cumaru (PE) -> 2000320598.png
+02. Albion (SP) (SP) -> 2000135794.png
+03. Anchieta (RJ) (RJ) -> 2000004148.png
+04. Anjos do Céu (CE) -> 2000210044.png
+05. Aster Itaquá (SP) -> 2000310120.png
+06. Atlético de Salvador (BA) -> 2000024120.png
+07. Atlético Parahybano (PB) -> 19295781.png
+08. Atlético Torres (PE) -> 2000209180.png
+09. Batalhão (TO) (TO) -> 2000318090.png
+10. Bela Vista (TO) (TO) -> 2000156264.png
+11. Belenense (PA) (PA) -> 2000240045.png
+12. Bom Jesus (RS) (RS) -> 2000283722.png
+13. Brasil Suburbano (RJ) -> 2000004150.png
+14. Campo Novo (MT) -> 2000255424.png
+15. Canaã (PA) (PA) -> 2000281081.png
+16. Capitão Poço (PA) -> 2000152145.png
+17. Carbonífera (RJ) -> 2000004151.png
+18. Carmópolis (SE) -> 2000288716.png
+19. Ceart (MS) -> 2000235287.png
+20. Central Paraíso (RJ) -> 2000232734.png
+21. Centro Oeste (GO) -> 2000154412.png
+22. Comercial Tietê (SP) -> 2000214116.png
+23. Comercial TL (MS) -> 2000240525.png
+24. Corinthians de São Bernardo do Campo (SP) -> 2000003894.png
+25. Dínamo Araxá (MG) (MG) -> 2000063304.png
+26. Egipciense (PE) -> 2000099932.png
+27. ESMAC (PA) -> 2000152152.png
+28. Ferroviária de Pindamonha (SP) -> 2000135793.png
+29. Flamengo (SE) (SE) -> 2000291266.png
+30. Flamengo EC de Curitibanos (PR) -> 2000003895.png
+31. Futebol com Vida (RS) -> 2000297236.png
+32. Gre^mio Valparaíso (GO) -> 2000192526.png
+33. Guarany (PA) (PA) -> 314692.png
+34. Inter SG (RJ) -> 2000194597.png
+35. Itabirito (MG) -> 2000193910.png
+36. Laguna (RN) (RN) -> 2000210017.png
+37. Librade (AM) -> 2000208897.png
+38. Maguary (PE) (PE) -> 2000099931.png
+39. Manauara (AM) -> 2000112366.png
+40. Monsoon (RS) -> 2000172789.png
+41. Monte Roraima (RR) -> 2000326401.png
+42. Náutico (MS) (MS) -> 2000199992.png
+43. Norte Clube (PA) (PA) -> 314690.png
+44. North (MG) (MG) -> 2000194009.png
+45. Paladino (RJ) (RJ) -> 19005366.png
+46. Panther (PA) (PA) -> 19339647.png
+47. Paracatu (MG) -> 2000194595.png
+48. Parahyba (PB) -> 19295779.png
+49. Parahyba United (PB) -> 19295780.png
+50. Paranaense (PR) -> 19339645.png
+51. Paraty (RJ) -> 2000239360.png
+52. Parintins (AM) -> 2000188892.png
+53. Paulínia Universitário (SP) -> 2000307695.png
+54. Paulistano (MT) (MT) -> 2000170932.png
+55. Pombal (PB) (PB) -> 2000208042.png
+56. Primavera (MT) (MT) -> 2000174048.png
+57. RB do Norte (AM) -> 2000178064.png
+58. Royal de Luziânia (GO) -> 2000203283.png
+59. Santa Fé (PE) (PE) -> 2000209201.png
+60. Santa Quitéria (PR) (PR) -> 2000062934.png
+61. Santa Rita (PB) (PB) -> 2000109059.png
+62. Santos Dumont (MA) (MA) -> 19339651.png
+63. São Luís (MA) (MA) -> 2000154433.png
+64. Serra Branca (PB) -> 2000199920.png
+65. Sfera (SP) -> 2000306764.png
+66. Sharjah Brasil (SP) -> 2000255286.png
+67. Sírio Libanês (GO) (GO) -> 2000059899.png
+68. Sport Bahia (BA) -> 2000174086.png
+69. Theresinense FC (PI) (PI) -> 314099.png
+70. União (PE) (PE) -> 2000099933.png
+71. Unidos do Alvorada (AM) -> 2000182369.png
+72. Uruaçu (GO) -> 2000204861.png
+73. Vera Cruz (RJ) (RJ) -> 2000239359.png
+74. Vila Matias (DF) -> 19152069.png
+75. Villa Real (MG) (MG) -> 2000192815.png
+76. Zinza (RJ) -> 2000255426.png

@@ -1,0 +1,11 @@
+Como preencher os emblemas faltantes
+=====================================
+
+1. Baixe o escudo de cada clube listado em emblemas_faltantes.csv
+2. Renomeie para o valor da coluna arquivo_esperado (ex.: 2000320598.png)
+3. Coloque os PNGs em: data/clubes/emblemas-faltantes/
+4. No CSV, marque baixado=SIM nas linhas prontas (opcional)
+5. Commit/push a pasta + CSV atualizado
+
+Importante: Unique ID sem pontos = nome do arquivo.
+Ex.: 2.000.320.598 -> 2000320598.png
