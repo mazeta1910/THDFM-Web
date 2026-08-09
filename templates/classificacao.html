@@ -421,6 +421,15 @@
     const avatarHtml = p.avatar_url
       ? `<img class="ficha-rodadas-avatar" src="${esc(p.avatar_url)}" alt="" />`
       : `<span class="ficha-rodadas-avatar ficha-rodadas-avatar-fallback">${esc(iniciais(p.nome))}</span>`;
+    const perfilUrl =
+      String(p.nome || "").trim().toLowerCase() === "benevides"
+        ? "/prototipo/perfil/benevides"
+        : "";
+    const whoInner =
+      `${avatarHtml}<span class="ficha-rodadas-nome">${esc(p.nome || "")}</span>`;
+    const whoHtml = perfilUrl
+      ? `<a class="ficha-rodadas-who ficha-rodadas-who-link" href="${esc(perfilUrl)}">${whoInner}</a>`
+      : `<div class="ficha-rodadas-who">${whoInner}</div>`;
 
     const markIcon = (kind) => {
       if (kind === "ok") {
@@ -534,7 +543,7 @@
       ? `<section class="ficha-rodadas-resumo" aria-label="Resumo das rodadas">` +
         `<h3 class="ficha-rodadas-resumo-title">Resumo das rodadas</h3>` +
         `<div class="ficha-rodadas-head">` +
-        `<div class="ficha-rodadas-who">${avatarHtml}<span class="ficha-rodadas-nome">${esc(p.nome || "")}</span></div>` +
+        whoHtml +
         `<div class="ficha-rodadas-cols" aria-hidden="true"><span>Rod</span><span>Pts</span><span>#</span></div>` +
         `</div>` +
         `<ul class="ficha-rodadas-lista">${rodadas}</ul>` +

@@ -79,7 +79,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert "/prototipo/perfil/publico" in r.text
     assert "/static/prototipo-perfil.js?v=20" in r.text
-    assert "/static/style.css?v=275" in r.text
+    assert "/static/style.css?v=276" in r.text
 
 
 def test_prototipo_perfil_alterar_senha_volta_ao_editar(client: TestClient):
@@ -183,7 +183,7 @@ def test_prototipo_perfil_publico_dono_nao_vota_karma(client: TestClient):
     assert "proto-steam-karma--line" in r.text
 
 
-def test_prototipo_perfil_benevides_privado(client: TestClient):
+def test_prototipo_perfil_benevides_liberado(client: TestClient):
     r = client.get("/prototipo/perfil/benevides", follow_redirects=False)
     assert r.status_code in (303, 302)
 
@@ -192,10 +192,6 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     part = dbmod.criar_participante("Comum Bene", status="liberado", celular="11990009903")
     dbmod.definir_credenciais(part["id"], "comum.bene", "senha12345")
     client.get(f"/p/{part['token']}")
-    r = client.get("/prototipo/perfil/benevides", follow_redirects=False)
-    assert r.status_code in (303, 302)
-
-    login_admin(client)
     part_b = dbmod.criar_participante("Benevides", status="liberado", celular="11990001122")
     dbmod.salvar_avatar(part_b["id"], "benevides-teste.jpg")
 

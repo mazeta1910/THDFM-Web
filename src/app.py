@@ -1161,10 +1161,10 @@ def prototipo_perfil_publico(request: Request):
 
 @app.get("/prototipo/perfil/benevides", response_class=HTMLResponse)
 def prototipo_perfil_benevides(request: Request):
-    """Rota privada: Mazeta vê o perfil do Benevides (protótipo)."""
+    """Perfil demo do Benevides (protótipo). Participante liberado ou admin."""
     import json
 
-    neg = require_dono(request)
+    neg = _require_proto_perfil(request)
     if neg:
         return neg
     fixado = _perfil_demo_benevides()
