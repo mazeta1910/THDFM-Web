@@ -166,7 +166,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=242" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=243" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
     assert "overflow-x: hidden" in css
     assert "overscroll-behavior-x: contain" in css
     assert ".xonha-timeline-loading" in css
@@ -294,15 +294,26 @@ def test_admin_atualiza_e_apaga(client: TestClient):
     admin = client.get("/admin/xonhometro")
     assert admin.status_code == 200
     assert "modal-xonha-apagar" in admin.text
-    assert "data-xonha-apagar" in admin.text
+    # First paint: cascas por ano — formulários só via JSON sob demanda.
+    assert "data-xonha-admin-lazy" in admin.text
+    assert 'data-xonha-admin-ano="2026"' in admin.text
+    assert "motivo novo" not in admin.text
+    assert f'id="tipo-{ev["id"]}"' not in admin.text
+    assert f'data-xonha-apagar="{ev["id"]}"' not in admin.text
     # Apagar usa modal custom; o único confirm() é o da importação WhatsApp.
     assert admin.text.count("confirm(") == 1
     assert "importar-whatsapp" in admin.text
-    assert "xonha-admin-details" in admin.text
-    assert 'class="xonha-admin-details"' in admin.text
     assert "xonha-btn-primary" not in admin.text
     assert 'aria-label="Registrar"' in admin.text
     assert "avatar-crop-modal" in admin.text
+    assert "carregarAno" in admin.text
+
+    ano_json = client.get("/admin/xonhometro/anos/2026.json")
+    assert ano_json.status_code == 200
+    payload = ano_json.json()
+    assert payload["ano"] == "2026"
+    assert any(e.get("motivo") == "motivo novo" for e in payload["eventos"])
+    assert any(e.get("id") == ev["id"] for e in payload["eventos"])
 
     r2 = client.post(
         "/admin/xonhometro/apagar",

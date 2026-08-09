@@ -72,63 +72,30 @@
     </form>
   </section>
 
-  <section class="xonha-admin-list">
+  <section
+    class="xonha-admin-list"
+    id="xonha-admin-list"
+    data-xonha-admin-lazy="1"
+    data-xonha-admin-anos-src="/admin/xonhometro/anos"
+  >
     <h2>Registros</h2>
-    {% for e in eventos %}
-    <details class="xonha-admin-details">
-      <summary class="xonha-admin-summary">
-        <span class="xonha-admin-summary-tipo xonha-admin-summary-tipo--{{ e.tipo }}">
-          {% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %}
-        </span>
-        <time datetime="{{ e.data }}{% if e.hora %}T{{ e.hora }}{% endif %}">
-          {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}
-          {% if e.hora %}<span>· {{ e.hora }}</span>{% endif %}
-        </time>
-        {% if e.motivo %}
-        <span class="xonha-admin-summary-motivo">{{ e.motivo }}</span>
-        {% endif %}
+    {% if timeline_anos %}
+    <p class="login-lead xonha-admin-list-hint">Abra um ano para carregar e editar os registros.</p>
+    {% for g in timeline_anos %}
+    <details class="xonha-admin-year" data-xonha-admin-ano="{{ g.ano }}">
+      <summary class="xonha-admin-year-summary">
+        <span class="xonha-admin-year-label">{{ g.ano }}</span>
+        <span class="xonha-admin-year-count">{{ g.quantidade }} registro{{ 's' if g.quantidade != 1 else '' }}</span>
       </summary>
-      <article class="card xonha-admin-card">
-        <form method="post" action="/admin/xonhometro/atualizar" class="xonha-admin-form" autocomplete="off">
-          <input type="hidden" name="evento_id" value="{{ e.id }}" />
-          <div class="xonha-admin-row">
-            <div class="xonha-field">
-              <label for="tipo-{{ e.id }}">Tipo</label>
-              <div class="xonha-select-wrap">
-                <select id="tipo-{{ e.id }}" name="tipo" required>
-                  <option value="saida" {% if e.tipo == 'saida' %}selected{% endif %}>Saída</option>
-                  <option value="volta" {% if e.tipo == 'volta' %}selected{% endif %}>Volta</option>
-                  <option value="banimento" {% if e.tipo == 'banimento' %}selected{% endif %}>Banimento</option>
-                </select>
-              </div>
-            </div>
-            <div class="xonha-field">
-              <label for="data-{{ e.id }}">Data</label>
-              <input id="data-{{ e.id }}" class="xonha-input" type="date" name="data" value="{{ e.data }}" required />
-            </div>
-            <div class="xonha-field">
-              <label for="hora-{{ e.id }}">Horário</label>
-              <input id="hora-{{ e.id }}" class="xonha-input" type="time" name="hora" value="{{ e.hora or '' }}" />
-            </div>
-          </div>
-          <div class="xonha-field">
-            <label for="motivo-{{ e.id }}">Motivo</label>
-            <textarea id="motivo-{{ e.id }}" class="xonha-input" name="motivo" rows="2" maxlength="500">{{ e.motivo or '' }}</textarea>
-          </div>
-          <div class="xonha-admin-actions">
-            <button type="submit" class="xonha-icon-btn xonha-icon-btn--save" title="Salvar" aria-label="Salvar">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            </button>
-            <button type="button" class="xonha-icon-btn xonha-icon-btn--delete" title="Apagar" aria-label="Apagar" data-xonha-apagar="{{ e.id }}" data-xonha-label="{% if e.tipo == 'saida' %}Saída{% elif e.tipo == 'banimento' %}Banimento{% else %}Volta{% endif %} em {{ e.data[8:10] }}/{{ e.data[5:7] }}/{{ e.data[0:4] }}{% if e.hora %} · {{ e.hora }}{% endif %}">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
-          </div>
-        </form>
-      </article>
+      <div class="xonha-admin-year-body" data-xonha-admin-year-body>
+        <p class="xonha-admin-year-loading" data-xonha-admin-year-loading hidden>Carregando…</p>
+        <p class="xonha-admin-year-erro" data-xonha-admin-year-erro hidden>Não foi possível carregar este ano.</p>
+      </div>
     </details>
+    {% endfor %}
     {% else %}
     <p class="login-lead">Nenhum registro ainda.</p>
-    {% endfor %}
+    {% endif %}
   </section>
 </div>
 
@@ -154,6 +121,7 @@
   const texto = document.getElementById("modal-xonha-apagar-texto");
   const form = document.getElementById("form-xonha-apagar");
   const idInput = document.getElementById("form-xonha-apagar-id");
+  const list = document.getElementById("xonha-admin-list");
   if (!modal || !form || !idInput) return;
 
   const abrir = (id, label) => {
@@ -168,10 +136,12 @@
     idInput.value = "";
   };
 
-  document.querySelectorAll("[data-xonha-apagar]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      abrir(btn.getAttribute("data-xonha-apagar"), btn.getAttribute("data-xonha-label") || "");
-    });
+  // Delegação: botões de apagar só existem após carregar o ano.
+  document.addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest("[data-xonha-apagar]") : null;
+    if (!btn) return;
+    e.preventDefault();
+    abrir(btn.getAttribute("data-xonha-apagar"), btn.getAttribute("data-xonha-label") || "");
   });
   document.getElementById("modal-xonha-apagar-cancelar")?.addEventListener("click", fechar);
   document.getElementById("modal-xonha-apagar-confirmar")?.addEventListener("click", () => {
@@ -180,6 +150,131 @@
   modal.addEventListener("click", (e) => { if (e.target === modal) fechar(); });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.classList.contains("is-open")) fechar();
+  });
+
+  if (!list || !list.hasAttribute("data-xonha-admin-lazy")) return;
+
+  const tipoLabel = (tipo) => {
+    if (tipo === "saida") return "Saída";
+    if (tipo === "banimento") return "Banimento";
+    return "Volta";
+  };
+  const esc = (s) => String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const fmtData = (data) => {
+    const d = String(data || "");
+    if (d.length < 10) return d;
+    return d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4);
+  };
+  const svgSave =
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
+  const svgDel =
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+  function renderEvento(e) {
+    const id = e.id;
+    const tipo = e.tipo || "volta";
+    const data = e.data || "";
+    const hora = e.hora || "";
+    const motivo = e.motivo || "";
+    const label = tipoLabel(tipo) + " em " + fmtData(data) + (hora ? " · " + hora : "");
+    const motivoResumo = motivo
+      ? (motivo.length > 72 ? motivo.slice(0, 72) + "…" : motivo)
+      : "";
+    return (
+      '<details class="xonha-admin-details">' +
+      '<summary class="xonha-admin-summary">' +
+      '<span class="xonha-admin-summary-tipo xonha-admin-summary-tipo--' + esc(tipo) + '">' +
+      esc(tipoLabel(tipo)) +
+      "</span>" +
+      '<time datetime="' + esc(data) + (hora ? "T" + esc(hora) : "") + '">' +
+      esc(fmtData(data)) +
+      (hora ? "<span>· " + esc(hora) + "</span>" : "") +
+      "</time>" +
+      (motivoResumo
+        ? '<span class="xonha-admin-summary-motivo">' + esc(motivoResumo) + "</span>"
+        : "") +
+      "</summary>" +
+      '<article class="card xonha-admin-card">' +
+      '<form method="post" action="/admin/xonhometro/atualizar" class="xonha-admin-form" autocomplete="off">' +
+      '<input type="hidden" name="evento_id" value="' + esc(id) + '" />' +
+      '<div class="xonha-admin-row">' +
+      '<div class="xonha-field"><label for="tipo-' + id + '">Tipo</label>' +
+      '<div class="xonha-select-wrap"><select id="tipo-' + id + '" name="tipo" required>' +
+      '<option value="saida"' + (tipo === "saida" ? " selected" : "") + ">Saída</option>" +
+      '<option value="volta"' + (tipo === "volta" ? " selected" : "") + ">Volta</option>" +
+      '<option value="banimento"' + (tipo === "banimento" ? " selected" : "") + ">Banimento</option>" +
+      "</select></div></div>" +
+      '<div class="xonha-field"><label for="data-' + id + '">Data</label>' +
+      '<input id="data-' + id + '" class="xonha-input" type="date" name="data" value="' + esc(data) + '" required /></div>' +
+      '<div class="xonha-field"><label for="hora-' + id + '">Horário</label>' +
+      '<input id="hora-' + id + '" class="xonha-input" type="time" name="hora" value="' + esc(hora) + '" /></div>' +
+      "</div>" +
+      '<div class="xonha-field"><label for="motivo-' + id + '">Motivo</label>' +
+      '<textarea id="motivo-' + id + '" class="xonha-input" name="motivo" rows="2" maxlength="500">' +
+      esc(motivo) +
+      "</textarea></div>" +
+      '<div class="xonha-admin-actions">' +
+      '<button type="submit" class="xonha-icon-btn xonha-icon-btn--save" title="Salvar" aria-label="Salvar">' +
+      svgSave +
+      "</button>" +
+      '<button type="button" class="xonha-icon-btn xonha-icon-btn--delete" title="Apagar" aria-label="Apagar" ' +
+      'data-xonha-apagar="' + esc(id) + '" data-xonha-label="' + esc(label) + '">' +
+      svgDel +
+      "</button>" +
+      "</div></form></article></details>"
+    );
+  }
+
+  function carregarAno(details) {
+    if (!details || details.dataset.loaded === "1" || details.dataset.loading === "1") {
+      return Promise.resolve();
+    }
+    const ano = details.getAttribute("data-xonha-admin-ano");
+    const base = list.getAttribute("data-xonha-admin-anos-src") || "/admin/xonhometro/anos";
+    if (!ano) return Promise.resolve();
+    const body = details.querySelector("[data-xonha-admin-year-body]");
+    const loading = details.querySelector("[data-xonha-admin-year-loading]");
+    const erro = details.querySelector("[data-xonha-admin-year-erro]");
+    if (!body) return Promise.resolve();
+    details.dataset.loading = "1";
+    if (loading) loading.hidden = false;
+    if (erro) erro.hidden = true;
+    return fetch(base + "/" + encodeURIComponent(ano) + ".json", {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then((payload) => {
+        const eventos = (payload && payload.eventos) || [];
+        const frag = document.createDocumentFragment();
+        const wrap = document.createElement("div");
+        wrap.className = "xonha-admin-year-items";
+        wrap.innerHTML = eventos.map(renderEvento).join("");
+        while (wrap.firstChild) frag.appendChild(wrap.firstChild);
+        body.querySelectorAll(".xonha-admin-details").forEach((el) => el.remove());
+        body.appendChild(frag);
+        details.dataset.loaded = "1";
+        details.dataset.loading = "0";
+        if (loading) loading.hidden = true;
+      })
+      .catch(() => {
+        details.dataset.loading = "0";
+        if (loading) loading.hidden = true;
+        if (erro) erro.hidden = false;
+      });
+  }
+
+  list.querySelectorAll("[data-xonha-admin-ano]").forEach((details) => {
+    details.addEventListener("toggle", () => {
+      if (details.open) carregarAno(details);
+    });
   });
 })();
 </script>

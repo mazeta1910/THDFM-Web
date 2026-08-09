@@ -2068,6 +2068,25 @@ def list_xonha_eventos(*, com_motivo: bool = True) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def list_xonha_eventos_ano(ano: str, *, com_motivo: bool = True) -> list[dict[str, Any]]:
+    """Eventos de um ano (mais recente primeiro) — payload do admin sob demanda."""
+    ano_s = str(ano or "").strip()
+    if len(ano_s) != 4 or not ano_s.isdigit():
+        return []
+    cols = "id, tipo, data, hora, criado_em"
+    if com_motivo:
+        cols += ", motivo"
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT {cols} "
+            "FROM xonha_eventos "
+            "WHERE substr(data, 1, 4) = ? "
+            "ORDER BY data DESC, COALESCE(hora, '') DESC, id DESC",
+            (ano_s,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
 def agrupar_xonha_eventos_por_ano(
     eventos: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:

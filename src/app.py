@@ -1239,23 +1239,50 @@ def xonhometro_timeline_json(request: Request):
 def admin_xonhometro(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    # First paint leve: stats + cascas dos anos. Formulários só sob demanda.
     import_meta = None
     try:
-        from src.xonhometro_seed import carregar_eventos_import
+        from src.xonhometro_seed import meta_eventos_import
 
-        _, import_meta = carregar_eventos_import()
+        import_meta = meta_eventos_import()
     except Exception:
         import_meta = None
-    eventos = db.list_xonha_eventos()
+    eventos = db.list_xonha_eventos(com_motivo=False)
     return render(
         request,
         "admin_xonhometro.html",
-        eventos=eventos,
+        timeline_anos=db.resumo_xonha_anos(eventos),
         stats=db.xonha_stats(eventos),
         import_meta=import_meta,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/admin/xonhometro/anos/{ano}.json")
+def admin_xonhometro_ano_json(request: Request, ano: str):
+    """Registros de um ano para edição — carregados ao abrir o <details>."""
+    if not admin_ok(request):
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    eventos = db.list_xonha_eventos_ano(ano, com_motivo=True)
+    payload = {
+        "ano": str(ano),
+        "quantidade": len(eventos),
+        "eventos": [
+            {
+                "id": e["id"],
+                "tipo": e["tipo"],
+                "data": e["data"],
+                "hora": e.get("hora") or "",
+                "motivo": e.get("motivo") or "",
+            }
+            for e in eventos
+        ],
+    }
+    return JSONResponse(
+        payload,
+        headers={"Cache-Control": "private, max-age=30"},
     )
 
 
