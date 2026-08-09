@@ -73,13 +73,13 @@
           <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
           <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
           <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
-        </div>
 
-        {# TEXTOS PARA REESCREVER — começo #}
-        <section class="proto-steam-hero-bolao" id="bolao" aria-label="No bolão">
-          {% include "partials/proto_bolao_perfil.html" %}
-        </section>
-        {# TEXTOS PARA REESCREVER — fim #}
+          {# TEXTOS PARA REESCREVER — começo #}
+          <section class="proto-steam-hero-bolao" id="bolao" aria-label="No bolão">
+            {% include "partials/proto_bolao_perfil.html" %}
+          </section>
+          {# TEXTOS PARA REESCREVER — fim #}
+        </div>
 
         <div class="proto-steam-hero-aside">
           <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
