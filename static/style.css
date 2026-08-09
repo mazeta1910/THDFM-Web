@@ -11258,18 +11258,37 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   border: 0;
   background: transparent;
 }
-.proto-edit .proto-times-picked {
+.proto-edit-section#times .proto-edit-section-title {
+  text-align: center;
+}
+.proto-edit .proto-times-inline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
-  margin-bottom: 0.55rem;
+  margin: 0 auto;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  min-height: 3rem;
+  box-sizing: border-box;
+}
+.proto-edit .proto-times-picked:not([hidden]) {
+  display: contents;
 }
 .proto-edit .proto-times-picked-top {
   display: none;
 }
-.proto-edit #proto-times-open {
-  margin-top: 0.15rem;
+.proto-edit .proto-times-chips {
+  display: contents;
+}
+.proto-edit .proto-times-chips .proto-chip,
+.proto-edit .proto-times-inline #proto-clear,
+.proto-edit .proto-times-inline #proto-times-open {
+  margin: 0;
+  flex: 0 0 auto;
 }
 @media (max-width: 640px) {
   .proto-edit-cover-media {
