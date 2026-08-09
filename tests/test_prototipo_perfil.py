@@ -88,6 +88,11 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     assert r.status_code in (303, 302)
 
     login_admin(client)
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Benevides", status="liberado", celular="11990001122")
+    dbmod.salvar_avatar(part["id"], "benevides-teste.jpg")
+
     r = client.get("/prototipo/perfil/benevides")
     assert r.status_code == 200
     assert "Benevides" in r.text
@@ -96,6 +101,8 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     assert "Palmeiras" in r.text
     assert 'id="proto-perfil-fixado"' in r.text
     assert 'id="public-amigo-pedir"' in r.text
+    assert "/avatars/benevides-teste.jpg" in r.text
+    assert "data-public-avatar" in r.text
 
 
 def test_menu_prototipo_so_dono(client: TestClient):

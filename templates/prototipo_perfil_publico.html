@@ -39,7 +39,9 @@
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
         <div class="proto-steam-avatar" aria-hidden="true">
-          {% if fixado %}
+          {% if fixado and fixado.avatar_url %}
+          <img src="{{ fixado.avatar_url }}" alt="" width="112" height="112" data-public-avatar />
+          {% elif fixado %}
           <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ fixado.iniciais }}</span>
           {% elif viewer_av %}
           <img src="{{ viewer_av }}" alt="" width="112" height="112" data-public-avatar />

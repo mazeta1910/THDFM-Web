@@ -952,9 +952,14 @@ def _perfil_demo_benevides() -> dict:
         if pal
         else []
     )
+    part = db.get_participante_por_nome("Benevides")
+    nome = (part or {}).get("nome") or "Benevides"
+    iniciais = (nome[:2] if nome else "BE").upper()
     return {
         "slug": "benevides",
-        "nome": "Benevides",
+        "nome": nome,
+        "participante_id": (part or {}).get("id"),
+        "avatar_url": avatar_url((part or {}).get("avatar_path")) if part else None,
         # TEXTOS PARA REESCREVER — começo
         "frase": "Porco até o fim.",
         # TEXTOS PARA REESCREVER — fim
@@ -963,7 +968,7 @@ def _perfil_demo_benevides() -> dict:
         "times": times,
         "karma": {"confiavel": 2, "legal": 2, "sexy": 1, "burro": 2},
         "nutela": 72,
-        "iniciais": "BE",
+        "iniciais": iniciais,
     }
 
 
