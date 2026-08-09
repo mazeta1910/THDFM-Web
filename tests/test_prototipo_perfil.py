@@ -20,11 +20,13 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "depoimentos" in r.text.lower()
     assert "quem sou eu" in r.text.lower() or "data-proto-quem" in r.text
     assert 'id="proto-misto"' in r.text
+    assert 'id="banner"' in r.text
+    assert "data-banner-preset" in r.text
     assert "aparece a tag" not in r.text.lower()
     assert "com dois ou mais" not in r.text.lower()
     assert "/static/prototipo-perfil.js" in r.text
     assert "/static/prototipo-times.js" in r.text
-    assert "/static/style.css?v=248" in r.text
+    assert "/static/style.css?v=249" in r.text
 
 
 def test_prototipo_perfil_publico(client: TestClient):

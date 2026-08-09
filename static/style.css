@@ -10182,12 +10182,78 @@ body.proto-steam-body .wrap.wide {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.proto-steam-stage {
+  position: relative;
+  margin-bottom: 0.85rem;
+}
+.proto-steam-banner {
+  height: 168px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.proto-steam-banner--padrao,
+.proto-steam-banner[data-banner="padrao"] {
+  background-image:
+    radial-gradient(800px 180px at 15% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    linear-gradient(135deg, #151515 0%, #1c1c1c 50%, #101010 100%);
+}
+.proto-steam-banner--laranja,
+.proto-steam-banner[data-banner="laranja"] {
+  background-image:
+    linear-gradient(120deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)),
+    linear-gradient(135deg, #7a2f06 0%, #e85d04 45%, #3a1604 100%);
+}
+.proto-steam-banner--gramado,
+.proto-steam-banner[data-banner="gramado"] {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 28px,
+      rgba(0, 0, 0, 0.08) 28px,
+      rgba(0, 0, 0, 0.08) 56px
+    ),
+    linear-gradient(180deg, #1a3d24 0%, #0f2416 55%, #0a1610 100%);
+}
+.proto-steam-banner--noite,
+.proto-steam-banner[data-banner="noite"] {
+  background-image:
+    radial-gradient(500px 160px at 80% 20%, rgba(90, 140, 200, 0.28), transparent 60%),
+    linear-gradient(160deg, #0b1220 0%, #152238 50%, #080d16 100%);
+}
+.proto-steam-banner--carbono,
+.proto-steam-banner[data-banner="carbono"] {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    linear-gradient(180deg, #1a1a1a, #0e0e0e);
+}
+.proto-steam-banner--ouro,
+.proto-steam-banner[data-banner="ouro"] {
+  background-image:
+    radial-gradient(700px 200px at 50% 0%, rgba(230, 194, 0, 0.28), transparent 55%),
+    linear-gradient(145deg, #2a2410 0%, #1a160c 45%, #3a3018 100%);
+}
+.proto-steam-banner[data-banner="custom"] {
+  background-color: #111;
+}
 .proto-steam-hero {
   display: grid;
   grid-template-columns: 128px minmax(0, 1fr) minmax(12rem, 16rem);
   gap: 1rem 1.15rem;
   padding: 1.1rem 1.15rem;
-  margin-bottom: 0.85rem;
+  margin: -52px 0.75rem 0;
+  position: relative;
+  z-index: 1;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
@@ -10196,7 +10262,8 @@ body.proto-steam-body .wrap.wide {
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--border) 70%, #888);
+  border: 3px solid var(--card);
+  box-shadow: 0 0 0 1px var(--border);
   background: var(--bg);
   overflow: hidden;
   flex: 0 0 auto;
@@ -10604,9 +10671,72 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 .proto-steam .proto-times-head--compact {
   margin-bottom: 0.55rem;
 }
+.proto-steam-banner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0.65rem 0 0.75rem;
+}
+.proto-steam-banner-opt {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.proto-steam-banner-opt.is-on,
+.proto-steam-banner-opt:hover {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+.proto-steam-banner-swatch {
+  display: block;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+}
+.proto-steam-banner-opt-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.proto-steam-banner-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 0.45rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.proto-steam-banner-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
 @media (max-width: 900px) {
+  .proto-steam-banner {
+    height: 140px;
+  }
   .proto-steam-hero {
     grid-template-columns: 112px minmax(0, 1fr);
+    margin-top: -40px;
   }
   .proto-steam-hero-aside {
     grid-column: 1 / -1;
@@ -10626,6 +10756,8 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   .proto-steam-hero {
     grid-template-columns: 1fr;
     justify-items: start;
+    margin-left: 0.4rem;
+    margin-right: 0.4rem;
   }
   .proto-steam-avatar {
     margin: 0 auto;

@@ -9,6 +9,7 @@
   const DEPS_KEY = "thdfm-proto-depoimentos";
   const RECADOS_KEY = "thdfm-proto-recados";
   const AMIGOS_KEY = "thdfm-proto-amigos";
+  const BANNER_KEY = "thdfm-proto-banner";
 
   const KARMA_IDS = ["confiavel", "legal", "sexy", "burro"];
   const KARMA_DEFAULT = { confiavel: 2, legal: 3, sexy: 1, burro: 1 };
@@ -20,6 +21,7 @@
     bom_amigo: "bom amigo",
     melhor_amigo: "mais que amigos, irmãos",
   };
+  const BANNER_PRESETS = ["padrao", "laranja", "gramado", "noite", "carbono", "ouro"];
 
   function escapeHtml(s) {
     return String(s)
@@ -232,6 +234,61 @@
     });
   }
 
+  function loadBanner() {
+    const stored = normLoad(BANNER_KEY, null);
+    if (!stored || typeof stored !== "object") return { kind: "preset", id: "padrao" };
+    if (stored.kind === "custom" && typeof stored.dataUrl === "string" && stored.dataUrl.startsWith("data:image/")) {
+      return { kind: "custom", dataUrl: stored.dataUrl };
+    }
+    const id = BANNER_PRESETS.includes(stored.id) ? stored.id : "padrao";
+    return { kind: "preset", id };
+  }
+
+  function applyBanner(root, banner) {
+    if (!root) return;
+    const el = root.querySelector("[data-proto-banner]");
+    if (!el) return;
+    if (banner.kind === "custom" && banner.dataUrl) {
+      el.setAttribute("data-banner", "custom");
+      el.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45)), url("${banner.dataUrl}")`;
+    } else {
+      el.style.backgroundImage = "";
+      el.setAttribute("data-banner", banner.id || "padrao");
+    }
+    root.querySelectorAll("[data-banner-preset]").forEach((btn) => {
+      const on = banner.kind === "preset" && btn.getAttribute("data-banner-preset") === banner.id;
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    const clearBtn = root.querySelector("#proto-banner-clear");
+    if (clearBtn) clearBtn.hidden = banner.kind !== "custom";
+  }
+
+  function compressImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("read"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1400;
+          const scale = Math.min(1, maxW / Math.max(1, img.width));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.72));
+        };
+        img.onerror = () => reject(new Error("img"));
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // ——— Edição ———
   const editRoot = document.getElementById("proto-perfil");
   if (editRoot) {
@@ -248,6 +305,38 @@
     bindTextField(editRoot.querySelector("[data-proto-aniversario]"), ANIV_KEY);
     bindTextField(editRoot.querySelector("[data-proto-relacionamento]"), REL_KEY);
     bindTextField(editRoot.querySelector("[data-proto-quem]"), QUEM_KEY);
+
+    let banner = loadBanner();
+    applyBanner(editRoot, banner);
+    editRoot.querySelectorAll("[data-banner-preset]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        banner = { kind: "preset", id: btn.getAttribute("data-banner-preset") || "padrao" };
+        save(BANNER_KEY, banner);
+        applyBanner(editRoot, banner);
+      });
+    });
+    const bannerFile = document.getElementById("proto-banner-file");
+    if (bannerFile) {
+      bannerFile.addEventListener("change", async () => {
+        const file = bannerFile.files && bannerFile.files[0];
+        if (!file) return;
+        try {
+          const dataUrl = await compressImageFile(file);
+          banner = { kind: "custom", dataUrl };
+          save(BANNER_KEY, banner);
+          applyBanner(editRoot, banner);
+        } catch (_) {}
+        bannerFile.value = "";
+      });
+    }
+    const bannerClear = document.getElementById("proto-banner-clear");
+    if (bannerClear) {
+      bannerClear.addEventListener("click", () => {
+        banner = { kind: "preset", id: "padrao" };
+        save(BANNER_KEY, banner);
+        applyBanner(editRoot, banner);
+      });
+    }
 
     let karma = loadKarma();
     const karmaRoot = document.getElementById("proto-karma-edit");
@@ -357,6 +446,8 @@
   // ——— Público ———
   const pubRoot = document.getElementById("proto-perfil-publico");
   if (pubRoot) {
+    applyBanner(pubRoot, loadBanner());
+
     const nome =
       loadStr(NOME_KEY, null) ||
       (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||

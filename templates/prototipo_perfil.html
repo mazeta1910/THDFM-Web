@@ -7,6 +7,8 @@
 <div class="proto-steam" id="proto-perfil" data-proto-perfil>
   <p class="proto-steam-kicker">Protótipo · local neste navegador · não grava no servidor</p>
 
+  <div class="proto-steam-stage">
+    <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
   {# Header compacto (inspirado na Steam): avatar + identidade + karma #}
   <header class="proto-steam-hero">
     <div class="proto-steam-avatar" aria-hidden="true">
@@ -103,6 +105,7 @@
       </div>
     </div>
   </header>
+  </div>
 
   <div class="proto-steam-layout">
     <div class="proto-steam-main">
@@ -135,6 +138,34 @@
     </div>
 
     <aside class="proto-steam-side" id="amigos">
+      <section class="proto-steam-panel" id="banner">
+        {# TEXTOS PARA REESCREVER — começo #}
+        <h2 class="proto-steam-panel-title">Banner do perfil</h2>
+        <p class="proto-steam-empty">Escolha um fundo ou envie uma imagem.</p>
+        {# TEXTOS PARA REESCREVER — fim #}
+        <div class="proto-steam-banner-grid" role="listbox" aria-label="Banners prontos">
+          {% for b in banner_presets %}
+          <button
+            type="button"
+            class="proto-steam-banner-opt"
+            data-banner-preset="{{ b.id }}"
+            title="{{ b.nome }}"
+            aria-label="{{ b.nome }}"
+          >
+            <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+            <span class="proto-steam-banner-opt-name">{{ b.nome }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <label class="proto-steam-banner-upload">
+          <span>Enviar imagem</span>
+          <input type="file" id="proto-banner-file" accept="image/*" />
+        </label>
+        <button type="button" class="proto-steam-btn proto-steam-btn--ghost" id="proto-banner-clear" hidden>
+          Remover imagem
+        </button>
+      </section>
+
       <section class="proto-steam-panel">
         <h2 class="proto-steam-panel-title">Neste perfil</h2>
         <ul class="proto-steam-stats">
@@ -177,6 +208,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=3" defer></script>
-<script src="/static/prototipo-perfil.js?v=3" defer></script>
+<script src="/static/prototipo-times.js?v=4" defer></script>
+<script src="/static/prototipo-perfil.js?v=4" defer></script>
 {% endblock %}

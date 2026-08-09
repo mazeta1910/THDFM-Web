@@ -7,6 +7,8 @@
 <div class="proto-steam" id="proto-perfil-publico" data-proto-perfil-publico>
   <p class="proto-steam-kicker">Protótipo · visão pública · local neste navegador</p>
 
+  <div class="proto-steam-stage">
+    <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
   <header class="proto-steam-hero">
     <div class="proto-steam-avatar" aria-hidden="true">
       {% if participante_nav %}
@@ -50,6 +52,7 @@
       </div>
     </div>
   </header>
+  </div>
 
   <div class="proto-steam-layout">
     <div class="proto-steam-main">
@@ -113,5 +116,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=3" defer></script>
+<script src="/static/prototipo-perfil.js?v=4" defer></script>
 {% endblock %}

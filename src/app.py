@@ -885,6 +885,18 @@ def _amizade_niveis_demo() -> list[dict]:
     ]
 
 
+def _banner_presets_demo() -> list[dict]:
+    """Banners/presets de fundo do perfil (protótipo)."""
+    return [
+        {"id": "padrao", "nome": "Padrão"},
+        {"id": "laranja", "nome": "Laranja THDFM"},
+        {"id": "gramado", "nome": "Gramado"},
+        {"id": "noite", "nome": "Noite de jogo"},
+        {"id": "carbono", "nome": "Carbono"},
+        {"id": "ouro", "nome": "Final"},
+    ]
+
+
 def _prototipo_times_ctx() -> dict:
     import json
 
@@ -914,6 +926,7 @@ def _prototipo_times_ctx() -> dict:
         "n_clubes": len(clubes),
         "karma_cats": _karma_cats_demo(),
         "amizade_niveis": _amizade_niveis_demo(),
+        "banner_presets": _banner_presets_demo(),
     }
 
 
