@@ -11022,6 +11022,9 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   gap: 0.85rem;
   align-items: start;
 }
+.proto-steam-layout--solo {
+  grid-template-columns: minmax(0, 1fr);
+}
 .proto-steam-main,
 .proto-steam-side {
   display: grid;

@@ -151,9 +151,6 @@
                 <span class="proto-steam-nutela-end is-raiz">raíz</span>
               </div>
             </div>
-            {% if not is_own_view %}
-            <button type="button" class="proto-text-btn proto-text-btn--accent proto-steam-amigo-btn" id="public-amigo-pedir">Pedir amizade</button>
-            {% endif %}
           </div>
           {# TEXTOS PARA REESCREVER — fim #}
 
@@ -163,28 +160,11 @@
     </header>
   </article>
 
-  <div class="proto-steam-layout">
+  <div class="proto-steam-layout proto-steam-layout--solo">
     <div class="proto-steam-main">
       {# TEXTOS PARA REESCREVER — começo #}
       <section class="proto-steam-panel" id="bolao" aria-label="No bolão">
         {% include "partials/proto_bolao_perfil.html" %}
-      </section>
-      {# TEXTOS PARA REESCREVER — fim #}
-
-      <section class="proto-steam-panel" id="feed">
-        <div class="proto-steam-panel-head">
-          <h2 class="proto-steam-panel-title">Feed <span id="public-feed-count">(0)</span></h2>
-        </div>
-        {% if is_own_view %}
-        <form class="proto-steam-compose" id="public-feed-form">
-          <textarea class="proto-steam-field" rows="2" maxlength="280" placeholder="O que está rolando?" required></textarea>
-          <button type="submit" class="proto-ico-btn proto-ico-btn--accent" title="Publicar" aria-label="Publicar no feed">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
-          </button>
-        </form>
-        {% endif %}
-        <ul class="proto-steam-feed" id="public-feed-list"></ul>
-        <p class="proto-steam-empty" id="public-feed-empty">Nenhuma postagem ainda.</p>
       </section>
 
       <section class="proto-steam-panel" id="recados">
@@ -202,40 +182,12 @@
         <ul class="proto-steam-feed" id="public-recados-list"></ul>
         <p class="proto-steam-empty" id="public-recados-empty">Nenhum recado ainda.</p>
       </section>
+      {# TEXTOS PARA REESCREVER — fim #}
     </div>
-
-    <aside class="proto-steam-side" id="amigos">
-      {% if is_own_view %}
-      <section class="proto-steam-panel" id="pedidos">
-        <h2 class="proto-steam-panel-title">Pedidos <span id="public-pedidos-count">(0)</span></h2>
-        <ul class="proto-steam-pedidos" id="public-pedidos-list"></ul>
-        <p class="proto-steam-empty" id="public-pedidos-empty">Nenhum pedido pendente.</p>
-      </section>
-      {% endif %}
-
-      <section class="proto-steam-panel">
-        <h2 class="proto-steam-panel-title">Amigos <span id="public-amigos-count">(0)</span></h2>
-        <ul class="proto-steam-amigos" id="public-amigos-list"></ul>
-        <p class="proto-steam-empty" id="public-amigos-empty">Nenhum amigo ainda.</p>
-      </section>
-
-      <section class="proto-steam-panel">
-        <h2 class="proto-steam-panel-title">Esquema de amizade</h2>
-        <ul class="proto-steam-amizade" id="public-amizade-list">
-          {% for n in amizade_niveis %}
-          <li data-amizade="{{ n.id }}">
-            <span class="proto-steam-amizade-icone" aria-hidden="true">{{ n.icone }}</span>
-            <span>{{ n.nome }}</span>
-            <span class="proto-steam-amizade-pct" data-amizade-pct>0%</span>
-          </li>
-          {% endfor %}
-        </ul>
-      </section>
-    </aside>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=19" defer></script>
+<script src="/static/prototipo-perfil.js?v=20" defer></script>
 {% endblock %}

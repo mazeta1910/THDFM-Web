@@ -920,28 +920,7 @@
       }
     }
 
-    let feed = loadPosts(FEED_KEY);
     let recados = loadPosts(RECADOS_KEY);
-    let amigos = loadAmigos();
-    let pedidos = loadPedidos();
-
-    function refreshFeed() {
-      renderPosts(
-        document.getElementById("public-feed-list"),
-        document.getElementById("public-feed-empty"),
-        document.getElementById("public-feed-count"),
-        feed,
-        {
-          canDelete: isOwn,
-          authorFallback: ownerNome,
-          onDelete: (id) => {
-            feed = feed.filter((x) => x.id !== id);
-            save(FEED_KEY, feed);
-            refreshFeed();
-          },
-        }
-      );
-    }
 
     function refreshRecados() {
       renderPosts(
@@ -960,74 +939,7 @@
       );
     }
 
-    function refreshAmigos() {
-      renderAmigos(
-        document.getElementById("public-amigos-list"),
-        document.getElementById("public-amigos-count"),
-        document.getElementById("public-amigos-empty"),
-        amigos
-      );
-      paintAmizade(document.getElementById("public-amizade-list"), amigos);
-    }
-
-    function refreshPedidos() {
-      renderPedidos(
-        document.getElementById("public-pedidos-list"),
-        document.getElementById("public-pedidos-count"),
-        document.getElementById("public-pedidos-empty"),
-        pedidos,
-        {
-          onAccept: (id) => {
-            const p = pedidos.find((x) => x.id === id);
-            if (!p) return;
-            pedidos = pedidos.filter((x) => x.id !== id);
-            amigos.unshift({
-              id: uid(),
-              nome: p.nome,
-              avatar: p.avatar,
-              iniciais: p.iniciais,
-              nivel: "conhecido",
-            });
-            amigos = amigos.slice(0, 40);
-            save(PEDIDOS_KEY, pedidos);
-            save(AMIGOS_KEY, amigos);
-            refreshPedidos();
-            refreshAmigos();
-          },
-          onReject: (id) => {
-            pedidos = pedidos.filter((x) => x.id !== id);
-            save(PEDIDOS_KEY, pedidos);
-            refreshPedidos();
-          },
-        }
-      );
-    }
-
-    refreshFeed();
     refreshRecados();
-    refreshAmigos();
-    if (isOwn) refreshPedidos();
-
-    const feedForm = document.getElementById("public-feed-form");
-    if (feedForm && isOwn) {
-      feedForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const texto = ((feedForm.querySelector("textarea") || {}).value || "").trim();
-        if (!texto) return;
-        feed.unshift({
-          id: uid(),
-          texto: texto.slice(0, 280),
-          autor: ownerNome,
-          avatar: viewer.avatar,
-          iniciais: viewer.iniciais,
-          at: new Date().toISOString(),
-        });
-        feed = feed.slice(0, 40);
-        save(FEED_KEY, feed);
-        feedForm.reset();
-        refreshFeed();
-      });
-    }
 
     const recadoForm = document.getElementById("public-recado-form");
     if (recadoForm && !isOwn) {
@@ -1047,31 +959,6 @@
         save(RECADOS_KEY, recados);
         recadoForm.reset();
         refreshRecados();
-      });
-    }
-
-    const pedirBtn = document.getElementById("public-amigo-pedir");
-    if (pedirBtn && !isOwn) {
-      const already =
-        pedidos.some((p) => p.nome.toLowerCase() === viewer.nome.toLowerCase()) ||
-        amigos.some((a) => a.nome.toLowerCase() === viewer.nome.toLowerCase());
-      if (already) {
-        pedirBtn.disabled = true;
-        pedirBtn.title = "Pedido já enviado ou já é amigo";
-      }
-      pedirBtn.addEventListener("click", () => {
-        if (pedirBtn.disabled) return;
-        pedidos.unshift({
-          id: uid(),
-          nome: viewer.nome,
-          avatar: viewer.avatar,
-          iniciais: viewer.iniciais,
-          at: new Date().toISOString(),
-        });
-        pedidos = pedidos.slice(0, 40);
-        save(PEDIDOS_KEY, pedidos);
-        pedirBtn.disabled = true;
-        pedirBtn.title = "Pedido enviado";
       });
     }
 

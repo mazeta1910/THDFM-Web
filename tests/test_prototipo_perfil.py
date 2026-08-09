@@ -98,21 +98,23 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert r.status_code == 200
     assert "meu perfil" in r.text.lower()
     assert 'data-own="1"' in r.text
-    assert 'id="public-feed-form"' in r.text
-    assert 'id="pedidos"' in r.text
+    assert 'id="public-feed-form"' not in r.text
+    assert 'id="feed"' not in r.text
+    assert 'id="pedidos"' not in r.text
     assert 'id="public-amigo-pedir"' not in r.text
+    assert "esquema de amizade" not in r.text.lower()
     assert "depoimentos" not in r.text.lower()
-    assert "mais que amigos, irmães" in r.text.lower()
     assert 'id="bolao"' in r.text
+    assert 'id="recados"' in r.text
     assert 'class="proto-steam-panel"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
     assert "assinatura {" not in r.text
     assert "{'placar':" not in r.text
-    # Bolão em card próprio abaixo do hero, antes do feed
+    # Bolão em card próprio abaixo do hero, antes dos recados
     assert 'proto-steam-hero-bolao' not in r.text
     assert r.text.index('class="proto-steam-card"') < r.text.index('id="bolao"')
-    assert r.text.index('id="bolao"') < r.text.index('id="feed"')
+    assert r.text.index('id="bolao"') < r.text.index('id="recados"')
 
 
 def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):
@@ -138,10 +140,11 @@ def test_prototipo_perfil_publico_visitante(client: TestClient):
     assert r.status_code == 200
     assert "visão de visitante" in r.text.lower()
     assert 'data-own="0"' in r.text
-    assert 'id="public-amigo-pedir"' in r.text
+    assert 'id="public-amigo-pedir"' not in r.text
     assert 'id="public-recado-form"' in r.text
     assert 'id="public-feed-form"' not in r.text
     assert 'id="pedidos"' not in r.text
+    assert "esquema de amizade" not in r.text.lower()
     assert "data-karma-cycle" in r.text
     assert "proto-steam-karma--votavel" in r.text
     assert "proto-steam-karma--line" in r.text
@@ -174,7 +177,9 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     assert 'data-own="0"' in r.text
     assert "Palmeiras" in r.text
     assert 'id="proto-perfil-fixado"' in r.text
-    assert 'id="public-amigo-pedir"' in r.text
+    assert 'id="public-amigo-pedir"' not in r.text
+    assert 'id="recados"' in r.text
+    assert 'id="public-recado-form"' in r.text
     assert "/avatars/benevides-teste.jpg" in r.text
     assert "data-public-avatar" in r.text
 
