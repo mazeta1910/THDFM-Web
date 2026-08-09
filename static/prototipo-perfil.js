@@ -146,12 +146,24 @@
     const iconsEl = row.querySelector("[data-karma-icons]");
     const voteEl = row.querySelector("[data-karma-vote-icons]");
     const labelEl = row.querySelector("[data-karma-label]");
+    const cycleBtn = row.querySelector("[data-karma-cycle]");
     const labels = labelsFor(row);
+    const cat = row.getAttribute("data-nome") || (labelEl ? labelEl.textContent : "");
     const n = Math.max(0, Math.min(3, mediaLevel | 0));
     const v = voteLevel == null ? null : Math.max(0, Math.min(3, voteLevel | 0));
     paintIcons(iconsEl, icon, n);
     if (voteEl) paintIcons(voteEl, icon, v || 0);
-    if (labelEl) labelEl.textContent = n === 0 ? "—" : labels[n - 1] || "—";
+    if (labelEl) labelEl.textContent = cat || labelEl.textContent;
+    const mediaTxt = n === 0 ? "sem média" : labels[n - 1] || "—";
+    const votoTxt = v ? labels[v - 1] || String(v) : "sem voto";
+    row.title = v != null ? `${mediaTxt} · seu voto: ${votoTxt}` : mediaTxt;
+    if (cycleBtn) {
+      cycleBtn.style.setProperty("--voto-n", String(v || 0));
+      cycleBtn.setAttribute(
+        "aria-label",
+        `Votar ${cat || "karma"} · média ${mediaTxt} · seu voto ${votoTxt}`
+      );
+    }
   }
 
   function paintKarmaRoot(root, karma, votos) {

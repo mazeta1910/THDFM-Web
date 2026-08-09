@@ -75,73 +75,75 @@
           <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
 
           {# TEXTOS PARA REESCREVER — começo #}
+          <div class="proto-steam-karma-bar">
+            <div
+              class="proto-steam-karma proto-steam-karma--line {% if not is_own_view %}proto-steam-karma--votavel{% endif %}"
+              id="public-karma"
+              aria-label="Karma"
+            >
+              {% for k in karma_cats %}
+              <div
+                class="proto-steam-karma-item"
+                data-karma="{{ k.id }}"
+                data-icon="{{ k.icon }}"
+                data-nome="{{ k.nome|lower }}"
+                data-labels="{{ k.labels | join('|') }}"
+              >
+                <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+                {% if not is_own_view %}
+                <button
+                  type="button"
+                  class="proto-steam-icons proto-steam-icons--voto"
+                  data-karma-cycle
+                  aria-label="Votar {{ k.nome }} (ícones = média da galera)"
+                  style="--voto-n: 0"
+                >
+                  <span data-karma-icons aria-hidden="true"></span>
+                </button>
+                <span class="visually-hidden" data-karma-vote-icons></span>
+                {% else %}
+                <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
+                {% endif %}
+              </div>
+              {% endfor %}
+              <div
+                class="proto-steam-nutela proto-steam-nutela--inline {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}"
+                data-nutela
+                style="--nutela: 50%; --nutela-voto: 50%"
+              >
+                <span class="proto-steam-nutela-end is-nutela">nutela</span>
+                <div class="proto-steam-nutela-meter">
+                  <div class="proto-steam-nutela-track" aria-hidden="true">
+                    <span class="proto-steam-nutela-marker" data-nutela-marker title="Média da galera"></span>
+                    {% if not is_own_view %}
+                    <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" hidden></span>
+                    {% endif %}
+                  </div>
+                  {% if not is_own_view %}
+                  <input
+                    class="proto-steam-nutela-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                    aria-label="Seu voto no medidor nutela a raíz"
+                    data-proto-nutela
+                  />
+                  {% endif %}
+                </div>
+                <span class="proto-steam-nutela-end is-raiz">raíz</span>
+              </div>
+            </div>
+            {% if not is_own_view %}
+            <button type="button" class="proto-text-btn proto-text-btn--accent proto-steam-amigo-btn" id="public-amigo-pedir">Pedir amizade</button>
+            {% endif %}
+          </div>
+
           <section class="proto-steam-hero-bolao" id="bolao" aria-label="No bolão">
             {% include "partials/proto_bolao_perfil.html" %}
           </section>
           {# TEXTOS PARA REESCREVER — fim #}
-        </div>
-
-        <div class="proto-steam-hero-aside">
-          <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
-            {# TEXTOS PARA REESCREVER — começo #}
-            <p class="proto-steam-karma-caption">Karma da galera</p>
-            {# TEXTOS PARA REESCREVER — fim #}
-            {% for k in karma_cats %}
-            <div
-              class="proto-steam-karma-row"
-              data-karma="{{ k.id }}"
-              data-icon="{{ k.icon }}"
-              data-labels="{{ k.labels | join('|') }}"
-            >
-              <div class="proto-steam-karma-media">
-                <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
-                <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
-              </div>
-              {% if not is_own_view %}
-              <div class="proto-steam-karma-voto">
-                <span class="proto-steam-karma-voto-lab">seu voto</span>
-                <button type="button" class="proto-steam-icons proto-steam-icons--voto" data-karma-cycle aria-label="Votar {{ k.nome }}">
-                  <span data-karma-vote-icons></span>
-                </button>
-              </div>
-              {% endif %}
-            </div>
-            {% endfor %}
-            <div class="proto-steam-nutela {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}" data-nutela style="--nutela: 50%; --nutela-voto: 50%">
-              <div class="proto-steam-nutela-head">
-                <span class="proto-steam-nutela-end is-nutela">nutela</span>
-                <span class="proto-steam-nutela-end is-raiz">raíz</span>
-              </div>
-              <div class="proto-steam-nutela-meter">
-                <div class="proto-steam-nutela-track" aria-hidden="true">
-                  <span class="proto-steam-nutela-marker" data-nutela-marker title="Média da galera"></span>
-                  {% if not is_own_view %}
-                  <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" hidden></span>
-                  {% endif %}
-                </div>
-                {% if not is_own_view %}
-                <input
-                  class="proto-steam-nutela-range"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                  aria-label="Seu voto no medidor nutela a raíz"
-                  data-proto-nutela
-                />
-                {% endif %}
-              </div>
-              {% if not is_own_view %}
-              <p class="proto-steam-nutela-hint" data-nutela-hint>Arraste para votar · o marcador claro é a média</p>
-              {% endif %}
-            </div>
-          </div>
-          {% if not is_own_view %}
-          {# TEXTOS PARA REESCREVER — começo #}
-          <button type="button" class="proto-text-btn proto-text-btn--accent proto-steam-amigo-btn" id="public-amigo-pedir">Pedir amizade</button>
-          {# TEXTOS PARA REESCREVER — fim #}
-          {% endif %}
         </div>
       </div>
     </header>
@@ -215,5 +217,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=15" defer></script>
+<script src="/static/prototipo-perfil.js?v=16" defer></script>
 {% endblock %}

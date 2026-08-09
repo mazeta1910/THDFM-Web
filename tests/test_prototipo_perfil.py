@@ -40,7 +40,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "avatar-edit-camera" in r.text
     assert "Salvar alterações" in r.text
     assert 'id="proto-edit-save"' in r.text
-    assert "/static/style.css?v=267" in r.text
+    assert "/static/style.css?v=268" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
@@ -96,6 +96,7 @@ def test_prototipo_perfil_publico_visitante(client: TestClient):
     assert 'id="pedidos"' not in r.text
     assert "data-karma-cycle" in r.text
     assert "proto-steam-karma--votavel" in r.text
+    assert "proto-steam-karma--line" in r.text
 
 
 def test_prototipo_perfil_publico_dono_nao_vota_karma(client: TestClient):
@@ -105,7 +106,7 @@ def test_prototipo_perfil_publico_dono_nao_vota_karma(client: TestClient):
     assert 'data-own="1"' in r.text
     assert "data-karma-cycle" not in r.text
     assert "proto-steam-karma--votavel" not in r.text
-    assert "Karma da galera" in r.text
+    assert "proto-steam-karma--line" in r.text
 
 
 def test_prototipo_perfil_benevides_privado(client: TestClient):
