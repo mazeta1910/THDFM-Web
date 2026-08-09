@@ -11171,6 +11171,8 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 }
 .proto-edit-field {
   display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
   gap: 0.35rem;
   margin-bottom: 0.85rem;
 }
@@ -11178,22 +11180,47 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   margin-bottom: 0;
 }
 .proto-edit-field > label {
+  display: block;
+  margin: 0;
+  min-height: 1.2em;
   font-size: 0.8rem;
   font-weight: 650;
+  line-height: 1.2;
   color: var(--steam-text, var(--text));
 }
-.proto-edit-input {
+.proto-edit input.proto-edit-input,
+.proto-edit select.proto-edit-input,
+.proto-edit textarea.proto-edit-input {
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 0.62rem 0.75rem;
+  margin-bottom: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg);
   color: var(--text);
   font: inherit;
-  line-height: 1.35;
+  font-size: 0.95rem;
+  line-height: 1.25;
   box-sizing: border-box;
+  vertical-align: top;
+}
+.proto-edit input.proto-edit-input,
+.proto-edit select.proto-edit-input {
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+}
+.proto-edit select.proto-edit-input {
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+.proto-edit textarea.proto-edit-input {
+  height: auto;
+  min-height: 5.5rem;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  line-height: 1.4;
 }
 .proto-edit-input:focus {
   outline: none;
@@ -11221,6 +11248,7 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem 1rem;
+  align-items: start;
 }
 .proto-edit-grid-2 .proto-edit-field {
   margin-bottom: 0;
