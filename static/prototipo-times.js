@@ -27,10 +27,6 @@
   let query = "";
   let selected = loadSelected();
 
-  const serieAIds = new Set(
-    clubes.filter((c) => norm(c.divisao || "").includes("assai")).map((c) => c.id)
-  );
-
   function loadSelected() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -58,6 +54,10 @@
       .toLowerCase()
       .trim();
   }
+
+  const serieAIds = new Set(
+    clubes.filter((c) => norm(c.divisao || "").includes("assai")).map((c) => c.id)
+  );
 
   function escapeHtml(s) {
     return String(s)
