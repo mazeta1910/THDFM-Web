@@ -83,8 +83,8 @@ def _path_publico(path: str) -> bool:
         return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
         return True
-    # Protótipos de perfil / times (avaliação pública)
-    if path.startswith("/prototipo/"):
+    # Perfil (handler ainda exige liberado/admin)
+    if path.startswith("/meu-perfil") or path.startswith("/perfil/") or path.startswith("/prototipo/"):
         return True
     # Link mágico do participante
     if path.startswith("/p/"):
@@ -930,7 +930,7 @@ def _prototipo_times_ctx() -> dict:
     }
 
 
-def _require_proto_perfil(request: Request) -> RedirectResponse | None:
+def _require_perfil(request: Request) -> RedirectResponse | None:
     """Perfil: participante liberado na sessão (admin também, via vínculo no render)."""
     if admin_ok(request):
         return None
@@ -946,39 +946,21 @@ def _require_proto_perfil(request: Request) -> RedirectResponse | None:
     return None
 
 
-def _perfil_demo_benevides() -> dict:
-    """Perfil fixo do Benevides para o protótipo privado."""
-    from src.clubes_catalogo import carregar_clubes
-
-    pal = next((c for c in carregar_clubes() if c.get("nome") == "Palmeiras"), None)
-    times = (
-        [
-            {
-                "id": pal["id"],
-                "nome": pal["nome"],
-                "uf": pal["uf"],
-                "emblema": pal["emblema"],
-            }
-        ]
-        if pal
-        else []
-    )
-    part = db.get_participante_por_nome("Benevides")
-    nome = (part or {}).get("nome") or "Benevides"
-    iniciais = (nome[:2] if nome else "BE").upper()
+def _perfil_publico_payload(part: dict) -> dict:
+    """Dados públicos de um participante para a página de perfil."""
+    nome = (part.get("nome") or "").strip() or "Participante"
+    iniciais = (nome[:2] if nome else "??").upper()
     return {
-        "slug": "benevides",
+        "slug": str(part["id"]),
         "nome": nome,
-        "participante_id": (part or {}).get("id"),
-        "avatar_url": avatar_url((part or {}).get("avatar_path")) if part else None,
-        # TEXTOS PARA REESCREVER — começo
-        "frase": "Porco até o fim.",
-        # TEXTOS PARA REESCREVER — fim
+        "participante_id": part["id"],
+        "avatar_url": avatar_url(part.get("avatar_path")),
+        "frase": "",
         "relacionamento": "",
         "aniversario": "",
-        "times": times,
-        "karma": {"confiavel": 2, "legal": 2, "sexy": 1, "burro": 2},
-        "nutela": 72,
+        "times": [],
+        "karma": {"confiavel": 2, "legal": 3, "sexy": 1, "burro": 1},
+        "nutela": 50,
         "iniciais": iniciais,
     }
 
@@ -1118,31 +1100,10 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     }
 
 
-@app.get("/prototipo/times", response_class=HTMLResponse)
-def prototipo_times(request: Request):
-    """Atalho legado: seletor isolado (preferir /prototipo/perfil#times)."""
-    neg = _require_proto_perfil(request)
-    if neg:
-        return neg
-    return render(request, "prototipo_times.html", **_prototipo_times_ctx(), **_taxa_ctx())
-
-
-@app.get("/prototipo/perfil", response_class=HTMLResponse)
-def prototipo_perfil(request: Request):
-    """Perfil editável (sobre + times + banner). Participante liberado ou admin."""
-    neg = _require_proto_perfil(request)
-    if neg:
-        return neg
-    return render(request, "prototipo_perfil.html", **_prototipo_times_ctx(), **_taxa_ctx())
-
-
-@app.get("/prototipo/perfil/publico", response_class=HTMLResponse)
-def prototipo_perfil_publico(request: Request):
-    """Visão pública do próprio perfil. Participante liberado ou admin.
-
-    Por padrão é a visão do dono. Use ?como=visitante para simular outro usuário.
-    """
-    neg = _require_proto_perfil(request)
+@app.get("/meu-perfil", response_class=HTMLResponse)
+def meu_perfil(request: Request):
+    """Visão pública do próprio perfil. Use ?como=visitante para simular outro usuário."""
+    neg = _require_perfil(request)
     if neg:
         return neg
     como = (request.query_params.get("como") or "").strip().lower()
@@ -1150,7 +1111,7 @@ def prototipo_perfil_publico(request: Request):
     part = _participante_sessao(request)
     return render(
         request,
-        "prototipo_perfil_publico.html",
+        "meu_perfil.html",
         **_prototipo_times_ctx(),
         **_taxa_ctx(),
         is_own_view=is_own_view,
@@ -1159,37 +1120,75 @@ def prototipo_perfil_publico(request: Request):
     )
 
 
-@app.get("/prototipo/perfil/benevides", response_class=HTMLResponse)
-def prototipo_perfil_benevides(request: Request):
-    """Perfil demo do Benevides (protótipo). Participante liberado ou admin."""
-    import json
-
-    neg = _require_proto_perfil(request)
+@app.get("/meu-perfil/editar", response_class=HTMLResponse)
+def meu_perfil_editar(request: Request):
+    """Edição do próprio perfil (sobre + times + banner)."""
+    neg = _require_perfil(request)
     if neg:
         return neg
-    fixado = _perfil_demo_benevides()
-    part_b = db.get_participante_por_nome("Benevides")
+    return render(request, "meu_perfil_editar.html", **_prototipo_times_ctx(), **_taxa_ctx())
+
+
+@app.get("/perfil/{participante_id:int}", response_class=HTMLResponse)
+def perfil_participante(request: Request, participante_id: int):
+    """Perfil público de qualquer participante liberado."""
+    import json
+
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse("/classificacao", status_code=303)
+    sess = _participante_sessao(request)
+    if sess and int(sess["id"]) == int(participante_id):
+        return RedirectResponse("/meu-perfil", status_code=303)
+    fixado = _perfil_publico_payload(part)
     return render(
         request,
-        "prototipo_perfil_publico.html",
+        "meu_perfil.html",
         **_prototipo_times_ctx(),
         **_taxa_ctx(),
         is_own_view=False,
         perfil_fixado=fixado,
         perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
-        bolao_perfil=_bolao_resumo_perfil(part_b["id"] if part_b else None),
+        bolao_perfil=_bolao_resumo_perfil(part["id"]),
     )
 
 
-@app.get("/prototipo/times/clubes.json")
-def prototipo_times_clubes_json(request: Request):
-    neg = _require_proto_perfil(request)
+@app.get("/meu-perfil/clubes.json")
+def meu_perfil_clubes_json(request: Request):
+    neg = _require_perfil(request)
     if neg:
         return neg
     from src.clubes_catalogo import carregar_clubes
 
     clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
     return JSONResponse({"clubes": clubes, "total": len(clubes)})
+
+
+@app.get("/prototipo/perfil", include_in_schema=False)
+@app.get("/prototipo/perfil/publico", include_in_schema=False)
+@app.get("/prototipo/perfil/benevides", include_in_schema=False)
+@app.get("/prototipo/times", include_in_schema=False)
+@app.get("/prototipo/times/clubes.json", include_in_schema=False)
+def legado_prototipo_perfil(request: Request):
+    """Redirects das rotas antigas de protótipo."""
+    path = request.url.path.rstrip("/")
+    q = request.url.query
+    suffix = f"?{q}" if q else ""
+    if path.endswith("/benevides"):
+        part = db.get_participante_por_nome("Benevides")
+        if part:
+            return RedirectResponse(f"/perfil/{part['id']}{suffix}", status_code=301)
+        return RedirectResponse(f"/meu-perfil{suffix}", status_code=301)
+    if path.endswith("/publico"):
+        return RedirectResponse(f"/meu-perfil{suffix}", status_code=301)
+    if path.endswith("/clubes.json"):
+        return RedirectResponse("/meu-perfil/clubes.json", status_code=301)
+    if path.endswith("/times"):
+        return RedirectResponse("/meu-perfil/editar#times", status_code=301)
+    return RedirectResponse(f"/meu-perfil/editar{suffix}", status_code=301)
 
 
 def _pagina_em_breve(request: Request, *, titulo: str, secao: str, lead: str | None = None):
@@ -2376,7 +2375,11 @@ def _redirect_conta_drawer(token: str, *, msg: str | None = None, erro: str | No
 def _safe_conta_next(next_url: str | None) -> str | None:
     """Permite voltar a páginas internas conhecidas após salvar a conta."""
     n = (next_url or "").strip()
-    if n in {"/prototipo/perfil", "/prototipo/perfil/publico"}:
+    if n in {"/meu-perfil", "/meu-perfil/editar", "/prototipo/perfil", "/prototipo/perfil/publico"}:
+        if n.startswith("/prototipo/perfil/publico"):
+            return "/meu-perfil"
+        if n.startswith("/prototipo/perfil"):
+            return "/meu-perfil/editar"
         return n
     return None
 

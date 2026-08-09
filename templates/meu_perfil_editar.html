@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Protótipo · Editar perfil — THDFM{% endblock %}
+{% block title %}Editar perfil — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block body_class %}proto-steam-body {% endblock %}
 
@@ -18,16 +18,16 @@
 >
   <header class="proto-edit-top">
     <div>
-      <p class="proto-steam-kicker">Protótipo · privado · Mazeta</p>
+      <p class="proto-steam-kicker">Meu perfil</p>
       {# TEXTOS PARA REESCREVER — começo #}
       <h1 class="proto-edit-title">Editar perfil</h1>
       <p class="proto-edit-lead">Toque na capa ou na foto para trocar. Ao salvar, você volta para o seu perfil.</p>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
     {# TEXTOS PARA REESCREVER — começo #}
-    <nav class="proto-edit-nav" aria-label="Atalhos do protótipo">
-      <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil/publico">Ver meu perfil</a>
-      <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
+    <nav class="proto-edit-nav" aria-label="Atalhos do perfil">
+      <a class="proto-text-btn proto-text-btn--accent" href="/meu-perfil">Ver meu perfil</a>
+      <a class="proto-text-btn" href="/meu-perfil?como=visitante">Ver como visitante</a>
       {% if participante_nav %}
       <a class="proto-text-btn" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
       {% endif %}
@@ -45,7 +45,7 @@
     aria-hidden="true"
   >
     <input type="hidden" name="nome" id="proto-avatar-nome" value="{{ viewer_nome }}" />
-    <input type="hidden" name="next" value="/prototipo/perfil" />
+    <input type="hidden" name="next" value="/meu-perfil/editar" />
     <input type="file" name="avatar" id="proto-avatar-file" accept=".jpg,.jpeg,.png,.webp,image/*" />
   </form>
   {% endif %}
@@ -194,7 +194,7 @@
         Sem alterações novas
       </p>
       <div class="proto-edit-save-actions">
-        <a class="proto-text-btn" href="/prototipo/perfil/publico">Ver perfil</a>
+        <a class="proto-text-btn" href="/meu-perfil">Ver perfil</a>
         <button type="submit" class="proto-text-btn proto-text-btn--accent" id="proto-edit-save" data-proto-save>
           Salvar alterações
         </button>
@@ -219,7 +219,7 @@
       class="proto-edit-senha-form"
       novalidate
     >
-      <input type="hidden" name="next" value="/prototipo/perfil" />
+      <input type="hidden" name="next" value="/meu-perfil/editar" />
       <div class="proto-edit-field">
         <label for="proto-senha-atual">Senha atual</label>
         <div class="password-field">
@@ -289,6 +289,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=13" defer></script>
-<script src="/static/prototipo-perfil.js?v=21" defer></script>
+<script src="/static/prototipo-times.js?v=14" defer></script>
+<script src="/static/prototipo-perfil.js?v=22" defer></script>
 {% endblock %}

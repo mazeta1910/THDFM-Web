@@ -1,4 +1,4 @@
-"""Protótipo do seletor de times (UF + catálogo FM)."""
+"""Catálogo de times (FM) e JSON do seletor no perfil."""
 
 from __future__ import annotations
 
@@ -25,24 +25,26 @@ def test_catalogo_clubes_carrega():
     assert (EMBLEMAS_FM_DIR / f"{pal['id_arquivo']}.png").is_file()
 
 
-def test_prototipo_times_exige_dono(client: TestClient):
+def test_legado_times_redireciona(client: TestClient):
     r = client.get("/prototipo/times", follow_redirects=False)
-    assert r.status_code in (303, 302)
+    assert r.status_code == 301
+    assert "/meu-perfil/editar" in (r.headers.get("location") or "")
 
 
-def test_prototipo_times_pagina(client: TestClient):
+def test_meu_perfil_editar_tem_seletor(client: TestClient):
     login_admin(client)
-    r = client.get("/prototipo/times")
+    r = client.get("/meu-perfil/editar")
     assert r.status_code == 200
-    assert "Escolha seus times" in r.text
+    assert "Times do coração" in r.text
     assert "Torcedor Misto" in r.text
     assert 'id="proto-times"' in r.text
     assert "/static/prototipo-times.js" in r.text
+    assert 'data-clubes-src="/meu-perfil/clubes.json"' in r.text
 
 
-def test_prototipo_times_json_e_emblema(client: TestClient):
+def test_meu_perfil_clubes_json_e_emblema(client: TestClient):
     login_admin(client)
-    r = client.get("/prototipo/times/clubes.json")
+    r = client.get("/meu-perfil/clubes.json")
     assert r.status_code == 200
     data = r.json()
     assert data["total"] >= 1200

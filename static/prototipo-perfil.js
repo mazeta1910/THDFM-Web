@@ -14,7 +14,7 @@
   const AMIGOS_KEY = "thdfm-proto-amigos";
   const PEDIDOS_KEY = "thdfm-proto-pedidos";
   const BANNER_KEY = "thdfm-proto-banner";
-  const CLUBES_URL = "/prototipo/times/clubes.json";
+  const CLUBES_URL = "/meu-perfil/clubes.json";
 
   const KARMA_IDS = ["confiavel", "legal", "sexy", "burro"];
   const KARMA_DEFAULT = { confiavel: 2, legal: 3, sexy: 1, burro: 1 };
@@ -730,7 +730,7 @@
       dirty = false;
       setSaveStatus("Salvo · abrindo seu perfil…", "saved");
       if (saveBtn) saveBtn.disabled = true;
-      window.location.assign("/prototipo/perfil/publico");
+      window.location.assign("/meu-perfil");
     };
 
     if (nomeInput) {

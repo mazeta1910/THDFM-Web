@@ -1,7 +1,7 @@
 {% set acesso_q = request.query_params.get('acesso') or '' %}
 {% set on_conta = participante_nav and '/conta' in path %}
 {% set on_home = path == '/' or path == '/home' %}
-{% set on_meu_perfil = path.startswith('/prototipo/perfil') and 'benevides' not in path %}
+{% set on_meu_perfil = path.startswith('/meu-perfil') %}
 {% set on_entrar = path.startswith('/entrar') or acesso_q == 'entrar' %}
 {% set on_login = (path.startswith('/login') and not path.startswith('/loguin')) or acesso_q in ('recuperar', 'login') %}
 {% set on_loguin = path.startswith('/loguin') or acesso_q == 'loguin' %}
@@ -42,7 +42,7 @@
         </span>
       </button>
       {# TEXTOS PARA REESCREVER — começo #}
-      <a href="/prototipo/perfil/publico" class="site-brand-user {% if on_meu_perfil %}active{% endif %}">
+      <a href="/meu-perfil" class="site-brand-user {% if on_meu_perfil %}active{% endif %}">
         <span class="site-brand-user-text">
           <span class="site-brand-name">{{ participante_nav.nome }}</span>
           <span class="site-brand-hint">Meu perfil</span>

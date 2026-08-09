@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Protótipo · {% if perfil_fixado %}{{ perfil_fixado.nome }}{% else %}Perfil{% endif %} — THDFM{% endblock %}
+{% block title %}{% if perfil_fixado %}{{ perfil_fixado.nome }}{% else %}Meu perfil{% endif %} — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block body_class %}proto-steam-body {% endblock %}
 
@@ -21,11 +21,11 @@
 >
   <p class="proto-steam-kicker">
     {% if fixado %}
-    Protótipo · perfil de {{ fixado.nome }} · privado
+    Perfil de {{ fixado.nome }}
     {% elif is_own_view %}
-    Protótipo · meu perfil
+    Meu perfil
     {% else %}
-    Protótipo · visão de visitante
+    Visão de visitante
     {% endif %}
   </p>
 
@@ -39,15 +39,15 @@
       {# TEXTOS PARA REESCREVER — começo #}
       <nav class="proto-steam-banner-nav" aria-label="Atalhos do perfil">
         {% if is_own_view %}
-        <a class="proto-text-btn proto-text-btn--accent proto-text-btn--icon" href="/prototipo/perfil" aria-label="Editar perfil" title="Editar perfil">
+        <a class="proto-text-btn proto-text-btn--accent proto-text-btn--icon" href="/meu-perfil/editar" aria-label="Editar perfil" title="Editar perfil">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"/>
             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
         </a>
-        <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
+        <a class="proto-text-btn" href="/meu-perfil?como=visitante">Ver como visitante</a>
         {% else %}
-        <a class="proto-text-btn" href="/prototipo/perfil/publico">Meu perfil</a>
+        <a class="proto-text-btn" href="/meu-perfil">Meu perfil</a>
         {% endif %}
       </nav>
       {# TEXTOS PARA REESCREVER — fim #}
@@ -196,5 +196,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=21" defer></script>
+<script src="/static/prototipo-perfil.js?v=22" defer></script>
 {% endblock %}

@@ -85,8 +85,8 @@
           </td>
           <td class="col-player" data-value="{{ r.participante }}">
             <div class="classificacao-player">
-              {% if (r.participante or '')|lower == 'benevides' %}
-              <a class="classificacao-player-link" href="/prototipo/perfil/benevides" title="Ver perfil">
+              {% if r.participante_id is defined and r.participante_id %}
+              <a class="classificacao-player-link" href="/perfil/{{ r.participante_id }}" title="Ver perfil">
                 {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
                 <span class="classificacao-nome">{{ r.participante }}</span>
               </a>

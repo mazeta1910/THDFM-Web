@@ -123,9 +123,10 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "perfis-estilo-json" not in r.text
     assert "Clique no nome para ver o estilo de palpites" not in r.text
     assert "/static/style.css?v=279" in r.text
-    assert 'href="/prototipo/perfil/benevides"' in r.text
+    assert 'href="/perfil/' in r.text
     assert "classificacao-player-link" in r.text
     assert "classificacao-nome-btn" not in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
