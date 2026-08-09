@@ -8912,21 +8912,14 @@ textarea.xonha-input {
 .listra-frase-bloco-remove:hover {
   color: var(--danger, #e03131);
 }
-.listra-add-more {
-  margin: 0;
-  padding: 0.45rem 0.75rem;
-  width: auto;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 10px;
-  background: transparent;
+.listra-add-more-btn {
   color: var(--accent);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
+  border-color: rgba(232, 93, 4, 0.45);
+  background: rgba(232, 93, 4, 0.1);
 }
-.listra-add-more:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+.listra-add-more-btn:hover {
+  background: rgba(232, 93, 4, 0.18);
+  color: var(--accent);
 }
 .listra-field {
   display: grid;
@@ -8988,8 +8981,8 @@ textarea.xonha-input {
 .listra-add-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 .listra-icon-action {

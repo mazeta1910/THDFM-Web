@@ -72,7 +72,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=244" in body
+    assert "/static/style.css?v=245" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
     assert len(body) < 250_000
@@ -212,7 +212,7 @@ def test_admin_adiciona_varias_frases_de_uma_vez(client: TestClient):
     assert page.status_code == 200
     assert "data-listra-add-bloco" in page.text
     assert "listra-frase-bloco-tpl" in page.text
-    assert "＋ Outra frase" in page.text
+    assert "listra-add-more-btn" in page.text
 
     r = client.post(
         "/grupo/listra",

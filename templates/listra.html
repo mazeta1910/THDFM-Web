@@ -32,8 +32,7 @@
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
     <p class="listra-add-note">
-      Novas entradas vão para a Listra do ano atual. Use <strong>＋ Outra frase</strong> para salvar várias de uma vez.
-      No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).
+      Novas entradas vão para a Listra do ano atual. No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).
     </p>
     <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off" data-listra-frase-form>
       <input type="hidden" name="ano" value="{{ ano_atual }}" />
@@ -114,8 +113,18 @@
         </div>
       </div>
       <div class="listra-add-actions">
-        <button type="button" class="listra-add-more" data-listra-add-bloco>
-          ＋ Outra frase
+        <button
+          type="button"
+          class="listra-icon-action listra-add-more-btn"
+          data-listra-add-bloco
+          title="Adicionar outra frase"
+          aria-label="Adicionar outra frase"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 8v8"/>
+            <path d="M8 12h8"/>
+          </svg>
         </button>
         <button
           type="submit"
