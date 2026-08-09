@@ -76,9 +76,8 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
-    assert "/static/prototipo-perfil.js?v=22" in r.text
     assert "/static/prototipo-times.js?v=14" in r.text
-    assert "/static/style.css?v=279" in r.text
+    assert "/static/style.css?v=280" in r.text
     assert 'id="proto-dindao"' in r.text
     assert "Dindão" in r.text
     assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(
@@ -129,6 +128,12 @@ def test_meu_perfil_publico(client: TestClient):
     assert "depoimentos" not in r.text.lower()
     assert 'id="bolao"' in r.text
     assert 'id="recados"' in r.text
+    assert 'data-viewer-id="' in r.text
+    assert "/static/prototipo-perfil.js?v=23" in r.text
+    js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
+    assert "proto-steam-post-nome" in js
+    assert "proto-steam-post-av-link" in js
+    assert "autor_id" in js
     assert 'class="proto-steam-panel"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
