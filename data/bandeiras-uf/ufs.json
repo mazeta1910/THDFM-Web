@@ -1,0 +1,195 @@
+{
+  "fonte": "Wikimedia Commons",
+  "licenca_nota": "Bandeiras oficiais de UFs brasileiras; ver página de cada arquivo no Commons para atribuição/licença.",
+  "ufs": [
+    {
+      "uf": "AC",
+      "nome": "Acre",
+      "regiao": "Norte",
+      "arquivo": "AC.svg",
+      "fonte": "Bandeira_do_Acre.svg"
+    },
+    {
+      "uf": "AL",
+      "nome": "Alagoas",
+      "regiao": "Nordeste",
+      "arquivo": "AL.svg",
+      "fonte": "Bandeira_de_Alagoas.svg"
+    },
+    {
+      "uf": "AP",
+      "nome": "Amapá",
+      "regiao": "Norte",
+      "arquivo": "AP.svg",
+      "fonte": "Bandeira_do_Amapá.svg"
+    },
+    {
+      "uf": "AM",
+      "nome": "Amazonas",
+      "regiao": "Norte",
+      "arquivo": "AM.svg",
+      "fonte": "Bandeira_do_Amazonas.svg"
+    },
+    {
+      "uf": "BA",
+      "nome": "Bahia",
+      "regiao": "Nordeste",
+      "arquivo": "BA.svg",
+      "fonte": "Bandeira_da_Bahia.svg"
+    },
+    {
+      "uf": "CE",
+      "nome": "Ceará",
+      "regiao": "Nordeste",
+      "arquivo": "CE.svg",
+      "fonte": "Bandeira_do_Ceará.svg"
+    },
+    {
+      "uf": "DF",
+      "nome": "Distrito Federal",
+      "regiao": "Centro-Oeste",
+      "arquivo": "DF.svg",
+      "fonte": "Bandeira_do_Distrito_Federal_(Brasil).svg"
+    },
+    {
+      "uf": "ES",
+      "nome": "Espírito Santo",
+      "regiao": "Sudeste",
+      "arquivo": "ES.svg",
+      "fonte": "Bandeira_do_Espírito_Santo.svg"
+    },
+    {
+      "uf": "GO",
+      "nome": "Goiás",
+      "regiao": "Centro-Oeste",
+      "arquivo": "GO.svg",
+      "fonte": "Bandeira_de_Goiás.svg"
+    },
+    {
+      "uf": "MA",
+      "nome": "Maranhão",
+      "regiao": "Nordeste",
+      "arquivo": "MA.svg",
+      "fonte": "Bandeira_do_Maranhão.svg"
+    },
+    {
+      "uf": "MT",
+      "nome": "Mato Grosso",
+      "regiao": "Centro-Oeste",
+      "arquivo": "MT.svg",
+      "fonte": "Bandeira_de_Mato_Grosso.svg"
+    },
+    {
+      "uf": "MS",
+      "nome": "Mato Grosso do Sul",
+      "regiao": "Centro-Oeste",
+      "arquivo": "MS.svg",
+      "fonte": "Bandeira_de_Mato_Grosso_do_Sul.svg"
+    },
+    {
+      "uf": "MG",
+      "nome": "Minas Gerais",
+      "regiao": "Sudeste",
+      "arquivo": "MG.svg",
+      "fonte": "Bandeira_de_Minas_Gerais.svg"
+    },
+    {
+      "uf": "PA",
+      "nome": "Pará",
+      "regiao": "Norte",
+      "arquivo": "PA.svg",
+      "fonte": "Bandeira_do_Pará.svg"
+    },
+    {
+      "uf": "PB",
+      "nome": "Paraíba",
+      "regiao": "Nordeste",
+      "arquivo": "PB.svg",
+      "fonte": "Bandeira_da_Paraíba.svg"
+    },
+    {
+      "uf": "PR",
+      "nome": "Paraná",
+      "regiao": "Sul",
+      "arquivo": "PR.svg",
+      "fonte": "Bandeira_do_Paraná.svg"
+    },
+    {
+      "uf": "PE",
+      "nome": "Pernambuco",
+      "regiao": "Nordeste",
+      "arquivo": "PE.svg",
+      "fonte": "Bandeira_de_Pernambuco.svg"
+    },
+    {
+      "uf": "PI",
+      "nome": "Piauí",
+      "regiao": "Nordeste",
+      "arquivo": "PI.svg",
+      "fonte": "Bandeira_do_Piauí.svg"
+    },
+    {
+      "uf": "RJ",
+      "nome": "Rio de Janeiro",
+      "regiao": "Sudeste",
+      "arquivo": "RJ.svg",
+      "fonte": "Bandeira_do_estado_do_Rio_de_Janeiro.svg"
+    },
+    {
+      "uf": "RN",
+      "nome": "Rio Grande do Norte",
+      "regiao": "Nordeste",
+      "arquivo": "RN.svg",
+      "fonte": "Bandeira_do_Rio_Grande_do_Norte.svg"
+    },
+    {
+      "uf": "RS",
+      "nome": "Rio Grande do Sul",
+      "regiao": "Sul",
+      "arquivo": "RS.svg",
+      "fonte": "Bandeira_do_Rio_Grande_do_Sul.svg"
+    },
+    {
+      "uf": "RO",
+      "nome": "Rondônia",
+      "regiao": "Norte",
+      "arquivo": "RO.svg",
+      "fonte": "Bandeira_de_Rondônia.svg"
+    },
+    {
+      "uf": "RR",
+      "nome": "Roraima",
+      "regiao": "Norte",
+      "arquivo": "RR.svg",
+      "fonte": "Bandeira_de_Roraima.svg"
+    },
+    {
+      "uf": "SC",
+      "nome": "Santa Catarina",
+      "regiao": "Sul",
+      "arquivo": "SC.svg",
+      "fonte": "Bandeira_de_Santa_Catarina.svg"
+    },
+    {
+      "uf": "SP",
+      "nome": "São Paulo",
+      "regiao": "Sudeste",
+      "arquivo": "SP.svg",
+      "fonte": "Bandeira_do_estado_de_São_Paulo.svg"
+    },
+    {
+      "uf": "SE",
+      "nome": "Sergipe",
+      "regiao": "Nordeste",
+      "arquivo": "SE.svg",
+      "fonte": "Bandeira_de_Sergipe.svg"
+    },
+    {
+      "uf": "TO",
+      "nome": "Tocantins",
+      "regiao": "Norte",
+      "arquivo": "TO.svg",
+      "fonte": "Bandeira_do_Tocantins.svg"
+    }
+  ]
+}
