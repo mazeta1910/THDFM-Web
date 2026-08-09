@@ -27,88 +27,96 @@
   <div class="toast-host" id="listra-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
   {% if pode_adicionar %}
+  {% set meliante_padrao = participante_listra.nome if participante_listra and participante_listra.nome else '' %}
+  {% set meliante_na_lista = meliante_padrao and meliante_padrao in (listra_meliantes|default([])) %}
   <section class="card listra-add-card">
     <h2>Nova frase · {{ ano_atual }}</h2>
-    <p class="listra-add-note">Novas entradas vão para a Listra do ano atual. No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).</p>
+    <p class="listra-add-note">
+      Novas entradas vão para a Listra do ano atual. Use <strong>＋ Outra frase</strong> para salvar várias de uma vez.
+      No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).
+    </p>
     <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off" data-listra-frase-form>
       <input type="hidden" name="ano" value="{{ ano_atual }}" />
-      <div class="listra-frase-row">
-        <div class="listra-field listra-field-emoji">
-          <label for="listra-emoji">Emoji</label>
-          <input
-            id="listra-emoji"
-            name="emoji"
-            class="listra-input listra-emoji-input"
-            type="text"
-            maxlength="16"
-            placeholder="📺"
-            data-listra-emoji
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Emoji da frase"
-          />
+      <div class="listra-add-blocos" data-listra-blocos>
+        <div class="listra-frase-bloco" data-listra-bloco>
+          <div class="listra-frase-bloco-head">
+            <span class="listra-frase-bloco-label" data-listra-bloco-label>Frase 1</span>
+          </div>
+          <div class="listra-frase-row">
+            <div class="listra-field listra-field-emoji">
+              <label>Emoji</label>
+              <input
+                name="emoji"
+                class="listra-input listra-emoji-input"
+                type="text"
+                maxlength="16"
+                placeholder="📺"
+                data-listra-emoji
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Emoji da frase"
+              />
+            </div>
+            <div class="listra-field listra-field-frase">
+              <label>Frase (contexto na Listra)</label>
+              <textarea
+                name="texto"
+                class="listra-input"
+                rows="3"
+                maxlength="2000"
+                required
+                placeholder="Cole a pérola completa — fica na Listra para contextualizar"
+                data-listra-texto
+              ></textarea>
+            </div>
+          </div>
+          <div class="listra-field">
+            <label>Trecho compartilhável</label>
+            <input
+              name="destaque"
+              class="listra-input"
+              type="text"
+              maxlength="500"
+              placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+              data-listra-destaque
+            />
+            <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
+          </div>
+          <div class="listra-field" data-listra-meliante-field>
+            <label>Nome do meliante</label>
+            <select
+              class="listra-input"
+              data-listra-meliante-select
+              data-listra-custom-select
+              required
+              aria-label="Selecionar meliante"
+            >
+              <option value="">Selecione o meliante…</option>
+              {% for nome in listra_meliantes|default([]) %}
+              <option value="{{ nome }}"{% if nome == meliante_padrao %} selected{% endif %}>{{ nome }}</option>
+              {% endfor %}
+              <option value="__novo__"{% if meliante_padrao and not meliante_na_lista %} selected{% endif %}>＋ Outro nome…</option>
+            </select>
+            <input
+              name="responsavel"
+              class="listra-input listra-meliante-novo"
+              type="text"
+              maxlength="30"
+              required
+              value="{{ meliante_padrao }}"
+              placeholder="Digite o nome do meliante"
+              autocomplete="off"
+              data-listra-meliante-input
+              {% if not meliante_padrao or meliante_na_lista %}hidden{% endif %}
+            />
+            <p class="listra-field-hint">Lista do gestor de meliantes. “Outro nome” cadastra um livre ao salvar.</p>
+          </div>
         </div>
-        <div class="listra-field listra-field-frase">
-          <label for="listra-texto">Frase (contexto na Listra)</label>
-          <textarea
-            id="listra-texto"
-            name="texto"
-            class="listra-input"
-            rows="3"
-            maxlength="2000"
-            required
-            placeholder="Cole a pérola completa — fica na Listra para contextualizar"
-            data-listra-texto
-          ></textarea>
-        </div>
-      </div>
-      <div class="listra-field">
-        <label for="listra-destaque">Trecho compartilhável</label>
-        <input
-          id="listra-destaque"
-          name="destaque"
-          class="listra-input"
-          type="text"
-          maxlength="500"
-          placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
-          data-listra-destaque
-        />
-        <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
-      </div>
-      <div class="listra-field" data-listra-meliante-field>
-        <label for="listra-meliante-select">Nome do meliante</label>
-        {% set meliante_padrao = participante_listra.nome if participante_listra and participante_listra.nome else '' %}
-        {% set meliante_na_lista = meliante_padrao and meliante_padrao in (listra_meliantes|default([])) %}
-        <select
-          id="listra-meliante-select"
-          class="listra-input"
-          data-listra-meliante-select
-          data-listra-custom-select
-          required
-          aria-label="Selecionar meliante"
-        >
-          <option value="">Selecione o meliante…</option>
-          {% for nome in listra_meliantes|default([]) %}
-          <option value="{{ nome }}"{% if nome == meliante_padrao %} selected{% endif %}>{{ nome }}</option>
-          {% endfor %}
-          <option value="__novo__"{% if meliante_padrao and not meliante_na_lista %} selected{% endif %}>＋ Outro nome…</option>
-        </select>
-        <input
-          id="listra-responsavel"
-          name="responsavel"
-          class="listra-input listra-meliante-novo"
-          type="text"
-          maxlength="30"
-          required
-          value="{{ meliante_padrao }}"
-          placeholder="Digite o nome do meliante"
-          autocomplete="off"
-          data-listra-meliante-input
-          {% if not meliante_padrao or meliante_na_lista %}hidden{% endif %}
-        />
-        <p class="listra-field-hint">Lista do gestor de meliantes. “Outro nome” cadastra um livre ao salvar.</p>
       </div>
       <div class="listra-add-actions">
+        <button type="button" class="listra-add-more" data-listra-add-bloco>
+          ＋ Outra frase
+        </button>
         <button
           type="submit"
           class="listra-icon-action listra-save-btn"
@@ -123,6 +131,83 @@
         </button>
       </div>
     </form>
+    <template id="listra-frase-bloco-tpl">
+      <div class="listra-frase-bloco" data-listra-bloco>
+        <div class="listra-frase-bloco-head">
+          <span class="listra-frase-bloco-label" data-listra-bloco-label>Frase</span>
+          <button type="button" class="listra-frase-bloco-remove" data-listra-remove-bloco aria-label="Remover esta frase">Remover</button>
+        </div>
+        <div class="listra-frase-row">
+          <div class="listra-field listra-field-emoji">
+            <label>Emoji</label>
+            <input
+              name="emoji"
+              class="listra-input listra-emoji-input"
+              type="text"
+              maxlength="16"
+              placeholder="📺"
+              data-listra-emoji
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Emoji da frase"
+            />
+          </div>
+          <div class="listra-field listra-field-frase">
+            <label>Frase (contexto na Listra)</label>
+            <textarea
+              name="texto"
+              class="listra-input"
+              rows="3"
+              maxlength="2000"
+              required
+              placeholder="Cole a pérola completa — fica na Listra para contextualizar"
+              data-listra-texto
+            ></textarea>
+          </div>
+        </div>
+        <div class="listra-field">
+          <label>Trecho compartilhável</label>
+          <input
+            name="destaque"
+            class="listra-input"
+            type="text"
+            maxlength="500"
+            placeholder="Ex.: ODIEI RIBEIRO — o que vai no WhatsApp"
+            data-listra-destaque
+          />
+          <p class="listra-field-hint">Opcional. Se vazio, compartilha a frase inteira.</p>
+        </div>
+        <div class="listra-field" data-listra-meliante-field>
+          <label>Nome do meliante</label>
+          <select
+            class="listra-input"
+            data-listra-meliante-select
+            data-listra-custom-select
+            required
+            aria-label="Selecionar meliante"
+          >
+            <option value="">Selecione o meliante…</option>
+            {% for nome in listra_meliantes|default([]) %}
+            <option value="{{ nome }}">{{ nome }}</option>
+            {% endfor %}
+            <option value="__novo__">＋ Outro nome…</option>
+          </select>
+          <input
+            name="responsavel"
+            class="listra-input listra-meliante-novo"
+            type="text"
+            maxlength="30"
+            required
+            value=""
+            placeholder="Digite o nome do meliante"
+            autocomplete="off"
+            data-listra-meliante-input
+            hidden
+          />
+          <p class="listra-field-hint">Lista do gestor de meliantes. “Outro nome” cadastra um livre ao salvar.</p>
+        </div>
+      </div>
+    </template>
   </section>
   {% endif %}
 
@@ -859,10 +944,12 @@
     return s;
   }
 
-  document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
-    var emojiInput = form.querySelector("[data-listra-emoji]");
-    var melianteSelect = form.querySelector("[data-listra-meliante-select]");
-    var melianteInput = form.querySelector("[data-listra-meliante-input]");
+  function wireBloco(bloco) {
+    if (!bloco || bloco.getAttribute("data-listra-bloco-ready") === "1") return;
+    bloco.setAttribute("data-listra-bloco-ready", "1");
+    var emojiInput = bloco.querySelector("[data-listra-emoji]");
+    var melianteSelect = bloco.querySelector("[data-listra-meliante-select]");
+    var melianteInput = bloco.querySelector("[data-listra-meliante-input]");
 
     function syncMeliante() {
       if (!melianteSelect || !melianteInput) return;
@@ -907,6 +994,65 @@
         emojiInput.value = filtrarSoEmoji(txt);
       });
     }
+  }
+
+  function renumerarBlocos(form) {
+    var blocos = form.querySelectorAll("[data-listra-bloco]");
+    blocos.forEach(function (bloco, i) {
+      var lab = bloco.querySelector("[data-listra-bloco-label]");
+      if (lab) lab.textContent = "Frase " + (i + 1);
+    });
+  }
+
+  document.querySelectorAll("[data-listra-frase-form]").forEach(function (form) {
+    form.querySelectorAll("[data-listra-bloco]").forEach(wireBloco);
+
+    var host = form.querySelector("[data-listra-blocos]");
+    var tpl = document.getElementById("listra-frase-bloco-tpl");
+    var btnAdd = form.querySelector("[data-listra-add-bloco]");
+
+    if (btnAdd && host && tpl) {
+      btnAdd.addEventListener("click", function () {
+        var node = tpl.content.firstElementChild.cloneNode(true);
+        // Copia meliante do último bloco preenchido.
+        var ultimo = host.querySelector("[data-listra-bloco]:last-of-type");
+        if (ultimo) {
+          var selPrev = ultimo.querySelector("[data-listra-meliante-select]");
+          var inpPrev = ultimo.querySelector("[data-listra-meliante-input]");
+          var selNovo = node.querySelector("[data-listra-meliante-select]");
+          var inpNovo = node.querySelector("[data-listra-meliante-input]");
+          if (selPrev && selNovo) selNovo.value = selPrev.value || "";
+          if (inpPrev && inpNovo) {
+            inpNovo.value = inpPrev.value || "";
+            inpNovo.hidden = !!inpPrev.hidden;
+          }
+        }
+        host.appendChild(node);
+        wireBloco(node);
+        if (typeof window.listraInitCustomSelects === "function") {
+          window.listraInitCustomSelects(node);
+        }
+        renumerarBlocos(form);
+        var ta = node.querySelector("[data-listra-texto]");
+        if (ta) {
+          try {
+            ta.focus({ preventScroll: true });
+          } catch (e) {
+            ta.focus();
+          }
+        }
+      });
+    }
+
+    form.addEventListener("click", function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest("[data-listra-remove-bloco]") : null;
+      if (!btn) return;
+      var bloco = btn.closest("[data-listra-bloco]");
+      if (!bloco || !host) return;
+      if (host.querySelectorAll("[data-listra-bloco]").length <= 1) return;
+      bloco.remove();
+      renumerarBlocos(form);
+    });
   });
 })();
 </script>

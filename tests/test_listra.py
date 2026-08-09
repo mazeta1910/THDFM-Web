@@ -72,7 +72,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=243" in body
+    assert "/static/style.css?v=244" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
     assert len(body) < 250_000
@@ -199,6 +199,39 @@ def test_visitante_nao_adiciona(client: TestClient):
     loc = unquote(r.headers.get("location") or "").lower()
     # Anônimo é barrado no gate de login.
     assert "acesso=entrar" in loc or "permiss" in loc
+
+
+def test_admin_adiciona_varias_frases_de_uma_vez(client: TestClient):
+    from urllib.parse import unquote
+
+    from src.listra_seed import LISTRA_ANO_ATUAL
+    from src import db
+
+    _login_admin(client)
+    page = client.get("/grupo/listra")
+    assert page.status_code == 200
+    assert "data-listra-add-bloco" in page.text
+    assert "listra-frase-bloco-tpl" in page.text
+    assert "＋ Outra frase" in page.text
+
+    r = client.post(
+        "/grupo/listra",
+        data={
+            "ano": str(LISTRA_ANO_ATUAL),
+            "texto": ["Primeira pérola multi", "Segunda pérola multi", ""],
+            "responsavel": ["Mazeta", "Mazeta", "Mazeta"],
+            "emoji": ["📺", "🎤", ""],
+            "destaque": ["MULTI UM", "MULTI DOIS", ""],
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = unquote(r.headers.get("location") or "")
+    assert "2 frases adicionadas" in loc
+    frases = db.list_listra_frases(LISTRA_ANO_ATUAL)
+    destaques = {f.get("destaque") for f in frases}
+    assert "MULTI UM" in destaques
+    assert "MULTI DOIS" in destaques
 
 
 def test_admin_adiciona_no_ano_atual(client: TestClient):

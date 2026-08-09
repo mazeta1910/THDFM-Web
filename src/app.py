@@ -950,14 +950,8 @@ def grupo_listra_export(request: Request, ano: int | None = None):
 
 
 @app.post("/grupo/listra")
-def grupo_listra_criar(
-    request: Request,
-    texto: str = Form(...),
-    responsavel: str = Form(...),
-    ano: int | None = Form(None),
-    emoji: str = Form(""),
-    destaque: str = Form(""),
-):
+async def grupo_listra_criar(request: Request):
+    """Cria uma ou várias frases (campos repetidos no form)."""
     from src.listra_seed import LISTRA_ANO_ATUAL
 
     caps = _listra_caps(request)
@@ -967,24 +961,54 @@ def grupo_listra_criar(
             + quote("Você não tem permissão para adicionar frases na Listra."),
             status_code=303,
         )
-    part = caps["participante"]
+    form = await request.form()
+    textos = [str(v) for v in form.getlist("texto")]
+    responsaveis = [str(v) for v in form.getlist("responsavel")]
+    emojis = [str(v) for v in form.getlist("emoji")]
+    destaques = [str(v) for v in form.getlist("destaque")]
+    ano_raw = form.get("ano")
     try:
-        frase = db.criar_listra_frase(
-            texto,
-            responsavel,
-            criado_por_id=part["id"] if part else None,
-            ano=ano if ano is not None else LISTRA_ANO_ATUAL,
-            emoji=emoji,
-            destaque=destaque,
-        )
-    except ValueError as exc:
+        ano = int(ano_raw) if ano_raw not in (None, "") else LISTRA_ANO_ATUAL
+    except (TypeError, ValueError):
+        ano = LISTRA_ANO_ATUAL
+
+    part = caps["participante"]
+    criadas: list[dict] = []
+    primeiro_erro: str | None = None
+    for i, texto in enumerate(textos):
+        if not (texto or "").strip():
+            continue
+        responsavel = responsaveis[i] if i < len(responsaveis) else ""
+        emoji = emojis[i] if i < len(emojis) else ""
+        destaque = destaques[i] if i < len(destaques) else ""
+        try:
+            frase = db.criar_listra_frase(
+                texto,
+                responsavel,
+                criado_por_id=part["id"] if part else None,
+                ano=ano,
+                emoji=emoji,
+                destaque=destaque,
+            )
+            criadas.append(frase)
+        except ValueError as exc:
+            if primeiro_erro is None:
+                primeiro_erro = str(exc)
+
+    if not criadas:
         return RedirectResponse(
-            f"/grupo/listra?erro={quote(str(exc))}",
+            f"/grupo/listra?erro={quote(primeiro_erro or 'Informe ao menos uma frase.')}",
             status_code=303,
         )
+    if len(criadas) == 1:
+        msg = "Frase adicionada à Listra"
+    else:
+        msg = f"{len(criadas)} frases adicionadas à Listra"
+        if primeiro_erro:
+            msg += f" (algumas falharam: {primeiro_erro})"
+    ultima = criadas[-1]
     return RedirectResponse(
-        f"/grupo/listra?msg={quote('Frase adicionada à Listra')}"
-        f"#listra-frase-{frase['id']}",
+        f"/grupo/listra?msg={quote(msg)}#listra-frase-{ultima['id']}",
         status_code=303,
     )
 
