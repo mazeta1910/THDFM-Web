@@ -93,6 +93,9 @@ def test_boquinha_e_donelli_e_casalzinho(client):
         assert hall["cards"][-1]["id"] == "arqui_inimigos"
         assert ids["arqui_inimigos"]["linha_cheia"] is True
 
+    # Benevides na tabela liga ao perfil (sem ficha modal)
+    db.criar_participante("Benevides", status="liberado", celular="11990001122")
+
     # Classificação renderiza Hall da Desgraça em cards exportáveis
     r = client.get("/classificacao")
     assert r.status_code == 200
@@ -112,36 +115,23 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Quantidade" in r.text
     assert "planilha-metrica-label\">Marca<" not in r.text
     assert "hall-avatar" in r.text
-    assert "data-abrir-ficha" in r.text
-    assert "ficha-estilo-card" in r.text
-    assert "Exportar ficha em PNG" in r.text
-    assert "Resumo das rodadas" in r.text
-    assert "ficha-rodadas-resumo" in r.text
-    assert "ficha-rodadas-head" in r.text
-    assert "ficha-rodada-toggle" in r.text
-    assert "Palpite $" in r.text or "Palpite " in r.text
-    assert "Seu palpite" not in r.text
-    assert "ficha-palpites-resumo" not in r.text
-    assert "justify-content: center" in (ROOT_DIR / "static" / "style.css").read_text(
-        encoding="utf-8"
-    ).split(".ficha-badges", 1)[1].split(".ficha-badge", 1)[0]
-    assert "/static/style.css?v=278" in r.text
-    assert "ficha-rodadas-who-link" in r.text
-    assert "/prototipo/perfil/benevides" in r.text
+    # Ficha "Estilo de palpites" saiu da classificação (foi para o perfil)
+    assert "data-abrir-ficha" not in r.text
+    assert "ficha-estilo-card" not in r.text
+    assert "Exportar ficha em PNG" not in r.text
+    assert "Estilo de palpites" not in r.text
+    assert "perfis-estilo-json" not in r.text
+    assert "Clique no nome para ver o estilo de palpites" not in r.text
+    assert "/static/style.css?v=279" in r.text
+    assert 'href="/prototipo/perfil/benevides"' in r.text
+    assert "classificacao-player-link" in r.text
+    assert "classificacao-nome-btn" not in r.text
 
     hall = trofeus_hall("oitavas")
     perfil = next(p for p in hall["perfis"].values() if p["nome"] == "Alpha")
     assert perfil["n_casa"] >= 1
     assert perfil["n"] >= 1
     assert all(b["id"] != "arqui_inimigos" for b in perfil.get("badges") or [])
-
-    # JSON da ficha traz resumo de pontuação (ao vivo no mínimo)
-    assert '"resumo_rodadas"' in r.text
-    assert '"rotulo"' in r.text
-    assert '"jogos"' in r.text
-    assert '"avatar_url"' in r.text
-    assert '"casa_emblema"' in r.text
-    assert "planilha-metricas" in r.text
 
 
 def test_empate_muitos_nomes_resume_lista(client):
@@ -169,8 +159,8 @@ def test_empate_muitos_nomes_resume_lista(client):
     assert "hall-card-fullrow" in r.text or "arqui_inimigos" not in ids
 
 
-def test_resumo_rodadas_na_ficha(client):
-    """Ficha: Ida/Volta corretos, jogo a jogo e sem rodada fantasma."""
+def test_resumo_rodadas_helper_e_sem_ficha_na_classificacao(client):
+    """Resumo Ida/Volta continua no helper; classificação não embute a ficha."""
     from src.ranking import confirmar_rodada, resumo_pontuacao_por_participante
 
     login_admin(client)
@@ -229,30 +219,22 @@ def test_resumo_rodadas_na_ficha(client):
 
     r = client.get("/classificacao")
     assert r.status_code == 200
-    assert "Resumo das rodadas" in r.text
-    assert "ficha-rodadas-lista" in r.text
-    assert "ficha-rodadas-head" in r.text
-    assert "ficha-rodada-toggle" in r.text
-    assert "planilha-metricas-bloco" in r.text
-    assert "ficha-jogo-embl" in r.text
-    assert 'aria-expanded="false"' in r.text
-    assert "Rodada 1" in r.text
-    assert "Palpite" in r.text
-    assert "Placar exato" in r.text or "resultado_label" in r.text
-    assert "Seu palpite" not in r.text
-    assert "/static/style.css?v=278" in r.text
-    assert "ficha-jogos-cols" in r.text
-    assert "ficha-jogo-mark" in r.text
-    assert "ficha-jogo-oficial" in r.text
-    assert "Oficial" in r.text
+    assert "Estilo de palpites" not in r.text
+    assert "ficha-estilo-card" not in r.text
+    assert "perfis-estilo-json" not in r.text
+    assert "data-abrir-ficha" not in r.text
+    assert "/static/style.css?v=279" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    # Estilos compartilhados com o perfil (resumo de rodadas) permanecem
     assert ".ficha-rodada-rotulo-short" in css
-    assert ".ficha-rodadas-head" in css
+    assert ".ficha-rodadas-lista" in css
     assert ".ficha-jogo-embl" in css
     assert ".ficha-jogos-cols" in css
     assert ".ficha-jogo-mark.is-ok" in css
     assert ".ficha-jogo-mark.is-miss" in css
     assert ".ficha-jogo-mark.is-na" in css
+    assert ".ficha-dialog" not in css
+    assert ".ficha-estilo-card" not in css
 
 
 def test_perfil_nao_zera_ao_avancar_fase(client):

@@ -81,7 +81,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "/prototipo/perfil/publico" in r.text
     assert "/static/prototipo-perfil.js?v=21" in r.text
     assert "/static/prototipo-times.js?v=13" in r.text
-    assert "/static/style.css?v=278" in r.text
+    assert "/static/style.css?v=279" in r.text
     assert 'id="proto-dindao"' in r.text
     assert "Dindão" in r.text
     assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(

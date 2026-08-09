@@ -2084,12 +2084,6 @@ def classificacao(request: Request):
         janela = db.get_janela()
 
     hall_data = trofeus_hall(fase if not modo_historico else fase)
-    linhas_ao_vivo = linhas if not modo_historico else calcular_classificacao()
-    resumo_por_id = resumo_pontuacao_por_participante(linhas_ao_vivo)
-    perfis = hall_data.get("perfis") or {}
-    for pid, perfil in perfis.items():
-        perfil["resumo_rodadas"] = resumo_por_id.get(int(pid), [])
-        perfil["avatar_url"] = avatar_url(perfil.get("avatar_path"))
     return render(
         request,
         "classificacao.html",
@@ -2102,7 +2096,6 @@ def classificacao(request: Request):
         rodada_atual_id=rodada_sel["id"] if rodada_sel else None,
         rodada_sel=rodada_sel,
         hall=hall_data.get("cards") or [],
-        perfis=perfis,
     )
 
 

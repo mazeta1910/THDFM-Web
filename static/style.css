@@ -5531,21 +5531,19 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   .eu-badge { padding: 0.08rem 0.28rem; font-size: 0.58rem; }
 }
 
-.classificacao-nome-btn {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  margin: 0;
+a.classificacao-player-link {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
   color: inherit;
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
+  text-decoration: none;
 }
-.classificacao-nome-btn:hover .classificacao-nome,
-.classificacao-nome-btn:focus-visible .classificacao-nome {
+a.classificacao-player-link:hover .classificacao-nome,
+a.classificacao-player-link:focus-visible .classificacao-nome {
   text-decoration: underline;
   text-underline-offset: 2px;
+  color: var(--accent);
 }
 
 .classificacao-hall-card {
@@ -5720,147 +5718,6 @@ html[data-theme="light"] .classificacao-table tbody tr.zona-risco:nth-child(even
   font-size: 0.78rem;
 }
 
-.ficha-dialog {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text);
-  padding: 0;
-  max-width: min(36rem, calc(100vw - 2rem));
-  width: 100%;
-  overflow-x: hidden;
-}
-.ficha-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.55);
-}
-.ficha-estilo-card {
-  margin: 0;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow-x: hidden;
-}
-.ficha-estilo-body {
-  padding: 0.85rem 1rem 1.1rem;
-  min-width: 0;
-  overflow-x: hidden;
-}
-.ficha-dialog-close {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.1rem 0.35rem;
-}
-.ficha-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-  justify-content: center;
-  text-align: center;
-}
-.ficha-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  max-width: 100%;
-}
-.ficha-rodadas-resumo {
-  margin: 0 0 0.85rem;
-  min-width: 0;
-}
-.ficha-rodadas-resumo-title {
-  margin: 0 0 0.35rem;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.ficha-rodadas-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.35rem 0.55rem;
-  align-items: center;
-  padding: 0.45rem 0.05rem 0.5rem;
-  margin-bottom: 0.1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-}
-.ficha-rodadas-who {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 0;
-}
-a.ficha-rodadas-who-link {
-  color: inherit;
-  text-decoration: none;
-  border-radius: 0.35rem;
-  outline-offset: 2px;
-}
-a.ficha-rodadas-who-link:hover .ficha-rodadas-nome,
-a.ficha-rodadas-who-link:focus-visible .ficha-rodadas-nome {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 0.12em;
-}
-a.ficha-rodadas-who-link:hover .ficha-rodadas-avatar,
-a.ficha-rodadas-who-link:focus-visible .ficha-rodadas-avatar,
-a.ficha-rodadas-who-link:hover .ficha-rodadas-avatar-fallback,
-a.ficha-rodadas-who-link:focus-visible .ficha-rodadas-avatar-fallback {
-  border-color: var(--accent);
-}
-.ficha-rodadas-avatar,
-.ficha-rodadas-avatar-fallback {
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: 0 0 auto;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-  box-sizing: border-box;
-}
-.ficha-rodadas-avatar-fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: var(--accent);
-}
-.ficha-rodadas-nome {
-  font-size: 0.9rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-.ficha-rodadas-cols {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(2.4rem, auto));
-  justify-content: end;
-  gap: 0.35rem 0.55rem;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.ficha-rodadas-cols span { text-align: right; }
 .ficha-rodadas-lista {
   list-style: none;
   margin: 0;
@@ -6135,51 +5992,7 @@ a.ficha-rodadas-who-link:focus-visible .ficha-rodadas-avatar-fallback {
   font-size: 0.72rem;
   color: var(--muted);
 }
-.ficha-perfil {
-  margin: 0.85rem 0 0;
-  min-width: 0;
-}
-.ficha-perfil-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-}
-.ficha-perfil-met {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: 8px;
-  background: var(--bg2);
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  min-width: 0;
-}
-.ficha-perfil-met.is-wide { grid-column: 1 / -1; }
-.ficha-perfil-lab {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.ficha-perfil-val {
-  font-size: 0.92rem;
-  font-weight: 750;
-  color: var(--text);
-  line-height: 1.2;
-}
-.ficha-perfil-val small {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted);
-}
 @media (max-width: 520px) {
-  .ficha-dialog {
-    max-width: calc(100vw - 1rem);
-  }
-  .ficha-estilo-body {
-    padding: 0.75rem 0.75rem 1rem;
-  }
   .ficha-rodada-rotulo-full {
     display: none;
   }
@@ -6189,8 +6002,7 @@ a.ficha-rodadas-who-link:focus-visible .ficha-rodadas-avatar-fallback {
   .ficha-rodada-titulo {
     font-size: 0.82rem;
   }
-  .ficha-rodada-nums,
-  .ficha-rodadas-cols {
+  .ficha-rodada-nums {
     grid-template-columns: repeat(3, minmax(2.1rem, auto));
     gap: 0.25rem 0.4rem;
   }
