@@ -698,9 +698,16 @@
   ],
   "summary": {
     "png_por_id": 75,
-    "faltando": [
+    "faltando": [],
+    "excluidos": [
       "Sport Bahia"
     ],
-    "nota": "PNG 512x512 RGBA; JPEG/WebP com fundo removido via rembg; images.jpg=Belenense; rasil Suburbano=Brasil Suburbano"
-  }
+    "clubes_uf": 1256
+  },
+  "excluded": [
+    {
+      "Name": "Sport Bahia",
+      "reason": "emblema não encontrado"
+    }
+  ]
 }

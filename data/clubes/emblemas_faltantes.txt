@@ -1,4 +1,4 @@
-# 76 clubes sem emblema no pack FMG
+# Clubes sem emblema no pack FMG (Sport Bahia excluído do catálogo)
 # Salve cada PNG com o nome em arquivo_esperado
 # Pasta sugerida: data/clubes/emblemas-faltantes/
 
@@ -69,12 +69,11 @@
 65. Sfera (SP) -> 2000306764.png
 66. Sharjah Brasil (SP) -> 2000255286.png
 67. Sírio Libanês (GO) (GO) -> 2000059899.png
-68. Sport Bahia (BA) -> 2000174086.png
-69. Theresinense FC (PI) (PI) -> 314099.png
-70. União (PE) (PE) -> 2000099933.png
-71. Unidos do Alvorada (AM) -> 2000182369.png
-72. Uruaçu (GO) -> 2000204861.png
-73. Vera Cruz (RJ) (RJ) -> 2000239359.png
-74. Vila Matias (DF) -> 19152069.png
-75. Villa Real (MG) (MG) -> 2000192815.png
-76. Zinza (RJ) -> 2000255426.png
+68. Theresinense FC (PI) (PI) -> 314099.png
+69. União (PE) (PE) -> 2000099933.png
+70. Unidos do Alvorada (AM) -> 2000182369.png
+71. Uruaçu (GO) -> 2000204861.png
+72. Vera Cruz (RJ) (RJ) -> 2000239359.png
+73. Vila Matias (DF) -> 19152069.png
+74. Villa Real (MG) (MG) -> 2000192815.png
+75. Zinza (RJ) -> 2000255426.png
