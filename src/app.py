@@ -1031,17 +1031,25 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     try:
         hist = resumo_pontuacao_por_participante(linhas).get(pid) or []
         for entrada in hist[-6:]:
+            curto = (entrada.get("rotulo_curto") or "").strip()
+            fase_full = (entrada.get("fase_label") or "").strip()
+            janela = (entrada.get("janela_label") or "").strip()
+            if curto and fase_full and janela:
+                titulo = f"{curto} · {fase_full} ({janela})"
+            elif curto and fase_full:
+                titulo = f"{curto} · {fase_full}"
+            else:
+                titulo = (entrada.get("rotulo") or curto or "Rodada").strip()
             rodadas.append(
                 {
-                    "rotulo": entrada.get("rotulo_curto") or entrada.get("rotulo") or "",
-                    "fase_label": entrada.get("fase_label_curta")
-                    or entrada.get("fase_label")
-                    or "",
-                    "janela_label": entrada.get("janela_label") or "",
+                    "titulo": titulo,
+                    "rotulo": entrada.get("rotulo") or titulo,
                     "pts": entrada.get("rod") or 0,
                     "soma": entrada.get("soma") or 0,
                     "posicao": entrada.get("posicao"),
+                    "movimento": entrada.get("movimento"),
                     "ao_vivo": bool(entrada.get("ao_vivo")),
+                    "jogos": entrada.get("jogos") or [],
                 }
             )
     except Exception:
@@ -1058,6 +1066,14 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
             for b in estilo["badges"][:4]
             if isinstance(b, dict) and b.get("titulo")
         ]
+
+    assin_raw = (estilo or {}).get("placar_assinatura")
+    assinatura = None
+    if isinstance(assin_raw, dict) and assin_raw.get("placar"):
+        n_assin = assin_raw.get("n") or 0
+        assinatura = f"{assin_raw['placar']} ({n_assin}×)"
+    elif isinstance(assin_raw, str) and assin_raw.strip():
+        assinatura = assin_raw.strip()
 
     zona = linha.get("zona") or ""
     mov = linha.get("movimento")
@@ -1083,7 +1099,7 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
         "pct_empate": (estilo or {}).get("pct_empate"),
         "pct_fora": (estilo or {}).get("pct_fora"),
         "media_gols": (estilo or {}).get("media_gols"),
-        "placar_assinatura": (estilo or {}).get("placar_assinatura"),
+        "assinatura": assinatura,
         "acertos_vencedor": (estilo or {}).get("acertos_vencedor") or 0,
         "acertos_placar": (estilo or {}).get("acertos_placar") or 0,
         "rodadas": rodadas,

@@ -10788,15 +10788,49 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   font-size: 0.72rem;
   color: var(--muted);
 }
-.proto-bolao-estilo {
-  margin: 0 0 0.65rem;
-  color: var(--steam-muted, var(--muted));
-  font-size: 0.82rem;
-  line-height: 1.4;
+.proto-bolao-estilo-block,
+.proto-bolao-rodadas-block {
+  margin: 0 0 0.85rem;
+}
+.proto-bolao-estilo-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proto-bolao-estilo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.proto-bolao-estilo-item {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.proto-bolao-estilo-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proto-bolao-estilo-item strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .proto-bolao-badges {
   list-style: none;
-  margin: 0 0 0.7rem;
+  margin: 0 0 0.85rem;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -10811,45 +10845,24 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   font-size: 0.72rem;
   font-weight: 700;
 }
-.proto-bolao-rodadas {
-  list-style: none;
+.proto-bolao-rodadas-lista {
   margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.3rem;
-}
-.proto-bolao-rodada {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.4rem 2.6rem 2.8rem;
-  gap: 0.35rem;
-  align-items: center;
-  padding: 0.35rem 0.45rem;
+  padding: 0.15rem 0.35rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--bg);
-  font-size: 0.78rem;
 }
-.proto-bolao-rodada.is-live {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+.proto-bolao-rodadas-lista .ficha-rodada-toggle {
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border-radius: 8px;
 }
-.proto-bolao-rodada-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-  font-weight: 650;
-}
-.proto-bolao-rodada-pos,
-.proto-bolao-rodada-pts,
-.proto-bolao-rodada-soma {
-  text-align: right;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.proto-bolao-rodada-pts {
-  color: var(--accent);
-  font-weight: 700;
+@media (max-width: 720px) {
+  .proto-bolao-estilo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 640px) {
   .proto-bolao-stats {

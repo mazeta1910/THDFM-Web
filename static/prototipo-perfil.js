@@ -944,5 +944,14 @@
         pedirBtn.title = "Pedido enviado";
       });
     }
+
+    pubRoot.querySelectorAll("[data-proto-rodada]").forEach((el) => {
+      const btn = el.querySelector(".ficha-rodada-toggle");
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        const openNow = el.classList.toggle("is-open");
+        btn.setAttribute("aria-expanded", openNow ? "true" : "false");
+      });
+    });
   }
 })();

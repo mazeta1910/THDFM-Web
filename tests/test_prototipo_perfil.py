@@ -40,7 +40,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "avatar-edit-camera" in r.text
     assert "Salvar alterações" in r.text
     assert 'id="proto-edit-save"' in r.text
-    assert "/static/style.css?v=262" in r.text
+    assert "/static/style.css?v=263" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
@@ -57,6 +57,8 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert 'id="bolao"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
+    assert "assinatura {" not in r.text
+    assert "{'placar':" not in r.text
 
 
 def test_prototipo_perfil_publico_visitante(client: TestClient):

@@ -192,16 +192,43 @@
         </div>
 
         {% if bolao_perfil.palpites %}
-        <p class="proto-bolao-estilo">
-          {{ bolao_perfil.palpites }} palpites
-          {% if bolao_perfil.pct_casa is not none %} · {{ bolao_perfil.pct_casa }}% casa{% endif %}
-          {% if bolao_perfil.pct_empate is not none %} · {{ bolao_perfil.pct_empate }}% empate{% endif %}
-          {% if bolao_perfil.pct_fora is not none %} · {{ bolao_perfil.pct_fora }}% fora{% endif %}
-          {% if bolao_perfil.media_gols is not none %} · média {{ bolao_perfil.media_gols }} gols{% endif %}
-          {% if bolao_perfil.placar_assinatura %} · assinatura {{ bolao_perfil.placar_assinatura }}{% endif %}
-          · {{ bolao_perfil.acertos_vencedor }} acertos de vencedor
-          · {{ bolao_perfil.acertos_placar }} placares exatos
-        </p>
+        <div class="proto-bolao-estilo-block">
+          <h3 class="proto-bolao-estilo-title">Estilo de palpites</h3>
+          <div class="proto-bolao-estilo-grid">
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Palpites</span>
+              <strong>{{ bolao_perfil.palpites }}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Casa</span>
+              <strong>{% if bolao_perfil.pct_casa is not none %}{{ bolao_perfil.pct_casa }}%{% else %}—{% endif %}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Empate</span>
+              <strong>{% if bolao_perfil.pct_empate is not none %}{{ bolao_perfil.pct_empate }}%{% else %}—{% endif %}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Fora</span>
+              <strong>{% if bolao_perfil.pct_fora is not none %}{{ bolao_perfil.pct_fora }}%{% else %}—{% endif %}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Média de gols</span>
+              <strong>{% if bolao_perfil.media_gols is not none %}{{ bolao_perfil.media_gols }}{% else %}—{% endif %}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Assinatura</span>
+              <strong>{% if bolao_perfil.assinatura %}{{ bolao_perfil.assinatura }}{% else %}—{% endif %}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Acertos vencedor</span>
+              <strong>{{ bolao_perfil.acertos_vencedor }}</strong>
+            </div>
+            <div class="proto-bolao-estilo-item">
+              <span class="proto-bolao-estilo-label">Placares exatos</span>
+              <strong>{{ bolao_perfil.acertos_placar }}</strong>
+            </div>
+          </div>
+        </div>
         {% endif %}
 
         {% if bolao_perfil.badges %}
@@ -213,16 +240,67 @@
         {% endif %}
 
         {% if bolao_perfil.rodadas %}
-        <ul class="proto-bolao-rodadas" aria-label="Pontuação por rodada">
-          {% for r in bolao_perfil.rodadas %}
-          <li class="proto-bolao-rodada {% if r.ao_vivo %}is-live{% endif %}">
-            <span class="proto-bolao-rodada-label">{{ r.rotulo }}{% if r.fase_label %} · {{ r.fase_label }}{% endif %}</span>
-            <span class="proto-bolao-rodada-pos">{% if r.posicao %}{{ r.posicao }}º{% else %}—{% endif %}</span>
-            <span class="proto-bolao-rodada-pts">{% if r.pts > 0 %}+{% endif %}{{ r.pts }}</span>
-            <span class="proto-bolao-rodada-soma">{{ r.soma }}</span>
-          </li>
-          {% endfor %}
-        </ul>
+        <div class="proto-bolao-rodadas-block">
+          <h3 class="proto-bolao-estilo-title">Resumo das rodadas</h3>
+          <ul class="ficha-rodadas-lista proto-bolao-rodadas-lista" aria-label="Pontuação por rodada">
+            {% for r in bolao_perfil.rodadas %}
+            <li class="ficha-rodada-item {% if r.ao_vivo %}is-ao-vivo{% endif %}" data-proto-rodada>
+              <button type="button" class="ficha-rodada-toggle" aria-expanded="false">
+                <span class="ficha-rodada-titulo">
+                  <span class="ficha-rodada-rotulo-line">
+                    <span class="ficha-rodada-chev" aria-hidden="true"></span>
+                    <span class="ficha-rodada-rotulo-full">{{ r.titulo }}</span>
+                  </span>
+                </span>
+                <span class="ficha-rodada-nums" aria-label="Pontuação da rodada">
+                  <span class="ficha-rodada-stat" title="Pontos na rodada">
+                    <span class="ficha-rodada-rod">{% if r.pts > 0 %}+{% endif %}{{ r.pts }}</span>
+                  </span>
+                  <span class="ficha-rodada-stat" title="Pontuação total">
+                    <span class="ficha-rodada-soma">{{ r.soma }}</span>
+                  </span>
+                  <span class="ficha-rodada-stat" title="Colocação">
+                    <span class="ficha-rodada-pos">{% if r.posicao %}{{ r.posicao }}º{% else %}—{% endif %}</span>
+                  </span>
+                </span>
+              </button>
+              <div class="ficha-rodada-jogos">
+                {% if r.jogos %}
+                <div class="ficha-jogos-cols" aria-hidden="true">
+                  <span>Jogo</span><span>Palpite</span><span>Plc</span><span>Ven</span>
+                  <span>Gc</span><span>Gf</span><span>Pts</span>
+                </div>
+                {% for j in r.jogos %}
+                <div class="ficha-jogo" role="row">
+                  <div class="ficha-jogo-oficial" title="{{ j.casa_curto or j.casa }} {{ j.real_m }}×{{ j.real_v }} {{ j.fora_curto or j.fora }}">
+                    <span class="ficha-jogo-scoreline">
+                      {% if j.casa_emblema %}<img class="ficha-jogo-embl" src="{{ j.casa_emblema }}" alt="" />{% else %}<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>{% endif %}
+                      <span class="ficha-jogo-score">{{ j.real_m }}×{{ j.real_v }}</span>
+                      {% if j.fora_emblema %}<img class="ficha-jogo-embl" src="{{ j.fora_emblema }}" alt="" />{% else %}<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>{% endif %}
+                    </span>
+                    <small>Oficial</small>
+                  </div>
+                  <div class="ficha-jogo-palpite">
+                    <span class="ficha-jogo-palpite-score">
+                      {% if j.sem_palpite %}—{% else %}{{ j.palpite_m }}×{{ j.palpite_v }}{% endif %}
+                    </span>
+                    <small>{{ (j.resultado_label or ('Sem palpite' if j.sem_palpite else ''))|upper }}</small>
+                  </div>
+                  <span class="ficha-jogo-mark {% if j.sem_palpite %}is-na{% elif j.placar %}is-ok{% else %}is-miss{% endif %}" title="Plc"></span>
+                  <span class="ficha-jogo-mark {% if j.sem_palpite %}is-na{% elif j.vencedor %}is-ok{% else %}is-miss{% endif %}" title="Ven"></span>
+                  <span class="ficha-jogo-num {% if j.gols_casa %}is-hit{% endif %}">{{ j.gols_casa or 0 }}</span>
+                  <span class="ficha-jogo-num {% if j.gols_fora %}is-hit{% endif %}">{{ j.gols_fora or 0 }}</span>
+                  <span class="ficha-jogo-pts {% if not j.pts %}is-zero{% endif %}">{% if j.pts %}+{{ j.pts }}{% else %}0{% endif %}</span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
         {% endif %}
 
         {% elif bolao_perfil %}
@@ -305,5 +383,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=13" defer></script>
+<script src="/static/prototipo-perfil.js?v=14" defer></script>
 {% endblock %}
