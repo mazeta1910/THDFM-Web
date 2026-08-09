@@ -66,6 +66,23 @@
         <div class="proto-steam-hero-main">
           <div class="proto-steam-name-row">
             <h1 class="proto-steam-name" data-public-nome>{% if fixado %}{{ fixado.nome }}{% else %}{{ viewer_nome }}{% endif %}</h1>
+            {% if bolao_perfil and bolao_perfil.disponivel %}
+            <p class="proto-steam-bolao-line proto-steam-bolao-line--name">
+              <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
+              <span aria-hidden="true">·</span>
+              <span>{{ bolao_perfil.soma }} pts</span>
+              {% if bolao_perfil.rod %}
+              <span aria-hidden="true">·</span>
+              <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
+                {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
+              </span>
+              {% endif %}
+              {% if bolao_perfil.zona_label %}
+              <span aria-hidden="true">·</span>
+              <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
+              {% endif %}
+            </p>
+            {% endif %}
             <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
           </div>
           {# Emblemas no lugar da bandeira Steam #}
@@ -140,23 +157,6 @@
           </div>
           {# TEXTOS PARA REESCREVER — fim #}
 
-          {% if bolao_perfil and bolao_perfil.disponivel %}
-          <p class="proto-steam-bolao-line">
-            <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
-            <span aria-hidden="true">·</span>
-            <span>{{ bolao_perfil.soma }} pts</span>
-            {% if bolao_perfil.rod %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
-              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
-            </span>
-            {% endif %}
-            {% if bolao_perfil.zona_label %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
-            {% endif %}
-          </p>
-          {% endif %}
           <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
         </div>
       </div>

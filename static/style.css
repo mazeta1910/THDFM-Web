@@ -10342,16 +10342,32 @@ body.proto-steam-body .wrap.wide {
 }
 .proto-steam-name-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem 0.75rem;
+  gap: 0.35rem 0.75rem;
   min-width: 0;
   width: 100%;
 }
+.proto-steam-name-row .proto-steam-bolao-line--name {
+  margin: 0;
+  margin-left: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
 .proto-steam-name-row .proto-times-misto {
   flex: 0 0 auto;
-  margin-left: auto;
+  margin-left: 0;
   white-space: nowrap;
+}
+.proto-steam-name-row .proto-times-misto:only-of-type,
+.proto-steam-name-row .proto-times-misto:first-child {
+  margin-left: auto;
+}
+/* Sem resumo do bolão, o misto continua à direita */
+.proto-steam-name-row:not(:has(.proto-steam-bolao-line--name)) .proto-times-misto {
+  margin-left: auto;
 }
 .proto-steam-name,
 .proto-steam-name-input {

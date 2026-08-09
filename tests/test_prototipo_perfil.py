@@ -61,7 +61,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert "/prototipo/perfil/publico" in r.text
     assert "/static/prototipo-perfil.js?v=19" in r.text
-    assert "/static/style.css?v=273" in r.text
+    assert "/static/style.css?v=274" in r.text
 
 
 def test_prototipo_perfil_alterar_senha_volta_ao_editar(client: TestClient):
