@@ -64,15 +64,18 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
 def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):
     """Nome/avatar no topo da sidebar do Dono abre o perfil, não Minha conta."""
     login_admin(client)
+    # Chrome do site (mesmo domínio do cookie do login)
+    client.cookies.set("thdfm_ui_mode", "user", domain="testserver.local")
     r = client.get("/")
     assert r.status_code == 200
+    assert "site-shell" in r.text
+    assert "Protótipo: perfil" in r.text
     assert 'href="/prototipo/perfil/publico"' in r.text
     assert 'class="site-brand-hint">Meu perfil</span>' in r.text
-    # O atalho do brand não abre o drawer de conta
-    assert 'class="site-brand-user' in r.text
     brand = r.text.split('class="site-brand-user', 1)[1].split("</a>", 1)[0]
     assert "data-conta-open" not in brand
     assert "Meu perfil" in brand
+    assert "Minha conta" not in brand
 
 
 def test_prototipo_perfil_publico_visitante(client: TestClient):
