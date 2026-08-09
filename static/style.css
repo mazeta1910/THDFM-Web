@@ -10361,10 +10361,6 @@ body.proto-steam-body .wrap.wide {
   margin-left: 0;
   white-space: nowrap;
 }
-.proto-steam-name-row .proto-times-misto:only-of-type,
-.proto-steam-name-row .proto-times-misto:first-child {
-  margin-left: auto;
-}
 /* Sem resumo do bolão, o misto continua à direita */
 .proto-steam-name-row:not(:has(.proto-steam-bolao-line--name)) .proto-times-misto {
   margin-left: auto;
