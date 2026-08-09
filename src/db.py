@@ -394,6 +394,29 @@ def _seed_listra_ano_se_faltando(
         )
 
 
+
+def _migrate_perfil_karma(conn: sqlite3.Connection) -> None:
+    """Votos de karma do perfil (média agregada por participante)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfil_karma_votos (
+          voter_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          target_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          categoria TEXT NOT NULL
+            CHECK (categoria IN ('confiavel', 'legal', 'sexy', 'burro')),
+          nivel INTEGER NOT NULL CHECK (nivel BETWEEN 1 AND 3),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          PRIMARY KEY (voter_id, target_id, categoria),
+          CHECK (voter_id != target_id)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_perfil_karma_target "
+        "ON perfil_karma_votos(target_id, categoria)"
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -403,6 +426,7 @@ def init_db() -> None:
         _migrate_recuperacao(conn)
         _migrate_xonhometro(conn)
         _migrate_listra(conn)
+        _migrate_perfil_karma(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -3530,4 +3554,77 @@ def salvar_listra_permissoes_lote(
 ) -> None:
     for pid, add, env in itens:
         salvar_listra_permissao(pid, pode_adicionar=add, pode_enviar=env)
+
+KARMA_CATEGORIAS = ("confiavel", "legal", "sexy", "burro")
+
+
+def salvar_karma_voto(
+    voter_id: int,
+    target_id: int,
+    categoria: str,
+    nivel: int,
+) -> None:
+    cat = (categoria or "").strip().lower()
+    if cat not in KARMA_CATEGORIAS:
+        raise ValueError("categoria inválida")
+    n = int(nivel)
+    if n < 1 or n > 3:
+        raise ValueError("nível inválido")
+    if int(voter_id) == int(target_id):
+        raise ValueError("não pode votar no próprio karma")
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO perfil_karma_votos (voter_id, target_id, categoria, nivel, updated_at)
+            VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(voter_id, target_id, categoria) DO UPDATE SET
+              nivel = excluded.nivel,
+              updated_at = datetime('now', 'localtime')
+            """,
+            (int(voter_id), int(target_id), cat, n),
+        )
+
+
+def karma_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]:
+    """Médias arredondadas (0–3), contagens e voto do visitante."""
+    tid = int(target_id)
+    medias = {c: 0 for c in KARMA_CATEGORIAS}
+    counts = {c: 0 for c in KARMA_CATEGORIAS}
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT categoria, AVG(nivel * 1.0) AS media, COUNT(*) AS n
+            FROM perfil_karma_votos
+            WHERE target_id = ?
+            GROUP BY categoria
+            """,
+            (tid,),
+        ).fetchall()
+        for row in rows:
+            cat = row["categoria"]
+            if cat not in medias:
+                continue
+            n = int(row["n"] or 0)
+            counts[cat] = n
+            if n > 0:
+                medias[cat] = int(max(0, min(3, round(float(row["media"])))))
+        meu_voto: dict[str, int] = {}
+        if voter_id is not None and int(voter_id) != tid:
+            votos = conn.execute(
+                """
+                SELECT categoria, nivel FROM perfil_karma_votos
+                WHERE target_id = ? AND voter_id = ?
+                """,
+                (tid, int(voter_id)),
+            ).fetchall()
+            for row in votos:
+                meu_voto[row["categoria"]] = int(row["nivel"])
+    return {
+        "target_id": tid,
+        "medias": medias,
+        "counts": counts,
+        "meu_voto": meu_voto if voter_id is not None and int(voter_id) != tid else None,
+        "pode_votar": bool(voter_id is not None and int(voter_id) != tid),
+    }
+
 

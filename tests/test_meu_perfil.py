@@ -76,7 +76,6 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
-    assert "/static/prototipo-perfil.js?v=22" in r.text
     assert "/static/prototipo-times.js?v=14" in r.text
     assert "/static/style.css?v=279" in r.text
     assert 'id="proto-dindao"' in r.text
@@ -179,9 +178,12 @@ def test_meu_perfil_visitante(client: TestClient):
     assert 'id="public-feed-form"' not in r.text
     assert 'id="pedidos"' not in r.text
     assert "esquema de amizade" not in r.text.lower()
-    assert "data-karma-cycle" in r.text
-    assert "proto-steam-karma--votavel" in r.text
+    # Preview do próprio perfil: não permite votar (agregação real)
+    assert 'data-pode-votar="0"' in r.text
+    assert "data-karma-cycle" not in r.text
+    assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
+    assert "/static/prototipo-perfil.js?v=23" in r.text
 
 
 def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
@@ -189,9 +191,12 @@ def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
     r = client.get("/meu-perfil")
     assert r.status_code == 200
     assert 'data-own="1"' in r.text
+    assert 'data-pode-votar="0"' in r.text
     assert "data-karma-cycle" not in r.text
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
+    assert 'id="proto-karma-resumo"' in r.text
+    assert "/static/prototipo-perfil.js?v=23" in r.text
 
 
 def test_perfil_outro_usuario(client: TestClient):

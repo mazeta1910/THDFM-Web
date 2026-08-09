@@ -160,17 +160,36 @@
     )}</span>`;
   }
 
-  function loadKarma() {
-    const base = { ...KARMA_DEFAULT };
-    const stored = normLoad(KARMA_KEY, null);
-    if (!stored || typeof stored !== "object") return base;
-    for (const id of KARMA_IDS) {
-      const n = Number(stored[id]);
-      if (!Number.isFinite(n)) continue;
-      if (n > 3) base[id] = Math.min(3, Math.max(1, Math.ceil(n / 4)));
-      else base[id] = Math.max(0, Math.min(3, Math.floor(n)));
-    }
+  function emptyKarmaMedias() {
+    const base = {};
+    for (const id of KARMA_IDS) base[id] = 0;
     return base;
+  }
+
+  function loadKarmaResumoEmbedded() {
+    const el = document.getElementById("proto-karma-resumo");
+    if (!el) return null;
+    try {
+      const data = JSON.parse(el.textContent || "null");
+      return data && typeof data === "object" ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function putKarmaVote(targetId, categoria, nivel) {
+    const r = await fetch(`/perfil/${encodeURIComponent(targetId)}/karma`, {
+      method: "PUT",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ categoria, nivel }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao votar");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
   }
 
   function loadNutela() {
@@ -230,24 +249,6 @@
       const vote = votos && Object.prototype.hasOwnProperty.call(votos, id) ? votos[id] : null;
       paintKarmaRow(row, karma[id] || 0, vote);
     });
-  }
-
-  function loadKarmaVotes(profileKey) {
-    const key = profileKey ? `${KARMA_VOTE_KEY}:${profileKey}` : KARMA_VOTE_KEY;
-    const stored = normLoad(key, null);
-    const out = {};
-    if (!stored || typeof stored !== "object") return out;
-    for (const id of KARMA_IDS) {
-      const n = Number(stored[id]);
-      if (!Number.isFinite(n) || n < 1) continue;
-      out[id] = Math.max(1, Math.min(3, Math.floor(n)));
-    }
-    return out;
-  }
-
-  function saveKarmaVotes(profileKey, votos) {
-    const key = profileKey ? `${KARMA_VOTE_KEY}:${profileKey}` : KARMA_VOTE_KEY;
-    save(key, votos);
   }
 
   function paintNutela(root, mediaValue, voteValue) {
@@ -858,14 +859,19 @@
         "Visitante THDFM";
 
     const karmaRoot = document.getElementById("public-karma");
+    const targetId = (pubRoot.getAttribute("data-target-id") || "").trim();
+    const podeVotar =
+      pubRoot.getAttribute("data-pode-votar") === "1" && !!targetId;
     const profileKey = fixado ? fixado.slug || "fixado" : "meu";
-    let karma = fixado
-      ? { ...KARMA_DEFAULT, ...(fixado.karma || {}) }
-      : loadKarma();
+    const karmaBoot = loadKarmaResumoEmbedded();
+    let karma = {
+      ...emptyKarmaMedias(),
+      ...((karmaBoot && karmaBoot.medias) || (fixado && fixado.karma) || {}),
+    };
+    let votos = { ...((karmaBoot && karmaBoot.meu_voto) || {}) };
     let nutela = fixado ? Number(fixado.nutela) || 50 : loadNutela();
-    let votos = isOwn ? {} : loadKarmaVotes(profileKey);
     let nutelaVoto = null;
-    if (!isOwn) {
+    if (podeVotar) {
       const rawVoto = loadStr(`${NUTELA_VOTE_KEY}:${profileKey}`, null);
       if (rawVoto != null && rawVoto !== "") {
         const n = Number(rawVoto);
@@ -881,19 +887,30 @@
       const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
       paintPublicTimes(selected);
     }
-    paintKarmaRoot(karmaRoot, karma, isOwn ? null : votos);
-    paintNutela(pubRoot, nutela, isOwn ? null : nutelaVoto);
+    paintKarmaRoot(karmaRoot, karma, podeVotar ? votos : null);
+    paintNutela(pubRoot, nutela, podeVotar ? nutelaVoto : null);
 
-    // Visitante vota sem apagar a média da galera
-    if (!isOwn && karmaRoot) {
+    // Visitante: voto no servidor; ícones = média agregada da galera
+    if (podeVotar && karmaRoot) {
       karmaRoot.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-karma-cycle]");
-        if (!btn) return;
+        if (!btn || btn.disabled) return;
         const row = btn.closest("[data-karma]");
         const id = row.getAttribute("data-karma");
-        votos[id] = ((votos[id] || 0) % 3) + 1;
-        saveKarmaVotes(profileKey, votos);
-        paintKarmaRoot(karmaRoot, karma, votos);
+        const next = ((votos[id] || 0) % 3) + 1;
+        btn.disabled = true;
+        putKarmaVote(targetId, id, next)
+          .then((data) => {
+            karma = { ...emptyKarmaMedias(), ...(data.medias || {}) };
+            votos = { ...(data.meu_voto || {}) };
+            paintKarmaRoot(karmaRoot, karma, votos);
+          })
+          .catch(() => {
+            /* mantém UI anterior */
+          })
+          .finally(() => {
+            btn.disabled = false;
+          });
       });
       const nutelaRange = pubRoot.querySelector("[data-proto-nutela]");
       if (nutelaRange) {

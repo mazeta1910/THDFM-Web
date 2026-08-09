@@ -8,6 +8,8 @@
 {% set viewer_av = avatar_url(participante_nav.avatar_path) if participante_nav else '' %}
 {% set viewer_ini = (participante_nav.nome or admin_nome or '??')[:2]|upper if (participante_nav or is_dono) else 'TH' %}
 {% set fixado = perfil_fixado %}
+{% set target_id = perfil_target_id if perfil_target_id is defined else (fixado.participante_id if fixado else (participante_nav.id if participante_nav else '')) %}
+{% set pode_votar = pode_votar_karma if pode_votar_karma is defined else (not is_own_view and fixado) %}
 
 <div
   class="proto-steam"
@@ -15,6 +17,8 @@
   data-proto-perfil-publico
   data-own="{{ 1 if is_own_view else 0 }}"
   data-fixado="{{ 1 if fixado else 0 }}"
+  data-target-id="{{ target_id }}"
+  data-pode-votar="{{ 1 if pode_votar else 0 }}"
   data-viewer-nome="{{ viewer_nome }}"
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
@@ -32,6 +36,7 @@
   {% if fixado %}
   <script type="application/json" id="proto-perfil-fixado">{{ perfil_fixado_json | safe }}</script>
   {% endif %}
+  <script type="application/json" id="proto-karma-resumo">{{ karma_resumo_json | default('null') | safe }}</script>
 
   <article class="proto-steam-card">
     <div class="proto-steam-banner-wrap">
@@ -100,7 +105,7 @@
           <div class="proto-steam-meta-row">
             <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
             <div
-              class="proto-steam-karma proto-steam-karma--line {% if not is_own_view %}proto-steam-karma--votavel{% endif %}"
+              class="proto-steam-karma proto-steam-karma--line {% if pode_votar %}proto-steam-karma--votavel{% endif %}"
               id="public-karma"
               aria-label="Karma"
             >
@@ -113,7 +118,7 @@
                 data-labels="{{ k.labels | join('|') }}"
               >
                 <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
-                {% if not is_own_view %}
+                {% if pode_votar %}
                 <button
                   type="button"
                   class="proto-steam-icons proto-steam-icons--voto"
@@ -196,5 +201,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=22" defer></script>
+<script src="/static/prototipo-perfil.js?v=23" defer></script>
 {% endblock %}
