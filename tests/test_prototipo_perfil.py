@@ -61,6 +61,20 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert "{'placar':" not in r.text
 
 
+def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):
+    """Nome/avatar no topo da sidebar do Dono abre o perfil, não Minha conta."""
+    login_admin(client)
+    r = client.get("/")
+    assert r.status_code == 200
+    assert 'href="/prototipo/perfil/publico"' in r.text
+    assert 'class="site-brand-hint">Meu perfil</span>' in r.text
+    # O atalho do brand não abre o drawer de conta
+    assert 'class="site-brand-user' in r.text
+    brand = r.text.split('class="site-brand-user', 1)[1].split("</a>", 1)[0]
+    assert "data-conta-open" not in brand
+    assert "Meu perfil" in brand
+
+
 def test_prototipo_perfil_publico_visitante(client: TestClient):
     login_admin(client)
     r = client.get("/prototipo/perfil/publico?como=visitante")
