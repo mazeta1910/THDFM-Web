@@ -41,7 +41,9 @@
         {% if is_own_view %}
         <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil">Editar perfil</a>
         <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
+        {% if is_dono %}
         <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
+        {% endif %}
         {% else %}
         <a class="proto-text-btn" href="/prototipo/perfil/publico">Meu perfil</a>
         {% endif %}

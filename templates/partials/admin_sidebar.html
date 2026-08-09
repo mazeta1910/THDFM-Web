@@ -104,16 +104,6 @@
         </div>
       </details>
 
-      {% if is_dono %}
-      <details class="admin-menu-group" data-group="prototipo-perfil" {% if path.startswith('/prototipo/perfil') or path.startswith('/prototipo/times') %}open{% endif %}>
-        <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Protótipo perfil</span></summary>
-        <div class="admin-menu-items">
-          <a class="admin-side-link {% if path.startswith('/prototipo/perfil') and 'benevides' not in path %}active{% endif %}" href="/prototipo/perfil">{{ ico('competicao') }}<span>Meu perfil</span></a>
-          <a class="admin-side-link {% if path.startswith('/prototipo/perfil/benevides') %}active{% endif %}" href="/prototipo/perfil/benevides">{{ ico('competicao') }}<span>Benevides</span></a>
-        </div>
-      </details>
-      {% endif %}
-
       <details class="admin-menu-group" data-group="grupo-whatsapp" {% if on_grupo_whatsapp or on_admin_xonhometro %}open{% endif %}>
         <summary class="admin-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
         <div class="admin-menu-items">

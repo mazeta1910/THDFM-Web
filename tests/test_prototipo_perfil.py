@@ -1,4 +1,4 @@
-"""Protótipo de perfil: privado do Dono + rota Benevides."""
+"""Perfil: disponível para participantes liberados; Benevides só Dono."""
 
 from __future__ import annotations
 
@@ -7,10 +7,28 @@ from fastapi.testclient import TestClient
 from tests.conftest import login_admin
 
 
-def test_prototipo_perfil_exige_dono(client: TestClient):
+def test_prototipo_perfil_exige_login(client: TestClient):
     r = client.get("/prototipo/perfil", follow_redirects=False)
     assert r.status_code in (303, 302)
     assert "/prototipo/perfil" not in (r.headers.get("location") or "")
+
+
+def test_prototipo_perfil_liberado_acessa(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Perfil User", status="liberado", celular="11990009901")
+    dbmod.definir_credenciais(part["id"], "perfil.user", "senha12345")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get("/prototipo/perfil")
+    assert r.status_code == 200
+    assert "Editar perfil" in r.text
+    assert "Perfil do Benevides" not in r.text
+
+    r = client.get("/prototipo/perfil/publico")
+    assert r.status_code == 200
+    assert 'data-own="1"' in r.text
+    assert "Perfil do Benevides" not in r.text
 
 
 def test_prototipo_perfil_pagina(client: TestClient):
@@ -117,15 +135,20 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert r.text.index('id="bolao"') < r.text.index('id="recados"')
 
 
-def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):
-    """Nome/avatar no topo da sidebar do Dono abre o perfil, não Minha conta."""
-    login_admin(client)
-    # Chrome do site (mesmo domínio do cookie do login)
-    client.cookies.set("thdfm_ui_mode", "user", domain="testserver.local")
+def test_sidebar_logado_brand_leva_ao_perfil(client: TestClient):
+    """Nome/avatar no topo da sidebar abre o perfil (Meu perfil), não Minha conta."""
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Brand User", status="liberado", celular="11990009902")
+    dbmod.definir_credenciais(part["id"], "brand.user", "senha12345")
+    client.get(f"/p/{part['token']}")
     r = client.get("/")
     assert r.status_code == 200
     assert "site-shell" in r.text
-    assert "Protótipo: perfil" in r.text
+    assert "Protótipo: perfil" not in r.text
+    assert "Perfil: Benevides" not in r.text
+    assert 'href="/prototipo/perfil"' not in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text
     assert 'href="/prototipo/perfil/publico"' in r.text
     assert 'class="site-brand-hint">Meu perfil</span>' in r.text
     brand = r.text.split('class="site-brand-user', 1)[1].split("</a>", 1)[0]
@@ -164,11 +187,17 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     r = client.get("/prototipo/perfil/benevides", follow_redirects=False)
     assert r.status_code in (303, 302)
 
-    login_admin(client)
     from src import db as dbmod
 
-    part = dbmod.criar_participante("Benevides", status="liberado", celular="11990001122")
-    dbmod.salvar_avatar(part["id"], "benevides-teste.jpg")
+    part = dbmod.criar_participante("Comum Bene", status="liberado", celular="11990009903")
+    dbmod.definir_credenciais(part["id"], "comum.bene", "senha12345")
+    client.get(f"/p/{part['token']}")
+    r = client.get("/prototipo/perfil/benevides", follow_redirects=False)
+    assert r.status_code in (303, 302)
+
+    login_admin(client)
+    part_b = dbmod.criar_participante("Benevides", status="liberado", celular="11990001122")
+    dbmod.salvar_avatar(part_b["id"], "benevides-teste.jpg")
 
     r = client.get("/prototipo/perfil/benevides")
     assert r.status_code == 200
@@ -184,14 +213,27 @@ def test_prototipo_perfil_benevides_privado(client: TestClient):
     assert "data-public-avatar" in r.text
 
 
-def test_menu_prototipo_so_dono(client: TestClient):
+def test_menu_perfil_fora_do_portal(client: TestClient):
+    """Portal não lista atalhos de perfil; acesso só pelo brand Meu perfil."""
     r = client.get("/")
     assert r.status_code == 200
     assert 'href="/prototipo/perfil"' not in r.text
     assert 'href="/prototipo/perfil/benevides"' not in r.text
+    assert "Protótipo: perfil" not in r.text
+    assert "Perfil: Benevides" not in r.text
 
     login_admin(client)
+    client.cookies.set("thdfm_ui_mode", "user", domain="testserver.local")
     r = client.get("/")
     assert r.status_code == 200
-    assert 'href="/prototipo/perfil"' in r.text
-    assert 'href="/prototipo/perfil/benevides"' in r.text
+    assert "Protótipo: perfil" not in r.text
+    assert "Perfil: Benevides" not in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text
+    # Brand continua apontando ao perfil público
+    assert 'href="/prototipo/perfil/publico"' in r.text
+    assert 'class="site-brand-hint">Meu perfil</span>' in r.text
+
+    r = client.get("/admin")
+    assert r.status_code == 200
+    assert "Protótipo perfil" not in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text

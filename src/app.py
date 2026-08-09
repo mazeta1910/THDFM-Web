@@ -931,8 +931,19 @@ def _prototipo_times_ctx() -> dict:
 
 
 def _require_proto_perfil(request: Request) -> RedirectResponse | None:
-    """Protótipo de perfil: só o Dono (Mazeta)."""
-    return require_dono(request)
+    """Perfil: participante liberado na sessão (admin também, via vínculo no render)."""
+    if admin_ok(request):
+        return None
+    token = request.session.get("participante_token")
+    if not token:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    part = db.get_participante_por_token(token)
+    if not part:
+        request.session.pop("participante_token", None)
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    if part.get("status") != "liberado":
+        return RedirectResponse(f"/p/{part['token']}", status_code=303)
+    return None
 
 
 def _perfil_demo_benevides() -> dict:
@@ -1118,7 +1129,7 @@ def prototipo_times(request: Request):
 
 @app.get("/prototipo/perfil", response_class=HTMLResponse)
 def prototipo_perfil(request: Request):
-    """Protótipo do perfil editável (sobre + times + karma). Só Mazeta."""
+    """Perfil editável (sobre + times + banner). Participante liberado ou admin."""
     neg = _require_proto_perfil(request)
     if neg:
         return neg
@@ -1127,7 +1138,7 @@ def prototipo_perfil(request: Request):
 
 @app.get("/prototipo/perfil/publico", response_class=HTMLResponse)
 def prototipo_perfil_publico(request: Request):
-    """Protótipo da visão do perfil. Só Mazeta.
+    """Visão pública do próprio perfil. Participante liberado ou admin.
 
     Por padrão é a visão do dono. Use ?como=visitante para simular outro usuário.
     """
@@ -1153,7 +1164,7 @@ def prototipo_perfil_benevides(request: Request):
     """Rota privada: Mazeta vê o perfil do Benevides (protótipo)."""
     import json
 
-    neg = _require_proto_perfil(request)
+    neg = require_dono(request)
     if neg:
         return neg
     fixado = _perfil_demo_benevides()
