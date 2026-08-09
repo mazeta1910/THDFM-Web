@@ -32,10 +32,12 @@ from src.config import (
     AVATAR_PADRAO_STEM,
     AVATARES_DIR,
     BANDEIRAS_UF_DIR,
+    CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
     COMPROVANTES_DIR,
     EMBLEMAS_DIR,
+    EMBLEMAS_FM_DIR,
     FASES,
     FASE_IDS,
     ADSENSE_CLIENT,
@@ -79,7 +81,10 @@ def _path_publico(path: str) -> bool:
     """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
     if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
         return True
-    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
+        return True
+    # Perfil (handler ainda exige liberado/admin)
+    if path.startswith("/meu-perfil") or path.startswith("/perfil/") or path.startswith("/prototipo/"):
         return True
     # Link mágico do participante
     if path.startswith("/p/"):
@@ -125,11 +130,14 @@ STATIC = ROOT_DIR / "static"
 STATIC.mkdir(exist_ok=True)
 EMBLEMAS_DIR.mkdir(parents=True, exist_ok=True)
 BANDEIRAS_UF_DIR.mkdir(parents=True, exist_ok=True)
+CLUBES_DIR.mkdir(parents=True, exist_ok=True)
+EMBLEMAS_FM_DIR.mkdir(parents=True, exist_ok=True)
 COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
+app.mount("/emblemas-fm", StaticFiles(directory=str(EMBLEMAS_FM_DIR)), name="emblemas_fm")
 app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="bandeiras_uf")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 
@@ -830,6 +838,357 @@ async def login_post(request: Request, celular: str = Form(...)):
 @app.get("/regras", response_class=HTMLResponse)
 def regras(request: Request):
     return render(request, "regras.html", **_taxa_ctx())
+
+
+def _karma_cats_demo() -> list[dict]:
+    """Karma estilo Orkut (1–3 ícones). Textos para o usuário reescrever."""
+    return [
+        {
+            "id": "confiavel",
+            "nome": "Confiável",
+            "icon": "😊",
+            "labels": ["confiável", "muito confiável", "super confiável"],
+            "demo": 2,
+        },
+        {
+            "id": "legal",
+            "nome": "Legal",
+            "icon": "🧊",
+            "labels": ["legal", "muito legal", "super legal"],
+            "demo": 3,
+        },
+        {
+            "id": "sexy",
+            "nome": "Sexy",
+            "icon": "❤️",
+            "labels": ["sexy", "muito sexy", "super sexy"],
+            "demo": 1,
+        },
+        {
+            "id": "burro",
+            "nome": "Burro",
+            "icon": "🫏",
+            "labels": ["burro", "muito burro", "super burro"],
+            "demo": 1,
+        },
+    ]
+
+
+def _amizade_niveis_demo() -> list[dict]:
+    """Esquema de amizade do protótipo (textos para reescrever)."""
+    return [
+        {"id": "nao_conheco", "nome": "quem é vc", "icone": "·"},
+        {"id": "conhecido", "nome": "conhecido", "icone": "○"},
+        {"id": "amigo", "nome": "amigo", "icone": "◐"},
+        {"id": "bom_amigo", "nome": "bom amigo", "icone": "●"},
+        {"id": "melhor_amigo", "nome": "mais que amigos, irmães", "icone": "★"},
+    ]
+
+
+def _banner_presets_demo() -> list[dict]:
+    """Banners/presets de fundo do perfil (protótipo)."""
+    return [
+        {"id": "padrao", "nome": "Padrão"},
+        {"id": "laranja", "nome": "Laranja THDFM"},
+        {"id": "gramado", "nome": "Gramado"},
+        {"id": "noite", "nome": "Noite de jogo"},
+        {"id": "carbono", "nome": "Carbono"},
+        {"id": "ouro", "nome": "Final"},
+    ]
+
+
+def _prototipo_times_ctx() -> dict:
+    import json
+
+    from src.clubes_catalogo import carregar_clubes, contagem_por_uf
+
+    ufs_meta_path = BANDEIRAS_UF_DIR / "ufs.json"
+    ufs_meta = (
+        json.loads(ufs_meta_path.read_text(encoding="utf-8"))
+        if ufs_meta_path.is_file()
+        else {"ufs": []}
+    )
+    por_uf = contagem_por_uf()
+    ufs = []
+    for u in ufs_meta.get("ufs", []):
+        code = u.get("uf") or ""
+        ufs.append(
+            {
+                **u,
+                "n_clubes": por_uf.get(code, 0),
+                "bandeira": f"/bandeiras-uf/{u.get('arquivo') or (code + '.svg')}",
+            }
+        )
+    clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
+    return {
+        "ufs": ufs,
+        "clubes_json": json.dumps(clubes, ensure_ascii=False),
+        "n_clubes": len(clubes),
+        "karma_cats": _karma_cats_demo(),
+        "amizade_niveis": _amizade_niveis_demo(),
+        "banner_presets": _banner_presets_demo(),
+    }
+
+
+def _require_perfil(request: Request) -> RedirectResponse | None:
+    """Perfil: participante liberado na sessão (admin também, via vínculo no render)."""
+    if admin_ok(request):
+        return None
+    token = request.session.get("participante_token")
+    if not token:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    part = db.get_participante_por_token(token)
+    if not part:
+        request.session.pop("participante_token", None)
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    if part.get("status") != "liberado":
+        return RedirectResponse(f"/p/{part['token']}", status_code=303)
+    return None
+
+
+def _perfil_publico_payload(part: dict) -> dict:
+    """Dados públicos de um participante para a página de perfil."""
+    nome = (part.get("nome") or "").strip() or "Participante"
+    iniciais = (nome[:2] if nome else "??").upper()
+    return {
+        "slug": str(part["id"]),
+        "nome": nome,
+        "participante_id": part["id"],
+        "avatar_url": avatar_url(part.get("avatar_path")),
+        "frase": "",
+        "relacionamento": "",
+        "aniversario": "",
+        "times": [],
+        "karma": {"confiavel": 2, "legal": 3, "sexy": 1, "burro": 1},
+        "nutela": 50,
+        "iniciais": iniciais,
+    }
+
+
+_ZONA_LABEL_PERFIL = {
+    "campeao": "Campeão",
+    "podio": "Zona de cima",
+    "meio": "Meio de tabela",
+    "risco": "Zona de risco",
+}
+
+
+def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
+    """Recorte seguro do bolão para o perfil público (posição, pts, estilo)."""
+    if not participante_id:
+        return None
+    try:
+        pid = int(participante_id)
+    except (TypeError, ValueError):
+        return None
+
+    part = db.get_participante(pid)
+    if not part:
+        return None
+    if part.get("status") != "liberado":
+        return {
+            "disponivel": False,
+            "motivo": "pendente",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    try:
+        linhas = calcular_classificacao()
+    except Exception:
+        return {
+            "disponivel": False,
+            "motivo": "erro",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    linha = next((r for r in linhas if int(r.get("participante_id") or 0) == pid), None)
+    if not linha:
+        return {
+            "disponivel": False,
+            "motivo": "fora",
+            "nome": part.get("nome") or "",
+            "classificacao_url": "/classificacao",
+        }
+
+    estilo = None
+    try:
+        from src.estilo_palpites import perfil_participante
+
+        estilo = perfil_participante(pid)
+    except Exception:
+        estilo = None
+
+    rodadas: list[dict] = []
+    try:
+        hist = resumo_pontuacao_por_participante(linhas).get(pid) or []
+        for entrada in hist[-6:]:
+            curto = (entrada.get("rotulo_curto") or "").strip()
+            fase_full = (entrada.get("fase_label") or "").strip()
+            janela = (entrada.get("janela_label") or "").strip()
+            if curto and fase_full and janela:
+                titulo = f"{curto} · {fase_full} ({janela})"
+            elif curto and fase_full:
+                titulo = f"{curto} · {fase_full}"
+            else:
+                titulo = (entrada.get("rotulo") or curto or "Rodada").strip()
+            rodadas.append(
+                {
+                    "titulo": titulo,
+                    "rotulo": entrada.get("rotulo") or titulo,
+                    "pts": entrada.get("rod") or 0,
+                    "soma": entrada.get("soma") or 0,
+                    "posicao": entrada.get("posicao"),
+                    "movimento": entrada.get("movimento"),
+                    "ao_vivo": bool(entrada.get("ao_vivo")),
+                    "jogos": entrada.get("jogos") or [],
+                }
+            )
+    except Exception:
+        rodadas = []
+
+    badges = []
+    if estilo and isinstance(estilo.get("badges"), list):
+        badges = [
+            {
+                "id": b.get("id"),
+                "titulo": b.get("titulo") or "",
+                "explicacao": b.get("explicacao") or "",
+            }
+            for b in estilo["badges"][:4]
+            if isinstance(b, dict) and b.get("titulo")
+        ]
+
+    assin_raw = (estilo or {}).get("placar_assinatura")
+    assinatura = None
+    if isinstance(assin_raw, dict) and assin_raw.get("placar"):
+        n_assin = assin_raw.get("n") or 0
+        assinatura = f"{assin_raw['placar']} ({n_assin}×)"
+    elif isinstance(assin_raw, str) and assin_raw.strip():
+        assinatura = assin_raw.strip()
+
+    zona = linha.get("zona") or ""
+    mov = linha.get("movimento")
+    return {
+        "disponivel": True,
+        "participante_id": pid,
+        "nome": linha.get("participante") or part.get("nome") or "",
+        "username": (part.get("username") or "").strip() or None,
+        "posicao": linha.get("posicao"),
+        "total": len(linhas),
+        "soma": linha.get("soma") or 0,
+        "rod": linha.get("rod") or 0,
+        "placar": linha.get("placar") or 0,
+        "vencedor": linha.get("vencedor") or 0,
+        "gols": linha.get("gols") or 0,
+        "fidelidade": linha.get("fidelidade") or 0,
+        "zona": zona,
+        "zona_label": _ZONA_LABEL_PERFIL.get(zona, ""),
+        "movimento": mov,
+        "badges": badges,
+        "palpites": (estilo or {}).get("n") or 0,
+        "pct_casa": (estilo or {}).get("pct_casa"),
+        "pct_empate": (estilo or {}).get("pct_empate"),
+        "pct_fora": (estilo or {}).get("pct_fora"),
+        "media_gols": (estilo or {}).get("media_gols"),
+        "assinatura": assinatura,
+        "acertos_vencedor": (estilo or {}).get("acertos_vencedor") or 0,
+        "acertos_placar": (estilo or {}).get("acertos_placar") or 0,
+        "rodadas": rodadas,
+        "classificacao_url": "/classificacao",
+    }
+
+
+@app.get("/meu-perfil", response_class=HTMLResponse)
+def meu_perfil(request: Request):
+    """Visão pública do próprio perfil. Use ?como=visitante para simular outro usuário."""
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    como = (request.query_params.get("como") or "").strip().lower()
+    is_own_view = como != "visitante"
+    part = _participante_sessao(request)
+    return render(
+        request,
+        "meu_perfil.html",
+        **_prototipo_times_ctx(),
+        **_taxa_ctx(),
+        is_own_view=is_own_view,
+        perfil_fixado=None,
+        bolao_perfil=_bolao_resumo_perfil(part["id"] if part else None),
+    )
+
+
+@app.get("/meu-perfil/editar", response_class=HTMLResponse)
+def meu_perfil_editar(request: Request):
+    """Edição do próprio perfil (sobre + times + banner)."""
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    return render(request, "meu_perfil_editar.html", **_prototipo_times_ctx(), **_taxa_ctx())
+
+
+@app.get("/perfil/{participante_id:int}", response_class=HTMLResponse)
+def perfil_participante(request: Request, participante_id: int):
+    """Perfil público de qualquer participante liberado."""
+    import json
+
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse("/classificacao", status_code=303)
+    sess = _participante_sessao(request)
+    if sess and int(sess["id"]) == int(participante_id):
+        return RedirectResponse("/meu-perfil", status_code=303)
+    fixado = _perfil_publico_payload(part)
+    return render(
+        request,
+        "meu_perfil.html",
+        **_prototipo_times_ctx(),
+        **_taxa_ctx(),
+        is_own_view=False,
+        perfil_fixado=fixado,
+        perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
+        bolao_perfil=_bolao_resumo_perfil(part["id"]),
+    )
+
+
+@app.get("/meu-perfil/clubes.json")
+def meu_perfil_clubes_json(request: Request):
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    from src.clubes_catalogo import carregar_clubes
+
+    clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]
+    return JSONResponse({"clubes": clubes, "total": len(clubes)})
+
+
+@app.get("/prototipo/perfil", include_in_schema=False)
+@app.get("/prototipo/perfil/publico", include_in_schema=False)
+@app.get("/prototipo/perfil/benevides", include_in_schema=False)
+@app.get("/prototipo/times", include_in_schema=False)
+@app.get("/prototipo/times/clubes.json", include_in_schema=False)
+def legado_prototipo_perfil(request: Request):
+    """Redirects das rotas antigas de protótipo."""
+    path = request.url.path.rstrip("/")
+    q = request.url.query
+    suffix = f"?{q}" if q else ""
+    if path.endswith("/benevides"):
+        part = db.get_participante_por_nome("Benevides")
+        if part:
+            return RedirectResponse(f"/perfil/{part['id']}{suffix}", status_code=301)
+        return RedirectResponse(f"/meu-perfil{suffix}", status_code=301)
+    if path.endswith("/publico"):
+        return RedirectResponse(f"/meu-perfil{suffix}", status_code=301)
+    if path.endswith("/clubes.json"):
+        return RedirectResponse("/meu-perfil/clubes.json", status_code=301)
+    if path.endswith("/times"):
+        return RedirectResponse("/meu-perfil/editar#times", status_code=301)
+    return RedirectResponse(f"/meu-perfil/editar{suffix}", status_code=301)
 
 
 def _pagina_em_breve(request: Request, *, titulo: str, secao: str, lead: str | None = None):
@@ -1724,12 +2083,6 @@ def classificacao(request: Request):
         janela = db.get_janela()
 
     hall_data = trofeus_hall(fase if not modo_historico else fase)
-    linhas_ao_vivo = linhas if not modo_historico else calcular_classificacao()
-    resumo_por_id = resumo_pontuacao_por_participante(linhas_ao_vivo)
-    perfis = hall_data.get("perfis") or {}
-    for pid, perfil in perfis.items():
-        perfil["resumo_rodadas"] = resumo_por_id.get(int(pid), [])
-        perfil["avatar_url"] = avatar_url(perfil.get("avatar_path"))
     return render(
         request,
         "classificacao.html",
@@ -1742,7 +2095,6 @@ def classificacao(request: Request):
         rodada_atual_id=rodada_sel["id"] if rodada_sel else None,
         rodada_sel=rodada_sel,
         hall=hall_data.get("cards") or [],
-        perfis=perfis,
     )
 
 
@@ -2020,6 +2372,37 @@ def _redirect_conta_drawer(token: str, *, msg: str | None = None, erro: str | No
     return RedirectResponse(f"/p/{token}?{'&'.join(parts)}", status_code=303)
 
 
+def _safe_conta_next(next_url: str | None) -> str | None:
+    """Permite voltar a páginas internas conhecidas após salvar a conta."""
+    n = (next_url or "").strip()
+    if n in {"/meu-perfil", "/meu-perfil/editar", "/prototipo/perfil", "/prototipo/perfil/publico"}:
+        if n.startswith("/prototipo/perfil/publico"):
+            return "/meu-perfil"
+        if n.startswith("/prototipo/perfil"):
+            return "/meu-perfil/editar"
+        return n
+    return None
+
+
+def _redirect_after_conta(
+    token: str,
+    *,
+    next_url: str | None = None,
+    msg: str | None = None,
+    erro: str | None = None,
+) -> RedirectResponse:
+    dest = _safe_conta_next(next_url)
+    if dest:
+        parts: list[str] = []
+        if msg:
+            parts.append(f"msg={quote(msg)}")
+        if erro:
+            parts.append(f"erro={quote(erro)}")
+        suffix = f"?{'&'.join(parts)}" if parts else ""
+        return RedirectResponse(dest + suffix, status_code=303)
+    return _redirect_conta_drawer(token, msg=msg, erro=erro)
+
+
 @app.get("/p/{token}/conta", response_class=HTMLResponse)
 def conta_participante(request: Request, token: str):
     part = db.get_participante_por_token(token)
@@ -2049,6 +2432,7 @@ async def conta_salvar(
     token: str,
     nome: str = Form(...),
     avatar: UploadFile = File(None),
+    next_url: str = Form("", alias="next"),
 ):
     part = db.get_participante_por_token(token)
     if not part:
@@ -2061,7 +2445,7 @@ async def conta_salvar(
     try:
         db.atualizar_nome_participante(part["id"], nome)
     except Exception as exc:
-        return _redirect_conta_drawer(token, erro=str(exc))
+        return _redirect_after_conta(token, next_url=next_url, erro=str(exc))
 
     # Se for o participante do admin logado, atualiza o nick da sessão
     if (
@@ -2074,10 +2458,10 @@ async def conta_salvar(
     if avatar is not None and getattr(avatar, "filename", None):
         ext = Path(avatar.filename or "").suffix.lower()
         if ext not in AVATAR_EXTS:
-            return _redirect_conta_drawer(token, erro="Foto deve ser jpg/png/webp")
+            return _redirect_after_conta(token, next_url=next_url, erro="Foto deve ser jpg/png/webp")
         data = await avatar.read()
         if not data or len(data) > AVATAR_MAX_BYTES:
-            return _redirect_conta_drawer(token, erro="Foto invalida ou maior que 3MB")
+            return _redirect_after_conta(token, next_url=next_url, erro="Foto invalida ou maior que 3MB")
         if part.get("avatar_path"):
             old = AVATARES_DIR / part["avatar_path"]
             if old.is_file():
@@ -2086,7 +2470,7 @@ async def conta_salvar(
         (AVATARES_DIR / rel).write_bytes(data)
         db.salvar_avatar(part["id"], rel)
 
-    return _redirect_conta_drawer(token, msg="Dados atualizados")
+    return _redirect_after_conta(token, next_url=next_url, msg="Dados atualizados")
 
 
 @app.post("/p/{token}/conta/senha")
@@ -2096,6 +2480,7 @@ async def conta_alterar_senha(
     senha_atual: str = Form(""),
     senha_nova: str = Form(""),
     senha_nova2: str = Form(""),
+    next_url: str = Form("", alias="next"),
 ):
     part = db.get_participante_por_token(token)
     if not part:
@@ -2109,7 +2494,7 @@ async def conta_alterar_senha(
     rate_key = f"senha:{ip}:{part['id']}"
 
     def _erro(msg: str) -> RedirectResponse:
-        return _redirect_conta_drawer(token, erro=msg)
+        return _redirect_after_conta(token, next_url=next_url, erro=msg)
 
     if not _auth_rate_ok(rate_key):
         return _erro("Muitas tentativas. Aguarde alguns minutos.")
@@ -2127,7 +2512,7 @@ async def conta_alterar_senha(
         _auth_rate_hit(rate_key)
         return _erro(str(exc))
 
-    return _redirect_conta_drawer(token, msg="Senha atualizada")
+    return _redirect_after_conta(token, next_url=next_url, msg="Senha atualizada")
 
 
 @app.post("/conta/sair")

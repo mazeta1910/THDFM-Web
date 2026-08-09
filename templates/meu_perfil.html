@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}{% if perfil_fixado %}{{ perfil_fixado.nome }}{% else %}Meu perfil{% endif %} — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block body_class %}proto-steam-body {% endblock %}
+
+{% block content %}
+{% set viewer_nome = participante_nav.nome if participante_nav else (admin_nome if is_dono else 'Visitante THDFM') %}
+{% set viewer_av = avatar_url(participante_nav.avatar_path) if participante_nav else '' %}
+{% set viewer_ini = (participante_nav.nome or admin_nome or '??')[:2]|upper if (participante_nav or is_dono) else 'TH' %}
+{% set fixado = perfil_fixado %}
+
+<div
+  class="proto-steam"
+  id="proto-perfil-publico"
+  data-proto-perfil-publico
+  data-own="{{ 1 if is_own_view else 0 }}"
+  data-fixado="{{ 1 if fixado else 0 }}"
+  data-viewer-nome="{{ viewer_nome }}"
+  data-viewer-avatar="{{ viewer_av or '' }}"
+  data-viewer-iniciais="{{ viewer_ini }}"
+>
+  <p class="proto-steam-kicker">
+    {% if fixado %}
+    Perfil de {{ fixado.nome }}
+    {% elif is_own_view %}
+    Meu perfil
+    {% else %}
+    Visão de visitante
+    {% endif %}
+  </p>
+
+  {% if fixado %}
+  <script type="application/json" id="proto-perfil-fixado">{{ perfil_fixado_json | safe }}</script>
+  {% endif %}
+
+  <article class="proto-steam-card">
+    <div class="proto-steam-banner-wrap">
+      <div class="proto-steam-banner" data-proto-banner data-banner="{% if fixado %}gramado{% else %}padrao{% endif %}" aria-hidden="true"></div>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <nav class="proto-steam-banner-nav" aria-label="Atalhos do perfil">
+        {% if is_own_view %}
+        <a class="proto-text-btn proto-text-btn--accent proto-text-btn--icon" href="/meu-perfil/editar" aria-label="Editar perfil" title="Editar perfil">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </a>
+        <a class="proto-text-btn" href="/meu-perfil?como=visitante">Ver como visitante</a>
+        {% else %}
+        <a class="proto-text-btn" href="/meu-perfil">Meu perfil</a>
+        {% endif %}
+      </nav>
+      {# TEXTOS PARA REESCREVER — fim #}
+    </div>
+
+    <header class="proto-steam-hero">
+      <div class="proto-steam-hero-top">
+        <div class="proto-steam-avatar" aria-hidden="true">
+          {% if fixado and fixado.avatar_url %}
+          <img src="{{ fixado.avatar_url }}" alt="" width="112" height="112" data-public-avatar />
+          {% elif fixado %}
+          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ fixado.iniciais }}</span>
+          {% elif viewer_av %}
+          <img src="{{ viewer_av }}" alt="" width="112" height="112" data-public-avatar />
+          {% else %}
+          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ viewer_ini }}</span>
+          {% endif %}
+        </div>
+
+        <div class="proto-steam-hero-main">
+          <div class="proto-steam-name-row">
+            <h1 class="proto-steam-name" data-public-nome>{% if fixado %}{{ fixado.nome }}{% else %}{{ viewer_nome }}{% endif %}</h1>
+            {% if bolao_perfil and bolao_perfil.disponivel %}
+            <p class="proto-steam-bolao-line proto-steam-bolao-line--name">
+              <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
+              <span aria-hidden="true">·</span>
+              <span>{{ bolao_perfil.soma }} pts</span>
+              {% if bolao_perfil.rod %}
+              <span aria-hidden="true">·</span>
+              <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
+                {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
+              </span>
+              {% endif %}
+              {% if bolao_perfil.zona_label %}
+              <span aria-hidden="true">·</span>
+              <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
+              {% endif %}
+            </p>
+            {% endif %}
+            <span class="proto-times-badges">
+              <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
+              <span class="proto-times-misto proto-times-dindao" id="public-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+            </span>
+          </div>
+          {# Emblemas no lugar da bandeira Steam #}
+          <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
+          <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
+
+          {# TEXTOS PARA REESCREVER — começo #}
+          <div class="proto-steam-meta-row">
+            <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
+            <div
+              class="proto-steam-karma proto-steam-karma--line {% if not is_own_view %}proto-steam-karma--votavel{% endif %}"
+              id="public-karma"
+              aria-label="Karma"
+            >
+              {% for k in karma_cats %}
+              <div
+                class="proto-steam-karma-item"
+                data-karma="{{ k.id }}"
+                data-icon="{{ k.icon }}"
+                data-nome="{{ k.nome|lower }}"
+                data-labels="{{ k.labels | join('|') }}"
+              >
+                <span class="proto-steam-karma-label" data-karma-label>{{ k.nome|lower }}</span>
+                {% if not is_own_view %}
+                <button
+                  type="button"
+                  class="proto-steam-icons proto-steam-icons--voto"
+                  data-karma-cycle
+                  aria-label="Votar {{ k.nome }} (ícones = média da galera)"
+                  style="--voto-n: 0"
+                >
+                  <span data-karma-icons aria-hidden="true"></span>
+                </button>
+                <span class="visually-hidden" data-karma-vote-icons></span>
+                {% else %}
+                <span class="proto-steam-icons" data-karma-icons aria-hidden="true"></span>
+                {% endif %}
+              </div>
+              {% endfor %}
+              <div
+                class="proto-steam-nutela proto-steam-nutela--inline {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}"
+                data-nutela
+                style="--nutela: 50%; --nutela-voto: 50%"
+              >
+                <span class="proto-steam-nutela-end is-nutela">nutela</span>
+                <div class="proto-steam-nutela-meter">
+                  <div class="proto-steam-nutela-track" aria-hidden="true">
+                    <span class="proto-steam-nutela-marker" data-nutela-marker title="Média da galera"></span>
+                    {% if not is_own_view %}
+                    <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" hidden></span>
+                    {% endif %}
+                  </div>
+                  {% if not is_own_view %}
+                  <input
+                    class="proto-steam-nutela-range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                    aria-label="Seu voto no medidor nutela a raíz"
+                    data-proto-nutela
+                  />
+                  {% endif %}
+                </div>
+                <span class="proto-steam-nutela-end is-raiz">raíz</span>
+              </div>
+            </div>
+          </div>
+          {# TEXTOS PARA REESCREVER — fim #}
+
+          <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
+        </div>
+      </div>
+    </header>
+  </article>
+
+  <div class="proto-steam-layout proto-steam-layout--solo">
+    <div class="proto-steam-main">
+      {# TEXTOS PARA REESCREVER — começo #}
+      <section class="proto-steam-panel" id="bolao" aria-label="No bolão">
+        {% include "partials/proto_bolao_perfil.html" %}
+      </section>
+
+      <section class="proto-steam-panel" id="recados">
+        <div class="proto-steam-panel-head">
+          <h2 class="proto-steam-panel-title">Recados <span id="public-recados-count">(0)</span></h2>
+        </div>
+        {% if not is_own_view %}
+        <form class="proto-steam-compose" id="public-recado-form">
+          <textarea class="proto-steam-field" rows="2" maxlength="280" placeholder="Deixe um recado…" required></textarea>
+          <button type="submit" class="proto-ico-btn proto-ico-btn--accent" title="Postar recado" aria-label="Postar recado">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+          </button>
+        </form>
+        {% endif %}
+        <ul class="proto-steam-feed" id="public-recados-list"></ul>
+        <p class="proto-steam-empty" id="public-recados-empty">Nenhum recado ainda.</p>
+      </section>
+      {# TEXTOS PARA REESCREVER — fim #}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/prototipo-perfil.js?v=22" defer></script>
+{% endblock %}

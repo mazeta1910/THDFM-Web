@@ -1,0 +1,101 @@
+{# Seletor de times (UF + busca + multi). Requer ufs, n_clubes no contexto.
+   Embutido no perfil: catálogo sob demanda (não renderiza a lista gigante no load). #}
+<section
+  class="proto-times {% if seletor_embedded %}proto-times--embedded{% endif %}"
+  id="proto-times"
+  data-proto-times
+  {% if seletor_embedded %}data-clubes-src="/meu-perfil/clubes.json" data-compact="1"{% endif %}
+>
+  {% if not seletor_embedded %}
+  <header class="proto-times-head">
+    <p class="xonha-kicker">Times do coração</p>
+    {# TEXTOS PARA REESCREVER — começo #}
+    <h1 class="proto-times-title">Escolha seus times</h1>
+    <p class="proto-times-lead">
+      Toque num estado ou busque pelo nome. Dá para marcar vários.
+    </p>
+    {# TEXTOS PARA REESCREVER — fim #}
+  </header>
+  {% else %}
+  {# Título vem da seção pai (editar perfil); evita cabeçalho duplicado. #}
+  {% endif %}
+
+  <div class="proto-times-inline">
+    <div class="proto-times-picked" id="proto-picked" hidden>
+      <div class="proto-times-picked-top">
+        <h3 class="proto-times-picked-title">Selecionados</h3>
+        {% if not seletor_embedded %}
+        <span class="proto-times-badges">
+          <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+          <span class="proto-times-misto proto-times-dindao" id="proto-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+        </span>
+        {% endif %}
+      </div>
+      <ul class="proto-times-chips" id="proto-chips"></ul>
+      <button type="button" class="proto-ico-btn" id="proto-clear" title="Limpar seleção" aria-label="Limpar seleção">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+    {% if seletor_embedded %}
+    <button type="button" class="proto-ico-btn proto-ico-btn--accent" id="proto-times-open" title="Escolher times" aria-label="Escolher times">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+    </button>
+    {% endif %}
+  </div>
+
+  <div class="proto-times-browser" id="proto-times-browser" {% if seletor_embedded %}hidden{% endif %}>
+    <div class="proto-times-tools">
+      <label class="proto-times-search">
+        <span class="visually-hidden">Buscar time</span>
+        <input
+          type="search"
+          id="proto-search"
+          placeholder="Buscar time… ex.: Palmeiras, Remo, ABC"
+          autocomplete="off"
+          enterkeyhint="search"
+        />
+      </label>
+      <button type="button" class="proto-ico-btn" id="proto-all-ufs" title="Todos os estados" aria-label="Todos os estados">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>
+      </button>
+      {% if seletor_embedded %}
+      <button type="button" class="proto-ico-btn" id="proto-times-close" title="Fechar lista" aria-label="Fechar lista">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+      {% endif %}
+    </div>
+
+    <section class="proto-times-ufs" aria-label="Estados">
+      <h3 class="proto-times-section-title">Por estado</h3>
+      <div class="proto-times-uf-grid" id="proto-uf-grid">
+        {% for u in ufs %}
+        <button
+          type="button"
+          class="proto-uf"
+          data-uf="{{ u.uf }}"
+          data-nome="{{ u.nome }}"
+          {% if not u.n_clubes %}disabled{% endif %}
+          aria-pressed="false"
+        >
+          <img class="proto-uf-flag" src="{{ u.bandeira }}" alt="" width="48" height="32" loading="lazy" />
+          <span class="proto-uf-code">{{ u.uf }}</span>
+          <span class="proto-uf-count">{{ u.n_clubes }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="proto-times-list-wrap" aria-label="Times">
+      <div class="proto-times-list-head">
+        <h3 class="proto-times-section-title" id="proto-list-title">Times</h3>
+        <p class="proto-times-meta" id="proto-list-meta">{% if seletor_embedded %}Abra para buscar{% else %}{{ n_clubes }} clubes{% endif %}</p>
+      </div>
+      <div class="proto-times-list" id="proto-list" role="list"></div>
+      <p class="proto-times-empty" id="proto-empty" hidden>Nenhum time encontrado.</p>
+    </section>
+  </div>
+</section>
+
+{% if not seletor_embedded %}
+<script type="application/json" id="proto-clubes-data">{{ clubes_json | safe }}</script>
+{% endif %}

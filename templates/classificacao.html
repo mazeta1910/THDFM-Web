@@ -85,12 +85,13 @@
           </td>
           <td class="col-player" data-value="{{ r.participante }}">
             <div class="classificacao-player">
-              {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
-              {% if r.participante_id is defined and perfis is defined and perfis.get(r.participante_id) %}
-              <button type="button" class="classificacao-nome-btn" data-abrir-ficha="{{ r.participante_id }}" title="Ver estilo de palpites">
+              {% if r.participante_id is defined and r.participante_id %}
+              <a class="classificacao-player-link" href="/perfil/{{ r.participante_id }}" title="Ver perfil">
+                {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
                 <span class="classificacao-nome">{{ r.participante }}</span>
-              </button>
+              </a>
               {% else %}
+              {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
               <span class="classificacao-nome">{{ r.participante }}</span>
               {% endif %}
               {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
@@ -126,7 +127,6 @@
   Regra de 3 com o Brasileirão (4 em 20 ≈ 20% no topo e 20% embaixo). Com {{ linhas|length }} participante(s): 1 campeão · {% if zona_faixa > 1 %}{{ zona_faixa - 1 }} zona alta · {% endif %}{{ zona_faixa }} zona de risco.
   {% if not modo_historico %} O movimento (▲/▼) compara com a última rodada confirmada. Ao confirmar a rodada, a tabela é arquivada neste histórico.{% endif %}
   Clique no cabeçalho de qualquer coluna para ordenar. No celular, deslize a tabela para o lado — colocação, foto e nome ficam fixos.
-  Clique no nome para ver o estilo de palpites.
 </p>
 {% endif %}
 
@@ -220,27 +220,6 @@
 </div>
 {% endif %}
 
-<dialog class="ficha-dialog" id="ficha-estilo" aria-labelledby="ficha-estilo-title">
-  <div
-    class="card classificacao-card ficha-estilo-card"
-    data-classificacao-export-target
-    data-export-prefix="estilo"
-    data-export-slug="ficha"
-  >
-    <div class="classificacao-card-head">
-      <div class="classificacao-card-identity">
-        <strong id="ficha-estilo-title">Estilo de palpites</strong>
-        <span class="classificacao-card-sub" id="ficha-estilo-sub">Ficha individual</span>
-      </div>
-      <div class="classificacao-card-actions" data-classificacao-export-ignore>
-        {{ btn_export_png("classificacao", "Exportar ficha em PNG") }}
-        <button type="button" class="ficha-dialog-close" data-fechar-ficha aria-label="Fechar">×</button>
-      </div>
-    </div>
-    <div class="planilha-body ficha-estilo-body" id="ficha-estilo-body"></div>
-  </div>
-</dialog>
-<script type="application/json" id="perfis-estilo-json">{{ perfis|default({})|tojson }}</script>
 
 <div class="col-tip-host" id="col-tip-host" hidden></div>
 <script>
@@ -374,242 +353,6 @@
       }
       applySort(key, type, dir);
     });
-  });
-})();
-</script>
-<script>
-(() => {
-  const raw = document.getElementById("perfis-estilo-json");
-  const dialog = document.getElementById("ficha-estilo");
-  const body = document.getElementById("ficha-estilo-body");
-  const sub = document.getElementById("ficha-estilo-sub");
-  const card = dialog && dialog.querySelector("[data-classificacao-export-target]");
-  if (!raw || !dialog || !body) return;
-  let perfis = {};
-  try { perfis = JSON.parse(raw.textContent || "{}"); } catch (e) { perfis = {}; }
-
-  const pct = (v) => (v == null ? "—" : `${v}%`);
-  const tile = (label, value, wide) =>
-    `<div class="planilha-metrica${wide ? " planilha-metrica-wide" : ""}">` +
-    `<span class="planilha-metrica-label">${label}</span>` +
-    `<span class="planilha-metrica-value">${value}</span></div>`;
-
-  const render = (p) => {
-    if (!p) return "<p>Sem dados de palpites ainda.</p>";
-    const badges = (p.badges || [])
-      .filter((b) => b && b.id !== "arqui_inimigos")
-      .map((b) => `<span class="ficha-badge" title="${(b.explicacao || "").replace(/"/g, "&quot;")}">${b.titulo}</span>`)
-      .join(" ");
-    const assinatura = p.placar_assinatura
-      ? `${p.placar_assinatura.placar} <small>(${p.placar_assinatura.n}×)</small>`
-      : "—";
-    const fmtPts = (n) => {
-      const v = Number(n) || 0;
-      return (v > 0 ? "+" : "") + v;
-    };
-    const esc = (s) => String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-    const iniciais = (nome) => {
-      const parts = String(nome || "").trim().split(/\s+/).filter(Boolean);
-      if (!parts.length) return "?";
-      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    };
-    const avatarHtml = p.avatar_url
-      ? `<img class="ficha-rodadas-avatar" src="${esc(p.avatar_url)}" alt="" />`
-      : `<span class="ficha-rodadas-avatar ficha-rodadas-avatar-fallback">${esc(iniciais(p.nome))}</span>`;
-
-    const markIcon = (kind) => {
-      if (kind === "ok") {
-        return `<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M3.2 8.2l3 3 6.6-6.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-      }
-      if (kind === "miss") {
-        return `<svg viewBox="0 0 16 16" width="9" height="9" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-      }
-      return `<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M4 8h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-    };
-    const statusMark = (pts, semPalpite, label) => {
-      const kind = semPalpite ? "na" : (Number(pts) > 0 ? "ok" : "miss");
-      const title = semPalpite
-        ? `${label}: sem palpite`
-        : (kind === "ok" ? `${label}: acertou (+${Number(pts) || 0})` : `${label}: errou`);
-      return (
-        `<span class="ficha-jogo-mark is-${kind}" title="${esc(title)}">` +
-        markIcon(kind) +
-        `<span class="visually-hidden">${esc(title)}</span>` +
-        `</span>`
-      );
-    };
-    const jogosHtml = (jogos) => {
-      if (!jogos || !jogos.length) {
-        return `<p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>`;
-      }
-      const head =
-        `<div class="ficha-jogos-cols" aria-hidden="true">` +
-        `<span>Jogo</span><span>Palpite</span><span>Plc</span><span>Ven</span>` +
-        `<span>Gc</span><span>Gf</span><span>Pts</span>` +
-        `</div>`;
-      const rows = jogos.map((j) => {
-        const real = `${j.real_m}×${j.real_v}`;
-        const sem = !!j.sem_palpite;
-        const palpiteScore = sem ? "—" : `${j.palpite_m}×${j.palpite_v}`;
-        const palpiteLab = esc((j.resultado_label || (sem ? "Sem palpite" : "")).toUpperCase());
-        const ptsCls = Number(j.pts) > 0 ? "" : " is-zero";
-        const ptsLab = Number(j.pts) > 0 ? fmtPts(j.pts) : "0";
-        const emCasa = j.casa_emblema
-          ? `<img class="ficha-jogo-embl" src="${esc(j.casa_emblema)}" alt="" />`
-          : `<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>`;
-        const emFora = j.fora_emblema
-          ? `<img class="ficha-jogo-embl" src="${esc(j.fora_emblema)}" alt="" />`
-          : `<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>`;
-        const gcCls = Number(j.gols_casa) > 0 ? " is-hit" : "";
-        const gfCls = Number(j.gols_fora) > 0 ? " is-hit" : "";
-        return (
-          `<div class="ficha-jogo" role="row">` +
-          `<div class="ficha-jogo-oficial" title="${esc(j.casa_curto || j.casa)} ${real} ${esc(j.fora_curto || j.fora)}">` +
-          `<span class="ficha-jogo-scoreline">` +
-          `${emCasa}<span class="ficha-jogo-score">${real}</span>${emFora}` +
-          `</span>` +
-          `<small>Oficial</small>` +
-          `</div>` +
-          `<div class="ficha-jogo-palpite">` +
-          `<span class="ficha-jogo-palpite-score">${esc(palpiteScore)}</span>` +
-          `<small>${palpiteLab}</small>` +
-          `</div>` +
-          statusMark(j.placar, sem, "Plc") +
-          statusMark(j.vencedor, sem, "Ven") +
-          `<span class="ficha-jogo-num${gcCls}" title="Gols casa: ${j.gols_casa || 0}">${j.gols_casa || 0}</span>` +
-          `<span class="ficha-jogo-num${gfCls}" title="Gols fora: ${j.gols_fora || 0}">${j.gols_fora || 0}</span>` +
-          `<span class="ficha-jogo-pts${ptsCls}">${ptsLab}</span>` +
-          `</div>`
-        );
-      }).join("");
-      return head + rows;
-    };
-
-    const rodadas = (p.resumo_rodadas || [])
-      .map((r) => {
-        const meta = [r.fase_label || r.fase_label_curta, r.janela_label].filter(Boolean).join(" · ");
-        const pos = r.posicao != null ? `${r.posicao}º` : "—";
-        let mov = "";
-        if (r.movimento != null && Number(r.movimento) !== 0) {
-          const m = Number(r.movimento);
-          mov = m > 0
-            ? `<span class="ficha-rodada-mov up">▲${m}</span>`
-            : `<span class="ficha-rodada-mov down">▼${Math.abs(m)}</span>`;
-        }
-        const rotulo = r.rotulo_curto || r.rotulo || "Rodada";
-        return (
-          `<li class="ficha-rodada-item${r.ao_vivo ? " is-ao-vivo" : ""}" data-ficha-rodada>` +
-          `<button type="button" class="ficha-rodada-toggle" aria-expanded="false">` +
-          `<span class="ficha-rodada-titulo">` +
-          `<span class="ficha-rodada-rotulo-line">` +
-          `<span class="ficha-rodada-chev" aria-hidden="true"></span>` +
-          `<span class="ficha-rodada-rotulo-full">${esc(r.rotulo || "Rodada")}</span>` +
-          `<span class="ficha-rodada-rotulo-short">${esc(rotulo)}</span>` +
-          `</span>` +
-          (meta ? `<span class="ficha-rodada-meta">${esc(meta)}</span>` : "") +
-          `</span>` +
-          `<span class="ficha-rodada-nums" aria-label="Pontuação da rodada">` +
-          `<span class="ficha-rodada-stat" title="Pontos na rodada">` +
-          `<span class="ficha-rodada-rod">${fmtPts(r.rod)}</span>` +
-          `</span>` +
-          `<span class="ficha-rodada-stat" title="Pontuação total">` +
-          `<span class="ficha-rodada-soma">${r.soma}</span>` +
-          `</span>` +
-          `<span class="ficha-rodada-stat" title="Colocação">` +
-          `<span class="ficha-rodada-pos">${pos}${mov}</span>` +
-          `</span>` +
-          `</span>` +
-          `</button>` +
-          `<div class="ficha-rodada-jogos">${jogosHtml(r.jogos)}</div>` +
-          `</li>`
-        );
-      })
-      .join("");
-    const resumo = rodadas
-      ? `<section class="ficha-rodadas-resumo" aria-label="Resumo das rodadas">` +
-        `<h3 class="ficha-rodadas-resumo-title">Resumo das rodadas</h3>` +
-        `<div class="ficha-rodadas-head">` +
-        `<div class="ficha-rodadas-who">${avatarHtml}<span class="ficha-rodadas-nome">${esc(p.nome || "")}</span></div>` +
-        `<div class="ficha-rodadas-cols" aria-hidden="true"><span>Rod</span><span>Pts</span><span>#</span></div>` +
-        `</div>` +
-        `<ul class="ficha-rodadas-lista">${rodadas}</ul>` +
-        `</section>`
-      : "";
-    return `
-      ${badges ? `<div class="ficha-badges">${badges}</div>` : ""}
-      ${resumo}
-      <section class="planilha-metricas-bloco" aria-label="Métricas do participante">
-        <h3 class="planilha-metricas-bloco-title">Perfil</h3>
-        <div class="planilha-metricas">
-          ${tile("Vitórias casa", `${p.n_casa} <small>(${pct(p.pct_casa)})</small>`)}
-          ${tile("Empates", `${p.n_empate} <small>(${pct(p.pct_empate)})</small>`)}
-          ${tile("Vitórias fora", `${p.n_fora} <small>(${pct(p.pct_fora)})</small>`)}
-          ${tile("Placar assinatura", assinatura, true)}
-          ${tile("Média de gols", p.media_gols == null ? "—" : p.media_gols)}
-          ${tile("Média do placar", p.media_placar || "—")}
-          ${tile("No favorito do grupo", pct(p.pct_favorito))}
-          ${tile("Goleadas (diff ≥ 3)", p.goleadas)}
-          ${tile("Placares baixos", p.placares_baixos)}
-          ${tile("Jogos com palpite", `${p.n} / ${p.n_jogos_fase}`)}
-          ${tile("Boquinhas", p.boquinhas)}
-          ${tile("Zebras que pagaram", p.zebra_ok)}
-          ${tile("Acertos vencedor", p.acertos_vencedor)}
-          ${tile("Acertos placar", p.acertos_placar)}
-        </div>
-      </section>
-    `;
-  };
-
-  const slugify = (texto) => String(texto || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-
-  const bindRodadas = () => {
-    body.querySelectorAll("[data-ficha-rodada]").forEach((el) => {
-      const btn = el.querySelector(".ficha-rodada-toggle");
-      if (!btn) return;
-      btn.addEventListener("click", () => {
-        const openNow = el.classList.toggle("is-open");
-        btn.setAttribute("aria-expanded", openNow ? "true" : "false");
-      });
-    });
-  };
-
-  const open = (id) => {
-    const p = perfis[String(id)] || perfis[id];
-    body.innerHTML = render(p);
-    bindRodadas();
-    if (sub) sub.textContent = p && p.nome ? p.nome : "Ficha individual";
-    if (card) card.setAttribute("data-export-slug", p && p.nome ? "ficha-" + slugify(p.nome) : "ficha");
-    if (typeof dialog.showModal === "function") dialog.showModal();
-    else dialog.setAttribute("open", "");
-  };
-  const close = () => {
-    if (typeof dialog.close === "function") dialog.close();
-    else dialog.removeAttribute("open");
-  };
-
-  document.querySelectorAll("[data-abrir-ficha]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      open(btn.getAttribute("data-abrir-ficha"));
-    });
-  });
-  dialog.querySelectorAll("[data-fechar-ficha]").forEach((btn) => {
-    btn.addEventListener("click", close);
-  });
-  dialog.addEventListener("click", (ev) => {
-    if (ev.target === dialog) close();
   });
 })();
 </script>

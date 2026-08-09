@@ -1,0 +1,30 @@
+{# Modal de corte de banner — pan + zoom, proporção larga #}
+<div class="modal-backdrop banner-crop-modal" id="banner-crop-modal" hidden>
+  <div
+    class="inscricao-modal banner-crop-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="banner-crop-title"
+  >
+    <h3 id="banner-crop-title">Ajustar banner</h3>
+    <p class="avatar-crop-hint">Arraste para enquadrar e use o zoom. A área retangular é o que fica no perfil.</p>
+    <div class="banner-crop-stage" id="banner-crop-stage">
+      <canvas id="banner-crop-canvas" width="420" height="140" aria-label="Área de corte do banner"></canvas>
+      <div class="banner-crop-mask" aria-hidden="true"></div>
+    </div>
+    <div class="avatar-crop-zoom-label">
+      <span class="avatar-crop-zoom-title" id="banner-crop-zoom-label">Zoom</span>
+      <div class="avatar-crop-zoom-row" role="group" aria-labelledby="banner-crop-zoom-label">
+        <button type="button" class="avatar-crop-zoom-btn" id="banner-crop-zoom-out" aria-label="Diminuir zoom">−</button>
+        <span class="avatar-crop-zoom-track">
+          <input id="banner-crop-zoom" class="avatar-crop-zoom" type="range" min="1" max="3" step="0.01" value="1" />
+        </span>
+        <button type="button" class="avatar-crop-zoom-btn" id="banner-crop-zoom-in" aria-label="Aumentar zoom">+</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="banner-crop-cancel">Cancelar</button>
+      <button type="button" id="banner-crop-apply">Usar banner</button>
+    </div>
+  </div>
+</div>

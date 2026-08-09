@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Protótipo · Times do coração — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+
+{% block content %}
+<p class="proto-redirect-hint">
+  O seletor agora vive no
+  <a href="/meu-perfil/editar#times">editar perfil</a>.
+  Esta página é legado — use o seletor no perfil.
+</p>
+{% set seletor_embedded = false %}
+{% include "partials/seletor_times.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/prototipo-times.js" defer></script>
+{% endblock %}

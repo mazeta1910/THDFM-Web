@@ -1,6 +1,7 @@
 {% set acesso_q = request.query_params.get('acesso') or '' %}
 {% set on_conta = participante_nav and '/conta' in path %}
 {% set on_home = path == '/' or path == '/home' %}
+{% set on_meu_perfil = path.startswith('/meu-perfil') %}
 {% set on_entrar = path.startswith('/entrar') or acesso_q == 'entrar' %}
 {% set on_login = (path.startswith('/login') and not path.startswith('/loguin')) or acesso_q in ('recuperar', 'login') %}
 {% set on_loguin = path.startswith('/loguin') or acesso_q == 'loguin' %}
@@ -20,7 +21,7 @@
       <button type="button" class="site-sidebar-close" id="site-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
-    <div class="site-brand-user-row {% if on_conta %}is-active{% endif %}">
+    <div class="site-brand-user-row {% if on_meu_perfil %}is-active{% endif %}">
       <button
         type="button"
         class="avatar-edit-trigger site-brand-avatar-wrap"
@@ -40,12 +41,14 @@
           </svg>
         </span>
       </button>
-      <a href="/p/{{ participante_nav.token }}/conta" class="site-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <a href="/meu-perfil" class="site-brand-user {% if on_meu_perfil %}active{% endif %}">
         <span class="site-brand-user-text">
           <span class="site-brand-name">{{ participante_nav.nome }}</span>
-          <span class="site-brand-hint">Minha conta</span>
+          <span class="site-brand-hint">Meu perfil</span>
         </span>
       </a>
+      {# TEXTOS PARA REESCREVER — fim #}
     </div>
     {% endif %}
   </div>

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block title %}Editar perfil — THDFM{% endblock %}
+{% block wrap_class %}wide{% endblock %}
+{% block body_class %}proto-steam-body {% endblock %}
+
+{% block content %}
+{% set viewer_nome = participante_nav.nome if participante_nav else 'Visitante THDFM' %}
+{% set viewer_av = avatar_url(participante_nav.avatar_path) if participante_nav else '' %}
+{% set viewer_ini = (participante_nav.nome or '??')[:2]|upper if participante_nav else 'TH' %}
+
+<div
+  class="proto-edit"
+  id="proto-perfil"
+  data-proto-perfil
+  data-viewer-nome="{{ viewer_nome }}"
+  data-viewer-avatar="{{ viewer_av or '' }}"
+  data-viewer-iniciais="{{ viewer_ini }}"
+>
+  <header class="proto-edit-top">
+    <div>
+      <p class="proto-steam-kicker">Meu perfil</p>
+      {# TEXTOS PARA REESCREVER — começo #}
+      <h1 class="proto-edit-title">Editar perfil</h1>
+      <p class="proto-edit-lead">Toque na capa ou na foto para trocar. Ao salvar, você volta para o seu perfil.</p>
+      {# TEXTOS PARA REESCREVER — fim #}
+    </div>
+    {# TEXTOS PARA REESCREVER — começo #}
+    <nav class="proto-edit-nav" aria-label="Atalhos do perfil">
+      <a class="proto-text-btn proto-text-btn--accent" href="/meu-perfil">Ver meu perfil</a>
+      <a class="proto-text-btn" href="/meu-perfil?como=visitante">Ver como visitante</a>
+      {% if participante_nav %}
+      <a class="proto-text-btn" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
+      {% endif %}
+    </nav>
+    {# TEXTOS PARA REESCREVER — fim #}
+  </header>
+
+  {% if participante_nav %}
+  <form
+    id="proto-avatar-form"
+    class="visually-hidden"
+    method="post"
+    action="/p/{{ participante_nav.token }}/conta"
+    enctype="multipart/form-data"
+    aria-hidden="true"
+  >
+    <input type="hidden" name="nome" id="proto-avatar-nome" value="{{ viewer_nome }}" />
+    <input type="hidden" name="next" value="/meu-perfil/editar" />
+    <input type="file" name="avatar" id="proto-avatar-file" accept=".jpg,.jpeg,.png,.webp,image/*" />
+  </form>
+  {% endif %}
+
+  <section class="proto-edit-cover" id="banner">
+    <div class="proto-edit-cover-media proto-steam-banner" data-proto-banner data-banner="padrao">
+      <button
+        type="button"
+        class="proto-edit-banner-trigger"
+        id="proto-banner-edit"
+        aria-label="Alterar foto do banner"
+      >
+        <span class="proto-edit-banner-camera" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </span>
+      </button>
+      <button type="button" class="proto-edit-banner-clear" id="proto-banner-clear" hidden title="Remover banner" aria-label="Remover banner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+      <input type="file" id="proto-banner-file" class="visually-hidden" accept="image/*" tabindex="-1" />
+    </div>
+    {% if participante_nav %}
+    <button
+      type="button"
+      class="proto-edit-avatar avatar-edit-trigger"
+      id="proto-avatar-edit"
+      aria-label="Alterar foto de perfil"
+    >
+      {% if viewer_av %}
+      <img src="{{ viewer_av }}" alt="" width="96" height="96" data-avatar-live />
+      {% else %}
+      <span class="proto-steam-avatar-fallback" data-avatar-live>{{ viewer_ini }}</span>
+      {% endif %}
+      <span class="avatar-edit-camera" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </span>
+    </button>
+    {% else %}
+    <div class="proto-edit-avatar" aria-hidden="true">
+      <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="proto-edit-themes" aria-labelledby="proto-edit-themes-title">
+    {# TEXTOS PARA REESCREVER — começo #}
+    <h2 class="proto-edit-themes-title" id="proto-edit-themes-title">Tema do banner</h2>
+    {# TEXTOS PARA REESCREVER — fim #}
+    <div class="proto-edit-presets" role="listbox" aria-label="Temas de banner">
+      {% for b in banner_presets %}
+      <button
+        type="button"
+        class="proto-edit-preset"
+        data-banner-preset="{{ b.id }}"
+        title="{{ b.nome }}"
+        aria-label="{{ b.nome }}"
+      >
+        <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+        <span class="proto-edit-preset-name">{{ b.nome }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <form class="proto-edit-form" id="proto-edit-form" onsubmit="return false;">
+    <section class="proto-edit-section">
+      {# TEXTOS PARA REESCREVER — começo #}
+      <h2 class="proto-edit-section-title">Sobre você</h2>
+      {# TEXTOS PARA REESCREVER — fim #}
+      <div class="proto-edit-field">
+        <label for="proto-perfil-nome">Nome de exibição</label>
+        <div class="proto-edit-name-line">
+          <input
+            id="proto-perfil-nome"
+            class="proto-edit-input"
+            type="text"
+            maxlength="30"
+            value="{{ viewer_nome }}"
+            data-proto-nome
+          />
+          <span class="proto-times-badges">
+            <span class="proto-times-misto" id="proto-misto" hidden>Torcedor Misto</span>
+            <span class="proto-times-misto proto-times-dindao" id="proto-dindao" hidden title="4 ou mais times do coração">Dindão</span>
+          </span>
+        </div>
+      </div>
+      <div class="proto-edit-field">
+        {# TEXTOS PARA REESCREVER — começo #}
+        <label for="proto-frase">Status / sobre</label>
+        {# TEXTOS PARA REESCREVER — fim #}
+        <textarea
+          id="proto-frase"
+          class="proto-edit-input proto-edit-textarea"
+          rows="3"
+          maxlength="280"
+          placeholder="Uma frase ou texto curto no perfil"
+          data-proto-frase
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="proto-edit-section">
+      <h2 class="proto-edit-section-title">Detalhes</h2>
+      <div class="proto-edit-grid-2">
+        <div class="proto-edit-field">
+          <label for="proto-rel">Relacionamento</label>
+          <select id="proto-rel" class="proto-edit-input" data-proto-relacionamento>
+            <option value="">—</option>
+            <option>solteiro(a)</option>
+            <option>namorando</option>
+            <option>noivo(a)</option>
+            <option>casado(a)</option>
+            <option>é complicado</option>
+            <option>chegando junto com o VAR</option>
+          </select>
+        </div>
+        <div class="proto-edit-field">
+          <label for="proto-aniv">Aniversário</label>
+          <input
+            id="proto-aniv"
+            class="proto-edit-input"
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
+            data-proto-aniversario
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="proto-edit-section" id="times">
+      <h2 class="proto-edit-section-title">Times do coração</h2>
+      {% set seletor_embedded = true %}
+      {% include "partials/seletor_times.html" %}
+    </section>
+
+    {# TEXTOS PARA REESCREVER — começo #}
+    <div class="proto-edit-savebar">
+      <p class="proto-edit-save-status" id="proto-edit-save-status" data-proto-save-status>
+        Sem alterações novas
+      </p>
+      <div class="proto-edit-save-actions">
+        <a class="proto-text-btn" href="/meu-perfil">Ver perfil</a>
+        <button type="submit" class="proto-text-btn proto-text-btn--accent" id="proto-edit-save" data-proto-save>
+          Salvar alterações
+        </button>
+      </div>
+    </div>
+    {# TEXTOS PARA REESCREVER — fim #}
+  </form>
+
+  {% if participante_nav %}
+  {# TEXTOS PARA REESCREVER — começo #}
+  <section class="proto-edit-section proto-edit-senha" id="senha">
+    <h2 class="proto-edit-section-title">Alterar senha</h2>
+    {% set flash_msg = request.query_params.get('msg') %}
+    {% set flash_erro = request.query_params.get('erro') %}
+    {% if flash_msg %}<p class="msg">{{ flash_msg.replace('+', ' ') }}</p>{% endif %}
+    {% if flash_erro %}<p class="msg proto-edit-senha-erro">{{ flash_erro.replace('+', ' ') }}</p>{% endif %}
+    {% if participante_nav.username and participante_nav.password_hash %}
+    <p class="proto-edit-senha-lead">Troca a senha de acesso ao bolão. Mínimo de 8 caracteres.</p>
+    <form
+      method="post"
+      action="/p/{{ participante_nav.token }}/conta/senha"
+      class="proto-edit-senha-form"
+      novalidate
+    >
+      <input type="hidden" name="next" value="/meu-perfil/editar" />
+      <div class="proto-edit-field">
+        <label for="proto-senha-atual">Senha atual</label>
+        <div class="password-field">
+          <input
+            id="proto-senha-atual"
+            class="proto-edit-input"
+            type="password"
+            name="senha_atual"
+            required
+            autocomplete="current-password"
+          />
+          <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="proto-edit-grid-2">
+        <div class="proto-edit-field">
+          <label for="proto-senha-nova">Nova senha</label>
+          <div class="password-field">
+            <input
+              id="proto-senha-nova"
+              class="proto-edit-input"
+              type="password"
+              name="senha_nova"
+              required
+              minlength="8"
+              autocomplete="new-password"
+            />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="proto-edit-field">
+          <label for="proto-senha-nova2">Confirmar nova senha</label>
+          <div class="password-field">
+            <input
+              id="proto-senha-nova2"
+              class="proto-edit-input"
+              type="password"
+              name="senha_nova2"
+              required
+              minlength="8"
+              autocomplete="new-password"
+            />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="proto-edit-senha-actions">
+        <button type="submit" class="proto-text-btn proto-text-btn--accent">Atualizar senha</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="proto-edit-senha-lead">Ainda não há senha do bolão nesta conta.</p>
+    <a class="proto-text-btn proto-text-btn--accent" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
+    {% endif %}
+  </section>
+  {# TEXTOS PARA REESCREVER — fim #}
+  {% endif %}
+</div>
+
+{% include "partials/banner_crop_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/prototipo-times.js?v=14" defer></script>
+<script src="/static/prototipo-perfil.js?v=22" defer></script>
+{% endblock %}
