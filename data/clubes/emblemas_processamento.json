@@ -1,0 +1,706 @@
+{
+  "processed": [
+    {
+      "unique_id": "19.005.366",
+      "name": "Paladino (RJ)",
+      "uf": "RJ",
+      "source": "Paladino (RJ).png",
+      "output": "19005366.png",
+      "ignored_dupes": [
+        "Paladino (RJ).jpg"
+      ],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "19.152.069",
+      "name": "Vila Matias",
+      "uf": "DF",
+      "source": "Vila Matias (DF).jpg",
+      "output": "19152069.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "19.295.779",
+      "name": "Parahyba",
+      "uf": "PB",
+      "source": "Parahyba (PB).png",
+      "output": "19295779.png",
+      "ignored_dupes": [
+        "Parahyba (PB).jpg"
+      ],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "19.295.780",
+      "name": "Parahyba United",
+      "uf": "PB",
+      "source": "Parahyba United (PB).png",
+      "output": "19295780.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "19.295.781",
+      "name": "Atlético Parahybano",
+      "uf": "PB",
+      "source": "Atlético Parahybano.jpg",
+      "output": "19295781.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "19.339.645",
+      "name": "Paranaense",
+      "uf": "PR",
+      "source": "Paranaense (PR).jpg",
+      "output": "19339645.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "19.339.647",
+      "name": "Panther (PA)",
+      "uf": "PA",
+      "source": "Panther (PA).jpg",
+      "output": "19339647.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "19.339.651",
+      "name": "Santos Dumont (MA)",
+      "uf": "MA",
+      "source": "Santos Dumont (MA).jpg",
+      "output": "19339651.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.003.894",
+      "name": "Corinthians de São Bernardo do Campo",
+      "uf": "SP",
+      "source": "Corinthians de São Bernardo do Campo (SP).jpg",
+      "output": "2000003894.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.003.895",
+      "name": "Flamengo EC de Curitibanos",
+      "uf": "PR",
+      "source": "Flamengo EC de Curitibanos (PR).jpeg",
+      "output": "2000003895.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.004.148",
+      "name": "Anchieta (RJ)",
+      "uf": "RJ",
+      "source": "Anchieta (RJ).jpg",
+      "output": "2000004148.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.004.150",
+      "name": "Brasil Suburbano",
+      "uf": "RJ",
+      "source": "rasil Suburbano (RJ).webp",
+      "output": "2000004150.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.004.151",
+      "name": "Carbonífera",
+      "uf": "RJ",
+      "source": "Carbonífera (RJ).png",
+      "output": "2000004151.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.024.120",
+      "name": "Atlético de Salvador",
+      "uf": "BA",
+      "source": "Atlético de Salvador.png",
+      "output": "2000024120.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.059.899",
+      "name": "Sírio Libanês (GO)",
+      "uf": "GO",
+      "source": "Sírio Libanês (GO).png",
+      "output": "2000059899.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.062.934",
+      "name": "Santa Quitéria (PR)",
+      "uf": "PR",
+      "source": "Santa Quitéria (PR).png",
+      "output": "2000062934.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.063.304",
+      "name": "Dínamo Araxá (MG)",
+      "uf": "MG",
+      "source": "Dínamo Araxá (MG) (MG).png",
+      "output": "2000063304.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.099.931",
+      "name": "Maguary (PE)",
+      "uf": "PE",
+      "source": "Maguary (PE).jpg",
+      "output": "2000099931.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.099.932",
+      "name": "Egipciense",
+      "uf": "PE",
+      "source": "Egipciense (PE).jpg",
+      "output": "2000099932.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.099.933",
+      "name": "União (PE)",
+      "uf": "PE",
+      "source": "União (PE).jpg",
+      "output": "2000099933.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.109.059",
+      "name": "Santa Rita (PB)",
+      "uf": "PB",
+      "source": "Santa Rita (PB).png",
+      "output": "2000109059.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.112.366",
+      "name": "Manauara",
+      "uf": "AM",
+      "source": "Manauara (AM).png",
+      "output": "2000112366.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.135.793",
+      "name": "Ferroviária de Pindamonha",
+      "uf": "SP",
+      "source": "Ferroviária de Pindamonha (SP).png",
+      "output": "2000135793.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.135.794",
+      "name": "Albion (SP)",
+      "uf": "SP",
+      "source": "Albion (SP).png",
+      "output": "2000135794.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.152.145",
+      "name": "Capitão Poço",
+      "uf": "PA",
+      "source": "Capitão Poço (PA).png",
+      "output": "2000152145.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.152.152",
+      "name": "ESMAC",
+      "uf": "PA",
+      "source": "ESMAC (PA).jpg",
+      "output": "2000152152.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.154.412",
+      "name": "Centro Oeste",
+      "uf": "GO",
+      "source": "Centro Oeste (GO).png",
+      "output": "2000154412.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.154.433",
+      "name": "São Luís (MA)",
+      "uf": "MA",
+      "source": "São Luís (MA).png",
+      "output": "2000154433.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.156.264",
+      "name": "Bela Vista (TO)",
+      "uf": "TO",
+      "source": "Bela_Vista_TO.png",
+      "output": "2000156264.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.170.932",
+      "name": "Paulistano (MT)",
+      "uf": "MT",
+      "source": "Paulistano (MT).png",
+      "output": "2000170932.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.172.789",
+      "name": "Monsoon",
+      "uf": "RS",
+      "source": "Monsoon (RS).png",
+      "output": "2000172789.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.174.048",
+      "name": "Primavera (MT)",
+      "uf": "MT",
+      "source": "Primavera (MT).png",
+      "output": "2000174048.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.178.064",
+      "name": "RB do Norte",
+      "uf": "AM",
+      "source": "RB do Norte (AM).jpg",
+      "output": "2000178064.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.182.369",
+      "name": "Unidos do Alvorada",
+      "uf": "AM",
+      "source": "Unidos do Alvorada (AM).png",
+      "output": "2000182369.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.188.892",
+      "name": "Parintins",
+      "uf": "AM",
+      "source": "Parintins (AM).png",
+      "output": "2000188892.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.192.526",
+      "name": "Gre^mio Valparaíso",
+      "uf": "GO",
+      "source": "Gre^mio Valparaíso (GO).png",
+      "output": "2000192526.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.192.815",
+      "name": "Villa Real (MG)",
+      "uf": "MG",
+      "source": "Villa Real (MG).png",
+      "output": "2000192815.png",
+      "ignored_dupes": [
+        "Villa Real (MG).jpg"
+      ],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.193.910",
+      "name": "Itabirito",
+      "uf": "MG",
+      "source": "Itabirito (MG).png",
+      "output": "2000193910.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.194.009",
+      "name": "North (MG)",
+      "uf": "MG",
+      "source": "North (MG).png",
+      "output": "2000194009.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.194.595",
+      "name": "Paracatu",
+      "uf": "MG",
+      "source": "Paracatu (MG).png",
+      "output": "2000194595.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.194.597",
+      "name": "Inter SG",
+      "uf": "RJ",
+      "source": "Inter SG (RJ).jpg",
+      "output": "2000194597.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.199.920",
+      "name": "Serra Branca",
+      "uf": "PB",
+      "source": "Serra Branca (PB).png",
+      "output": "2000199920.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.199.992",
+      "name": "Náutico (MS)",
+      "uf": "MS",
+      "source": "Náutico (MS).png",
+      "output": "2000199992.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.203.283",
+      "name": "Royal de Luziânia",
+      "uf": "GO",
+      "source": "Royal de Luziânia.png",
+      "output": "2000203283.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.204.861",
+      "name": "Uruaçu",
+      "uf": "GO",
+      "source": "Uruaçu (GO).png",
+      "output": "2000204861.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.208.042",
+      "name": "Pombal (PB)",
+      "uf": "PB",
+      "source": "Pombal (PB).png",
+      "output": "2000208042.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.208.897",
+      "name": "Librade",
+      "uf": "AM",
+      "source": "Librade (AM).jpg",
+      "output": "2000208897.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.209.180",
+      "name": "Atlético Torres",
+      "uf": "PE",
+      "source": "Atlético Torres.jpg",
+      "output": "2000209180.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.209.201",
+      "name": "Santa Fé (PE)",
+      "uf": "PE",
+      "source": "Santa Fé (PE).webp",
+      "output": "2000209201.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.210.017",
+      "name": "Laguna (RN)",
+      "error": "[Errno 2] No such file or directory: 'rsvg-convert'",
+      "source": "Laguna (RN).svg"
+    },
+    {
+      "unique_id": "2.000.210.044",
+      "name": "Anjos do Céu",
+      "uf": "CE",
+      "source": "Anjos do Céu.jpg",
+      "output": "2000210044.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.214.116",
+      "name": "Comercial Tietê",
+      "uf": "SP",
+      "source": "Comercial Tietê (SP).png",
+      "output": "2000214116.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.232.734",
+      "name": "Central Paraíso",
+      "uf": "RJ",
+      "source": "Central Paraíso (RJ).png",
+      "output": "2000232734.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.235.287",
+      "name": "Ceart",
+      "uf": "MS",
+      "source": "Ceart (MS).jpg",
+      "output": "2000235287.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.239.359",
+      "name": "Vera Cruz (RJ)",
+      "uf": "RJ",
+      "source": "Vera Cruz (RJ).png",
+      "output": "2000239359.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.239.360",
+      "name": "Paraty",
+      "uf": "RJ",
+      "source": "Paraty (RJ).png",
+      "output": "2000239360.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.240.045",
+      "name": "Belenense (PA)",
+      "uf": "PA",
+      "source": "images.jpg",
+      "output": "2000240045.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.240.525",
+      "name": "Comercial TL",
+      "uf": "MS",
+      "source": "Comercial TL (MS).png",
+      "output": "2000240525.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.255.286",
+      "name": "Sharjah Brasil",
+      "uf": "SP",
+      "source": "Sharjah Brasil (SP).png",
+      "output": "2000255286.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.255.424",
+      "name": "Campo Novo",
+      "uf": "MT",
+      "source": "Campo Novo (MT).png",
+      "output": "2000255424.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.255.426",
+      "name": "Zinza",
+      "uf": "RJ",
+      "source": "Zinza (RJ).png",
+      "output": "2000255426.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.281.081",
+      "name": "Canaã (PA)",
+      "uf": "PA",
+      "source": "Canaã (PA).png",
+      "output": "2000281081.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.283.722",
+      "name": "Bom Jesus (RS)",
+      "uf": "RS",
+      "source": "Bom Jesus (RS).jpg",
+      "output": "2000283722.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.288.716",
+      "name": "Carmópolis",
+      "uf": "SE",
+      "source": "Carmópolis (SE).png",
+      "output": "2000288716.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.291.266",
+      "name": "Flamengo (SE)",
+      "uf": "SE",
+      "source": "Flamengo (SE).jpg",
+      "output": "2000291266.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.297.236",
+      "name": "Futebol com Vida",
+      "uf": "RS",
+      "source": "Futebol com Vida (RS).jpg",
+      "output": "2000297236.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.306.764",
+      "name": "Sfera",
+      "uf": "SP",
+      "source": "Sfera (SP).jpg",
+      "output": "2000306764.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "2.000.307.695",
+      "name": "Paulínia Universitário",
+      "uf": "SP",
+      "source": "Paulínia Universitário (SP).png",
+      "output": "2000307695.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.310.120",
+      "name": "Aster Itaquá",
+      "uf": "SP",
+      "source": "Aster.png",
+      "output": "2000310120.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.318.090",
+      "name": "Batalhão (TO)",
+      "uf": "TO",
+      "source": "EscudoBatalhao.png",
+      "output": "2000318090.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.320.598",
+      "name": "Águia de Cumaru",
+      "uf": "PE",
+      "source": "Águia de Cumaru (PE).png",
+      "output": "2000320598.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "2.000.326.401",
+      "name": "Monte Roraima",
+      "uf": "RR",
+      "source": "Monte Roraima (RR).png",
+      "output": "2000326401.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "314.099",
+      "name": "Theresinense FC (PI)",
+      "uf": "PI",
+      "source": "Theresinense FC (PI).png",
+      "output": "314099.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    },
+    {
+      "unique_id": "314.690",
+      "name": "Norte Clube (PA)",
+      "uf": "PA",
+      "source": "Norte Clube (PA).png",
+      "output": "314690.png",
+      "ignored_dupes": [],
+      "bg_removed": true
+    },
+    {
+      "unique_id": "314.692",
+      "name": "Guarany (PA)",
+      "uf": "PA",
+      "source": "Guarany (PA).png",
+      "output": "314692.png",
+      "ignored_dupes": [],
+      "bg_removed": false
+    }
+  ],
+  "unmatched_files": [],
+  "missing_clubs": [
+    {
+      "Unique ID": "2.000.210.017",
+      "Name": "Laguna (RN)",
+      "UF": "RN",
+      "arquivo_esperado": "2000210017.png",
+      "baixado": ""
+    },
+    {
+      "Unique ID": "2.000.174.086",
+      "Name": "Sport Bahia",
+      "UF": "BA",
+      "arquivo_esperado": "2000174086.png",
+      "baixado": ""
+    }
+  ],
+  "summary": {
+    "png_por_id": 75,
+    "faltando": [
+      "Sport Bahia"
+    ],
+    "nota": "PNG 512x512 RGBA; JPEG/WebP com fundo removido via rembg; images.jpg=Belenense; rasil Suburbano=Brasil Suburbano"
+  }
+}
