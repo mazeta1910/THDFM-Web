@@ -7,6 +7,8 @@
   const clubesSrc = root.getAttribute("data-clubes-src") || "";
   const searchInput = document.getElementById("proto-search");
   const ufGrid = document.getElementById("proto-uf-grid");
+  const ufsSection = document.getElementById("proto-times-ufs");
+  const ufsToggle = document.getElementById("proto-ufs-toggle");
   const listEl = document.getElementById("proto-list");
   const emptyEl = document.getElementById("proto-empty");
   const metaEl = document.getElementById("proto-list-meta");
@@ -242,6 +244,22 @@
         renderList();
       }, 120);
     });
+  }
+
+  function setUfsCollapsed(collapsed) {
+    if (!ufsSection || !ufsToggle || !ufGrid) return;
+    ufsSection.classList.toggle("is-collapsed", collapsed);
+    ufGrid.hidden = collapsed;
+    ufsToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    ufsToggle.setAttribute("title", collapsed ? "Expandir estados" : "Minimizar estados");
+  }
+
+  if (ufsToggle) {
+    ufsToggle.addEventListener("click", () => {
+      const collapsed = !(ufsSection && ufsSection.classList.contains("is-collapsed"));
+      setUfsCollapsed(collapsed);
+    });
+    setUfsCollapsed(true);
   }
 
   if (ufGrid) {

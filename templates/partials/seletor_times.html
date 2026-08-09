@@ -65,9 +65,24 @@
       {% endif %}
     </div>
 
-    <section class="proto-times-ufs" aria-label="Estados">
-      <h3 class="proto-times-section-title">Por estado</h3>
-      <div class="proto-times-uf-grid" id="proto-uf-grid">
+    <section class="proto-times-ufs is-collapsed" id="proto-times-ufs" aria-label="Estados">
+      <div class="proto-times-ufs-head">
+        <h3 class="proto-times-section-title" id="proto-ufs-title">Por estado</h3>
+        <button
+          type="button"
+          class="proto-times-ufs-toggle"
+          id="proto-ufs-toggle"
+          aria-expanded="false"
+          aria-controls="proto-uf-grid"
+          title="Expandir estados"
+        >
+          <span class="visually-hidden">Expandir ou minimizar estados</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="proto-times-uf-grid" id="proto-uf-grid" hidden>
         {% for u in ufs %}
         <button
           type="button"
