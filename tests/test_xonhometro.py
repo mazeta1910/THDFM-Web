@@ -166,7 +166,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=241" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=242" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
     assert "overflow-x: hidden" in css
     assert "overscroll-behavior-x: contain" in css
     assert ".xonha-timeline-loading" in css
