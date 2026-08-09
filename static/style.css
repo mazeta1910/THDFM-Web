@@ -11718,6 +11718,36 @@ button.proto-edit-preset,
 .proto-edit-grid-2 .proto-edit-field {
   margin-bottom: 0;
 }
+.proto-edit-senha {
+  margin-top: 0.35rem;
+}
+.proto-edit-senha-lead {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.proto-edit-senha-form {
+  display: grid;
+  gap: 0.75rem;
+}
+.proto-edit-senha-form .password-field {
+  margin-bottom: 0;
+}
+.proto-edit-senha-form .password-field .proto-edit-input {
+  padding-right: 2.75rem;
+}
+.proto-edit-senha-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+}
+.proto-edit-senha-erro {
+  color: #e8a0a0;
+  border-color: color-mix(in srgb, #c47a7a 55%, var(--border));
+  background: color-mix(in srgb, #c47a7a 14%, var(--card));
+}
 .proto-edit-savebar {
   display: flex;
   flex-wrap: wrap;

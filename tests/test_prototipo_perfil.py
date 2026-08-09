@@ -15,6 +15,14 @@ def test_prototipo_perfil_exige_dono(client: TestClient):
 
 def test_prototipo_perfil_pagina(client: TestClient):
     login_admin(client)
+    from src import db as dbmod
+
+    # Garante senha do bolão para exibir o formulário de alteração
+    part = dbmod.get_participante_por_admin_login("mazeta")
+    assert part
+    if not part.get("password_hash"):
+        dbmod.definir_credenciais(part["id"], "mazeta", "senha-bolao1")
+
     r = client.get("/prototipo/perfil")
     assert r.status_code == 200
     assert "Editar perfil" in r.text
@@ -43,7 +51,40 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'id="proto-aniv"' in r.text
     assert 'type="date"' in r.text
     assert 'data-proto-aniversario' in r.text
-    assert "/static/style.css?v=271" in r.text
+    assert 'id="senha"' in r.text
+    assert "Alterar senha" in r.text
+    assert 'id="proto-senha-atual"' in r.text
+    assert 'name="senha_nova"' in r.text
+    assert 'action="/p/' in r.text and "/conta/senha" in r.text
+    assert "/static/style.css?v=272" in r.text
+
+
+def test_prototipo_perfil_alterar_senha_volta_ao_editar(client: TestClient):
+    login_admin(client)
+    from src import db as dbmod
+
+    part = dbmod.get_participante_por_admin_login("mazeta")
+    assert part
+    if not part.get("password_hash"):
+        dbmod.definir_credenciais(part["id"], "mazeta", "senha-bolao1")
+    else:
+        dbmod.admin_redefinir_credenciais(part["id"], senha_nova="senha-bolao1")
+
+    r = client.post(
+        f"/p/{part['token']}/conta/senha",
+        data={
+            "senha_atual": "senha-bolao1",
+            "senha_nova": "senha-nova99",
+            "senha_nova2": "senha-nova99",
+            "next": "/prototipo/perfil",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = r.headers.get("location") or ""
+    assert loc.startswith("/prototipo/perfil")
+    assert "msg=" in loc
+    assert dbmod.autenticar_por_username("mazeta", "senha-nova99")
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):

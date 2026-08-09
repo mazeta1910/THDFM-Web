@@ -2473,6 +2473,7 @@ async def conta_alterar_senha(
     senha_atual: str = Form(""),
     senha_nova: str = Form(""),
     senha_nova2: str = Form(""),
+    next_url: str = Form("", alias="next"),
 ):
     part = db.get_participante_por_token(token)
     if not part:
@@ -2486,7 +2487,7 @@ async def conta_alterar_senha(
     rate_key = f"senha:{ip}:{part['id']}"
 
     def _erro(msg: str) -> RedirectResponse:
-        return _redirect_conta_drawer(token, erro=msg)
+        return _redirect_after_conta(token, next_url=next_url, erro=msg)
 
     if not _auth_rate_ok(rate_key):
         return _erro("Muitas tentativas. Aguarde alguns minutos.")
@@ -2504,7 +2505,7 @@ async def conta_alterar_senha(
         _auth_rate_hit(rate_key)
         return _erro(str(exc))
 
-    return _redirect_conta_drawer(token, msg="Senha atualizada")
+    return _redirect_after_conta(token, next_url=next_url, msg="Senha atualizada")
 
 
 @app.post("/conta/sair")

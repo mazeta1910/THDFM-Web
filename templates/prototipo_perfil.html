@@ -191,6 +191,87 @@
     </div>
     {# TEXTOS PARA REESCREVER — fim #}
   </form>
+
+  {% if participante_nav %}
+  {# TEXTOS PARA REESCREVER — começo #}
+  <section class="proto-edit-section proto-edit-senha" id="senha">
+    <h2 class="proto-edit-section-title">Alterar senha</h2>
+    {% set flash_msg = request.query_params.get('msg') %}
+    {% set flash_erro = request.query_params.get('erro') %}
+    {% if flash_msg %}<p class="msg">{{ flash_msg.replace('+', ' ') }}</p>{% endif %}
+    {% if flash_erro %}<p class="msg proto-edit-senha-erro">{{ flash_erro.replace('+', ' ') }}</p>{% endif %}
+    {% if participante_nav.username and participante_nav.password_hash %}
+    <p class="proto-edit-senha-lead">Troca a senha de acesso ao bolão. Mínimo de 8 caracteres.</p>
+    <form
+      method="post"
+      action="/p/{{ participante_nav.token }}/conta/senha"
+      class="proto-edit-senha-form"
+      novalidate
+    >
+      <input type="hidden" name="next" value="/prototipo/perfil" />
+      <div class="proto-edit-field">
+        <label for="proto-senha-atual">Senha atual</label>
+        <div class="password-field">
+          <input
+            id="proto-senha-atual"
+            class="proto-edit-input"
+            type="password"
+            name="senha_atual"
+            required
+            autocomplete="current-password"
+          />
+          <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="proto-edit-grid-2">
+        <div class="proto-edit-field">
+          <label for="proto-senha-nova">Nova senha</label>
+          <div class="password-field">
+            <input
+              id="proto-senha-nova"
+              class="proto-edit-input"
+              type="password"
+              name="senha_nova"
+              required
+              minlength="8"
+              autocomplete="new-password"
+            />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="proto-edit-field">
+          <label for="proto-senha-nova2">Confirmar nova senha</label>
+          <div class="password-field">
+            <input
+              id="proto-senha-nova2"
+              class="proto-edit-input"
+              type="password"
+              name="senha_nova2"
+              required
+              minlength="8"
+              autocomplete="new-password"
+            />
+            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="proto-edit-senha-actions">
+        <button type="submit" class="proto-text-btn proto-text-btn--accent">Atualizar senha</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="proto-edit-senha-lead">Ainda não há senha do bolão nesta conta.</p>
+    <a class="proto-text-btn proto-text-btn--accent" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
+    {% endif %}
+  </section>
+  {# TEXTOS PARA REESCREVER — fim #}
+  {% endif %}
 </div>
 
 {% include "partials/banner_crop_modal.html" %}
