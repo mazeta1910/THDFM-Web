@@ -58,11 +58,31 @@
     return iso;
   }
 
+  const ANIV_MESES = [
+    "jan",
+    "fev",
+    "mar",
+    "abr",
+    "mai",
+    "jun",
+    "jul",
+    "ago",
+    "set",
+    "out",
+    "nov",
+    "dez",
+  ];
+
+  /** Ex.: "12 de dez" (sem ano). */
   function formatAnivDisplay(raw) {
     const iso = normalizeAnivIso(raw);
     if (!iso) return "";
-    const [, y, m, d] = iso.split("-");
-    return `${d}/${m}/${y}`;
+    const parts = iso.split("-");
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    const mes = ANIV_MESES[month - 1];
+    if (!mes || !day) return "";
+    return `${day} de ${mes}`;
   }
 
   function todayIsoDate() {
@@ -896,7 +916,7 @@
       const metaEl = pubRoot.querySelector("[data-public-meta]");
       if (fraseEl) fraseEl.textContent = frase || quem || "Sem status ainda.";
       if (metaEl) {
-        metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
+        metaEl.textContent = [rel || null, aniv ? `Aniversário: ${aniv}` : null].filter(Boolean).join(" · ") || "—";
       }
     }
 
