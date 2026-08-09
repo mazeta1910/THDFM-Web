@@ -58,7 +58,10 @@
         <div class="site-menu-items">
           <a class="site-side-link {% if on_home and not on_entrar and not on_login and not on_loguin %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
           <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
-          <a class="site-side-link {% if on_proto_perfil %}active{% endif %}" href="/prototipo/perfil">{{ ico('competicao') }}<span>Protótipo: perfil</span></a>
+          {% if is_dono %}
+          <a class="site-side-link {% if on_proto_perfil and 'benevides' not in path %}active{% endif %}" href="/prototipo/perfil">{{ ico('competicao') }}<span>Protótipo: perfil</span></a>
+          <a class="site-side-link {% if path.startswith('/prototipo/perfil/benevides') %}active{% endif %}" href="/prototipo/perfil/benevides">{{ ico('competicao') }}<span>Perfil: Benevides</span></a>
+          {% endif %}
           <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
         </div>
       </details>

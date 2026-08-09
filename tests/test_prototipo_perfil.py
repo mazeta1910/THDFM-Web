@@ -1,11 +1,20 @@
-"""Protótipo de perfil: card unificado, recados logados, pedidos de amizade."""
+"""Protótipo de perfil: privado do Dono + rota Benevides."""
 
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import login_admin
+
+
+def test_prototipo_perfil_exige_dono(client: TestClient):
+    r = client.get("/prototipo/perfil", follow_redirects=False)
+    assert r.status_code in (303, 302)
+    assert "/prototipo/perfil" not in (r.headers.get("location") or "")
+
 
 def test_prototipo_perfil_pagina(client: TestClient):
+    login_admin(client)
     r = client.get("/prototipo/perfil")
     assert r.status_code == 200
     assert "Meu perfil" in r.text
@@ -19,12 +28,12 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "banner-crop-modal" in r.text
     assert 'id="proto-feed-form"' not in r.text
     assert "depoimentos" not in r.text.lower()
-    assert "enviar pedido de amizade" not in r.text.lower()
-    assert 'id="proto-amigo-form"' not in r.text
+    assert 'href="/prototipo/perfil/benevides"' in r.text
     assert "/static/style.css?v=251" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
+    login_admin(client)
     r = client.get("/prototipo/perfil/publico")
     assert r.status_code == 200
     assert "meu perfil" in r.text.lower()
@@ -33,11 +42,11 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert 'id="pedidos"' in r.text
     assert 'id="public-amigo-pedir"' not in r.text
     assert "depoimentos" not in r.text.lower()
-    assert "seu nome" not in r.text.lower()
     assert "mais que amigos, irmães" in r.text.lower()
 
 
 def test_prototipo_perfil_publico_visitante(client: TestClient):
+    login_admin(client)
     r = client.get("/prototipo/perfil/publico?como=visitante")
     assert r.status_code == 200
     assert "visão de visitante" in r.text.lower()
@@ -48,7 +57,29 @@ def test_prototipo_perfil_publico_visitante(client: TestClient):
     assert 'id="pedidos"' not in r.text
 
 
-def test_menu_aponta_para_perfil(client: TestClient):
+def test_prototipo_perfil_benevides_privado(client: TestClient):
+    r = client.get("/prototipo/perfil/benevides", follow_redirects=False)
+    assert r.status_code in (303, 302)
+
+    login_admin(client)
+    r = client.get("/prototipo/perfil/benevides")
+    assert r.status_code == 200
+    assert "Benevides" in r.text
+    assert 'data-fixado="1"' in r.text
+    assert 'data-own="0"' in r.text
+    assert "Palmeiras" in r.text
+    assert 'id="proto-perfil-fixado"' in r.text
+    assert 'id="public-amigo-pedir"' in r.text
+
+
+def test_menu_prototipo_so_dono(client: TestClient):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert 'href="/prototipo/perfil"' not in r.text
+    assert 'href="/prototipo/perfil/benevides"' not in r.text
+
+    login_admin(client)
     r = client.get("/")
     assert r.status_code == 200
     assert 'href="/prototipo/perfil"' in r.text
+    assert 'href="/prototipo/perfil/benevides"' in r.text

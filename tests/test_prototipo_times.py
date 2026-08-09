@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from src.clubes_catalogo import carregar_clubes, emblema_fm_url, unique_id_arquivo
 from src.config import EMBLEMAS_FM_DIR
+from tests.conftest import login_admin
 
 
 def test_unique_id_arquivo():
@@ -24,7 +25,13 @@ def test_catalogo_clubes_carrega():
     assert (EMBLEMAS_FM_DIR / f"{pal['id_arquivo']}.png").is_file()
 
 
+def test_prototipo_times_exige_dono(client: TestClient):
+    r = client.get("/prototipo/times", follow_redirects=False)
+    assert r.status_code in (303, 302)
+
+
 def test_prototipo_times_pagina(client: TestClient):
+    login_admin(client)
     r = client.get("/prototipo/times")
     assert r.status_code == 200
     assert "Escolha seus times" in r.text
@@ -34,6 +41,7 @@ def test_prototipo_times_pagina(client: TestClient):
 
 
 def test_prototipo_times_json_e_emblema(client: TestClient):
+    login_admin(client)
     r = client.get("/prototipo/times/clubes.json")
     assert r.status_code == 200
     data = r.json()

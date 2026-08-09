@@ -930,24 +930,71 @@ def _prototipo_times_ctx() -> dict:
     }
 
 
+def _require_proto_perfil(request: Request) -> RedirectResponse | None:
+    """Protótipo de perfil: só o Dono (Mazeta)."""
+    return require_dono(request)
+
+
+def _perfil_demo_benevides() -> dict:
+    """Perfil fixo do Benevides para o protótipo privado."""
+    from src.clubes_catalogo import carregar_clubes
+
+    pal = next((c for c in carregar_clubes() if c.get("nome") == "Palmeiras"), None)
+    times = (
+        [
+            {
+                "id": pal["id"],
+                "nome": pal["nome"],
+                "uf": pal["uf"],
+                "emblema": pal["emblema"],
+            }
+        ]
+        if pal
+        else []
+    )
+    return {
+        "slug": "benevides",
+        "nome": "Benevides",
+        # TEXTOS PARA REESCREVER — começo
+        "frase": "Porco até o fim.",
+        "quem": "Benevides · Palmeiras.",
+        # TEXTOS PARA REESCREVER — fim
+        "relacionamento": "",
+        "aniversario": "",
+        "times": times,
+        "karma": {"confiavel": 2, "legal": 2, "sexy": 1, "burro": 2},
+        "nutela": 72,
+        "iniciais": "BE",
+    }
+
+
 @app.get("/prototipo/times", response_class=HTMLResponse)
 def prototipo_times(request: Request):
     """Atalho legado: seletor isolado (preferir /prototipo/perfil#times)."""
+    neg = _require_proto_perfil(request)
+    if neg:
+        return neg
     return render(request, "prototipo_times.html", **_prototipo_times_ctx(), **_taxa_ctx())
 
 
 @app.get("/prototipo/perfil", response_class=HTMLResponse)
 def prototipo_perfil(request: Request):
-    """Protótipo do perfil editável (sobre + times + karma)."""
+    """Protótipo do perfil editável (sobre + times + karma). Só Mazeta."""
+    neg = _require_proto_perfil(request)
+    if neg:
+        return neg
     return render(request, "prototipo_perfil.html", **_prototipo_times_ctx(), **_taxa_ctx())
 
 
 @app.get("/prototipo/perfil/publico", response_class=HTMLResponse)
 def prototipo_perfil_publico(request: Request):
-    """Protótipo da visão do perfil.
+    """Protótipo da visão do perfil. Só Mazeta.
 
     Por padrão é a visão do dono. Use ?como=visitante para simular outro usuário.
     """
+    neg = _require_proto_perfil(request)
+    if neg:
+        return neg
     como = (request.query_params.get("como") or "").strip().lower()
     is_own_view = como != "visitante"
     return render(
@@ -956,11 +1003,35 @@ def prototipo_perfil_publico(request: Request):
         **_prototipo_times_ctx(),
         **_taxa_ctx(),
         is_own_view=is_own_view,
+        perfil_fixado=None,
+    )
+
+
+@app.get("/prototipo/perfil/benevides", response_class=HTMLResponse)
+def prototipo_perfil_benevides(request: Request):
+    """Rota privada: Mazeta vê o perfil do Benevides (protótipo)."""
+    import json
+
+    neg = _require_proto_perfil(request)
+    if neg:
+        return neg
+    fixado = _perfil_demo_benevides()
+    return render(
+        request,
+        "prototipo_perfil_publico.html",
+        **_prototipo_times_ctx(),
+        **_taxa_ctx(),
+        is_own_view=False,
+        perfil_fixado=fixado,
+        perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
     )
 
 
 @app.get("/prototipo/times/clubes.json")
 def prototipo_times_clubes_json(request: Request):
+    neg = _require_proto_perfil(request)
+    if neg:
+        return neg
     from src.clubes_catalogo import carregar_clubes
 
     clubes = [c for c in carregar_clubes() if c.get("tem_emblema")]

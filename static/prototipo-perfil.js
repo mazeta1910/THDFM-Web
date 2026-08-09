@@ -630,39 +630,87 @@
     }
   }
 
+  function loadPerfilFixado() {
+    const el = document.getElementById("proto-perfil-fixado");
+    if (!el) return null;
+    try {
+      const data = JSON.parse(el.textContent || "null");
+      return data && typeof data === "object" ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function paintFixadoTimes(times) {
+    const list = document.getElementById("public-times");
+    const empty = document.getElementById("public-times-empty");
+    const misto = document.getElementById("public-misto");
+    const items = Array.isArray(times) ? times : [];
+    if (misto) misto.hidden = items.length < 2;
+    if (!items.length) {
+      if (list) list.innerHTML = "";
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    list.innerHTML = items
+      .map(
+        (c) => `
+      <li class="proto-steam-time">
+        <img src="${escapeHtml(c.emblema)}" alt="" width="28" height="28" loading="lazy" />
+        <span>${escapeHtml(c.nome)}</span>
+        <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
+      </li>`
+      )
+      .join("");
+  }
+
   // ——— Perfil (dono ou visitante) ———
   const pubRoot = document.getElementById("proto-perfil-publico");
   if (pubRoot) {
     const isOwn = pubRoot.getAttribute("data-own") === "1";
+    const fixado = pubRoot.getAttribute("data-fixado") === "1" ? loadPerfilFixado() : null;
     const viewer = viewerFrom(pubRoot);
-    const ownerNome =
-      loadStr(NOME_KEY, null) ||
-      (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||
-      "Visitante THDFM";
+    const ownerNome = fixado
+      ? fixado.nome
+      : loadStr(NOME_KEY, null) ||
+        (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||
+        "Visitante THDFM";
 
-    applyBanner(pubRoot, loadBanner());
-    paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
-    paintNutela(pubRoot, loadNutela());
+    if (fixado) {
+      applyBanner(pubRoot, { kind: "preset", id: "gramado" });
+      paintKarmaRoot(document.getElementById("public-karma"), {
+        ...KARMA_DEFAULT,
+        ...(fixado.karma || {}),
+      });
+      paintNutela(pubRoot, Number(fixado.nutela) || 50);
+      paintFixadoTimes(fixado.times || []);
+    } else {
+      applyBanner(pubRoot, loadBanner());
+      paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
+      paintNutela(pubRoot, loadNutela());
+      const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
+      paintPublicTimes(selected);
+    }
 
     pubRoot.querySelectorAll("[data-public-nome]").forEach((el) => {
       el.textContent = ownerNome;
     });
 
-    const frase = loadStr(FRASE_KEY, "");
-    const aniv = loadStr(ANIV_KEY, "");
-    const rel = loadStr(REL_KEY, "");
-    const quem = loadStr(QUEM_KEY, "");
-    const fraseEl = pubRoot.querySelector("[data-public-frase]");
-    const metaEl = pubRoot.querySelector("[data-public-meta]");
-    const quemEl = pubRoot.querySelector("[data-public-quem]");
-    if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
-    if (quemEl) quemEl.textContent = quem || "—";
-    if (metaEl) {
-      metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
+    if (!fixado) {
+      const frase = loadStr(FRASE_KEY, "");
+      const aniv = loadStr(ANIV_KEY, "");
+      const rel = loadStr(REL_KEY, "");
+      const quem = loadStr(QUEM_KEY, "");
+      const fraseEl = pubRoot.querySelector("[data-public-frase]");
+      const metaEl = pubRoot.querySelector("[data-public-meta]");
+      const quemEl = pubRoot.querySelector("[data-public-quem]");
+      if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
+      if (quemEl) quemEl.textContent = quem || "—";
+      if (metaEl) {
+        metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
+      }
     }
-
-    const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
-    paintPublicTimes(selected);
 
     let feed = loadPosts(FEED_KEY);
     let recados = loadPosts(RECADOS_KEY);

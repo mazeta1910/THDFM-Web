@@ -1,37 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Protótipo · Perfil — THDFM{% endblock %}
+{% block title %}Protótipo · {% if perfil_fixado %}{{ perfil_fixado.nome }}{% else %}Perfil{% endif %} — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block body_class %}proto-steam-body {% endblock %}
 
 {% block content %}
-{% set viewer_nome = participante_nav.nome if participante_nav else 'Visitante THDFM' %}
+{% set viewer_nome = participante_nav.nome if participante_nav else (admin_nome if is_dono else 'Visitante THDFM') %}
 {% set viewer_av = avatar_url(participante_nav.avatar_path) if participante_nav else '' %}
-{% set viewer_ini = (participante_nav.nome or '??')[:2]|upper if participante_nav else 'TH' %}
+{% set viewer_ini = (participante_nav.nome or admin_nome or '??')[:2]|upper if (participante_nav or is_dono) else 'TH' %}
+{% set fixado = perfil_fixado %}
 
 <div
   class="proto-steam"
   id="proto-perfil-publico"
   data-proto-perfil-publico
   data-own="{{ 1 if is_own_view else 0 }}"
+  data-fixado="{{ 1 if fixado else 0 }}"
   data-viewer-nome="{{ viewer_nome }}"
   data-viewer-avatar="{{ viewer_av or '' }}"
   data-viewer-iniciais="{{ viewer_ini }}"
 >
   <p class="proto-steam-kicker">
-    {% if is_own_view %}
+    {% if fixado %}
+    Protótipo · perfil de {{ fixado.nome }} · privado
+    {% elif is_own_view %}
     Protótipo · meu perfil
     {% else %}
     Protótipo · visão de visitante
     {% endif %}
   </p>
 
+  {% if fixado %}
+  <script type="application/json" id="proto-perfil-fixado">{{ perfil_fixado_json | safe }}</script>
+  {% endif %}
+
   <article class="proto-steam-card">
-    <div class="proto-steam-banner" data-proto-banner data-banner="padrao" aria-hidden="true"></div>
+    <div class="proto-steam-banner" data-proto-banner data-banner="{% if fixado %}gramado{% else %}padrao{% endif %}" aria-hidden="true"></div>
 
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
         <div class="proto-steam-avatar" aria-hidden="true">
-          {% if viewer_av %}
+          {% if fixado %}
+          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ fixado.iniciais }}</span>
+          {% elif viewer_av %}
           <img src="{{ viewer_av }}" alt="" width="112" height="112" data-public-avatar />
           {% else %}
           <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ viewer_ini }}</span>
@@ -40,12 +50,12 @@
 
         <div class="proto-steam-hero-main">
           <div class="proto-steam-name-row">
-            <h1 class="proto-steam-name" data-public-nome>{{ viewer_nome }}</h1>
+            <h1 class="proto-steam-name" data-public-nome>{% if fixado %}{{ fixado.nome }}{% else %}{{ viewer_nome }}{% endif %}</h1>
             <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
           </div>
-          <p class="proto-steam-meta" data-public-meta>—</p>
-          <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>Sem frase ainda.</p>
-          <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>—</p>
+          <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
+          <p class="proto-steam-frase proto-steam-frase--view" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem frase ainda.{% endif %}</p>
+          <p class="proto-steam-bio proto-steam-bio--view" data-public-quem>{% if fixado %}{{ fixado.quem }}{% else %}—{% endif %}</p>
         </div>
 
         <div class="proto-steam-hero-aside">
@@ -56,6 +66,9 @@
             </a>
             <a class="proto-ico-btn" href="/prototipo/perfil/publico?como=visitante" title="Ver como visitante" aria-label="Ver como visitante">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+            </a>
+            <a class="proto-ico-btn" href="/prototipo/perfil/benevides" title="Ver Benevides" aria-label="Ver Benevides">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
             </a>
             {% else %}
             <button type="button" class="proto-ico-btn" id="public-amigo-pedir" title="Enviar pedido de amizade" aria-label="Enviar pedido de amizade">
