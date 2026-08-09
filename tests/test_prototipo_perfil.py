@@ -33,7 +33,12 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "Ver meu perfil" in r.text
     assert "Ver como visitante" in r.text
     assert "Perfil do Benevides" in r.text
-    assert "/static/style.css?v=256" in r.text
+    assert 'id="proto-avatar-edit"' in r.text
+    assert 'id="proto-avatar-form"' in r.text
+    assert 'name="next"' in r.text
+    assert "Tema do banner" in r.text
+    assert "avatar-edit-camera" in r.text
+    assert "/static/style.css?v=257" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):

@@ -563,12 +563,39 @@
   if (editRoot) {
     const bannerCrop = initBannerCrop();
     const nomeInput = editRoot.querySelector("[data-proto-nome]");
+    const avatarNome = document.getElementById("proto-avatar-nome");
+    const syncAvatarNome = () => {
+      if (!avatarNome) return;
+      const fromField = nomeInput && nomeInput.value.trim();
+      avatarNome.value = fromField || editRoot.getAttribute("data-viewer-nome") || "Visitante THDFM";
+    };
     if (nomeInput) {
       const saved = loadStr(NOME_KEY, null);
       if (saved) nomeInput.value = saved;
-      const push = () => saveStr(NOME_KEY, nomeInput.value.trim() || "Visitante THDFM");
+      const push = () => {
+        saveStr(NOME_KEY, nomeInput.value.trim() || "Visitante THDFM");
+        syncAvatarNome();
+      };
       nomeInput.addEventListener("input", push);
       nomeInput.addEventListener("change", push);
+      syncAvatarNome();
+    }
+
+    const avatarBtn = document.getElementById("proto-avatar-edit");
+    const avatarInput = document.getElementById("proto-avatar-file");
+    const avatarForm = document.getElementById("proto-avatar-form");
+    if (avatarBtn && avatarInput) {
+      avatarBtn.addEventListener("click", () => avatarInput.click());
+      if (window.thdfmBindAvatarCrop) {
+        window.thdfmBindAvatarCrop(avatarInput, {
+          preview: avatarBtn,
+          previewAttr: "data-avatar-live",
+          autoSubmitForm: avatarForm,
+        });
+      }
+      if (avatarForm) {
+        avatarForm.addEventListener("submit", syncAvatarNome);
+      }
     }
 
     bindTextField(editRoot.querySelector("[data-proto-frase]"), FRASE_KEY);

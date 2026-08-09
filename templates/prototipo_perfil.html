@@ -21,7 +21,7 @@
       <p class="proto-steam-kicker">Protótipo · privado · Mazeta</p>
       {# TEXTOS PARA REESCREVER — começo #}
       <h1 class="proto-edit-title">Editar perfil</h1>
-      <p class="proto-edit-lead">Banner, foto, textos e times. Alterações ficam só neste protótipo.</p>
+      <p class="proto-edit-lead">Toque na foto para trocar. Banner, textos e times ficam neste protótipo.</p>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
     {# TEXTOS PARA REESCREVER — começo #}
@@ -36,6 +36,21 @@
     {# TEXTOS PARA REESCREVER — fim #}
   </header>
 
+  {% if participante_nav %}
+  <form
+    id="proto-avatar-form"
+    class="visually-hidden"
+    method="post"
+    action="/p/{{ participante_nav.token }}/conta"
+    enctype="multipart/form-data"
+    aria-hidden="true"
+  >
+    <input type="hidden" name="nome" id="proto-avatar-nome" value="{{ viewer_nome }}" />
+    <input type="hidden" name="next" value="/prototipo/perfil" />
+    <input type="file" name="avatar" id="proto-avatar-file" accept=".jpg,.jpeg,.png,.webp,image/*" />
+  </form>
+  {% endif %}
+
   <section class="proto-edit-cover" id="banner">
     <div class="proto-edit-cover-media proto-steam-banner" data-proto-banner data-banner="padrao"></div>
     <div class="proto-edit-cover-actions">
@@ -47,28 +62,51 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
     </div>
-    <div class="proto-edit-avatar" aria-hidden="true">
-      {% if viewer_av %}
-      <img src="{{ viewer_av }}" alt="" width="96" height="96" />
-      {% else %}
-      <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
-      {% endif %}
-    </div>
-  </section>
-
-  <div class="proto-edit-presets" role="listbox" aria-label="Banners prontos">
-    {% for b in banner_presets %}
+    {% if participante_nav %}
     <button
       type="button"
-      class="proto-edit-preset"
-      data-banner-preset="{{ b.id }}"
-      title="{{ b.nome }}"
-      aria-label="{{ b.nome }}"
+      class="proto-edit-avatar avatar-edit-trigger"
+      id="proto-avatar-edit"
+      aria-label="Alterar foto de perfil"
     >
-      <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+      {% if viewer_av %}
+      <img src="{{ viewer_av }}" alt="" width="96" height="96" data-avatar-live />
+      {% else %}
+      <span class="proto-steam-avatar-fallback" data-avatar-live>{{ viewer_ini }}</span>
+      {% endif %}
+      <span class="avatar-edit-camera" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </span>
     </button>
-    {% endfor %}
-  </div>
+    {% else %}
+    <div class="proto-edit-avatar" aria-hidden="true">
+      <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="proto-edit-themes" aria-labelledby="proto-edit-themes-title">
+    {# TEXTOS PARA REESCREVER — começo #}
+    <h2 class="proto-edit-themes-title" id="proto-edit-themes-title">Tema do banner</h2>
+    {# TEXTOS PARA REESCREVER — fim #}
+    <div class="proto-edit-presets" role="listbox" aria-label="Temas de banner">
+      {% for b in banner_presets %}
+      <button
+        type="button"
+        class="proto-edit-preset"
+        data-banner-preset="{{ b.id }}"
+        title="{{ b.nome }}"
+        aria-label="{{ b.nome }}"
+      >
+        <span class="proto-steam-banner-swatch proto-steam-banner--{{ b.id }}" aria-hidden="true"></span>
+        <span class="proto-edit-preset-name">{{ b.nome }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
 
   <form class="proto-edit-form" id="proto-edit-form" onsubmit="return false;">
     <section class="proto-edit-section">
@@ -154,6 +192,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-times.js?v=9" defer></script>
-<script src="/static/prototipo-perfil.js?v=9" defer></script>
+<script src="/static/prototipo-times.js?v=10" defer></script>
+<script src="/static/prototipo-perfil.js?v=10" defer></script>
 {% endblock %}
