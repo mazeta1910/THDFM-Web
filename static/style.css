@@ -10182,15 +10182,19 @@ body.proto-steam-body .wrap.wide {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.proto-steam-stage {
-  position: relative;
+.proto-steam-card {
   margin-bottom: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  overflow: hidden;
 }
 .proto-steam-banner {
-  height: 240px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background-color: var(--card);
+  height: 220px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  background-color: #141414;
   background-size: cover;
   background-position: center;
   overflow: hidden;
@@ -10248,19 +10252,23 @@ body.proto-steam-body .wrap.wide {
 }
 .proto-steam-hero {
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr) minmax(12rem, 16rem);
-  gap: 1rem 1.15rem;
-  padding: 1.1rem 1.15rem;
-  margin: -64px 0.85rem 0;
-  position: relative;
-  z-index: 1;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--card);
+  gap: 0.85rem;
+  padding: 0.9rem 1rem 1rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.proto-steam-hero-top {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(11rem, 15rem);
+  gap: 0.85rem 1rem;
+  align-items: start;
 }
 .proto-steam-avatar {
-  width: 128px;
-  height: 128px;
+  width: 112px;
+  height: 112px;
+  margin-top: -48px;
   border-radius: 50%;
   border: 3px solid var(--card);
   box-shadow: 0 0 0 1px var(--border);
@@ -10269,10 +10277,10 @@ body.proto-steam-body .wrap.wide {
   flex: 0 0 auto;
 }
 .proto-steam-avatar img {
-  width: 128px !important;
-  height: 128px !important;
-  max-width: 128px !important;
-  max-height: 128px !important;
+  width: 112px !important;
+  height: 112px !important;
+  max-width: 112px !important;
+  max-height: 112px !important;
   object-fit: cover;
   display: block;
   border-radius: 50%;
@@ -10395,8 +10403,90 @@ body.proto-steam-body .wrap.wide {
 }
 .proto-steam-hero-aside {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
   align-content: start;
+  justify-items: end;
+}
+.proto-steam-toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.proto-ico-btn {
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.proto-ico-btn svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+.proto-ico-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--accent);
+}
+.proto-ico-btn--accent {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--text);
+}
+.proto-ico-btn--tiny {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 6px;
+}
+.proto-ico-btn--tiny svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.proto-ico-btn--file {
+  position: relative;
+  overflow: hidden;
+}
+.proto-ico-btn--file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.proto-steam-hero-times {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.proto-steam-mini-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.proto-steam-hero-times .proto-times--embedded {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.proto-steam-hero-times .proto-times-picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.proto-steam-hero-times .proto-times-picked-top {
+  display: none;
+}
+.proto-steam-hero-times #proto-times-open {
+  margin-top: 0.35rem;
 }
 .proto-steam-karma {
   display: grid;
@@ -10476,34 +10566,8 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   background: linear-gradient(90deg, #f0c4a0, var(--accent));
   border-radius: inherit;
 }
-.proto-steam-hero-actions {
-  display: grid;
-  gap: 0.35rem;
-}
 .proto-steam-btn {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0;
-  padding: 0.5rem 0.8rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 22%, var(--card));
-  color: var(--text);
-  text-decoration: none;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.proto-steam-btn:hover {
-  background: color-mix(in srgb, var(--accent) 32%, var(--card));
-  color: var(--text);
-}
-.proto-steam-btn--ghost {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--steam-text);
+  display: none;
 }
 .proto-steam-banner-panel {
   margin-bottom: 0.85rem;
@@ -10511,7 +10575,7 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 .proto-steam-banner-panel-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.35rem 1rem;
   margin-bottom: 0.35rem;
@@ -10520,10 +10584,101 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   margin: 0;
 }
 .proto-steam-banner-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+.proto-steam-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.proto-steam-panel-head .proto-steam-panel-title {
+  margin: 0;
+}
+.proto-steam-compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+.proto-steam-post,
+.proto-steam-pedido {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.proto-steam-post:last-child,
+.proto-steam-pedido:last-child {
+  border-bottom: 0;
+}
+.proto-steam-post-av,
+.proto-steam-amigo .proto-steam-post-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.proto-steam-post-av--fb {
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.proto-steam-post-body {
+  min-width: 0;
+}
+.proto-steam-post-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
   align-items: center;
+  gap: 0.35rem 0.55rem;
+  margin-bottom: 0.2rem;
+}
+.proto-steam-post-head strong {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+.proto-steam-post-head time {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.proto-steam-post-head .proto-ico-btn {
+  margin-left: auto;
+}
+.proto-steam-pedidos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.proto-steam-pedido {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+}
+.proto-steam-pedido-body {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.proto-steam-pedido-body strong {
+  font-size: 0.86rem;
+}
+.proto-steam-pedido-body time {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.proto-steam-pedido-actions {
+  display: inline-flex;
+  gap: 0.25rem;
 }
 .proto-steam-layout {
   display: grid;
@@ -10651,22 +10806,11 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 }
 .proto-steam-amigo {
   display: grid;
-  grid-template-columns: 36px 1fr auto auto;
+  grid-template-columns: 36px 1fr auto;
   gap: 0.45rem;
   align-items: center;
   padding: 0.4rem 0;
   border-bottom: 1px solid var(--border);
-}
-.proto-steam-amigo-avatar {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
-  color: var(--text);
-  font-size: 0.7rem;
-  font-weight: 800;
 }
 .proto-steam-amigo-nome {
   color: var(--accent);
@@ -10825,48 +10969,33 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   font-weight: 700;
   color: var(--muted);
 }
-.proto-steam-banner-upload {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  margin: 0 0 0.45rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
-  color: var(--text);
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.proto-steam-banner-upload input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  overflow: hidden;
-}
 @media (max-width: 900px) {
   .proto-steam-banner {
-    height: 180px;
+    height: 170px;
   }
   .proto-steam-banner-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .proto-steam-hero {
-    grid-template-columns: 112px minmax(0, 1fr);
-    margin-top: -48px;
+  .proto-steam-hero-top {
+    grid-template-columns: 96px minmax(0, 1fr);
   }
   .proto-steam-hero-aside {
     grid-column: 1 / -1;
+    justify-items: start;
   }
-  .proto-steam-avatar,
+  .proto-steam-toolbar {
+    justify-content: flex-start;
+  }
+  .proto-steam-avatar {
+    width: 96px;
+    height: 96px;
+    margin-top: -40px;
+  }
   .proto-steam-avatar img {
-    width: 112px !important;
-    height: 112px !important;
-    max-width: 112px !important;
-    max-height: 112px !important;
+    width: 96px !important;
+    height: 96px !important;
+    max-width: 96px !important;
+    max-height: 96px !important;
   }
   .proto-steam-layout {
     grid-template-columns: 1fr;
@@ -10874,21 +11003,24 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 }
 @media (max-width: 560px) {
   .proto-steam-banner {
-    height: 150px;
+    height: 140px;
   }
   .proto-steam-banner-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .proto-steam-hero {
+  .proto-steam-hero-top {
     grid-template-columns: 1fr;
-    justify-items: start;
-    margin-left: 0.4rem;
-    margin-right: 0.4rem;
   }
   .proto-steam-name-row {
     flex-wrap: wrap;
   }
   .proto-steam-avatar {
-    margin: 0 auto;
+    margin: -36px auto 0;
+  }
+  .proto-steam-compose {
+    grid-template-columns: 1fr;
+  }
+  .proto-steam-compose .proto-ico-btn {
+    justify-self: end;
   }
 }

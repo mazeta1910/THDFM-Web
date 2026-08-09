@@ -944,12 +944,18 @@ def prototipo_perfil(request: Request):
 
 @app.get("/prototipo/perfil/publico", response_class=HTMLResponse)
 def prototipo_perfil_publico(request: Request):
-    """Protótipo da visão pública do perfil."""
+    """Protótipo da visão do perfil.
+
+    Por padrão é a visão do dono. Use ?como=visitante para simular outro usuário.
+    """
+    como = (request.query_params.get("como") or "").strip().lower()
+    is_own_view = como != "visitante"
     return render(
         request,
         "prototipo_perfil_publico.html",
         **_prototipo_times_ctx(),
         **_taxa_ctx(),
+        is_own_view=is_own_view,
     )
 
 

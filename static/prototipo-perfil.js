@@ -7,10 +7,10 @@
   const ANIV_KEY = "thdfm-proto-aniversario";
   const REL_KEY = "thdfm-proto-relacionamento";
   const QUEM_KEY = "thdfm-proto-quem";
-  const DEPS_KEY = "thdfm-proto-depoimentos";
   const RECADOS_KEY = "thdfm-proto-recados";
   const FEED_KEY = "thdfm-proto-feed";
   const AMIGOS_KEY = "thdfm-proto-amigos";
+  const PEDIDOS_KEY = "thdfm-proto-pedidos";
   const BANNER_KEY = "thdfm-proto-banner";
   const CLUBES_URL = "/prototipo/times/clubes.json";
 
@@ -62,6 +62,43 @@
     try {
       localStorage.setItem(key, value);
     } catch (_) {}
+  }
+
+  function uid() {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function formatWhen(iso) {
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function viewerFrom(root) {
+    return {
+      nome: root.getAttribute("data-viewer-nome") || "Visitante THDFM",
+      avatar: root.getAttribute("data-viewer-avatar") || "",
+      iniciais: root.getAttribute("data-viewer-iniciais") || "TH",
+    };
+  }
+
+  function avatarHtml(person) {
+    if (person.avatar) {
+      return `<img class="proto-steam-post-av" src="${escapeHtml(person.avatar)}" alt="" width="36" height="36" />`;
+    }
+    return `<span class="proto-steam-post-av proto-steam-post-av--fb" aria-hidden="true">${escapeHtml(
+      (person.iniciais || (person.nome || "?").slice(0, 2)).toUpperCase()
+    )}</span>`;
   }
 
   function loadKarma() {
@@ -125,7 +162,17 @@
 
   function loadPosts(key) {
     const list = normLoad(key, []);
-    return Array.isArray(list) ? list.filter((d) => d && d.texto) : [];
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((d) => d && d.texto)
+      .map((d) => ({
+        id: d.id || uid(),
+        texto: String(d.texto).slice(0, 280),
+        autor: d.autor || "",
+        avatar: d.avatar || "",
+        iniciais: d.iniciais || "",
+        at: d.at || null,
+      }));
   }
 
   function loadAmigos() {
@@ -134,12 +181,29 @@
     return list
       .filter((a) => a && a.nome)
       .map((a) => ({
+        id: a.id || uid(),
         nome: String(a.nome).slice(0, 30),
         nivel: AMIZADE_IDS.includes(a.nivel) ? a.nivel : "amigo",
+        avatar: a.avatar || "",
+        iniciais: a.iniciais || "",
       }));
   }
 
-  function renderFeed(listEl, emptyEl, countEl, items, { editable, authorFallback } = {}) {
+  function loadPedidos() {
+    const list = normLoad(PEDIDOS_KEY, []);
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((p) => p && p.nome)
+      .map((p) => ({
+        id: p.id || uid(),
+        nome: String(p.nome).slice(0, 30),
+        avatar: p.avatar || "",
+        iniciais: p.iniciais || "",
+        at: p.at || null,
+      }));
+  }
+
+  function renderPosts(listEl, emptyEl, countEl, items, { canDelete, onDelete, authorFallback } = {}) {
     if (countEl) countEl.textContent = `(${items.length})`;
     if (!listEl) return;
     if (!items.length) {
@@ -149,20 +213,39 @@
     }
     if (emptyEl) emptyEl.hidden = true;
     listEl.innerHTML = items
-      .map((d, i) => {
-        const autor = d.autor || authorFallback || "alguém";
+      .map((d) => {
+        const person = {
+          nome: d.autor || authorFallback || "alguém",
+          avatar: d.avatar,
+          iniciais: d.iniciais || (d.autor || authorFallback || "?").slice(0, 2),
+        };
+        const when = d.at ? formatWhen(d.at) : "";
         return `
-      <li class="proto-steam-feed-item" data-idx="${i}">
-        <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
-        <p class="proto-steam-feed-meta">— ${escapeHtml(autor)}</p>
-        ${
-          editable
-            ? `<button type="button" class="proto-steam-feed-del" data-del="${i}">remover</button>`
-            : ""
-        }
+      <li class="proto-steam-post" data-id="${escapeHtml(d.id)}">
+        ${avatarHtml(person)}
+        <div class="proto-steam-post-body">
+          <div class="proto-steam-post-head">
+            <strong>${escapeHtml(person.nome)}</strong>
+            ${when ? `<time datetime="${escapeHtml(d.at)}">${escapeHtml(when)}</time>` : ""}
+            ${
+              canDelete
+                ? `<button type="button" class="proto-ico-btn proto-ico-btn--tiny" data-del="${escapeHtml(d.id)}" title="Apagar" aria-label="Apagar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 7h12v2H6zm2 3h8l-1 11H9L8 10zm3-6h2l1 2H10z"/></svg>
+                  </button>`
+                : ""
+            }
+          </div>
+          <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
+        </div>
       </li>`;
       })
       .join("");
+
+    if (canDelete && typeof onDelete === "function") {
+      listEl.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => onDelete(btn.getAttribute("data-del")));
+      });
+    }
   }
 
   function paintAmizade(root, amigos) {
@@ -191,9 +274,7 @@
       .map(
         (a) => `
       <li class="proto-steam-amigo">
-        <span class="proto-steam-amigo-avatar" aria-hidden="true">${escapeHtml(
-          (a.nome || "?").slice(0, 2).toUpperCase()
-        )}</span>
+        ${avatarHtml(a)}
         <span class="proto-steam-amigo-nome">${escapeHtml(a.nome)}</span>
         <span class="proto-steam-amigo-nivel">${escapeHtml(AMIZADE_NOMES[a.nivel] || a.nivel)}</span>
       </li>`
@@ -201,9 +282,42 @@
       .join("");
   }
 
-  function setStat(root, key, n) {
-    const el = root.querySelector(`[data-stat="${key}"]`);
-    if (el) el.textContent = String(n);
+  function renderPedidos(listEl, countEl, emptyEl, pedidos, { onAccept, onReject }) {
+    if (countEl) countEl.textContent = `(${pedidos.length})`;
+    if (!listEl) return;
+    if (!pedidos.length) {
+      listEl.innerHTML = "";
+      if (emptyEl) emptyEl.hidden = false;
+      return;
+    }
+    if (emptyEl) emptyEl.hidden = true;
+    listEl.innerHTML = pedidos
+      .map(
+        (p) => `
+      <li class="proto-steam-pedido" data-id="${escapeHtml(p.id)}">
+        ${avatarHtml(p)}
+        <div class="proto-steam-pedido-body">
+          <strong>${escapeHtml(p.nome)}</strong>
+          ${p.at ? `<time datetime="${escapeHtml(p.at)}">${escapeHtml(formatWhen(p.at))}</time>` : ""}
+        </div>
+        <div class="proto-steam-pedido-actions">
+          <button type="button" class="proto-ico-btn proto-ico-btn--accent proto-ico-btn--tiny" data-accept="${escapeHtml(p.id)}" title="Aceitar" aria-label="Aceitar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+          </button>
+          <button type="button" class="proto-ico-btn proto-ico-btn--tiny" data-reject="${escapeHtml(p.id)}" title="Recusar" aria-label="Recusar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>
+          </button>
+        </div>
+      </li>`
+      )
+      .join("");
+
+    listEl.querySelectorAll("[data-accept]").forEach((btn) => {
+      btn.addEventListener("click", () => onAccept(btn.getAttribute("data-accept")));
+    });
+    listEl.querySelectorAll("[data-reject]").forEach((btn) => {
+      btn.addEventListener("click", () => onReject(btn.getAttribute("data-reject")));
+    });
   }
 
   function bindTextField(el, key) {
@@ -213,43 +327,6 @@
     const sync = () => saveStr(key, (el.value || "").trim());
     el.addEventListener("input", sync);
     el.addEventListener("change", sync);
-  }
-
-  function wirePostForm(form, key, refresh, { withAutor } = {}) {
-    if (!form) return;
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const textoEl = form.querySelector("textarea");
-      const autorEl = form.querySelector('input[type="text"]');
-      const texto = ((textoEl && textoEl.value) || "").trim();
-      if (!texto) return;
-      let items = loadPosts(key);
-      const row = { texto: texto.slice(0, 280) };
-      if (withAutor) {
-        const autor = ((autorEl && autorEl.value) || "").trim();
-        if (!autor) return;
-        row.autor = autor.slice(0, 30);
-      }
-      items.unshift(row);
-      items = items.slice(0, 40);
-      save(key, items);
-      form.reset();
-      refresh();
-    });
-  }
-
-  function wireFeedDelete(listEl, key, refresh) {
-    if (!listEl) return;
-    listEl.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-del]");
-      if (!btn) return;
-      const idx = Number(btn.getAttribute("data-del"));
-      if (!Number.isFinite(idx)) return;
-      const items = loadPosts(key);
-      items.splice(idx, 1);
-      save(key, items);
-      refresh();
-    });
   }
 
   function loadBanner() {
@@ -290,9 +367,7 @@
     const btnCancel = document.getElementById("banner-crop-cancel");
     const zoomOutBtn = document.getElementById("banner-crop-zoom-out");
     const zoomInBtn = document.getElementById("banner-crop-zoom-in");
-    if (!modal || !canvas || !zoomEl || !btnApply || !btnCancel) {
-      return { open() {} };
-    }
+    if (!modal || !canvas || !zoomEl || !btnApply || !btnCancel) return { open() {} };
 
     const ctx = canvas.getContext("2d");
     const VIEW_W = canvas.width;
@@ -312,20 +387,17 @@
       const min = Number(zoomEl.min) || 1;
       const max = Number(zoomEl.max) || 3;
       const val = Number(zoomEl.value) || min;
-      const pct = ((val - min) / (max - min)) * 100;
-      zoomEl.style.setProperty("--zoom-pct", pct + "%");
+      zoomEl.style.setProperty("--zoom-pct", ((val - min) / (max - min)) * 100 + "%");
       if (zoomOutBtn) zoomOutBtn.disabled = val <= min + 0.001;
       if (zoomInBtn) zoomInBtn.disabled = val >= max - 0.001;
     };
 
     const cropBox = () => {
       if (!img) return { w: 1, h: 1 };
-      const baseW = img.naturalWidth;
-      const baseH = img.naturalHeight;
-      let w = baseW / scale;
+      let w = img.naturalWidth / scale;
       let h = w / ASPECT;
-      if (h > baseH / scale) {
-        h = baseH / scale;
+      if (h > img.naturalHeight / scale) {
+        h = img.naturalHeight / scale;
         w = h * ASPECT;
       }
       return { w, h };
@@ -423,13 +495,11 @@
     canvas.addEventListener("touchstart", pointerDown, { passive: false });
     window.addEventListener("touchmove", pointerMove, { passive: false });
     window.addEventListener("touchend", pointerUp);
-
     btnCancel.addEventListener("click", () => close());
     modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("is-open")) close();
     });
-
     btnApply.addEventListener("click", () => {
       if (!img) return;
       const out = document.createElement("canvas");
@@ -455,6 +525,37 @@
     } catch (_) {
       return [];
     }
+  }
+
+  function paintPublicTimes(selected) {
+    const list = document.getElementById("public-times");
+    const empty = document.getElementById("public-times-empty");
+    const misto = document.getElementById("public-misto");
+    if (misto) misto.hidden = selected.length < 2;
+    if (!selected.length) {
+      if (list) list.innerHTML = "";
+      if (empty) empty.hidden = false;
+      return;
+    }
+    fetchClubes().then((clubes) => {
+      const items = selected.map((id) => clubes.find((c) => c.id === id)).filter(Boolean);
+      if (!items.length) {
+        if (list) list.innerHTML = "";
+        if (empty) empty.hidden = false;
+        return;
+      }
+      if (empty) empty.hidden = true;
+      list.innerHTML = items
+        .map(
+          (c) => `
+        <li class="proto-steam-time">
+          <img src="${escapeHtml(c.emblema)}" alt="" width="28" height="28" loading="lazy" />
+          <span>${escapeHtml(c.nome)}</span>
+          <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
+        </li>`
+        )
+        .join("");
+    });
   }
 
   // ——— Edição ———
@@ -525,54 +626,26 @@
     }
     const nutelaRange = editRoot.querySelector("[data-proto-nutela]");
     if (nutelaRange) {
-      nutelaRange.addEventListener("input", () => {
-        saveStr(NUTELA_KEY, String(nutelaRange.value));
-      });
-    }
-
-    function refreshFeed() {
-      const items = loadPosts(FEED_KEY);
-      const nome = loadStr(NOME_KEY, null) || (nomeInput && nomeInput.value) || "Visitante THDFM";
-      renderFeed(
-        document.getElementById("proto-feed-list"),
-        document.getElementById("proto-feed-empty"),
-        document.getElementById("proto-feed-count"),
-        items,
-        { editable: true, authorFallback: nome }
-      );
-      setStat(editRoot, "feed", items.length);
-    }
-    refreshFeed();
-    wirePostForm(document.getElementById("proto-feed-form"), FEED_KEY, refreshFeed, { withAutor: false });
-    wireFeedDelete(document.getElementById("proto-feed-list"), FEED_KEY, refreshFeed);
-
-    const timesSel = normLoad(TIMES_KEY, []);
-    setStat(editRoot, "times", Array.isArray(timesSel) ? timesSel.length : 0);
-    setStat(editRoot, "amigos", loadAmigos().length);
-    setStat(editRoot, "recados", loadPosts(RECADOS_KEY).length);
-    const chips = document.getElementById("proto-chips");
-    if (chips) {
-      const obs = new MutationObserver(() => {
-        const t = normLoad(TIMES_KEY, []);
-        setStat(editRoot, "times", Array.isArray(t) ? t.length : 0);
-      });
-      obs.observe(chips, { childList: true });
+      nutelaRange.addEventListener("input", () => saveStr(NUTELA_KEY, String(nutelaRange.value)));
     }
   }
 
-  // ——— Público ———
+  // ——— Perfil (dono ou visitante) ———
   const pubRoot = document.getElementById("proto-perfil-publico");
   if (pubRoot) {
+    const isOwn = pubRoot.getAttribute("data-own") === "1";
+    const viewer = viewerFrom(pubRoot);
+    const ownerNome =
+      loadStr(NOME_KEY, null) ||
+      (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||
+      "Visitante THDFM";
+
     applyBanner(pubRoot, loadBanner());
     paintKarmaRoot(document.getElementById("public-karma"), loadKarma());
     paintNutela(pubRoot, loadNutela());
 
-    const nome =
-      loadStr(NOME_KEY, null) ||
-      (pubRoot.querySelector("[data-public-nome]") || {}).textContent ||
-      "Visitante THDFM";
     pubRoot.querySelectorAll("[data-public-nome]").forEach((el) => {
-      el.textContent = nome;
+      el.textContent = ownerNome;
     });
 
     const frase = loadStr(FRASE_KEY, "");
@@ -580,82 +653,57 @@
     const rel = loadStr(REL_KEY, "");
     const quem = loadStr(QUEM_KEY, "");
     const fraseEl = pubRoot.querySelector("[data-public-frase]");
-    const anivEl = pubRoot.querySelector("[data-public-aniversario]");
-    const relEl = pubRoot.querySelector("[data-public-relacionamento]");
-    const quemEl = pubRoot.querySelector("[data-public-quem]");
     const metaEl = pubRoot.querySelector("[data-public-meta]");
+    const quemEl = pubRoot.querySelector("[data-public-quem]");
     if (fraseEl) fraseEl.textContent = frase || "Sem frase ainda.";
-    if (anivEl) anivEl.textContent = aniv || "—";
-    if (relEl) relEl.textContent = rel || "—";
     if (quemEl) quemEl.textContent = quem || "—";
     if (metaEl) {
       metaEl.textContent = [rel || null, aniv ? `niver ${aniv}` : null].filter(Boolean).join(" · ") || "—";
     }
 
     const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
-    const list = document.getElementById("public-times");
-    const empty = document.getElementById("public-times-empty");
-    const misto = document.getElementById("public-misto");
-    if (misto) misto.hidden = selected.length < 2;
-    setStat(pubRoot, "times", selected.length);
-    if (!selected.length) {
-      if (list) list.innerHTML = "";
-      if (empty) empty.hidden = false;
-    } else {
-      fetchClubes().then((clubes) => {
-        const items = selected.map((id) => clubes.find((c) => c.id === id)).filter(Boolean);
-        if (!items.length) {
-          if (list) list.innerHTML = "";
-          if (empty) empty.hidden = false;
-          return;
-        }
-        if (empty) empty.hidden = true;
-        list.innerHTML = items
-          .map(
-            (c) => `
-          <li class="proto-steam-time">
-            <img src="${escapeHtml(c.emblema)}" alt="" width="32" height="32" loading="lazy" />
-            <span>${escapeHtml(c.nome)}</span>
-            <span class="proto-steam-time-uf">${escapeHtml(c.uf)}</span>
-          </li>`
-          )
-          .join("");
-      });
-    }
+    paintPublicTimes(selected);
 
-    function refreshPublicFeed() {
-      const items = loadPosts(FEED_KEY);
-      renderFeed(
+    let feed = loadPosts(FEED_KEY);
+    let recados = loadPosts(RECADOS_KEY);
+    let amigos = loadAmigos();
+    let pedidos = loadPedidos();
+
+    function refreshFeed() {
+      renderPosts(
         document.getElementById("public-feed-list"),
         document.getElementById("public-feed-empty"),
         document.getElementById("public-feed-count"),
-        items,
-        { authorFallback: nome }
+        feed,
+        {
+          canDelete: isOwn,
+          authorFallback: ownerNome,
+          onDelete: (id) => {
+            feed = feed.filter((x) => x.id !== id);
+            save(FEED_KEY, feed);
+            refreshFeed();
+          },
+        }
       );
-      setStat(pubRoot, "feed", items.length);
     }
-    function refreshPublicRecados() {
-      const items = loadPosts(RECADOS_KEY);
-      renderFeed(
+
+    function refreshRecados() {
+      renderPosts(
         document.getElementById("public-recados-list"),
         document.getElementById("public-recados-empty"),
         document.getElementById("public-recados-count"),
-        items
+        recados,
+        {
+          canDelete: isOwn,
+          onDelete: (id) => {
+            recados = recados.filter((x) => x.id !== id);
+            save(RECADOS_KEY, recados);
+            refreshRecados();
+          },
+        }
       );
-      setStat(pubRoot, "recados", items.length);
-    }
-    function refreshPublicDeps() {
-      const items = loadPosts(DEPS_KEY);
-      renderFeed(
-        document.getElementById("public-deps-list"),
-        document.getElementById("public-deps-empty"),
-        document.getElementById("public-deps-count"),
-        items
-      );
-      setStat(pubRoot, "deps", items.length);
     }
 
-    let amigos = loadAmigos();
     function refreshAmigos() {
       renderAmigos(
         document.getElementById("public-amigos-list"),
@@ -664,32 +712,110 @@
         amigos
       );
       paintAmizade(document.getElementById("public-amizade-list"), amigos);
-      setStat(pubRoot, "amigos", amigos.length);
     }
 
-    refreshPublicFeed();
-    refreshPublicRecados();
-    refreshPublicDeps();
-    refreshAmigos();
+    function refreshPedidos() {
+      renderPedidos(
+        document.getElementById("public-pedidos-list"),
+        document.getElementById("public-pedidos-count"),
+        document.getElementById("public-pedidos-empty"),
+        pedidos,
+        {
+          onAccept: (id) => {
+            const p = pedidos.find((x) => x.id === id);
+            if (!p) return;
+            pedidos = pedidos.filter((x) => x.id !== id);
+            amigos.unshift({
+              id: uid(),
+              nome: p.nome,
+              avatar: p.avatar,
+              iniciais: p.iniciais,
+              nivel: "conhecido",
+            });
+            amigos = amigos.slice(0, 40);
+            save(PEDIDOS_KEY, pedidos);
+            save(AMIGOS_KEY, amigos);
+            refreshPedidos();
+            refreshAmigos();
+          },
+          onReject: (id) => {
+            pedidos = pedidos.filter((x) => x.id !== id);
+            save(PEDIDOS_KEY, pedidos);
+            refreshPedidos();
+          },
+        }
+      );
+    }
 
-    wirePostForm(document.getElementById("public-recado-form"), RECADOS_KEY, refreshPublicRecados, { withAutor: true });
-    wirePostForm(document.getElementById("public-dep-form"), DEPS_KEY, refreshPublicDeps, { withAutor: true });
+    refreshFeed();
+    refreshRecados();
+    refreshAmigos();
+    if (isOwn) refreshPedidos();
+
+    const feedForm = document.getElementById("public-feed-form");
+    if (feedForm && isOwn) {
+      feedForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const texto = ((feedForm.querySelector("textarea") || {}).value || "").trim();
+        if (!texto) return;
+        feed.unshift({
+          id: uid(),
+          texto: texto.slice(0, 280),
+          autor: ownerNome,
+          avatar: viewer.avatar,
+          iniciais: viewer.iniciais,
+          at: new Date().toISOString(),
+        });
+        feed = feed.slice(0, 40);
+        save(FEED_KEY, feed);
+        feedForm.reset();
+        refreshFeed();
+      });
+    }
+
+    const recadoForm = document.getElementById("public-recado-form");
+    if (recadoForm && !isOwn) {
+      recadoForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const texto = ((recadoForm.querySelector("textarea") || {}).value || "").trim();
+        if (!texto) return;
+        recados.unshift({
+          id: uid(),
+          texto: texto.slice(0, 280),
+          autor: viewer.nome,
+          avatar: viewer.avatar,
+          iniciais: viewer.iniciais,
+          at: new Date().toISOString(),
+        });
+        recados = recados.slice(0, 40);
+        save(RECADOS_KEY, recados);
+        recadoForm.reset();
+        refreshRecados();
+      });
+    }
 
     const pedirBtn = document.getElementById("public-amigo-pedir");
-    if (pedirBtn) {
-      pedirBtn.addEventListener("click", () => {
-        const visitor = "Visitante";
-        if (amigos.some((a) => a.nome.toLowerCase() === visitor.toLowerCase())) {
-          pedirBtn.textContent = "Pedido já enviado";
-          pedirBtn.disabled = true;
-          return;
-        }
-        amigos.unshift({ nome: visitor, nivel: "conhecido" });
-        amigos = amigos.slice(0, 40);
-        save(AMIGOS_KEY, amigos);
-        refreshAmigos();
-        pedirBtn.textContent = "Pedido enviado";
+    if (pedirBtn && !isOwn) {
+      const already =
+        pedidos.some((p) => p.nome.toLowerCase() === viewer.nome.toLowerCase()) ||
+        amigos.some((a) => a.nome.toLowerCase() === viewer.nome.toLowerCase());
+      if (already) {
         pedirBtn.disabled = true;
+        pedirBtn.title = "Pedido já enviado ou já é amigo";
+      }
+      pedirBtn.addEventListener("click", () => {
+        if (pedirBtn.disabled) return;
+        pedidos.unshift({
+          id: uid(),
+          nome: viewer.nome,
+          avatar: viewer.avatar,
+          iniciais: viewer.iniciais,
+          at: new Date().toISOString(),
+        });
+        pedidos = pedidos.slice(0, 40);
+        save(PEDIDOS_KEY, pedidos);
+        pedirBtn.disabled = true;
+        pedirBtn.title = "Pedido enviado";
       });
     }
   }

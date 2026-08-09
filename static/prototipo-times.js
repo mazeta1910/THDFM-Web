@@ -133,12 +133,12 @@
       pickedWrap.hidden = true;
       chipsEl.innerHTML = "";
       if (mistoEl) mistoEl.hidden = true;
-      if (openBtn) openBtn.textContent = "Escolher times";
+      if (openBtn) openBtn.setAttribute("title", "Escolher times");
       return;
     }
     pickedWrap.hidden = false;
     if (mistoEl) mistoEl.hidden = selected.length < 2;
-    if (openBtn) openBtn.textContent = "Editar times";
+    if (openBtn) openBtn.setAttribute("title", "Editar times");
     chipsEl.innerHTML = items
       .map((c) => {
         const img = c.emblema

@@ -30,11 +30,15 @@
       {% endif %}
     </div>
     <ul class="proto-times-chips" id="proto-chips"></ul>
-    <button type="button" class="btn secondary proto-times-clear" id="proto-clear">Limpar seleção</button>
+    <button type="button" class="proto-ico-btn" id="proto-clear" title="Limpar seleção" aria-label="Limpar seleção">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 7h12v2H6zm2 3h8l-1 11H9L8 10zm3-6h2l1 2H10z"/></svg>
+    </button>
   </div>
 
   {% if seletor_embedded %}
-  <button type="button" class="proto-steam-btn" id="proto-times-open">Escolher times</button>
+  <button type="button" class="proto-ico-btn proto-ico-btn--accent" id="proto-times-open" title="Escolher times" aria-label="Escolher times">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+  </button>
   {% endif %}
 
   <div class="proto-times-browser" id="proto-times-browser" {% if seletor_embedded %}hidden{% endif %}>
@@ -49,9 +53,13 @@
           enterkeyhint="search"
         />
       </label>
-      <button type="button" class="btn secondary proto-times-allufs" id="proto-all-ufs">Todos os estados</button>
+      <button type="button" class="proto-ico-btn" id="proto-all-ufs" title="Todos os estados" aria-label="Todos os estados">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>
+      </button>
       {% if seletor_embedded %}
-      <button type="button" class="btn secondary" id="proto-times-close">Fechar lista</button>
+      <button type="button" class="proto-ico-btn" id="proto-times-close" title="Fechar lista" aria-label="Fechar lista">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
       {% endif %}
     </div>
 
