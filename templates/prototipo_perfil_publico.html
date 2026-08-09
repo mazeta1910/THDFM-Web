@@ -72,25 +72,14 @@
           <ul class="proto-steam-flags" id="public-times" aria-label="Times do coração"></ul>
           <p class="proto-steam-empty proto-steam-flags-empty" id="public-times-empty">Nenhum time escolhido ainda.</p>
           <p class="proto-steam-meta" data-public-meta>{% if fixado %}{{ fixado.relacionamento or '—' }}{% else %}—{% endif %}</p>
-          {% if bolao_perfil and bolao_perfil.disponivel %}
-          <p class="proto-steam-bolao-line">
-            <span>{{ bolao_perfil.posicao }}º de {{ bolao_perfil.total }}</span>
-            <span aria-hidden="true">·</span>
-            <span>{{ bolao_perfil.soma }} pts</span>
-            {% if bolao_perfil.rod %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-rod {% if bolao_perfil.rod > 0 %}is-up{% elif bolao_perfil.rod < 0 %}is-down{% endif %}">
-              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} nesta rodada
-            </span>
-            {% endif %}
-            {% if bolao_perfil.zona_label %}
-            <span aria-hidden="true">·</span>
-            <span class="proto-steam-bolao-zona is-{{ bolao_perfil.zona }}">{{ bolao_perfil.zona_label }}</span>
-            {% endif %}
-          </p>
-          {% endif %}
           <p class="proto-steam-summary" data-public-frase>{% if fixado %}{{ fixado.frase }}{% else %}Sem status ainda.{% endif %}</p>
         </div>
+
+        {# TEXTOS PARA REESCREVER — começo #}
+        <section class="proto-steam-hero-bolao" id="bolao" aria-label="No bolão">
+          {% include "partials/proto_bolao_perfil.html" %}
+        </section>
+        {# TEXTOS PARA REESCREVER — fim #}
 
         <div class="proto-steam-hero-aside">
           <div class="proto-steam-karma {% if not is_own_view %}proto-steam-karma--votavel{% endif %}" id="public-karma" aria-label="Karma">
@@ -160,177 +149,6 @@
 
   <div class="proto-steam-layout">
     <div class="proto-steam-main">
-      {# TEXTOS PARA REESCREVER — começo #}
-      <section class="proto-steam-panel" id="bolao">
-        <div class="proto-steam-panel-head">
-          <h2 class="proto-steam-panel-title">No bolão</h2>
-          {% if bolao_perfil and bolao_perfil.classificacao_url %}
-          <a class="proto-steam-panel-link" href="{{ bolao_perfil.classificacao_url }}">Ver classificação</a>
-          {% endif %}
-        </div>
-
-        {% if bolao_perfil and bolao_perfil.disponivel %}
-        <div class="proto-bolao-stats">
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Posição</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.posicao }}º</strong>
-            <span class="proto-bolao-stat-sub">de {{ bolao_perfil.total }}</span>
-          </div>
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Pontos</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.soma }}</strong>
-            <span class="proto-bolao-stat-sub">
-              {% if bolao_perfil.rod > 0 %}+{% endif %}{{ bolao_perfil.rod }} na rodada
-            </span>
-          </div>
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Placar exato</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.placar }}</strong>
-            <span class="proto-bolao-stat-sub">pts</span>
-          </div>
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Vencedor</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.vencedor }}</strong>
-            <span class="proto-bolao-stat-sub">pts</span>
-          </div>
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Gols</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.gols }}</strong>
-            <span class="proto-bolao-stat-sub">pts</span>
-          </div>
-          <div class="proto-bolao-stat">
-            <span class="proto-bolao-stat-label">Fidelidade</span>
-            <strong class="proto-bolao-stat-value">{{ bolao_perfil.fidelidade }}</strong>
-            <span class="proto-bolao-stat-sub">pts</span>
-          </div>
-        </div>
-
-        {% if bolao_perfil.palpites %}
-        <div class="proto-bolao-estilo-block">
-          <h3 class="proto-bolao-estilo-title">Estilo de palpites</h3>
-          <div class="proto-bolao-estilo-grid">
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Palpites</span>
-              <strong>{{ bolao_perfil.palpites }}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Casa</span>
-              <strong>{% if bolao_perfil.pct_casa is not none %}{{ bolao_perfil.pct_casa }}%{% else %}—{% endif %}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Empate</span>
-              <strong>{% if bolao_perfil.pct_empate is not none %}{{ bolao_perfil.pct_empate }}%{% else %}—{% endif %}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Fora</span>
-              <strong>{% if bolao_perfil.pct_fora is not none %}{{ bolao_perfil.pct_fora }}%{% else %}—{% endif %}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Média de gols</span>
-              <strong>{% if bolao_perfil.media_gols is not none %}{{ bolao_perfil.media_gols }}{% else %}—{% endif %}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Assinatura</span>
-              <strong>{% if bolao_perfil.assinatura %}{{ bolao_perfil.assinatura }}{% else %}—{% endif %}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Acertos vencedor</span>
-              <strong>{{ bolao_perfil.acertos_vencedor }}</strong>
-            </div>
-            <div class="proto-bolao-estilo-item">
-              <span class="proto-bolao-estilo-label">Placares exatos</span>
-              <strong>{{ bolao_perfil.acertos_placar }}</strong>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if bolao_perfil.badges %}
-        <ul class="proto-bolao-badges">
-          {% for b in bolao_perfil.badges %}
-          <li class="proto-bolao-badge" title="{{ b.explicacao }}">{{ b.titulo }}</li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-
-        {% if bolao_perfil.rodadas %}
-        <div class="proto-bolao-rodadas-block">
-          <h3 class="proto-bolao-estilo-title">Resumo das rodadas</h3>
-          <ul class="ficha-rodadas-lista proto-bolao-rodadas-lista" aria-label="Pontuação por rodada">
-            {% for r in bolao_perfil.rodadas %}
-            <li class="ficha-rodada-item {% if r.ao_vivo %}is-ao-vivo{% endif %}" data-proto-rodada>
-              <button type="button" class="ficha-rodada-toggle" aria-expanded="false">
-                <span class="ficha-rodada-titulo">
-                  <span class="ficha-rodada-rotulo-line">
-                    <span class="ficha-rodada-chev" aria-hidden="true"></span>
-                    <span class="ficha-rodada-rotulo-full">{{ r.titulo }}</span>
-                  </span>
-                </span>
-                <span class="ficha-rodada-nums" aria-label="Pontuação da rodada">
-                  <span class="ficha-rodada-stat" title="Pontos na rodada">
-                    <span class="ficha-rodada-rod">{% if r.pts > 0 %}+{% endif %}{{ r.pts }}</span>
-                  </span>
-                  <span class="ficha-rodada-stat" title="Pontuação total">
-                    <span class="ficha-rodada-soma">{{ r.soma }}</span>
-                  </span>
-                  <span class="ficha-rodada-stat" title="Colocação">
-                    <span class="ficha-rodada-pos">{% if r.posicao %}{{ r.posicao }}º{% else %}—{% endif %}</span>
-                  </span>
-                </span>
-              </button>
-              <div class="ficha-rodada-jogos">
-                {% if r.jogos %}
-                <div class="ficha-jogos-cols" aria-hidden="true">
-                  <span>Jogo</span><span>Palpite</span><span>Plc</span><span>Ven</span>
-                  <span>Gc</span><span>Gf</span><span>Pts</span>
-                </div>
-                {% for j in r.jogos %}
-                <div class="ficha-jogo" role="row">
-                  <div class="ficha-jogo-oficial" title="{{ j.casa_curto or j.casa }} {{ j.real_m }}×{{ j.real_v }} {{ j.fora_curto or j.fora }}">
-                    <span class="ficha-jogo-scoreline">
-                      {% if j.casa_emblema %}<img class="ficha-jogo-embl" src="{{ j.casa_emblema }}" alt="" />{% else %}<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>{% endif %}
-                      <span class="ficha-jogo-score">{{ j.real_m }}×{{ j.real_v }}</span>
-                      {% if j.fora_emblema %}<img class="ficha-jogo-embl" src="{{ j.fora_emblema }}" alt="" />{% else %}<span class="ficha-jogo-embl-fallback" aria-hidden="true"></span>{% endif %}
-                    </span>
-                    <small>Oficial</small>
-                  </div>
-                  <div class="ficha-jogo-palpite">
-                    <span class="ficha-jogo-palpite-score">
-                      {% if j.sem_palpite %}—{% else %}{{ j.palpite_m }}×{{ j.palpite_v }}{% endif %}
-                    </span>
-                    <small>{{ (j.resultado_label or ('Sem palpite' if j.sem_palpite else ''))|upper }}</small>
-                  </div>
-                  <span class="ficha-jogo-mark {% if j.sem_palpite %}is-na{% elif j.placar %}is-ok{% else %}is-miss{% endif %}" title="Plc"></span>
-                  <span class="ficha-jogo-mark {% if j.sem_palpite %}is-na{% elif j.vencedor %}is-ok{% else %}is-miss{% endif %}" title="Ven"></span>
-                  <span class="ficha-jogo-num {% if j.gols_casa %}is-hit{% endif %}">{{ j.gols_casa or 0 }}</span>
-                  <span class="ficha-jogo-num {% if j.gols_fora %}is-hit{% endif %}">{{ j.gols_fora or 0 }}</span>
-                  <span class="ficha-jogo-pts {% if not j.pts %}is-zero{% endif %}">{% if j.pts %}+{{ j.pts }}{% else %}0{% endif %}</span>
-                </div>
-                {% endfor %}
-                {% else %}
-                <p class="ficha-jogo-vazio">Nenhum jogo com placar oficial nesta perna.</p>
-                {% endif %}
-              </div>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endif %}
-
-        {% elif bolao_perfil %}
-        <p class="proto-steam-empty">
-          {% if bolao_perfil.motivo == 'pendente' %}
-          Ainda não está liberado no bolão.
-          {% else %}
-          Sem dados de classificação por enquanto.
-          {% endif %}
-        </p>
-        {% else %}
-        <p class="proto-steam-empty">Sem vínculo com o bolão nesta demo.</p>
-        {% endif %}
-      </section>
-      {# TEXTOS PARA REESCREVER — fim #}
-
       <section class="proto-steam-panel" id="feed">
         <div class="proto-steam-panel-head">
           <h2 class="proto-steam-panel-title">Feed <span id="public-feed-count">(0)</span></h2>

@@ -10296,10 +10296,69 @@ body.proto-steam-body .wrap.wide {
 }
 .proto-steam-hero-top {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) minmax(11rem, 15rem);
+  grid-template-columns: 112px minmax(11rem, 15rem) minmax(0, 1fr) minmax(12rem, 16rem);
   gap: 0.85rem 1rem;
   align-items: start;
   overflow: visible;
+}
+.proto-steam-hero-bolao {
+  min-width: 0;
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  padding: 0.6rem 0.7rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  max-height: min(32rem, 72vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.proto-steam-hero-bolao .proto-steam-panel-head {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.proto-steam-hero-bolao .proto-steam-panel-title {
+  font-size: 0.78rem;
+}
+.proto-steam-bolao-line--hero {
+  margin: 0 0 0.15rem;
+  font-size: 0.8rem;
+}
+.proto-steam-hero-bolao .proto-bolao-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.35rem;
+}
+.proto-steam-hero-bolao .proto-bolao-stat {
+  padding: 0.4rem 0.45rem;
+  border-radius: 8px;
+}
+.proto-steam-hero-bolao .proto-bolao-stat-value {
+  font-size: 1.02rem;
+}
+.proto-steam-hero-bolao .proto-bolao-estilo-block,
+.proto-steam-hero-bolao .proto-bolao-rodadas-block {
+  margin: 0 0 0.45rem;
+}
+.proto-steam-hero-bolao .proto-bolao-estilo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+.proto-steam-hero-bolao .proto-bolao-estilo-item {
+  padding: 0.4rem 0.45rem;
+  border-radius: 8px;
+}
+.proto-steam-hero-bolao .proto-bolao-badges {
+  margin: 0 0 0.45rem;
+}
+.proto-steam-hero-bolao .proto-bolao-rodadas-lista {
+  max-height: 14rem;
+  overflow: auto;
+}
+.proto-steam-hero-bolao .ficha-rodada-jogos {
+  overflow-x: auto;
 }
 .proto-steam-avatar {
   position: relative;
@@ -11287,6 +11346,21 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   font-weight: 700;
   color: var(--muted);
 }
+@media (max-width: 1100px) {
+  .proto-steam-hero-top {
+    grid-template-columns: 112px minmax(0, 1fr) minmax(12rem, 15rem);
+  }
+  .proto-steam-hero-bolao {
+    grid-column: 1 / -1;
+    max-height: none;
+  }
+  .proto-steam-hero-bolao .proto-bolao-estilo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .proto-steam-hero-bolao .proto-bolao-rodadas-lista {
+    max-height: none;
+  }
+}
 @media (max-width: 900px) {
   .proto-steam-banner {
     height: 170px;
@@ -11297,8 +11371,11 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   .proto-steam-hero-top {
     grid-template-columns: 96px minmax(0, 1fr);
   }
-  .proto-steam-hero-aside {
+  .proto-steam-hero-aside,
+  .proto-steam-hero-bolao {
     grid-column: 1 / -1;
+  }
+  .proto-steam-hero-aside {
     justify-items: start;
   }
   .proto-steam-toolbar {

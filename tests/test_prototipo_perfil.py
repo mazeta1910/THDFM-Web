@@ -40,7 +40,7 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert "avatar-edit-camera" in r.text
     assert "Salvar alterações" in r.text
     assert 'id="proto-edit-save"' in r.text
-    assert "/static/style.css?v=265" in r.text
+    assert "/static/style.css?v=266" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):
@@ -55,10 +55,14 @@ def test_prototipo_perfil_publico_dono(client: TestClient):
     assert "depoimentos" not in r.text.lower()
     assert "mais que amigos, irmães" in r.text.lower()
     assert 'id="bolao"' in r.text
+    assert 'class="proto-steam-hero-bolao"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
     assert "assinatura {" not in r.text
     assert "{'placar':" not in r.text
+    # Bolão fica no card principal, não como painel solto abaixo
+    assert r.text.index('id="bolao"') < r.text.index('id="feed"')
+    assert 'proto-steam-hero-bolao' in r.text.split('id="feed"', 1)[0]
 
 
 def test_sidebar_dono_brand_leva_ao_perfil(client: TestClient):
