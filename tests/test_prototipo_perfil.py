@@ -30,7 +30,10 @@ def test_prototipo_perfil_pagina(client: TestClient):
     assert 'id="proto-feed-form"' not in r.text
     assert "depoimentos" not in r.text.lower()
     assert 'href="/prototipo/perfil/benevides"' in r.text
-    assert "/static/style.css?v=255" in r.text
+    assert "Ver meu perfil" in r.text
+    assert "Ver como visitante" in r.text
+    assert "Perfil do Benevides" in r.text
+    assert "/static/style.css?v=256" in r.text
 
 
 def test_prototipo_perfil_publico_dono(client: TestClient):

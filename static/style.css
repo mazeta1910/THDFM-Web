@@ -11085,6 +11085,60 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   gap: 0.75rem 1rem;
   margin-bottom: 1rem;
 }
+.proto-edit-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  max-width: 22rem;
+}
+.proto-edit-nav--compact {
+  max-width: 16rem;
+  justify-content: flex-end;
+}
+a.proto-text-btn,
+button.proto-text-btn,
+.proto-text-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 2rem;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+a.proto-text-btn:hover,
+button.proto-text-btn:hover,
+.proto-text-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--accent);
+}
+.proto-text-btn--accent {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--text);
+}
+.proto-text-btn--accent:hover {
+  color: var(--text);
+  filter: brightness(1.06);
+}
+.proto-steam-hero-aside .proto-edit-nav {
+  justify-self: end;
+}
 .proto-edit-title {
   margin: 0.15rem 0 0.25rem;
   font-size: 1.45rem;

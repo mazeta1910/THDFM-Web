@@ -24,22 +24,16 @@
       <p class="proto-edit-lead">Banner, foto, textos e times. Alterações ficam só neste protótipo.</p>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
-    <div class="proto-steam-toolbar">
-      <a class="proto-ico-btn" href="/prototipo/perfil/publico" title="Ver meu perfil" aria-label="Ver meu perfil">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
-      </a>
-      <a class="proto-ico-btn" href="/prototipo/perfil/publico?como=visitante" title="Ver como visitante" aria-label="Ver como visitante">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
-      </a>
-      <a class="proto-ico-btn" href="/prototipo/perfil/benevides" title="Ver Benevides" aria-label="Ver Benevides">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-      </a>
+    {# TEXTOS PARA REESCREVER — começo #}
+    <nav class="proto-edit-nav" aria-label="Atalhos do protótipo">
+      <a class="proto-text-btn proto-text-btn--accent" href="/prototipo/perfil/publico">Ver meu perfil</a>
+      <a class="proto-text-btn" href="/prototipo/perfil/publico?como=visitante">Ver como visitante</a>
+      <a class="proto-text-btn" href="/prototipo/perfil/benevides">Perfil do Benevides</a>
       {% if participante_nav %}
-      <a class="proto-ico-btn" href="/p/{{ participante_nav.token }}/conta?page=1" title="Minha conta" aria-label="Minha conta">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94a7.14 7.14 0 0 0 .05-.94 7.14 7.14 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 7.48a.5.5 0 0 0 .12.64L4.85 9.7a7.14 7.14 0 0 0-.05.94 7.14 7.14 0 0 0 .05.94L2.82 14.16a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.8a.5.5 0 0 0 .5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg>
-      </a>
+      <a class="proto-text-btn" href="/p/{{ participante_nav.token }}/conta?page=1">Minha conta</a>
       {% endif %}
-    </div>
+    </nav>
+    {# TEXTOS PARA REESCREVER — fim #}
   </header>
 
   <section class="proto-edit-cover" id="banner">
