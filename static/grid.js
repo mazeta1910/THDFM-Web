@@ -109,7 +109,7 @@
         else if (cell.ok) {
           row += "🟩";
           ok += 1;
-        } else row += "⬛";
+        } else row += "🟥";
       }
       lines.push(row);
     }
@@ -285,9 +285,38 @@
     }
   });
 
+  async function checarViradaDia() {
+    try {
+      const r = await fetch("/grid/api/hoje", { headers: { Accept: "application/json" } });
+      if (!r.ok) return;
+      const data = await r.json();
+      const novoDia = data?.puzzle?.dia;
+      if (novoDia && dia && novoDia !== dia) {
+        window.location.reload();
+      }
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function agendarVirada() {
+    const raw = Number(root.getAttribute("data-virada-ms") || puzzle.virada_em_ms || 0);
+    // +1.5s de folga após 00:00 SP; limita a 24h
+    const delay = Math.min(Math.max(raw + 1500, 1500), 24 * 60 * 60 * 1000);
+    window.setTimeout(() => {
+      window.location.reload();
+    }, delay);
+    // Backup: se a aba voltar depois da meia-noite, confere o dia
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") checarViradaDia();
+    });
+    window.setInterval(checarViradaDia, 60 * 1000);
+  }
+
   // boot
   paintAll();
   if (boot.progresso) applyProgresso(boot.progresso);
   const filled = countScore().filled;
   if (filled >= size * size) showResult(null);
+  agendarVirada();
 })();

@@ -12174,44 +12174,53 @@ button.proto-text-btn:disabled {
 
 /* —— THDFM Grid (prévia) —— */
 .grid-page {
-  max-width: 52rem;
+  max-width: 58rem;
   margin: 0 auto;
   display: grid;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 .grid-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem 1rem;
+  gap: 0.85rem 1.1rem;
 }
 .grid-kicker {
-  margin: 0 0 0.25rem;
-  font-size: 0.72rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
 }
 .grid-title {
   margin: 0;
-  font-size: clamp(1.45rem, 3vw, 1.9rem);
-  line-height: 1.15;
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 .grid-sub {
-  margin: 0.35rem 0 0;
+  margin: 0.5rem 0 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  max-width: 40rem;
+}
+.grid-sub strong {
+  color: var(--text);
+  font-weight: 800;
 }
 .grid-streak {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.35rem 0.65rem;
+  gap: 0.3rem;
+  padding: 0.45rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
+  font-size: 1.05rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -12222,42 +12231,43 @@ button.proto-text-btn:disabled {
   gap: 0.45rem;
 }
 .grid-board-wrap {
-  padding: 0.85rem;
+  padding: 1rem 1.05rem 1.1rem;
 }
 .grid-board {
   display: grid;
-  grid-template-columns: minmax(5.5rem, 1.15fr) repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
+  grid-template-columns: minmax(7rem, 1.2fr) repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
   align-items: stretch;
 }
-.grid-corner { min-height: 2.5rem; }
+.grid-corner { min-height: 3.4rem; }
 .grid-axis {
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 0.45rem 0.35rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1.25;
+  padding: 0.7rem 0.55rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  font-size: clamp(0.92rem, 2.1vw, 1.12rem);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
   color: var(--text);
 }
 .grid-axis--row {
   justify-items: start;
   text-align: left;
-  padding-left: 0.55rem;
+  padding-left: 0.7rem;
 }
 button.grid-cell,
 .grid-cell {
   appearance: none;
-  min-height: 5.4rem;
+  min-height: 7.6rem;
   display: grid;
   place-items: center;
-  gap: 0.2rem;
-  padding: 0.4rem;
-  border-radius: 12px;
+  gap: 0.35rem;
+  padding: 0.55rem 0.45rem;
+  border-radius: 14px;
   border: 1px dashed var(--border);
   background: var(--bg);
   color: var(--text);
@@ -12274,14 +12284,15 @@ button.grid-cell,
   cursor: default;
 }
 .grid-cell-empty {
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.85rem;
+  font-weight: 800;
   color: var(--muted);
   line-height: 1;
 }
 .grid-cell-n {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   color: var(--muted);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .grid-cell.is-ok {
@@ -12295,13 +12306,13 @@ button.grid-cell,
   background: color-mix(in srgb, #e03131 12%, var(--bg));
 }
 .grid-cell-embl {
-  width: 2rem;
-  height: 2rem;
+  width: 3.35rem;
+  height: 3.35rem;
   object-fit: contain;
 }
 .grid-cell-nome {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.86rem;
+  font-weight: 800;
   text-align: center;
   line-height: 1.2;
   max-width: 100%;
@@ -12311,33 +12322,69 @@ button.grid-cell,
   -webkit-box-orient: vertical;
 }
 .grid-hint {
-  margin: 0.75rem 0 0;
+  margin: 0.85rem 0 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 .grid-result-title {
   margin: 0 0 0.35rem;
-  font-size: 1.05rem;
+  font-size: 1.35rem;
+  font-weight: 900;
 }
 .grid-result-score {
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.65rem;
   color: var(--muted);
+  font-size: 1.02rem;
+  font-weight: 700;
 }
 .grid-share-text {
-  margin: 0 0 0.75rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: 10px;
+  margin: 0 0 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg);
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.92rem;
-  line-height: 1.35;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  font-weight: 700;
 }
 .grid-share-actions {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+.grid-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  line-height: 0;
+  font-size: 0;
+}
+.grid-share-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.grid-share-btn--wa {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+}
+.grid-share-btn--wa:hover {
+  background: color-mix(in srgb, var(--accent) 78%, #000);
+  color: #fff;
+  border: none;
 }
 .grid-modal {
   border: 0;
@@ -12402,16 +12449,18 @@ button.grid-cell,
 .grid-sug {
   width: 100%;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 0.55rem;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0.65rem;
   align-items: center;
   text-align: left;
-  padding: 0.45rem 0.5rem;
+  padding: 0.55rem 0.55rem;
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
   color: inherit;
   font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
 }
 .grid-sug:hover,
@@ -12420,8 +12469,8 @@ button.grid-cell,
   border-color: var(--border);
 }
 .grid-sug img {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 .grid-sug small {
@@ -12500,14 +12549,22 @@ button.grid-cell,
 }
 @media (max-width: 640px) {
   .grid-board {
-    grid-template-columns: minmax(4.2rem, 0.95fr) repeat(3, minmax(0, 1fr));
-    gap: 0.3rem;
+    grid-template-columns: minmax(5.2rem, 1fr) repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
   }
-  .grid-axis { font-size: 0.64rem; padding: 0.35rem 0.25rem; }
+  .grid-axis { font-size: 0.78rem; padding: 0.45rem 0.3rem; }
   button.grid-cell,
-  .grid-cell { min-height: 4.6rem; }
-  .grid-cell-embl { width: 1.6rem; height: 1.6rem; }
-  .grid-cell-nome { font-size: 0.6rem; }
+  .grid-cell { min-height: 6.1rem; padding: 0.4rem 0.3rem; }
+  .grid-cell-embl { width: 2.55rem; height: 2.55rem; }
+  .grid-cell-nome { font-size: 0.72rem; }
+  .grid-title { font-size: clamp(1.7rem, 8vw, 2.2rem); }
+  .grid-sug {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .grid-sug img {
+    width: 36px;
+    height: 36px;
+  }
   .grid-rank-table th[data-sort-key="taxa"],
   .grid-rank-table td:nth-child(5) {
     display: none;
