@@ -65,6 +65,16 @@
       {% endif %}
     </div>
 
+    {# Sugestões / resultados logo abaixo da busca #}
+    <section class="proto-times-list-wrap proto-times-list-wrap--suggest" aria-label="Times">
+      <div class="proto-times-list-head">
+        <h3 class="proto-times-section-title" id="proto-list-title">Sugestões</h3>
+        <p class="proto-times-meta" id="proto-list-meta">{% if seletor_embedded %}Abra para buscar{% else %}{{ n_clubes }} clubes{% endif %}</p>
+      </div>
+      <div class="proto-times-list" id="proto-list" role="list"></div>
+      <p class="proto-times-empty" id="proto-empty" hidden>Nenhum time encontrado.</p>
+    </section>
+
     <section class="proto-times-ufs is-collapsed" id="proto-times-ufs" aria-label="Estados">
       <div class="proto-times-ufs-head">
         <h3 class="proto-times-section-title" id="proto-ufs-title">Por estado</h3>
@@ -98,15 +108,6 @@
         </button>
         {% endfor %}
       </div>
-    </section>
-
-    <section class="proto-times-list-wrap" aria-label="Times">
-      <div class="proto-times-list-head">
-        <h3 class="proto-times-section-title" id="proto-list-title">Times</h3>
-        <p class="proto-times-meta" id="proto-list-meta">{% if seletor_embedded %}Abra para buscar{% else %}{{ n_clubes }} clubes{% endif %}</p>
-      </div>
-      <div class="proto-times-list" id="proto-list" role="list"></div>
-      <p class="proto-times-empty" id="proto-empty" hidden>Nenhum time encontrado.</p>
     </section>
   </div>
 </section>

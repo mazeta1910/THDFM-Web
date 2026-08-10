@@ -38,8 +38,12 @@ def test_meu_perfil_editar_tem_seletor(client: TestClient):
     assert "Times do coração" in r.text
     assert "Torcedor Misto" in r.text
     assert 'id="proto-times"' in r.text
-    assert "/static/prototipo-times.js" in r.text
+    assert "/static/prototipo-times.js?v=17" in r.text
     assert 'data-clubes-src="/meu-perfil/clubes.json"' in r.text
+    assert 'id="proto-ufs-toggle"' in r.text
+    assert 'class="proto-times-ufs is-collapsed"' in r.text
+    assert r.text.index('id="proto-list"') < r.text.index('id="proto-times-ufs"')
+    assert 'proto-times-list-wrap--suggest' in r.text
 
 
 def test_meu_perfil_clubes_json_e_emblema(client: TestClient):
