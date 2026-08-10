@@ -31,7 +31,7 @@
   let query = "";
   let selected = loadSelected();
 
-  function loadSelected() {
+  function loadSelectedFromLs() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const arr = raw ? JSON.parse(raw) : [];
@@ -39,6 +39,28 @@
     } catch (_) {
       return [];
     }
+  }
+
+  function loadSelected() {
+    const softEl = document.getElementById("proto-perfil-soft");
+    if (softEl) {
+      try {
+        const data = JSON.parse(softEl.textContent || "null");
+        if (data && Array.isArray(data.times_ids)) {
+          const ids = data.times_ids.filter((id) => typeof id === "string");
+          // Servidor vazio + LS antigo: mantém LS até o usuário salvar de novo
+          if (!ids.length) {
+            const local = loadSelectedFromLs();
+            if (local.length) return local;
+          }
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+          } catch (_) {}
+          return ids;
+        }
+      } catch (_) {}
+    }
+    return loadSelectedFromLs();
   }
 
   function saveSelected() {

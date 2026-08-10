@@ -36,6 +36,7 @@ CLUBES_CSV_PATH = CLUBES_DIR / "fm24_clubes_uf.csv"
 EMBLEMAS_FM_DIR = CLUBES_DIR / "emblemas-por-id"
 COMPROVANTES_DIR = DATA_DIR / "comprovantes"
 AVATARES_DIR = DATA_DIR / "avatars"
+BANNERS_DIR = DATA_DIR / "banners"
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "troque-esta-senha")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
@@ -104,6 +105,10 @@ COMPROVANTE_MAX_BYTES = 5 * 1024 * 1024
 AVATAR_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 AVATAR_MAX_BYTES = 3 * 1024 * 1024
 AVATAR_PADRAO_STEM = "avatar-padrao"
+BANNER_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+BANNER_MAX_BYTES = 3 * 1024 * 1024
+BANNER_PRESETS = ("padrao", "laranja", "gramado", "noite", "carbono", "ouro")
+PERFIL_TIMES_MAX = 12
 NOME_MAX_LEN = 30
 
 

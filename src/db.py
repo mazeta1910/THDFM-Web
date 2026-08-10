@@ -185,6 +185,20 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN password_hash TEXT")
     if "credenciais_em" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN credenciais_em TEXT")
+    if "perfil_frase" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN perfil_frase TEXT")
+    if "perfil_relacionamento" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN perfil_relacionamento TEXT")
+    if "perfil_aniversario" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN perfil_aniversario TEXT")
+    if "banner_preset" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN banner_preset TEXT NOT NULL DEFAULT 'padrao'"
+        )
+    if "banner_path" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN banner_path TEXT")
+    if "times_json" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN times_json TEXT")
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_admin_login "
         "ON participantes(admin_login) WHERE admin_login IS NOT NULL AND admin_login != ''"
@@ -497,7 +511,9 @@ def set_fase_atual(fase: str) -> None:
 _PARTICIPANTE_COLS = (
     "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
     "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login, "
-    "username, password_hash, credenciais_em"
+    "username, password_hash, credenciais_em, "
+    "perfil_frase, perfil_relacionamento, perfil_aniversario, "
+    "banner_preset, banner_path, times_json"
 )
 
 
@@ -1392,6 +1408,144 @@ def salvar_avatar(participante_id: int, relative_path: str | None) -> None:
         conn.execute(
             "UPDATE participantes SET avatar_path = ? WHERE id = ?",
             (relative_path, participante_id),
+        )
+
+
+BANNER_PRESETS = ("padrao", "laranja", "gramado", "noite", "carbono", "ouro")
+PERFIL_TIMES_MAX = 12
+
+
+def _parse_times_json(raw: str | None) -> list[str]:
+    import json
+
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(data, list):
+        return []
+    out: list[str] = []
+    for item in data:
+        if isinstance(item, str) and item.strip():
+            out.append(item.strip())
+        if len(out) >= PERFIL_TIMES_MAX:
+            break
+    return out
+
+
+def perfil_soft_do_participante(part: dict[str, Any] | None) -> dict[str, Any]:
+    """Campos editáveis do perfil (frase, times, banner)."""
+    from src.clubes_catalogo import carregar_clubes
+
+    if not part:
+        return {
+            "frase": "",
+            "relacionamento": "",
+            "aniversario": "",
+            "times_ids": [],
+            "times": [],
+            "banner": {"kind": "preset", "id": "padrao", "url": None},
+        }
+    times_ids = _parse_times_json(part.get("times_json"))
+    by_id = {c["id"]: c for c in carregar_clubes() if c.get("tem_emblema")}
+    times = []
+    for tid in times_ids:
+        c = by_id.get(tid)
+        if not c:
+            continue
+        times.append(
+            {
+                "id": c["id"],
+                "nome": c["nome"],
+                "uf": c["uf"],
+                "emblema": c["emblema"],
+            }
+        )
+    banner_path = (part.get("banner_path") or "").strip() or None
+    preset = (part.get("banner_preset") or "padrao").strip().lower()
+    if preset not in BANNER_PRESETS:
+        preset = "padrao"
+    if banner_path:
+        banner = {"kind": "custom", "id": None, "url": f"/banners/{banner_path}"}
+    else:
+        banner = {"kind": "preset", "id": preset, "url": None}
+    return {
+        "frase": (part.get("perfil_frase") or "").strip(),
+        "relacionamento": (part.get("perfil_relacionamento") or "").strip(),
+        "aniversario": (part.get("perfil_aniversario") or "").strip(),
+        "times_ids": [t["id"] for t in times],
+        "times": times,
+        "banner": banner,
+    }
+
+
+def salvar_perfil_soft(
+    participante_id: int,
+    *,
+    frase: str | None = None,
+    relacionamento: str | None = None,
+    aniversario: str | None = None,
+    times_ids: list[str] | None = None,
+    banner_preset: str | None = None,
+    clear_banner_custom: bool = False,
+) -> None:
+    import json
+    import re
+
+    sets: list[str] = []
+    args: list[Any] = []
+    if frase is not None:
+        sets.append("perfil_frase = ?")
+        args.append(str(frase).strip()[:280] or None)
+    if relacionamento is not None:
+        sets.append("perfil_relacionamento = ?")
+        args.append(str(relacionamento).strip()[:80] or None)
+    if aniversario is not None:
+        raw = str(aniversario).strip()
+        if raw and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+            raise ValueError("aniversário inválido")
+        sets.append("perfil_aniversario = ?")
+        args.append(raw or None)
+    if times_ids is not None:
+        from src.clubes_catalogo import carregar_clubes
+
+        valid = {c["id"] for c in carregar_clubes() if c.get("tem_emblema")}
+        cleaned: list[str] = []
+        for tid in times_ids:
+            s = str(tid or "").strip()
+            if s in valid and s not in cleaned:
+                cleaned.append(s)
+            if len(cleaned) >= PERFIL_TIMES_MAX:
+                break
+        sets.append("times_json = ?")
+        args.append(json.dumps(cleaned, ensure_ascii=False))
+    if banner_preset is not None:
+        preset = str(banner_preset).strip().lower()
+        if preset not in BANNER_PRESETS:
+            raise ValueError("banner inválido")
+        sets.append("banner_preset = ?")
+        args.append(preset)
+        if clear_banner_custom:
+            sets.append("banner_path = NULL")
+    elif clear_banner_custom:
+        sets.append("banner_path = NULL")
+    if not sets:
+        return
+    args.append(int(participante_id))
+    with get_db() as conn:
+        conn.execute(
+            f"UPDATE participantes SET {', '.join(sets)} WHERE id = ?",
+            args,
+        )
+
+
+def salvar_banner(participante_id: int, relative_path: str | None) -> None:
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET banner_path = ? WHERE id = ?",
+            (relative_path, int(participante_id)),
         )
 
 

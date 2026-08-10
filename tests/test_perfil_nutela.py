@@ -78,7 +78,7 @@ def test_api_nutela_voto_e_perfil(client: TestClient):
     assert 'id="proto-nutela-resumo"' in r.text
     assert '"media": 75' in r.text or '"media":75' in r.text
     assert "data-proto-nutela" in r.text
-    assert "/static/prototipo-perfil.js?v=24" in r.text
+    assert "/static/prototipo-perfil.js?v=25" in r.text
 
     r = client.put(
         f"/perfil/{votante['id']}/nutela",

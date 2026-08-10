@@ -32,6 +32,10 @@ from src.config import (
     AVATAR_PADRAO_STEM,
     AVATARES_DIR,
     BANDEIRAS_UF_DIR,
+    BANNER_EXTS,
+    BANNER_MAX_BYTES,
+    BANNER_PRESETS,
+    BANNERS_DIR,
     CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
@@ -134,12 +138,14 @@ CLUBES_DIR.mkdir(parents=True, exist_ok=True)
 EMBLEMAS_FM_DIR.mkdir(parents=True, exist_ok=True)
 COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
+BANNERS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
 app.mount("/emblemas-fm", StaticFiles(directory=str(EMBLEMAS_FM_DIR)), name="emblemas_fm")
 app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="bandeiras_uf")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
+app.mount("/banners", StaticFiles(directory=str(BANNERS_DIR)), name="banners")
 
 # Rate limit em memória: chave → timestamps de tentativas
 _AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
@@ -970,15 +976,18 @@ def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
     iniciais = (nome[:2] if nome else "??").upper()
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
     nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
+    soft = db.perfil_soft_do_participante(part)
     return {
         "slug": str(part["id"]),
         "nome": nome,
         "participante_id": part["id"],
         "avatar_url": avatar_url(part.get("avatar_path")),
-        "frase": "",
-        "relacionamento": "",
-        "aniversario": "",
-        "times": [],
+        "frase": soft["frase"],
+        "relacionamento": soft["relacionamento"],
+        "aniversario": soft["aniversario"],
+        "times": soft["times"],
+        "times_ids": soft["times_ids"],
+        "banner": soft["banner"],
         "karma": karma["medias"],
         "karma_counts": karma["counts"],
         "karma_meu_voto": karma["meu_voto"],
@@ -1137,6 +1146,7 @@ def meu_perfil(request: Request):
     part = _voter_sessao(request)
     karma = db.karma_resumo(part["id"], voter_id=part["id"]) if part else None
     nutela = db.nutela_resumo(part["id"], voter_id=part["id"]) if part else None
+    soft = db.perfil_soft_do_participante(part) if part else None
     return render(
         request,
         "meu_perfil.html",
@@ -1151,6 +1161,8 @@ def meu_perfil(request: Request):
         karma_resumo_json=json.dumps(karma, ensure_ascii=False) if karma else "null",
         nutela_resumo=nutela,
         nutela_resumo_json=json.dumps(nutela, ensure_ascii=False) if nutela else "null",
+        perfil_soft=soft,
+        perfil_soft_json=json.dumps(soft, ensure_ascii=False) if soft else "null",
         pode_votar_karma=False,
     )
 
@@ -1158,10 +1170,21 @@ def meu_perfil(request: Request):
 @app.get("/meu-perfil/editar", response_class=HTMLResponse)
 def meu_perfil_editar(request: Request):
     """Edição do próprio perfil (sobre + times + banner)."""
+    import json
+
     neg = _require_perfil(request)
     if neg:
         return neg
-    return render(request, "meu_perfil_editar.html", **_prototipo_times_ctx(), **_taxa_ctx())
+    part = _voter_sessao(request)
+    soft = db.perfil_soft_do_participante(part) if part else None
+    return render(
+        request,
+        "meu_perfil_editar.html",
+        **_prototipo_times_ctx(),
+        **_taxa_ctx(),
+        perfil_soft=soft,
+        perfil_soft_json=json.dumps(soft, ensure_ascii=False) if soft else "null",
+    )
 
 
 @app.get("/perfil/{participante_id:int}", response_class=HTMLResponse)
@@ -1182,6 +1205,7 @@ def perfil_participante(request: Request, participante_id: int):
     fixado = _perfil_publico_payload(part, voter_id=voter_id)
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
     nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
+    soft = db.perfil_soft_do_participante(part)
     return render(
         request,
         "meu_perfil.html",
@@ -1197,6 +1221,8 @@ def perfil_participante(request: Request, participante_id: int):
         karma_resumo_json=json.dumps(karma, ensure_ascii=False),
         nutela_resumo=nutela,
         nutela_resumo_json=json.dumps(nutela, ensure_ascii=False),
+        perfil_soft=soft,
+        perfil_soft_json=json.dumps(soft, ensure_ascii=False),
         pode_votar_karma=bool(karma.get("pode_votar")),
     )
 
@@ -1274,6 +1300,69 @@ async def perfil_nutela_put(request: Request, participante_id: int):
     except (TypeError, ValueError) as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
     return JSONResponse(db.nutela_resumo(participante_id, voter_id=voter["id"]))
+
+
+@app.put("/meu-perfil/soft")
+async def meu_perfil_soft_put(request: Request):
+    """Salva frase, relacionamento, aniversário, times e preset de banner."""
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = _voter_sessao(request)
+    if not part:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    times = body.get("times")
+    if times is not None and not isinstance(times, list):
+        return JSONResponse({"erro": "times inválido"}, status_code=400)
+    banner_preset = body.get("banner_preset")
+    clear_custom = bool(body.get("clear_banner_custom"))
+    if banner_preset is not None and str(banner_preset).strip().lower() not in BANNER_PRESETS:
+        return JSONResponse({"erro": "banner inválido"}, status_code=400)
+    try:
+        db.salvar_perfil_soft(
+            part["id"],
+            frase=body.get("frase") if "frase" in body else None,
+            relacionamento=body.get("relacionamento") if "relacionamento" in body else None,
+            aniversario=body.get("aniversario") if "aniversario" in body else None,
+            times_ids=[str(x) for x in times] if times is not None else None,
+            banner_preset=str(banner_preset).strip().lower() if banner_preset is not None else None,
+            clear_banner_custom=clear_custom,
+        )
+    except (TypeError, ValueError) as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    fresh = db.get_participante(part["id"])
+    return JSONResponse(db.perfil_soft_do_participante(fresh))
+
+
+@app.post("/meu-perfil/banner")
+async def meu_perfil_banner_post(request: Request, banner: UploadFile = File(...)):
+    """Upload da capa customizada do perfil."""
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = _voter_sessao(request)
+    if not part:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    ext = Path(banner.filename or "").suffix.lower()
+    if ext not in BANNER_EXTS:
+        return JSONResponse({"erro": "Capa deve ser jpg/png/webp"}, status_code=400)
+    data = await banner.read()
+    if not data or len(data) > BANNER_MAX_BYTES:
+        return JSONResponse({"erro": "Capa inválida ou maior que 3MB"}, status_code=400)
+    if part.get("banner_path"):
+        old = BANNERS_DIR / part["banner_path"]
+        if old.is_file():
+            old.unlink(missing_ok=True)
+    rel = f"{part['id']}_{int(time.time())}{ext}"
+    (BANNERS_DIR / rel).write_bytes(data)
+    db.salvar_banner(part["id"], rel)
+    fresh = db.get_participante(part["id"])
+    return JSONResponse(db.perfil_soft_do_participante(fresh))
 
 
 @app.get("/meu-perfil/clubes.json")

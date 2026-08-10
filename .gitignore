@@ -6,6 +6,7 @@ data/*.db
 data/ultimo/
 data/comprovantes/
 data/avatars/
+data/banners/
 *.pyc
 .pytest_cache/
 .DS_Store

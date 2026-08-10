@@ -240,6 +240,43 @@
     return data;
   }
 
+
+  async function putPerfilSoft(payload) {
+    const r = await fetch("/meu-perfil/soft", {
+      method: "PUT",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao salvar perfil");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+  async function uploadBannerDataUrl(dataUrl) {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const ext = (blob.type || "").includes("png") ? "png" : (blob.type || "").includes("webp") ? "webp" : "jpg";
+    const form = new FormData();
+    form.append("banner", blob, `capa.${ext}`);
+    const r = await fetch("/meu-perfil/banner", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: form,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao enviar capa");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+
   function labelsFor(row) {
     const raw = row.getAttribute("data-labels") || "";
     const parts = raw.split("|").map((s) => s.trim()).filter(Boolean);
@@ -503,11 +540,35 @@
     el.addEventListener("change", mark);
   }
 
+  function loadSoftEmbedded() {
+    const el = document.getElementById("proto-perfil-soft");
+    if (!el) return null;
+    try {
+      const data = JSON.parse(el.textContent || "null");
+      return data && typeof data === "object" ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function bannerFromSoft(soft) {
+    if (!soft || !soft.banner || typeof soft.banner !== "object") return null;
+    const b = soft.banner;
+    if (b.kind === "custom" && b.url) return { kind: "custom", url: String(b.url) };
+    const id = BANNER_PRESETS.includes(b.id) ? b.id : "padrao";
+    return { kind: "preset", id };
+  }
+
   function loadBanner() {
+    const fromSoft = bannerFromSoft(loadSoftEmbedded());
+    if (fromSoft) return fromSoft;
     const stored = normLoad(BANNER_KEY, null);
     if (!stored || typeof stored !== "object") return { kind: "preset", id: "padrao" };
     if (stored.kind === "custom" && typeof stored.dataUrl === "string" && stored.dataUrl.startsWith("data:image/")) {
       return { kind: "custom", dataUrl: stored.dataUrl };
+    }
+    if (stored.kind === "custom" && typeof stored.url === "string" && stored.url) {
+      return { kind: "custom", url: stored.url };
     }
     const id = BANNER_PRESETS.includes(stored.id) ? stored.id : "padrao";
     return { kind: "preset", id };
@@ -517,12 +578,13 @@
     if (!root) return;
     const el = root.querySelector("[data-proto-banner]");
     if (!el) return;
-    if (banner.kind === "custom" && banner.dataUrl) {
+    const customSrc = (banner && (banner.dataUrl || banner.url)) || "";
+    if (banner && banner.kind === "custom" && customSrc) {
       el.setAttribute("data-banner", "custom");
-      el.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.5)), url("${banner.dataUrl}")`;
+      el.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.5)), url("${customSrc}")`;
     } else {
       el.style.backgroundImage = "";
-      el.setAttribute("data-banner", banner.id || "padrao");
+      el.setAttribute("data-banner", (banner && banner.id) || "padrao");
     }
     root.querySelectorAll("[data-banner-preset]").forEach((btn) => {
       const on = banner.kind === "preset" && btn.getAttribute("data-banner-preset") === banner.id;
@@ -753,6 +815,27 @@
     let dirty = false;
     let banner = loadBanner();
 
+    const softBoot = loadSoftEmbedded();
+    if (softBoot) {
+      if (softBoot.frase) saveStr(FRASE_KEY, String(softBoot.frase || ""));
+      if (softBoot.relacionamento) saveStr(REL_KEY, String(softBoot.relacionamento || ""));
+      if (softBoot.aniversario) saveStr(ANIV_KEY, normalizeAnivIso(softBoot.aniversario || ""));
+      const softBanner = bannerFromSoft(softBoot);
+      if (softBanner && (softBanner.kind === "custom" || softBanner.id !== "padrao")) {
+        banner = softBanner;
+        save(BANNER_KEY, softBanner);
+      } else if (softBanner && softBanner.kind === "preset" && softBanner.id === "padrao") {
+        // só sobrescreve LS se não houver capa local pendente de migrar
+        const localBanner = normLoad(BANNER_KEY, null);
+        if (!localBanner || localBanner.kind !== "custom") {
+          banner = softBanner;
+        }
+      }
+      if (Array.isArray(softBoot.times_ids) && softBoot.times_ids.length) {
+        save(TIMES_KEY, softBoot.times_ids.filter((id) => typeof id === "string"));
+      }
+    }
+
     // Migra "quem sou eu" antigo para o status único, se ainda houver
     if (fraseInput) {
       const fraseSaved = loadStr(FRASE_KEY, null);
@@ -784,16 +867,52 @@
     const persistProfile = () => {
       const nome = (nomeInput && nomeInput.value.trim()) || "Visitante THDFM";
       if (nomeInput) nomeInput.value = nome;
+      const frase = ((fraseInput && fraseInput.value) || "").trim();
+      const aniv = normalizeAnivIso((anivInput && anivInput.value) || "");
+      const rel = ((relInput && relInput.value) || "").trim();
+      const times = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
       saveStr(NOME_KEY, nome);
-      saveStr(FRASE_KEY, ((fraseInput && fraseInput.value) || "").trim());
-      saveStr(ANIV_KEY, normalizeAnivIso((anivInput && anivInput.value) || ""));
-      saveStr(REL_KEY, ((relInput && relInput.value) || "").trim());
+      saveStr(FRASE_KEY, frase);
+      saveStr(ANIV_KEY, aniv);
+      saveStr(REL_KEY, rel);
       save(BANNER_KEY, banner);
       syncAvatarNome();
-      dirty = false;
-      setSaveStatus("Salvo · abrindo seu perfil…", "saved");
       if (saveBtn) saveBtn.disabled = true;
-      window.location.assign("/meu-perfil");
+      setSaveStatus("Salvando…", "saved");
+
+      const softPayload = {
+        frase,
+        aniversario: aniv,
+        relacionamento: rel,
+        times,
+      };
+      if (banner.kind === "preset") {
+        softPayload.banner_preset = banner.id || "padrao";
+        softPayload.clear_banner_custom = true;
+      }
+
+      const afterSoft = () => {
+        dirty = false;
+        setSaveStatus("Salvo · abrindo seu perfil…", "saved");
+        window.location.assign("/meu-perfil");
+      };
+
+      const fail = (err) => {
+        setSaveStatus((err && err.message) || "Falha ao salvar", "dirty");
+        if (saveBtn) saveBtn.disabled = false;
+      };
+
+      const run = async () => {
+        if (banner.kind === "custom" && banner.dataUrl) {
+          await uploadBannerDataUrl(banner.dataUrl);
+        } else if (banner.kind === "preset") {
+          await putPerfilSoft(softPayload);
+          return;
+        }
+        await putPerfilSoft(softPayload);
+      };
+
+      run().then(afterSoft).catch(fail);
     };
 
     if (nomeInput) {
@@ -924,6 +1043,7 @@
     const targetId = (pubRoot.getAttribute("data-target-id") || "").trim();
     const podeVotar =
       pubRoot.getAttribute("data-pode-votar") === "1" && !!targetId;
+    const profileKey = fixado ? fixado.slug || "fixado" : "meu";
     const karmaBoot = loadKarmaResumoEmbedded();
     let karma = {
       ...emptyKarmaMedias(),
@@ -943,14 +1063,65 @@
       if (Number.isFinite(n)) nutelaVoto = Math.max(0, Math.min(100, Math.round(n)));
     }
 
-    if (fixado) {
-      applyBanner(pubRoot, { kind: "preset", id: "gramado" });
+    const softBoot = loadSoftEmbedded() || (fixado ? fixado : null);
+    const localTimes = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
+    const softTimes = Array.isArray(softBoot && softBoot.times) ? softBoot.times : [];
+    const softIds = Array.isArray(softBoot && softBoot.times_ids) ? softBoot.times_ids : [];
+    const bannerBoot =
+      bannerFromSoft(softBoot) ||
+      (fixado && fixado.banner ? bannerFromSoft({ banner: fixado.banner }) : null) ||
+      (!fixado ? loadBanner() : { kind: "preset", id: "padrao" });
+    applyBanner(pubRoot, bannerBoot);
+    if (softTimes.length) {
+      paintFixadoTimes(softTimes);
+    } else if (!fixado && localTimes.length) {
+      paintPublicTimes(localTimes);
+    } else if (fixado) {
       paintFixadoTimes(fixado.times || []);
     } else {
-      applyBanner(pubRoot, loadBanner());
-      const selected = normLoad(TIMES_KEY, []).filter((id) => typeof id === "string");
-      paintPublicTimes(selected);
+      paintPublicTimes(softIds.filter((id) => typeof id === "string"));
     }
+    const timesCount = softTimes.length || softIds.length || (!fixado ? localTimes.length : 0);
+    const mistoEl = document.getElementById("public-misto");
+    const dindaoEl = document.getElementById("public-dindao");
+    if (mistoEl) mistoEl.hidden = timesCount < 2;
+    if (dindaoEl) dindaoEl.hidden = timesCount < 4;
+
+    // Migra LS → servidor na primeira visita ao próprio perfil
+    if (isOwn && !fixado) {
+      const needsTimes = !softIds.length && localTimes.length;
+      const localBanner = loadBanner();
+      const softBannerNow = bannerFromSoft(softBoot);
+      const needsBanner =
+        localBanner &&
+        ((localBanner.kind === "custom" && localBanner.dataUrl) ||
+          (localBanner.kind === "preset" &&
+            localBanner.id &&
+            localBanner.id !== "padrao" &&
+            (!softBannerNow || softBannerNow.kind !== "custom")));
+      const needsFrase =
+        softBoot &&
+        !String(softBoot.frase || "").trim() &&
+        String(loadStr(FRASE_KEY, "") || "").trim();
+      if (needsTimes || needsBanner || needsFrase) {
+        const payload = {
+          frase: (loadStr(FRASE_KEY, "") || "").trim(),
+          aniversario: normalizeAnivIso(loadStr(ANIV_KEY, "")),
+          relacionamento: (loadStr(REL_KEY, "") || "").trim(),
+          times: localTimes,
+        };
+        const migrate = async () => {
+          if (localBanner.kind === "custom" && localBanner.dataUrl) {
+            await uploadBannerDataUrl(localBanner.dataUrl);
+          } else if (localBanner.kind === "preset") {
+            payload.banner_preset = localBanner.id || "padrao";
+          }
+          await putPerfilSoft(payload);
+        };
+        migrate().catch(() => {});
+      }
+    }
+
     paintKarmaRoot(karmaRoot, karma, podeVotar ? votos : null);
     paintNutela(pubRoot, nutela, podeVotar ? nutelaVoto : null);
 
@@ -994,9 +1165,7 @@
                   : Math.max(0, Math.min(100, Math.round(Number(data.meu_voto))));
               paintNutela(pubRoot, nutela, nutelaVoto);
             })
-            .catch(() => {
-              /* mantém UI anterior */
-            })
+            .catch(() => {})
             .finally(() => {
               nutelaRange.disabled = false;
             });
@@ -1008,15 +1177,20 @@
       el.textContent = ownerNome;
     });
 
-    if (!fixado) {
-      const frase = (loadStr(FRASE_KEY, "") || "").trim();
-      const quem = (loadStr(QUEM_KEY, "") || "").trim();
-      const aniv = formatAnivDisplay(loadStr(ANIV_KEY, ""));
-      const rel = loadStr(REL_KEY, "");
+    {
+      const softFrase = softBoot && softBoot.frase != null ? String(softBoot.frase).trim() : "";
+      const softRel = softBoot && softBoot.relacionamento != null ? String(softBoot.relacionamento).trim() : "";
+      const softAniv = softBoot ? formatAnivDisplay(softBoot.aniversario || "") : "";
+      const frase = softFrase || (fixado ? "" : (loadStr(FRASE_KEY, "") || "").trim());
+      const quem = fixado ? "" : (loadStr(QUEM_KEY, "") || "").trim();
+      const aniv = softAniv || (fixado ? "" : formatAnivDisplay(loadStr(ANIV_KEY, "")));
+      const rel = softRel || (fixado ? "" : loadStr(REL_KEY, ""));
       const fraseEl = pubRoot.querySelector("[data-public-frase]");
       const metaEl = pubRoot.querySelector("[data-public-meta]");
-      if (fraseEl) fraseEl.textContent = frase || quem || "Sem status ainda.";
-      if (metaEl) {
+      if (fraseEl && (softBoot || !fixado)) {
+        fraseEl.textContent = frase || quem || "Sem status ainda.";
+      }
+      if (metaEl && (softBoot || !fixado)) {
         metaEl.textContent = [rel || null, aniv ? `Aniversário: ${aniv}` : null].filter(Boolean).join(" · ") || "—";
       }
     }
