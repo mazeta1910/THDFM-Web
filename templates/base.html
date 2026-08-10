@@ -4,6 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{% block title %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}</title>
+  {% block head_meta %}
+  <meta name="description" content="Técnicos Horríveis do Futebol Mundial — bolão, jogos e passatempos." />
+  <meta property="og:site_name" content="THDFM" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Técnicos Horríveis do Futebol Mundial — bolão, jogos e passatempos.{% endblock %}" />
+  <meta property="og:url" content="{% block og_url %}{{ public_base_url }}{{ request.url.path }}{% endblock %}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ self.og_title() }}" />
+  <meta name="twitter:description" content="{{ self.og_description() }}" />
+  {% endblock %}
   <script>
   (function () {
     try {

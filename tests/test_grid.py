@@ -72,6 +72,25 @@ def test_grid_exige_login(client: TestClient):
     assert r.status_code in (303, 302)
 
 
+def test_grid_og_preview_para_bot_whatsapp(client: TestClient):
+    """Crawler do WhatsApp precisa ver título/OG do Grid (sem redirect de login)."""
+    r = client.get(
+        "/grid",
+        headers={"User-Agent": "WhatsApp/2.23.0"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 200
+    assert "<title>THDFM Grid</title>" in r.text
+    assert 'property="og:title" content="THDFM Grid"' in r.text
+    assert 'property="og:description"' in r.text
+    assert "Puzzle diário" in r.text
+    assert 'property="og:image" content="' in r.text
+    assert "/static/img/og-grid.png" in r.text
+    assert 'property="og:url"' in r.text
+    assert "/grid" in r.text
+    assert (ROOT_DIR / "static" / "img" / "og-grid.png").is_file()
+
+
 def test_grid_liberado_para_participante(client: TestClient):
     from src import db as dbmod
 
