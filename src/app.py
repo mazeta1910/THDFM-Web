@@ -186,8 +186,11 @@ def avatar_padrao_url() -> str | None:
 
 def avatar_url(avatar_path: str | None) -> str | None:
     """URL da foto do participante ou da foto padrão do bolão."""
-    if avatar_path:
-        return f"/avatars/{avatar_path}"
+    rel = (avatar_path or "").strip()
+    if rel and "/" not in rel and "\\" not in rel and ".." not in rel:
+        path = AVATARES_DIR / rel
+        if path.is_file():
+            return f"/avatars/{rel}"
     return avatar_padrao_url()
 
 
@@ -2486,7 +2489,9 @@ def classificacao(request: Request):
             rodada_sel = db.get_rodada_historico(rid)
         if not rodada_sel or _rodada_historico_vazia(rodada_sel):
             return RedirectResponse("/classificacao", status_code=303)
-        linhas = rodada_sel["linhas"]
+        from src.ranking import enriquecer_avatares_historico
+
+        linhas = enriquecer_avatares_historico(rodada_sel["linhas"])
         modo_historico = True
         fase = rodada_sel["fase"]
         janela = rodada_sel["janela"]
