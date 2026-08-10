@@ -1485,6 +1485,11 @@ def salvar_avatar(participante_id: int, relative_path: str | None) -> None:
 
 BANNER_PRESETS = ("padrao", "laranja", "gramado", "noite", "carbono", "ouro")
 PERFIL_TIMES_MAX = 12
+# Palmeiras (catálogo FM) — fixo no perfil do Benevides
+PALMEIRAS_CLUBE_ID = "329"
+PERFIL_TIMES_FIXOS_POR_NOME = {
+    "benevides": (PALMEIRAS_CLUBE_ID,),
+}
 
 
 def _parse_times_json(raw: str | None) -> list[str]:
@@ -1507,6 +1512,28 @@ def _parse_times_json(raw: str | None) -> list[str]:
     return out
 
 
+def _times_fixos_do_participante(part: dict[str, Any] | None) -> list[str]:
+    if not part:
+        return []
+    nome = unicodedata.normalize("NFKD", (part.get("nome") or "").strip())
+    nome = "".join(ch for ch in nome if not unicodedata.combining(ch)).lower()
+    return list(PERFIL_TIMES_FIXOS_POR_NOME.get(nome, ()))
+
+
+def _garantir_times_fixos(times_ids: list[str], fixos: list[str]) -> list[str]:
+    """Mantém os fixos no início; completa com os demais até o limite."""
+    out: list[str] = []
+    for fid in fixos:
+        if fid and fid not in out:
+            out.append(fid)
+    for tid in times_ids:
+        if tid and tid not in out:
+            out.append(tid)
+        if len(out) >= PERFIL_TIMES_MAX:
+            break
+    return out
+
+
 def perfil_soft_do_participante(part: dict[str, Any] | None) -> dict[str, Any]:
     """Campos editáveis do perfil (frase, times, banner)."""
     from src.clubes_catalogo import carregar_clubes
@@ -1518,9 +1545,11 @@ def perfil_soft_do_participante(part: dict[str, Any] | None) -> dict[str, Any]:
             "aniversario": "",
             "times_ids": [],
             "times": [],
+            "times_locked": [],
             "banner": {"kind": "preset", "id": "padrao", "url": None},
         }
-    times_ids = _parse_times_json(part.get("times_json"))
+    fixos = _times_fixos_do_participante(part)
+    times_ids = _garantir_times_fixos(_parse_times_json(part.get("times_json")), fixos)
     by_id = {c["id"]: c for c in carregar_clubes() if c.get("tem_emblema")}
     times = []
     for tid in times_ids:
@@ -1533,6 +1562,7 @@ def perfil_soft_do_participante(part: dict[str, Any] | None) -> dict[str, Any]:
                 "nome": c["nome"],
                 "uf": c["uf"],
                 "emblema": c["emblema"],
+                "locked": tid in fixos,
             }
         )
     banner_path = (part.get("banner_path") or "").strip() or None
@@ -1549,6 +1579,7 @@ def perfil_soft_do_participante(part: dict[str, Any] | None) -> dict[str, Any]:
         "aniversario": (part.get("perfil_aniversario") or "").strip(),
         "times_ids": [t["id"] for t in times],
         "times": times,
+        "times_locked": list(fixos),
         "banner": banner,
     }
 
@@ -1583,12 +1614,14 @@ def salvar_perfil_soft(
     if times_ids is not None:
         from src.clubes_catalogo import carregar_clubes
 
+        part = get_participante(int(participante_id))
+        fixos = _times_fixos_do_participante(part)
         valid = {c["id"] for c in carregar_clubes() if c.get("tem_emblema")}
+        # fixos válidos entram mesmo se o cliente omitir
         cleaned: list[str] = []
-        for tid in times_ids:
-            s = str(tid or "").strip()
-            if s in valid and s not in cleaned:
-                cleaned.append(s)
+        for tid in _garantir_times_fixos([str(x or "").strip() for x in times_ids], fixos):
+            if tid in valid and tid not in cleaned:
+                cleaned.append(tid)
             if len(cleaned) >= PERFIL_TIMES_MAX:
                 break
         sets.append("times_json = ?")
