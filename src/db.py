@@ -465,6 +465,7 @@ def _migrate_perfil_recados(conn: sqlite3.Connection) -> None:
           autor_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
           texto TEXT NOT NULL DEFAULT '',
           midia_path TEXT,
+          parent_id INTEGER REFERENCES perfil_recados(id) ON DELETE CASCADE,
           criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
         )
         """
@@ -486,18 +487,26 @@ def _migrate_perfil_recados(conn: sqlite3.Connection) -> None:
               autor_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
               texto TEXT NOT NULL DEFAULT '',
               midia_path TEXT,
+              parent_id INTEGER REFERENCES perfil_recados(id) ON DELETE CASCADE,
               criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
             );
-            INSERT INTO perfil_recados__new (id, target_id, autor_id, texto, midia_path, criado_em)
-            SELECT id, target_id, autor_id, COALESCE(texto, ''), midia_path, criado_em
+            INSERT INTO perfil_recados__new (id, target_id, autor_id, texto, midia_path, parent_id, criado_em)
+            SELECT id, target_id, autor_id, COALESCE(texto, ''), midia_path, NULL, criado_em
             FROM perfil_recados;
             DROP TABLE perfil_recados;
             ALTER TABLE perfil_recados__new RENAME TO perfil_recados;
             """
         )
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(perfil_recados)").fetchall()}
+    if "parent_id" not in cols:
+        conn.execute("ALTER TABLE perfil_recados ADD COLUMN parent_id INTEGER")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_perfil_recados_target "
         "ON perfil_recados(target_id, id DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_perfil_recados_parent "
+        "ON perfil_recados(parent_id, id)"
     )
 
 
@@ -3933,6 +3942,7 @@ def nutela_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]
 
 
 PERFIL_RECADOS_MAX = 40
+PERFIL_RECADO_RESPOSTAS_MAX = 30
 RECADO_REACOES_EMOJI = (
     "👍",
     "❤️",
@@ -4066,6 +4076,36 @@ def _apagar_arquivo_recado(midia_path: str | None) -> None:
         pass
 
 
+def _recado_dict_from_row(
+    row: sqlite3.Row,
+    *,
+    reacoes: list[dict[str, Any]] | None = None,
+    respostas: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    keys = set(row.keys())
+    nome = str(row["autor_nome"] if "autor_nome" in keys else "").strip() or "alguém"
+    at = row["criado_em"] or ""
+    if at and "T" not in str(at):
+        at = str(at).replace(" ", "T", 1)
+    rid = int(row["id"])
+    parent_raw = row["parent_id"] if "parent_id" in keys else None
+    avatar = row["autor_avatar"] if "autor_avatar" in keys else None
+    return {
+        "id": str(rid),
+        "target_id": int(row["target_id"]),
+        "autor_id": int(row["autor_id"]),
+        "autor": nome,
+        "avatar_path": avatar,
+        "iniciais": (nome[:2] if nome else "??").upper(),
+        "texto": row["texto"] or "",
+        "midia_path": row["midia_path"] or None,
+        "parent_id": str(int(parent_raw)) if parent_raw is not None else None,
+        "at": at or None,
+        "reacoes": reacoes or [],
+        "respostas": respostas if respostas is not None else [],
+    }
+
+
 def listar_recados(
     target_id: int,
     *,
@@ -4075,42 +4115,77 @@ def listar_recados(
     tid = int(target_id)
     lim = max(1, min(int(limite), PERFIL_RECADOS_MAX))
     with get_db() as conn:
-        rows = conn.execute(
+        roots = conn.execute(
             """
-            SELECT r.id, r.target_id, r.autor_id, r.texto, r.midia_path, r.criado_em,
+            SELECT r.id, r.target_id, r.autor_id, r.texto, r.midia_path, r.parent_id, r.criado_em,
                    a.nome AS autor_nome, a.avatar_path AS autor_avatar
             FROM perfil_recados r
             JOIN participantes a ON a.id = r.autor_id
-            WHERE r.target_id = ?
+            WHERE r.target_id = ? AND r.parent_id IS NULL
             ORDER BY r.id DESC
             LIMIT ?
             """,
             (tid, lim),
         ).fetchall()
-    ids = [int(row["id"]) for row in rows]
-    reacoes_map = reacoes_dos_recados(ids, voter_id=voter_id)
+        root_ids = [int(row["id"]) for row in roots]
+        replies: list[sqlite3.Row] = []
+        if root_ids:
+            placeholders = ",".join("?" for _ in root_ids)
+            replies = conn.execute(
+                f"""
+                SELECT r.id, r.target_id, r.autor_id, r.texto, r.midia_path, r.parent_id, r.criado_em,
+                       a.nome AS autor_nome, a.avatar_path AS autor_avatar
+                FROM perfil_recados r
+                JOIN participantes a ON a.id = r.autor_id
+                WHERE r.target_id = ? AND r.parent_id IN ({placeholders})
+                ORDER BY r.id ASC
+                """,
+                (tid, *root_ids),
+            ).fetchall()
+    all_ids = root_ids + [int(row["id"]) for row in replies]
+    reacoes_map = reacoes_dos_recados(all_ids, voter_id=voter_id)
+    by_parent: dict[int, list[dict[str, Any]]] = {i: [] for i in root_ids}
+    for row in replies:
+        pid = int(row["parent_id"])
+        by_parent.setdefault(pid, []).append(
+            _recado_dict_from_row(
+                row,
+                reacoes=reacoes_map.get(int(row["id"]), []),
+                respostas=[],
+            )
+        )
     out: list[dict[str, Any]] = []
-    for row in rows:
-        nome = (row["autor_nome"] or "").strip() or "alguém"
-        at = row["criado_em"] or ""
-        if at and "T" not in str(at):
-            at = str(at).replace(" ", "T", 1)
+    for row in roots:
         rid = int(row["id"])
         out.append(
-            {
-                "id": str(rid),
-                "target_id": int(row["target_id"]),
-                "autor_id": int(row["autor_id"]),
-                "autor": nome,
-                "avatar_path": row["autor_avatar"],
-                "iniciais": (nome[:2] if nome else "??").upper(),
-                "texto": row["texto"] or "",
-                "midia_path": row["midia_path"] or None,
-                "at": at or None,
-                "reacoes": reacoes_map.get(rid, []),
-            }
+            _recado_dict_from_row(
+                row,
+                reacoes=reacoes_map.get(rid, []),
+                respostas=by_parent.get(rid, []),
+            )
         )
     return out
+
+
+def _apagar_recados_e_midias(
+    conn: sqlite3.Connection, rows: list[sqlite3.Row]
+) -> list[str]:
+    """Apaga linhas (e filhos) e devolve paths de mídia a remover do disco."""
+    midias: list[str] = []
+    for row in rows:
+        rid = int(row["id"])
+        filhos = conn.execute(
+            "SELECT id, midia_path FROM perfil_recados WHERE parent_id = ?",
+            (rid,),
+        ).fetchall()
+        for filho in filhos:
+            if filho["midia_path"]:
+                midias.append(str(filho["midia_path"]))
+            conn.execute("DELETE FROM perfil_recados WHERE id = ?", (int(filho["id"]),))
+        if row["midia_path"]:
+            midias.append(str(row["midia_path"]))
+        conn.execute("DELETE FROM perfil_recados WHERE id = ?", (rid,))
+    return midias
 
 
 def criar_recado(
@@ -4119,11 +4194,13 @@ def criar_recado(
     texto: str,
     *,
     midia_path: str | None = None,
+    parent_id: int | None = None,
 ) -> dict[str, Any]:
     tid = int(target_id)
     aid = int(autor_id)
     body = (texto or "").strip()
     midia = (midia_path or "").strip() or None
+    pid = int(parent_id) if parent_id is not None else None
     if midia and ("/" in midia or "\\" in midia or ".." in midia):
         raise ValueError("mídia inválida")
     if not body and not midia:
@@ -4138,34 +4215,61 @@ def criar_recado(
         raise ValueError("autor inválido")
     extras_midia: list[str] = []
     with get_db() as conn:
+        if pid is not None:
+            parent = conn.execute(
+                """
+                SELECT id, target_id, parent_id FROM perfil_recados
+                WHERE id = ?
+                """,
+                (pid,),
+            ).fetchone()
+            if not parent or int(parent["target_id"]) != tid:
+                raise ValueError("recado não encontrado")
+            if parent["parent_id"] is not None:
+                raise ValueError("só é possível responder ao recado original")
         cur = conn.execute(
             """
-            INSERT INTO perfil_recados (target_id, autor_id, texto, midia_path)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO perfil_recados (target_id, autor_id, texto, midia_path, parent_id)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (tid, aid, body, midia),
+            (tid, aid, body, midia, pid),
         )
         rid = int(cur.lastrowid)
-        # mantém só os N mais recentes no mural
-        extras = conn.execute(
-            """
-            SELECT id, midia_path FROM perfil_recados
-            WHERE target_id = ?
-            ORDER BY id DESC
-            LIMIT -1 OFFSET ?
-            """,
-            (tid, PERFIL_RECADOS_MAX),
-        ).fetchall()
-        for row in extras:
-            if row["midia_path"]:
-                extras_midia.append(str(row["midia_path"]))
-            conn.execute("DELETE FROM perfil_recados WHERE id = ?", (row["id"],))
+        if pid is not None:
+            extras = conn.execute(
+                """
+                SELECT id, midia_path FROM perfil_recados
+                WHERE parent_id = ?
+                ORDER BY id DESC
+                LIMIT -1 OFFSET ?
+                """,
+                (pid, PERFIL_RECADO_RESPOSTAS_MAX),
+            ).fetchall()
+            extras_midia.extend(_apagar_recados_e_midias(conn, extras))
+        else:
+            # mantém só os N mais recentes no mural (raízes)
+            extras = conn.execute(
+                """
+                SELECT id, midia_path FROM perfil_recados
+                WHERE target_id = ? AND parent_id IS NULL
+                ORDER BY id DESC
+                LIMIT -1 OFFSET ?
+                """,
+                (tid, PERFIL_RECADOS_MAX),
+            ).fetchall()
+            extras_midia.extend(_apagar_recados_e_midias(conn, extras))
     for rel in extras_midia:
         _apagar_arquivo_recado(rel)
-    lista = listar_recados(tid, limite=1, voter_id=aid)
-    for item in lista:
-        if item["id"] == str(rid):
-            return item
+    lista = listar_recados(tid, limite=PERFIL_RECADOS_MAX, voter_id=aid)
+    if pid is not None:
+        for item in lista:
+            for resp in item.get("respostas") or []:
+                if resp["id"] == str(rid):
+                    return resp
+    else:
+        for item in lista:
+            if item["id"] == str(rid):
+                return item
     return {
         "id": str(rid),
         "target_id": tid,
@@ -4175,8 +4279,10 @@ def criar_recado(
         "iniciais": ((autor.get("nome") or "??")[:2]).upper(),
         "texto": body,
         "midia_path": midia,
+        "parent_id": str(pid) if pid is not None else None,
         "at": None,
         "reacoes": [],
+        "respostas": [],
     }
 
 
@@ -4185,7 +4291,7 @@ def apagar_recado(target_id: int, recado_id: int, *, actor_id: int) -> bool:
     tid = int(target_id)
     rid = int(recado_id)
     aid = int(actor_id)
-    midia_rel: str | None = None
+    midias: list[str] = []
     with get_db() as conn:
         row = conn.execute(
             """
@@ -4198,9 +4304,9 @@ def apagar_recado(target_id: int, recado_id: int, *, actor_id: int) -> bool:
             return False
         if aid != int(row["target_id"]) and aid != int(row["autor_id"]):
             raise ValueError("sem permissão")
-        midia_rel = row["midia_path"]
-        conn.execute("DELETE FROM perfil_recados WHERE id = ?", (rid,))
-    _apagar_arquivo_recado(midia_rel)
+        midias.extend(_apagar_recados_e_midias(conn, [row]))
+    for rel in midias:
+        _apagar_arquivo_recado(rel)
     return True
 
 

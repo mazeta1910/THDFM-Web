@@ -245,6 +245,10 @@
     const texto = d && d.texto != null ? String(d.texto).slice(0, 280) : "";
     const midia = d && d.midia ? String(d.midia) : "";
     if (!texto && !midia) return null;
+    const parentRaw = d && d.parent_id != null ? String(d.parent_id) : "";
+    const respostas = Array.isArray(d && d.respostas)
+      ? d.respostas.map((x) => mapRecadoItem(x, fallbackTargetId)).filter(Boolean)
+      : [];
     return {
       id: String((d && d.id) || uid()),
       texto,
@@ -255,8 +259,15 @@
       iniciais: (d && d.iniciais) || "",
       at: (d && d.at) || null,
       target_id: (d && d.target_id) || fallbackTargetId || null,
+      parent_id: parentRaw || null,
       reacoes: normReacoes(d && d.reacoes),
+      respostas,
     };
+  }
+
+  function countRecadosTree(items) {
+    if (!Array.isArray(items)) return 0;
+    return items.reduce((n, d) => n + 1 + (d.respostas ? d.respostas.length : 0), 0);
   }
 
   function loadRecadosEmbedded() {
@@ -271,23 +282,27 @@
     }
   }
 
-  async function postRecado(targetId, { texto, file } = {}) {
+  async function postRecado(targetId, { texto, file, parentId } = {}) {
     const bodyTexto = String(texto || "").trim().slice(0, 280);
+    const parent = parentId != null && parentId !== "" ? String(parentId) : "";
     let r;
     if (file) {
       const form = new FormData();
       form.append("texto", bodyTexto);
       form.append("midia", file, file.name || "midia.jpg");
+      if (parent) form.append("parent_id", parent);
       r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
         method: "POST",
         headers: { Accept: "application/json" },
         body: form,
       });
     } else {
+      const payload = { texto: bodyTexto };
+      if (parent) payload.parent_id = Number(parent);
       r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: bodyTexto }),
+        body: JSON.stringify(payload),
       });
     }
     const data = await r.json().catch(() => ({}));
@@ -553,41 +568,64 @@
     return `<div class="proto-steam-reacoes">${chips}${addBtn}</div>`;
   }
 
-  function renderPosts(
-    listEl,
-    emptyEl,
-    countEl,
-    items,
-    { canDelete, onDelete, canReact, onToggleReacao, authorFallback, viewer, owner } = {}
+  function renderRecadoPostHtml(
+    d,
+    { canDelete, canReact, canReply, authorFallback, viewer, owner, isReply } = {}
   ) {
-    if (countEl) countEl.textContent = `(${items.length})`;
-    if (!listEl) return;
-    if (!items.length) {
-      listEl.innerHTML = "";
-      if (emptyEl) emptyEl.hidden = false;
-      return;
-    }
-    if (emptyEl) emptyEl.hidden = true;
-    listEl.innerHTML = items
-      .map((d) => {
-        const person = {
-          nome: d.autor || authorFallback || "alguém",
-          avatar: d.avatar,
-          iniciais: d.iniciais || (d.autor || authorFallback || "?").slice(0, 2),
-        };
-        const when = d.at ? formatWhen(d.at) : "";
-        const autorId = resolveAutorId(d, viewer, owner);
-        const href = perfilHref(autorId, viewer && viewer.id);
-        const av = avatarHtml(person);
-        const nome = escapeHtml(person.nome);
-        const avBlock = href
-          ? `<a class="proto-steam-post-av-link" href="${escapeHtml(href)}" title="Ver perfil de ${nome}">${av}</a>`
-          : av;
-        const nomeBlock = href
-          ? `<a class="proto-steam-post-nome" href="${escapeHtml(href)}">${nome}</a>`
-          : `<strong>${nome}</strong>`;
-        return `
-      <li class="proto-steam-post" data-id="${escapeHtml(d.id)}">
+    const person = {
+      nome: d.autor || authorFallback || "alguém",
+      avatar: d.avatar,
+      iniciais: d.iniciais || (d.autor || authorFallback || "?").slice(0, 2),
+    };
+    const when = d.at ? formatWhen(d.at) : "";
+    const autorId = resolveAutorId(d, viewer, owner);
+    const href = perfilHref(autorId, viewer && viewer.id);
+    const av = avatarHtml(person);
+    const nome = escapeHtml(person.nome);
+    const avBlock = href
+      ? `<a class="proto-steam-post-av-link" href="${escapeHtml(href)}" title="Ver perfil de ${nome}">${av}</a>`
+      : av;
+    const nomeBlock = href
+      ? `<a class="proto-steam-post-nome" href="${escapeHtml(href)}">${nome}</a>`
+      : `<strong>${nome}</strong>`;
+    const respostas = Array.isArray(d.respostas) ? d.respostas : [];
+    const respostasHtml =
+      !isReply && respostas.length
+        ? `<ul class="proto-steam-respostas">
+            ${respostas
+              .map((r) =>
+                renderRecadoPostHtml(r, {
+                  canDelete,
+                  canReact,
+                  canReply: false,
+                  authorFallback,
+                  viewer,
+                  owner,
+                  isReply: true,
+                })
+              )
+              .join("")}
+          </ul>`
+        : "";
+    const replyUi =
+      !isReply && canReply
+        ? `<div class="proto-steam-reply-bar">
+            <button type="button" class="proto-steam-reply-toggle" data-reply-toggle="${escapeHtml(d.id)}">Responder</button>
+            <form class="proto-steam-reply-form" data-reply-form="${escapeHtml(d.id)}" hidden>
+              <textarea class="proto-steam-field proto-steam-reply-field" rows="2" maxlength="280" placeholder="Escreva uma resposta…" required></textarea>
+              <div class="proto-steam-reply-actions">
+                <button type="button" class="proto-text-btn" data-reply-cancel>Cancelar</button>
+                <button type="submit" class="proto-ico-btn proto-ico-btn--accent proto-ico-btn--tiny" title="Enviar resposta" aria-label="Enviar resposta">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                </button>
+              </div>
+            </form>
+          </div>`
+        : "";
+    return `
+      <li class="proto-steam-post${isReply ? " proto-steam-post--resposta" : ""}" data-id="${escapeHtml(d.id)}"${
+        isReply && d.parent_id ? ` data-parent-id="${escapeHtml(d.parent_id)}"` : ""
+      }>
         ${avBlock}
         <div class="proto-steam-post-body">
           <div class="proto-steam-post-head">
@@ -610,14 +648,100 @@
               : ""
           }
           ${renderReacoesHtml(d.reacoes, { canReact })}
+          ${replyUi}
+          ${respostasHtml}
         </div>
       </li>`;
-      })
+  }
+
+  function renderPosts(
+    listEl,
+    emptyEl,
+    countEl,
+    items,
+    {
+      canDelete,
+      onDelete,
+      canReact,
+      onToggleReacao,
+      canReply,
+      onReply,
+      authorFallback,
+      viewer,
+      owner,
+    } = {}
+  ) {
+    if (countEl) countEl.textContent = `(${countRecadosTree(items)})`;
+    if (!listEl) return;
+    if (!items.length) {
+      listEl.innerHTML = "";
+      if (emptyEl) emptyEl.hidden = false;
+      return;
+    }
+    if (emptyEl) emptyEl.hidden = true;
+    listEl.innerHTML = items
+      .map((d) =>
+        renderRecadoPostHtml(d, {
+          canDelete,
+          canReact,
+          canReply,
+          authorFallback,
+          viewer,
+          owner,
+          isReply: false,
+        })
+      )
       .join("");
 
     if (canDelete && typeof onDelete === "function") {
       listEl.querySelectorAll("[data-del]").forEach((btn) => {
         btn.addEventListener("click", () => onDelete(btn.getAttribute("data-del")));
+      });
+    }
+
+    if (canReply && typeof onReply === "function") {
+      listEl.querySelectorAll("[data-reply-toggle]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-reply-toggle");
+          const form = Array.from(listEl.querySelectorAll("[data-reply-form]")).find(
+            (f) => f.getAttribute("data-reply-form") === id
+          );
+          if (!form) return;
+          const open = form.hidden;
+          listEl.querySelectorAll("[data-reply-form]").forEach((f) => {
+            f.hidden = true;
+          });
+          form.hidden = !open;
+          if (!form.hidden) {
+            const ta = form.querySelector("textarea");
+            if (ta) ta.focus();
+          }
+        });
+      });
+      listEl.querySelectorAll("[data-reply-cancel]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const form = btn.closest("[data-reply-form]");
+          if (!form) return;
+          form.hidden = true;
+          const ta = form.querySelector("textarea");
+          if (ta) ta.value = "";
+        });
+      });
+      listEl.querySelectorAll("[data-reply-form]").forEach((form) => {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const parentId = form.getAttribute("data-reply-form");
+          const ta = form.querySelector("textarea");
+          const texto = ((ta && ta.value) || "").trim();
+          if (!parentId || !texto) return;
+          const submitBtn = form.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          Promise.resolve(onReply(parentId, texto.slice(0, 280)))
+            .catch(() => {})
+            .finally(() => {
+              if (submitBtn) submitBtn.disabled = false;
+            });
+        });
       });
     }
 
@@ -1407,6 +1531,7 @@
 
     let recados = targetId ? loadRecadosEmbedded() : [];
     const canReact = !!(viewer && viewer.id && targetId);
+    const canReply = !!(viewer && viewer.id && targetId);
 
     function applyRecadosList(list) {
       if (!Array.isArray(list)) return;
@@ -1423,6 +1548,7 @@
         {
           canDelete: isOwn,
           canReact,
+          canReply,
           viewer,
           onDelete: (id) => {
             if (!targetId || !id) return;
@@ -1435,6 +1561,12 @@
             toggleRecadoReacao(targetId, id, emoji)
               .then((data) => applyRecadosList(data.recados || []))
               .catch(() => {});
+          },
+          onReply: (parentId, texto) => {
+            if (!targetId || !parentId || !texto) return Promise.resolve();
+            return postRecado(targetId, { texto, parentId }).then((data) => {
+              applyRecadosList(data.recados || []);
+            });
           },
         }
       );

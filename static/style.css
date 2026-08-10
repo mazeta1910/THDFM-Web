@@ -11011,6 +11011,67 @@ a.proto-steam-post-nome:focus-visible {
 .proto-steam-post-head .proto-ico-btn {
   margin-left: auto;
 }
+.proto-steam-respostas {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0 0 0 0.65rem;
+  border-left: 2px solid var(--border);
+  display: grid;
+  gap: 0.15rem;
+}
+.proto-steam-post--resposta {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+  border-bottom: 0;
+}
+.proto-steam-post--resposta .proto-steam-post-av,
+a.proto-steam-post--resposta .proto-steam-post-av-link,
+.proto-steam-post--resposta > a.proto-steam-post-av-link {
+  width: 28px;
+  height: 28px;
+}
+.proto-steam-post--resposta .proto-steam-post-av--fb {
+  font-size: 0.6rem;
+}
+.proto-steam-reply-bar {
+  margin-top: 0.35rem;
+}
+button.proto-steam-reply-toggle,
+.proto-steam-reply-toggle {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.proto-steam-reply-toggle:hover,
+.proto-steam-reply-toggle:focus-visible {
+  color: var(--accent);
+}
+.proto-steam-reply-form {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.proto-steam-reply-form[hidden] {
+  display: none !important;
+}
+.proto-steam-reply-field {
+  min-height: 2.6rem;
+  font-size: 0.84rem;
+}
+.proto-steam-reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
 .proto-steam-reacoes {
   display: flex;
   flex-wrap: wrap;
