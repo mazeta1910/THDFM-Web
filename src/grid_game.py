@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import random
 import re
 from dataclasses import dataclass
@@ -19,6 +20,9 @@ GRID_SIZE = 3
 DENSIDADE_MIN = 4
 BUSCA_LIMITE = 12
 BUSCA_MIN_CHARS = 3
+# Só sugere clube depois de digitar ~70% do nome (sem sufixo de UF).
+SUGESTAO_FRACAO = 0.70
+_UF_SUFFIX_RE = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
 
 REGIOES: dict[str, set[str]] = {
     "Norte": {"AC", "AP", "AM", "PA", "RO", "RR", "TO"},
@@ -357,6 +361,28 @@ def puzzle_publico(dia: str | None = None) -> dict[str, Any]:
     }
 
 
+def nome_core_norm(nome_norm: str) -> str:
+    """Nome sem sufixo '(UF)' — base do limiar de sugestão."""
+    return _UF_SUFFIX_RE.sub("", (nome_norm or "").strip()).strip()
+
+
+def min_chars_sugestao(nome_norm: str) -> int:
+    core = nome_core_norm(nome_norm)
+    n = max(len(core), 1)
+    return max(BUSCA_MIN_CHARS, math.ceil(n * SUGESTAO_FRACAO))
+
+
+def _clube_elegivel_sugestao(clube: dict[str, Any], query: str) -> bool:
+    """True se a query já cobre ~70% do nome e casa com o clube."""
+    if len(query) < BUSCA_MIN_CHARS:
+        return False
+    nome = clube.get("nome_norm") or ""
+    core = nome_core_norm(nome)
+    if not (core.startswith(query) or nome.startswith(query) or query in core):
+        return False
+    return len(query) >= min_chars_sugestao(nome)
+
+
 def buscar_celula(
     *,
     dia: str,
@@ -365,7 +391,7 @@ def buscar_celula(
     q: str,
     limite: int = BUSCA_LIMITE,
 ) -> dict[str, Any]:
-    """Compat: não devolve mais lista de clubes (evita spoiler do pool certo)."""
+    """Sugestões do catálogo completo após ~70% do nome (não só o pool certo)."""
     puzzle = gerar_puzzle(dia)
     if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
         raise ValueError("célula inválida")
@@ -377,19 +403,42 @@ def buscar_celula(
     total = len(pool)
     query = (q or "").strip().casefold()
     pronto = len(query) >= BUSCA_MIN_CHARS
+    itens: list[dict[str, Any]] = []
+    if pronto:
+        candidatos = [c for c in clubes_grid() if _clube_elegivel_sugestao(c, query)]
+        candidatos.sort(
+            key=lambda c: (
+                0 if nome_core_norm(c["nome_norm"]).startswith(query) else 1,
+                len(nome_core_norm(c["nome_norm"])),
+                c["nome_norm"],
+            )
+        )
+        lim = max(1, min(int(limite), 30))
+        itens = [
+            {
+                "id": c["id"],
+                "nome": c["nome"],
+                "emblema": c["emblema"],
+            }
+            for c in candidatos[:lim]
+        ]
     return {
         "total": total,
-        "filtrados": total,
-        "itens": [],
+        "filtrados": len(itens),
+        "itens": itens,
         "query": q or "",
         "min_chars": BUSCA_MIN_CHARS,
+        "fracao_sugestao": SUGESTAO_FRACAO,
         "pronto": pronto,
-        "sugestoes": False,
+        "sugestoes": True,
     }
 
 
 def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
-    """Resolve chute digitado → clube do catálogo (sem autocomplete)."""
+    """Resolve chute digitado → clube do catálogo.
+
+    Prefere match exato; senão, único candidato elegível pela regra dos ~70%.
+    """
     query = (nome or "").strip().casefold()
     if len(query) < BUSCA_MIN_CHARS:
         raise ValueError(f"Digite pelo menos {BUSCA_MIN_CHARS} letras do nome")
@@ -397,17 +446,19 @@ def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
     if len(exatos) == 1:
         return exatos[0]
     if len(exatos) > 1:
-        raise ValueError("Nome ambíguo — use o nome oficial completo")
-    contem = [c for c in clubes_grid() if query in c["nome_norm"]]
-    if len(contem) == 1:
-        return contem[0]
-    if not contem:
-        raise ValueError("Clube não encontrado no catálogo")
-    # Vários parciais: só aceita se um começa com a query e os outros não
-    prefixos = [c for c in contem if c["nome_norm"].startswith(query)]
-    if len(prefixos) == 1:
-        return prefixos[0]
-    raise ValueError("Vários clubes batem — digite o nome completo")
+        raise ValueError("Nome ambíguo — escolha na lista de sugestões")
+    # Core exato (ex.: "santos" com vários "Santos (UF)")
+    core_exatos = [c for c in clubes_grid() if nome_core_norm(c["nome_norm"]) == query]
+    if len(core_exatos) == 1:
+        return core_exatos[0]
+    elegiveis = [c for c in clubes_grid() if _clube_elegivel_sugestao(c, query)]
+    if len(elegiveis) == 1:
+        return elegiveis[0]
+    if not elegiveis:
+        raise ValueError(
+            "Clube não encontrado — continue digitando até aparecer na lista"
+        )
+    raise ValueError("Vários clubes batem — escolha na lista de sugestões")
 
 
 def validar_chute(

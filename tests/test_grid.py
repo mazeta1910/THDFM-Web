@@ -115,7 +115,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=6" in r.text
+    assert "/static/grid.js?v=7" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert "data-grid-share-wa" in r.text
@@ -124,7 +124,8 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'id="ranking"' in r.text
     assert "grid-result-top" in r.text
     assert "data-grid-chute" in r.text
-    assert "data-grid-suggestions" not in r.text
+    assert "data-grid-suggestions" in r.text
+    assert "~70%" in r.text
     assert 'href="#ranking"' not in r.text
     assert "data-grid-streak" in r.text
     assert "grid-title" in r.text
@@ -149,7 +150,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "SQ_OK" in js
     assert "\\uD83D\\uDFE9" in js
     assert "🟩" not in js
-    assert "data-grid-suggestions" not in js
+    assert "data-grid-suggestions" in js
     assert "c.uf" not in js
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
@@ -177,27 +178,37 @@ def test_grid_fluxo_logado(client: TestClient):
     col = categoria_por_id(puzzle["colunas"][0]["id"])
     assert row and col
     clube = pool_celula(row, col)[0]
+    from src.grid_game import min_chars_sugestao, nome_core_norm
 
-    # 1–2 letras: API não devolve sugestões
+    core = nome_core_norm(clube["nome_norm"])
+    precisa = min_chars_sugestao(clube["nome_norm"])
+
+    # Poucas letras: ainda sem sugestão (abaixo de 70%)
+    curto_q = core[: max(1, precisa - 1)]
     curto = client.get(
         "/grid/api/buscar",
-        params={"linha": 0, "coluna": 0, "q": clube["nome"][:1]},
+        params={"linha": 0, "coluna": 0, "q": curto_q},
     )
     assert curto.status_code == 200
-    assert curto.json()["itens"] == []
+    assert curto.json()["itens"] == [] or not any(
+        x["id"] == clube["id"] for x in curto.json()["itens"]
+    )
 
+    # ~70% do nome: aparece no catálogo completo
+    q70 = core[:precisa]
     busca = client.get(
         "/grid/api/buscar",
-        params={"linha": 0, "coluna": 0, "q": clube["nome"][:3]},
+        params={"linha": 0, "coluna": 0, "q": q70},
     )
     assert busca.status_code == 200
     assert busca.json()["pronto"] is True
-    assert busca.json()["itens"] == []
-    assert busca.json().get("sugestoes") is False
+    assert busca.json().get("sugestoes") is True
+    assert any(x["id"] == clube["id"] for x in busca.json()["itens"])
+    assert "uf" not in (busca.json()["itens"][0] or {})
 
     chute = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "nome": clube["nome"]},
+        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
     )
     assert chute.status_code == 200
     body = chute.json()
@@ -206,7 +217,7 @@ def test_grid_fluxo_logado(client: TestClient):
 
     chute2 = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "nome": clube["nome"]},
+        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
     )
     assert chute2.status_code == 409
 
@@ -256,17 +267,41 @@ def test_texto_share_usa_verde_e_vermelho():
     assert "🟥".encode("utf-8") in raw
 
 
+def test_sugestao_exige_cerca_de_70_por_cento_do_nome():
+    from src.grid_game import buscar_celula, min_chars_sugestao, nome_core_norm
+
+    santos = next(c for c in clubes_grid() if c["nome_norm"] == "santos")
+    precisa = min_chars_sugestao(santos["nome_norm"])
+    assert precisa == 5  # ceil(6 * 0.7)
+
+    dia = "2026-08-10"
+    cedo = buscar_celula(dia=dia, linha=0, coluna=0, q="sant")
+    assert all(x["id"] != santos["id"] for x in cedo["itens"])
+
+    ok = buscar_celula(dia=dia, linha=0, coluna=0, q="santo")  # 5/6
+    assert any(x["id"] == santos["id"] for x in ok["itens"])
+
+    # Barcelona (RJ): core=barcelona (9) → precisa 7
+    barca = next(c for c in clubes_grid() if c["nome_norm"] == "barcelona (rj)")
+    assert min_chars_sugestao(barca["nome_norm"]) == 7
+    assert nome_core_norm(barca["nome_norm"]) == "barcelona"
+    cedo_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barcel")  # 6
+    assert all(x["id"] != barca["id"] for x in cedo_b["itens"])
+    ok_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barcelo")  # 7
+    assert any(x["id"] == barca["id"] for x in ok_b["itens"])
+
+
 def test_resolver_clube_por_nome_sem_sugestoes():
     from src.grid_game import resolver_clube_por_nome
 
-    clube = clubes_grid()[0]
-    hit = resolver_clube_por_nome(clube["nome"])
+    clube = next(c for c in clubes_grid() if c["nome_norm"] == "santos")
+    hit = resolver_clube_por_nome("Santos")
     assert hit["id"] == clube["id"]
     try:
         resolver_clube_por_nome("xyzclubeinexistente999")
         assert False, "deveria falhar"
     except ValueError as exc:
-        assert "não encontrado" in str(exc).casefold() or "nao encontrado" in str(exc).casefold()
+        assert "não encontrado" in str(exc).casefold() or "lista" in str(exc).casefold()
 
 
 def test_ranking_e_stats_grid(client: TestClient):
