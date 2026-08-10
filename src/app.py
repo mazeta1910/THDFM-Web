@@ -1073,6 +1073,7 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
         for entrada in hist[-6:]:
             curto = (entrada.get("rotulo_curto") or "").strip()
             fase_full = (entrada.get("fase_label") or "").strip()
+            fase_curta = (entrada.get("fase_label_curta") or "").strip()
             janela = (entrada.get("janela_label") or "").strip()
             if curto and fase_full and janela:
                 titulo = f"{curto} · {fase_full} ({janela})"
@@ -1080,9 +1081,18 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
                 titulo = f"{curto} · {fase_full}"
             else:
                 titulo = (entrada.get("rotulo") or curto or "Rodada").strip()
+            if curto and fase_curta and janela:
+                titulo_curto = f"{curto} · {fase_curta} ({janela})"
+            elif curto and fase_curta:
+                titulo_curto = f"{curto} · {fase_curta}"
+            elif curto:
+                titulo_curto = curto
+            else:
+                titulo_curto = titulo
             rodadas.append(
                 {
                     "titulo": titulo,
+                    "titulo_curto": titulo_curto,
                     "rotulo": entrada.get("rotulo") or titulo,
                     "pts": entrada.get("rod") or 0,
                     "soma": entrada.get("soma") or 0,
