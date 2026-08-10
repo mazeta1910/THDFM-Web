@@ -3959,7 +3959,7 @@ def reacoes_dos_recados(
     *,
     voter_id: int | None = None,
 ) -> dict[int, list[dict[str, Any]]]:
-    """Agrega reações por recado: [{emoji, count, mine}, ...] na ordem de aparição."""
+    """Agrega reações por recado: [{emoji, count, mine, autores}, ...] na ordem de aparição."""
     ids = [int(x) for x in recado_ids if x is not None]
     if not ids:
         return {}
@@ -3977,14 +3977,33 @@ def reacoes_dos_recados(
             """,
             (int(voter_id) if voter_id else 0, *ids),
         ).fetchall()
+        autor_rows = conn.execute(
+            f"""
+            SELECT r.recado_id, r.emoji, r.voter_id, p.nome, r.criado_em
+            FROM perfil_recado_reacoes r
+            JOIN participantes p ON p.id = r.voter_id
+            WHERE r.recado_id IN ({placeholders})
+            ORDER BY r.criado_em ASC, p.nome COLLATE NOCASE ASC
+            """,
+            (*ids,),
+        ).fetchall()
+    autores_map: dict[tuple[int, str], list[dict[str, Any]]] = {}
+    for row in autor_rows:
+        key = (int(row["recado_id"]), str(row["emoji"]))
+        nome = (row["nome"] or "").strip() or "alguém"
+        autores_map.setdefault(key, []).append(
+            {"id": int(row["voter_id"]), "nome": nome}
+        )
     out: dict[int, list[dict[str, Any]]] = {i: [] for i in ids}
     for row in rows:
         rid = int(row["recado_id"])
+        emoji = str(row["emoji"])
         out.setdefault(rid, []).append(
             {
-                "emoji": row["emoji"],
+                "emoji": emoji,
                 "count": int(row["n"] or 0),
                 "mine": bool(row["mine"]),
+                "autores": autores_map.get((rid, emoji), []),
             }
         )
     return out

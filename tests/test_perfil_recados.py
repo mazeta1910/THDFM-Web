@@ -55,7 +55,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=30" in r.text
+    assert "/static/prototipo-perfil.js?v=31" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -136,7 +136,7 @@ def test_recado_com_imagem_e_gif(client: TestClient, tmp_path, monkeypatch):
     assert r.status_code == 200
     assert "/recados-midia/" in r.text
     assert "data-recado-midia" in r.text
-    assert "/static/prototipo-perfil.js?v=30" in r.text
+    assert "/static/prototipo-perfil.js?v=31" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-feed-midia" in js
     assert "FormData" in js
@@ -155,17 +155,25 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     assert r.status_code == 200
     data = r.json()
     assert data["recado_id"] == str(rid)
-    assert data["reacoes"] == [{"emoji": "👍", "count": 1, "mine": True}]
-    assert data["recados"][0]["reacoes"] == [{"emoji": "👍", "count": 1, "mine": True}]
+    assert data["reacoes"][0]["emoji"] == "👍"
+    assert data["reacoes"][0]["count"] == 1
+    assert data["reacoes"][0]["mine"] is True
+    assert data["reacoes"][0]["autores"] == [{"id": a["id"], "nome": "Reage A"}]
+    assert data["recados"][0]["reacoes"][0]["autores"][0]["nome"] == "Reage A"
 
     client.cookies.clear()
-    _login_part(client, "Reage B", "reage.b", "11990009112")
+    b = _login_part(client, "Reage B", "reage.b", "11990009112")
     r = client.put(
         f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
         json={"emoji": "👍"},
     )
     assert r.status_code == 200
-    assert r.json()["reacoes"] == [{"emoji": "👍", "count": 2, "mine": True}]
+    reacs = r.json()["reacoes"]
+    assert reacs[0]["count"] == 2
+    assert reacs[0]["mine"] is True
+    nomes = {x["nome"] for x in reacs[0]["autores"]}
+    assert nomes == {"Reage A", "Reage B"}
+    assert {x["id"] for x in reacs[0]["autores"]} == {a["id"], b["id"]}
 
     # toggle remove o próprio voto
     r = client.put(
@@ -173,7 +181,10 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
         json={"emoji": "👍"},
     )
     assert r.status_code == 200
-    assert r.json()["reacoes"] == [{"emoji": "👍", "count": 1, "mine": False}]
+    reacs = r.json()["reacoes"]
+    assert reacs[0]["count"] == 1
+    assert reacs[0]["mine"] is False
+    assert reacs[0]["autores"] == [{"id": a["id"], "nome": "Reage A"}]
 
     r = client.put(
         f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
@@ -184,6 +195,7 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     assert emojis["👍"]["count"] == 1
     assert emojis["🔥"]["count"] == 1
     assert emojis["🔥"]["mine"] is True
+    assert emojis["🔥"]["autores"][0]["nome"] == "Reage B"
 
     r = client.put(
         f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
@@ -194,10 +206,15 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     r = client.get(f"/perfil/{alvo['id']}")
     assert r.status_code == 200
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
-    assert "proto-steam-reacao" in js
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "proto-steam-reacao-wrap" in js
+    assert "proto-steam-reacao-tip" in js
+    assert "button.proto-steam-reacao" in css
+    assert "width: auto" in css
     assert "data-reacao-add" in js
-    assert "/static/prototipo-perfil.js?v=30" in r.text
+    assert "/static/prototipo-perfil.js?v=31" in r.text
     assert "👍" in r.text
+    assert "Reage A" in r.text
 
 
 def test_notificacao_recados_envelope(client: TestClient):
