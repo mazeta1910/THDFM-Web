@@ -237,6 +237,19 @@ def test_resumo_rodadas_helper_e_sem_ficha_na_classificacao(client):
     assert ".ficha-dialog" not in css
     assert ".ficha-estilo-card" not in css
 
+    # Perfil: rótulo curto no HTML (mobile esconde o full via CSS)
+    db.definir_credenciais(a["id"], "alpha.rodadas", "senha12345")
+    client.get(f"/p/{a['token']}")
+    rp = client.get("/meu-perfil")
+    assert rp.status_code == 200
+    assert "ficha-rodada-rotulo-full" in rp.text
+    assert "ficha-rodada-rotulo-short" in rp.text
+    assert "R1 · Oitavas (Ida)" in rp.text
+    assert "R1 · Oit (Ida)" in rp.text
+    assert 'class="ficha-rodada-lab">Pts</span>' in rp.text
+    assert 'class="ficha-rodada-lab">Total</span>' in rp.text
+    assert 'class="ficha-rodada-lab">Col</span>' in rp.text
+
 
 def test_perfil_nao_zera_ao_avancar_fase(client):
     """Perfil usa jogos de todas as fases — não some ao ir para Quartas."""

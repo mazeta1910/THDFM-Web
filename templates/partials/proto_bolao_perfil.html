@@ -101,16 +101,20 @@
           <span class="ficha-rodada-rotulo-line">
             <span class="ficha-rodada-chev" aria-hidden="true"></span>
             <span class="ficha-rodada-rotulo-full">{{ r.titulo }}</span>
+            <span class="ficha-rodada-rotulo-short">{{ r.titulo_curto or r.titulo }}</span>
           </span>
         </span>
         <span class="ficha-rodada-nums" aria-label="Pontuação da rodada">
           <span class="ficha-rodada-stat" title="Pontos na rodada">
+            <span class="ficha-rodada-lab">Pts</span>
             <span class="ficha-rodada-rod">{% if r.pts > 0 %}+{% endif %}{{ r.pts }}</span>
           </span>
           <span class="ficha-rodada-stat" title="Pontuação total">
+            <span class="ficha-rodada-lab">Total</span>
             <span class="ficha-rodada-soma">{{ r.soma }}</span>
           </span>
           <span class="ficha-rodada-stat" title="Colocação">
+            <span class="ficha-rodada-lab">Col</span>
             <span class="ficha-rodada-pos">{% if r.posicao %}{{ r.posicao }}º{% else %}—{% endif %}</span>
           </span>
         </span>
