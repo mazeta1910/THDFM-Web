@@ -23,16 +23,15 @@
   <header class="grid-head">
     <div>
       <p class="grid-kicker">Puzzle diário</p>
-      <h1 class="grid-title">THDFM Grid</h1>
+      <h1 class="grid-title">
+        THDFM Grid
+        <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
+      </h1>
       <p class="grid-sub">
         Acerte um clube em cada célula · 1 tentativa por casa
         · puzzle de <strong>{{ puzzle.rotulo }}</strong>
         · vira à 00:00 (Brasília)
       </p>
-    </div>
-    <div class="grid-meta">
-      <a class="btn secondary" href="#ranking">Ranking</a>
-      <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
     </div>
   </header>
 
