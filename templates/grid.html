@@ -136,14 +136,15 @@
       name="q"
       autocomplete="off"
       spellcheck="false"
-      placeholder="Digite o nome do clube…"
+      placeholder="Digite cerca de 70% do nome…"
       data-grid-search
     />
     <p class="grid-modal-hint" data-grid-modal-hint hidden></p>
+    <ul class="grid-suggestions" data-grid-suggestions></ul>
     <div class="grid-modal-actions">
       <button type="submit" class="btn" value="chute" data-grid-chute>Chutar</button>
     </div>
-    <p class="grid-modal-note">Uma tentativa por célula · digite o nome (sem lista de sugestões).</p>
+    <p class="grid-modal-note">Uma tentativa por célula · sugestões após ~70% do nome (catálogo completo).</p>
   </form>
 </dialog>
 
@@ -151,5 +152,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=6" defer></script>
+<script src="/static/grid.js?v=7" defer></script>
 {% endblock %}

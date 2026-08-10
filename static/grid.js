@@ -17,6 +17,7 @@
   const searchInput = document.querySelector("[data-grid-search]");
   const form = document.querySelector("[data-grid-form]");
   const hintModal = document.querySelector("[data-grid-modal-hint]");
+  const suggestions = document.querySelector("[data-grid-suggestions]");
   const countEl = document.querySelector("[data-grid-count]");
   const hintEl = document.querySelector("[data-grid-hint]");
   const resultEl = document.querySelector("[data-grid-result]");
@@ -28,6 +29,8 @@
   let celulas = emptyBoard();
   let active = null; // {linha, coluna}
   let shareText = "";
+  let searchTimer = 0;
+  const MIN_CHARS = 3;
 
   // Escapes ASCII-safe: evita charset errado no .js quebrar o WhatsApp
   const SQ_OK = "\uD83D\uDFE9"; // large green square
@@ -145,6 +148,9 @@
     const n = cellBtn(linha, coluna)?.getAttribute("data-possiveis") || "0";
     if (countEl) countEl.textContent = n;
     setModalHint("");
+    if (suggestions) {
+      suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~70% do nome para ver sugestões.</li>`;
+    }
     if (searchInput) {
       searchInput.value = "";
       searchInput.focus();
@@ -158,24 +164,51 @@
     if (modal && modal.open) modal.close();
   }
 
-  async function submitGuessByName(nomeRaw) {
+  async function runSearch(q) {
     if (!active) return;
-    const nome = String(nomeRaw || "").trim();
-    if (nome.length < 3) {
-      setModalHint("Digite pelo menos 3 letras do nome.", true);
+    const query = String(q || "").trim();
+    if (query.length < MIN_CHARS) {
+      if (countEl) {
+        const n = cellBtn(active.linha, active.coluna)?.getAttribute("data-possiveis") || "0";
+        countEl.textContent = n;
+      }
+      if (suggestions) {
+        suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~70% do nome para ver sugestões.</li>`;
+      }
       return;
     }
-    const { linha, coluna } = active;
-    const r = await fetch("/grid/api/chute", {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ linha, coluna, nome }),
+    const params = new URLSearchParams({
+      linha: String(active.linha),
+      coluna: String(active.coluna),
+      q: query,
+    });
+    const r = await fetch(`/grid/api/buscar?${params}`, {
+      headers: { Accept: "application/json" },
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setModalHint(data.erro || "Não foi possível registrar o chute.", true);
+    if (!r.ok) return;
+    // Mantém a densidade da célula; filtrados = quantos bateram a busca
+    if (countEl && data.total != null) countEl.textContent = String(data.total);
+    if (!suggestions) return;
+    const itens = Array.isArray(data.itens) ? data.itens : [];
+    if (!itens.length) {
+      suggestions.innerHTML = `<li class="grid-sug-empty">Nada ainda — continue digitando o nome.</li>`;
       return;
     }
+    suggestions.innerHTML = itens
+      .map(
+        (c) => `
+      <li>
+        <button type="button" class="grid-sug" data-clube-id="${escapeHtml(c.id)}">
+          <img src="${escapeHtml(c.emblema || "")}" alt="" />
+          <span>${escapeHtml(c.nome)}</span>
+        </button>
+      </li>`
+      )
+      .join("");
+  }
+
+  async function applyChuteResponse(data, linha, coluna) {
     if (Array.isArray(data.celulas)) {
       celulas = emptyBoard();
       data.celulas.forEach((row, ri) => {
@@ -198,6 +231,43 @@
     if (data.finalizado) showResult(data.share || null);
   }
 
+  async function submitGuessByName(nomeRaw) {
+    if (!active) return;
+    const nome = String(nomeRaw || "").trim();
+    if (nome.length < MIN_CHARS) {
+      setModalHint("Digite pelo menos 3 letras do nome.", true);
+      return;
+    }
+    const { linha, coluna } = active;
+    const r = await fetch("/grid/api/chute", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ linha, coluna, nome }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setModalHint(data.erro || "Não foi possível registrar o chute.", true);
+      return;
+    }
+    await applyChuteResponse(data, linha, coluna);
+  }
+
+  async function submitGuessById(clubeId) {
+    if (!active || !clubeId) return;
+    const { linha, coluna } = active;
+    const r = await fetch("/grid/api/chute", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ linha, coluna, clube_id: clubeId }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setModalHint(data.erro || "Não foi possível registrar o chute.", true);
+      return;
+    }
+    await applyChuteResponse(data, linha, coluna);
+  }
+
   root.querySelectorAll("[data-grid-cell]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const linha = Number(btn.getAttribute("data-linha"));
@@ -205,6 +275,25 @@
       openModal(linha, coluna);
     });
   });
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim();
+      setModalHint("");
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        runSearch(q).catch(() => {});
+      }, 160);
+    });
+  }
+
+  if (suggestions) {
+    suggestions.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-clube-id]");
+      if (!btn) return;
+      submitGuessById(btn.getAttribute("data-clube-id")).catch(() => {});
+    });
+  }
 
   if (form) {
     form.addEventListener("submit", (e) => {
