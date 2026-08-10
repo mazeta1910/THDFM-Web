@@ -461,6 +461,33 @@ def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
     raise ValueError("Vários clubes batem — escolha na lista de sugestões")
 
 
+def chute_nome_inexistente(
+    *,
+    linha: int,
+    coluna: int,
+    nome: str,
+) -> dict[str, Any]:
+    """Registra chute com texto fora do catálogo como erro (célula vermelha)."""
+    if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
+        raise ValueError("célula inválida")
+    rotulo = " ".join((nome or "").strip().split())
+    if len(rotulo) < BUSCA_MIN_CHARS:
+        raise ValueError(f"Digite pelo menos {BUSCA_MIN_CHARS} letras do nome")
+    rotulo = rotulo[:80]
+    return {
+        "ok": False,
+        "clube": {
+            "id": "",
+            "nome": rotulo,
+            "uf": "",
+            "emblema": "",
+        },
+        "linha": linha,
+        "coluna": coluna,
+        "inventado": True,
+    }
+
+
 def validar_chute(
     *,
     dia: str,

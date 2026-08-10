@@ -12372,6 +12372,17 @@ button.grid-cell,
   height: 3.35rem;
   object-fit: contain;
 }
+.grid-cell-embl--miss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, #e03131 22%, transparent);
+  color: #e03131;
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+}
 .grid-cell-nome {
   font-size: 0.86rem;
   font-weight: 800;

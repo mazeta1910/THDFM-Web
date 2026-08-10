@@ -2737,6 +2737,7 @@ async def grid_api_chute(request: Request):
         return neg
     from src.grid_game import (
         celulas_completas,
+        chute_nome_inexistente,
         dia_grid,
         parse_celulas_progresso,
         resolver_clube_por_nome,
@@ -2755,12 +2756,24 @@ async def grid_api_chute(request: Request):
         nome = str((body or {}).get("nome") or "").strip()
     except (TypeError, ValueError):
         return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+
+    resultado = None
     if not clube_id and nome:
         try:
             clube_id = str(resolver_clube_por_nome(nome)["id"])
         except ValueError as exc:
-            return JSONResponse({"erro": str(exc)}, status_code=400)
-    if not clube_id:
+            msg = str(exc)
+            # Texto nada a ver / fora do catálogo: ainda conta como erro na célula
+            if "não encontrado" in msg.casefold():
+                try:
+                    resultado = chute_nome_inexistente(
+                        linha=linha, coluna=coluna, nome=nome
+                    )
+                except ValueError as exc2:
+                    return JSONResponse({"erro": str(exc2)}, status_code=400)
+            else:
+                return JSONResponse({"erro": msg}, status_code=400)
+    if resultado is None and not clube_id:
         return JSONResponse({"erro": "Digite o nome do clube"}, status_code=400)
 
     dia = dia_grid()
@@ -2773,12 +2786,13 @@ async def grid_api_chute(request: Request):
             if celulas[linha][coluna] is not None:
                 return JSONResponse({"erro": "Célula já jogada"}, status_code=409)
 
-    try:
-        resultado = validar_chute(
-            dia=dia, linha=linha, coluna=coluna, clube_id=clube_id
-        )
-    except ValueError as exc:
-        return JSONResponse({"erro": str(exc)}, status_code=400)
+    if resultado is None:
+        try:
+            resultado = validar_chute(
+                dia=dia, linha=linha, coluna=coluna, clube_id=clube_id
+            )
+        except ValueError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=400)
 
     celulas[linha][coluna] = {
         "ok": resultado["ok"],

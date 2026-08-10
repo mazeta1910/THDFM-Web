@@ -115,7 +115,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=7" in r.text
+    assert "/static/grid.js?v=8" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert "data-grid-share-wa" in r.text
@@ -289,6 +289,28 @@ def test_sugestao_exige_cerca_de_70_por_cento_do_nome():
     assert all(x["id"] != barca["id"] for x in cedo_b["itens"])
     ok_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barcelo")  # 7
     assert any(x["id"] == barca["id"] for x in ok_b["itens"])
+
+
+def test_chute_nome_inexistente_conta_como_erro(client: TestClient):
+    login_admin(client)
+    r = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "nome": "S. C. DA PEÇÁ"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["resultado"]["ok"] is False
+    assert body["resultado"].get("inventado") is True
+    assert body["resultado"]["clube"]["nome"] == "S. C. DA PEÇÁ"
+    assert body["celulas"][0][0]["ok"] is False
+    assert body["celulas"][0][0]["clube"]["nome"] == "S. C. DA PEÇÁ"
+
+    # Célula já preenchida
+    r2 = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "nome": "B. C. DO CURVEDO"},
+    )
+    assert r2.status_code == 409
 
 
 def test_resolver_clube_por_nome_sem_sugestoes():
