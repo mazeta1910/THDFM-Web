@@ -184,7 +184,7 @@
       <li>
         <button type="button" class="grid-sug" data-clube-id="${escapeHtml(c.id)}">
           <img src="${escapeHtml(c.emblema || "")}" alt="" />
-          <span>${escapeHtml(c.nome)} <small>${escapeHtml(c.uf || "")}</small></span>
+          <span>${escapeHtml(c.nome)}</span>
         </button>
       </li>`
       )
