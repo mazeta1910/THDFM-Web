@@ -372,9 +372,42 @@
     window.setInterval(checarViradaDia, 60 * 1000);
   }
 
+  const MIOPIA_KEY = "thdfm-grid-miopia";
+  const MIOPIA_OK = new Set(["off", "leve", "moderada", "alta"]);
+
+  function aplicarMiopia(modo) {
+    const m = MIOPIA_OK.has(modo) ? modo : "off";
+    root.setAttribute("data-miopia", m);
+    try {
+      localStorage.setItem(MIOPIA_KEY, m);
+    } catch (_) {
+      /* ignore */
+    }
+    root.querySelectorAll("[data-miopia]").forEach((btn) => {
+      const on = btn.getAttribute("data-miopia") === m;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function initMiopia() {
+    let saved = "off";
+    try {
+      saved = localStorage.getItem(MIOPIA_KEY) || "off";
+    } catch (_) {
+      saved = "off";
+    }
+    aplicarMiopia(saved);
+    root.querySelectorAll("[data-miopia]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        aplicarMiopia(btn.getAttribute("data-miopia") || "off");
+      });
+    });
+  }
+
   paintAll();
   if (boot.progresso) applyProgresso(boot.progresso);
   const filled = countScore().filled;
   if (filled >= size * size) showResult(boot.share || null);
+  initMiopia();
   agendarVirada();
 })();

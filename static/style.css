@@ -12394,11 +12394,169 @@ button.grid-cell,
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+.grid-board-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
 .grid-hint {
-  margin: 0.85rem 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
+  flex: 1 1 12rem;
 }
+.grid-miopia {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+.grid-miopia-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.grid-miopia-toggles {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 88%, var(--accent));
+}
+.grid-miopia-btn {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 0.38rem 0.7rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  line-height: 1.1;
+}
+.grid-miopia-btn + .grid-miopia-btn {
+  border-left: 1px solid var(--border);
+}
+.grid-miopia-btn[aria-pressed="true"] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+}
+.grid-miopia-btn:hover {
+  color: var(--text);
+}
+
+/* Modo miopia: amplia rótulos/células (leve → alta) */
+.grid-page[data-miopia="leve"] .grid-axis {
+  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
+  padding: 0.8rem 0.6rem;
+}
+.grid-page[data-miopia="leve"] button.grid-cell,
+.grid-page[data-miopia="leve"] .grid-cell {
+  min-height: 8.4rem;
+}
+.grid-page[data-miopia="leve"] .grid-cell-embl {
+  width: 3.7rem;
+  height: 3.7rem;
+}
+.grid-page[data-miopia="leve"] .grid-cell-nome {
+  font-size: 0.98rem;
+}
+.grid-page[data-miopia="leve"] .grid-board {
+  grid-template-columns: minmax(8rem, 1.25fr) repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.grid-page[data-miopia="moderada"] .grid-axis {
+  font-size: clamp(1.18rem, 2.8vw, 1.42rem);
+  padding: 0.9rem 0.65rem;
+  letter-spacing: 0.02em;
+}
+.grid-page[data-miopia="moderada"] button.grid-cell,
+.grid-page[data-miopia="moderada"] .grid-cell {
+  min-height: 9.4rem;
+  gap: 0.45rem;
+}
+.grid-page[data-miopia="moderada"] .grid-cell-embl {
+  width: 4.2rem;
+  height: 4.2rem;
+}
+.grid-page[data-miopia="moderada"] .grid-cell-nome {
+  font-size: 1.08rem;
+  -webkit-line-clamp: 3;
+}
+.grid-page[data-miopia="moderada"] .grid-cell-empty {
+  font-size: 2.15rem;
+}
+.grid-page[data-miopia="moderada"] .grid-board {
+  grid-template-columns: minmax(9rem, 1.3fr) repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.grid-page[data-miopia="alta"] .grid-axis {
+  font-size: clamp(1.32rem, 3.2vw, 1.6rem);
+  padding: 1rem 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+}
+.grid-page[data-miopia="alta"] button.grid-cell,
+.grid-page[data-miopia="alta"] .grid-cell {
+  min-height: 10.6rem;
+  gap: 0.5rem;
+  border-width: 2px;
+}
+.grid-page[data-miopia="alta"] .grid-cell-embl {
+  width: 4.8rem;
+  height: 4.8rem;
+}
+.grid-page[data-miopia="alta"] .grid-cell-nome {
+  font-size: 1.2rem;
+  -webkit-line-clamp: 3;
+}
+.grid-page[data-miopia="alta"] .grid-cell-empty {
+  font-size: 2.4rem;
+}
+.grid-page[data-miopia="alta"] .grid-cell-n {
+  font-size: 0.9rem;
+}
+.grid-page[data-miopia="alta"] .grid-board {
+  grid-template-columns: minmax(10rem, 1.35fr) repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.grid-page[data-miopia="alta"] .grid-hint,
+.grid-page[data-miopia="alta"] .grid-miopia-label,
+.grid-page[data-miopia="alta"] .grid-miopia-btn {
+  font-size: 1rem;
+}
+.grid-page[data-miopia="alta"] .grid-miopia-btn {
+  padding: 0.48rem 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .grid-board-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .grid-miopia {
+    margin-left: 0;
+    align-items: stretch;
+  }
+  .grid-miopia-toggles {
+    width: 100%;
+  }
+  .grid-miopia-btn {
+    flex: 1 1 0;
+    text-align: center;
+  }
+}
+
 .grid-result-title {
   margin: 0 0 0.35rem;
   font-size: 1.35rem;

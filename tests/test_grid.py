@@ -10,18 +10,37 @@ from fastapi.testclient import TestClient
 from src.config import ROOT_DIR
 from src.grid_game import (
     DENSIDADE_MIN,
+    GRID_HISTORICO_DESDE,
     TZ_SP,
     categoria_por_id,
+    categorias_disponiveis,
     clubes_grid,
     clubes_por_id,
     dia_grid,
     gerar_puzzle,
+    historico_ativo,
     ms_ate_proxima_virada,
     pool_celula,
     texto_share,
     validar_chute,
 )
+from src.grid_historico import historico_serie_a
 from tests.conftest import login_admin
+
+# Puzzle clássico congelado: categorias históricas não podem alterar o dia anterior ao cutover.
+_PUZZLE_2026_08_10 = {
+    "dia": "2026-08-10",
+    "linhas": [
+        {"id": "uf:SP", "tipo": "uf", "valor": "SP", "rotulo": "Clube de SP"},
+        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
+        {"id": "regiao:Nordeste", "tipo": "regiao", "valor": "Nordeste", "rotulo": "Região Nordeste"},
+    ],
+    "colunas": [
+        {"id": "letra:S", "tipo": "letra", "valor": "S", "rotulo": "Nome começa com S"},
+        {"id": "letra:B", "tipo": "letra", "valor": "B", "rotulo": "Nome começa com B"},
+        {"id": "letra:P", "tipo": "letra", "valor": "P", "rotulo": "Nome começa com P"},
+    ],
+}
 
 
 def test_gerar_puzzle_deterministico_e_denso():
@@ -32,6 +51,31 @@ def test_gerar_puzzle_deterministico_e_denso():
     assert len(a["linhas"]) == 3
     assert len(a["colunas"]) == 3
     for row in a["densidades"]:
+        assert all(n >= DENSIDADE_MIN for n in row)
+    # Eixos do dia pré-cutover permanecem idênticos ao pool clássico
+    assert a["linhas"] == _PUZZLE_2026_08_10["linhas"]
+    assert a["colunas"] == _PUZZLE_2026_08_10["colunas"]
+
+
+def test_categorias_historicas_so_apos_cutover_meia_noite():
+    assert GRID_HISTORICO_DESDE == "2026-08-11"
+    assert historico_ativo("2026-08-10") is False
+    assert historico_ativo("2026-08-11") is True
+
+    cats_antes = {c.id for c in categorias_disponiveis("2026-08-10")}
+    cats_depois = {c.id for c in categorias_disponiveis("2026-08-11")}
+    assert "titulo:campeao_br" not in cats_antes
+    assert "premio:melhor_ataque" not in cats_antes
+    assert "titulo:campeao_br" in cats_depois
+    assert "premio:artilheiro" in cats_depois
+
+    hist = historico_serie_a()
+    assert len(hist.get("titulo:campeao_br") or []) >= DENSIDADE_MIN
+    assert len(hist.get("premio:melhor_ataque") or []) >= DENSIDADE_MIN
+
+    p = gerar_puzzle("2026-08-11")
+    assert p["dia"] == "2026-08-11"
+    for row in p["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
 
 
@@ -115,9 +159,13 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=8" in r.text
+    assert "/static/grid.js?v=9" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
+    assert 'data-grid-miopia' in r.text
+    assert 'data-miopia="leve"' in r.text
+    assert 'data-miopia="moderada"' in r.text
+    assert 'data-miopia="alta"' in r.text
     assert "data-grid-share-wa" in r.text
     assert "aria-label=\"Compartilhar no WhatsApp\"" in r.text
     assert "WhatsApp</button>" not in r.text
@@ -132,6 +180,8 @@ def test_grid_fluxo_logado(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".grid-share-text" in css
     assert "text-align: center" in css.split(".grid-share-text", 1)[1].split("}", 1)[0]
+    assert '.grid-page[data-miopia="alta"]' in css
+    assert ".grid-miopia-toggles" in css
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")
@@ -152,6 +202,8 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "🟩" not in js
     assert "data-grid-suggestions" in js
     assert "c.uf" not in js
+    assert "thdfm-grid-miopia" in js
+    assert "aplicarMiopia" in js
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
