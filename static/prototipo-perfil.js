@@ -233,7 +233,7 @@
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const err = new Error((data && data.erro) || "Falha ao votar nutela");
+      const err = new Error((data && data.erro) || "Falha ao votar nutella");
       err.status = r.status;
       throw err;
     }

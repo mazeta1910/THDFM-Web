@@ -3832,7 +3832,7 @@ def salvar_nutela_voto(voter_id: int, target_id: int, valor: int) -> None:
     if v < 0 or v > 100:
         raise ValueError("valor inválido")
     if int(voter_id) == int(target_id):
-        raise ValueError("não pode votar no próprio nutela")
+        raise ValueError("não pode votar no próprio nutella")
     with get_db() as conn:
         conn.execute(
             """

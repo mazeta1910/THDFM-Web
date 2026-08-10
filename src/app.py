@@ -1370,7 +1370,7 @@ async def perfil_nutela_put(request: Request, participante_id: int):
     if not voter:
         return JSONResponse({"erro": "Não autorizado"}, status_code=401)
     if int(voter["id"]) == int(participante_id):
-        return JSONResponse({"erro": "Não pode votar no próprio nutela"}, status_code=403)
+        return JSONResponse({"erro": "Não pode votar no próprio nutella"}, status_code=403)
     try:
         body = await request.json()
     except Exception:
