@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}THDFM Grid{% endblock %}
+{% block og_title %}THDFM Grid{% endblock %}
+{% block og_description %}Puzzle diário de clubes · {{ puzzle.rotulo }} · Acerte um time em cada célula · vira à 00:00 (Brasília){% endblock %}
+{% block og_url %}{{ public_base_url }}/grid{% endblock %}
+{% block head_meta %}
+{{ super() }}
+<meta property="og:image" content="{{ public_base_url }}/static/img/og-grid.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="THDFM Grid — puzzle diário" />
+<meta name="twitter:image" content="{{ public_base_url }}/static/img/og-grid.png" />
+{% endblock %}
 {% block content %}
 <section
   class="grid-page"

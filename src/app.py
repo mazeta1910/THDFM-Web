@@ -88,6 +88,10 @@ def _path_publico(path: str) -> bool:
     """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
     if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
         return True
+    # Grid HTML: middleware deixa passar para crawlers de preview (OG);
+    # o handler ainda exige login para humanos (API /grid/api/* segue protegida).
+    if path == "/grid":
+        return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
         return True
     # Perfil (handler ainda exige liberado/admin)
@@ -369,6 +373,10 @@ def render(request: Request, name: str, **ctx):
     else:
         ctx.setdefault("admin_nome", admin_nome(request))
     ctx.setdefault("participante_nav", part_nav)
+    ctx.setdefault(
+        "public_base_url",
+        (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/"),
+    )
     if "recados_novos_count" not in ctx:
         try:
             ctx["recados_novos_count"] = (
@@ -2603,12 +2611,28 @@ def _grid_voter(request: Request) -> dict | None:
     return _voter_sessao(request)
 
 
+_LINK_PREVIEW_BOT_RE = re.compile(
+    r"facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|"
+    r"Slackbot|Discordbot|TelegramBot|Googlebot|bingbot|Applebot|"
+    r"SkypeUriPreview|Slack-ImgProxy|preview",
+    re.I,
+)
+
+
+def _is_link_preview_bot(request: Request) -> bool:
+    """Crawlers de preview (WhatsApp/etc.) precisam ver OG sem login."""
+    ua = request.headers.get("user-agent") or ""
+    return bool(_LINK_PREVIEW_BOT_RE.search(ua))
+
+
 @app.get("/grid", response_class=HTMLResponse)
 def grid_page(request: Request):
     """THDFM Grid — puzzle diário (liberado para participantes logados)."""
-    neg = _require_perfil(request)
-    if neg:
-        return neg
+    # Preview de link: serve a página com meta OG (sem redirect de login).
+    if not _is_link_preview_bot(request):
+        neg = _require_perfil(request)
+        if neg:
+            return neg
     from src.grid_game import dia_grid, puzzle_publico
 
     dia = dia_grid()
