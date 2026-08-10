@@ -12403,9 +12403,9 @@ button.grid-cell,
   border: 1px solid var(--border);
   background: var(--bg);
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1.05rem;
-  line-height: 1.45;
+  line-height: 1.55;
   font-weight: 700;
 }
 .grid-share-actions {
@@ -12515,6 +12515,30 @@ button.grid-cell,
   background: var(--bg);
   color: var(--text);
   font: inherit;
+}
+.grid-modal-hint {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.grid-modal-hint.is-error {
+  background: color-mix(in srgb, #e85d5d 18%, transparent);
+  color: #ffb4b4;
+}
+:root[data-theme="light"] .grid-modal-hint.is-error {
+  color: #9b1c1c;
+}
+.grid-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.grid-modal-actions .btn {
+  min-width: 7rem;
 }
 .grid-suggestions {
   list-style: none;

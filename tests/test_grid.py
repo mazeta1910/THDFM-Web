@@ -115,7 +115,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=5" in r.text
+    assert "/static/grid.js?v=6" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert "data-grid-share-wa" in r.text
@@ -123,6 +123,8 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "WhatsApp</button>" not in r.text
     assert 'id="ranking"' in r.text
     assert "grid-result-top" in r.text
+    assert "data-grid-chute" in r.text
+    assert "data-grid-suggestions" not in r.text
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")
@@ -138,7 +140,10 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" not in bolao_block
     assert "Ranking Grid" not in bolao_block
     js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
-    assert "MIN_CHARS = 3" in js
+    assert "SQ_OK" in js
+    assert "\\uD83D\\uDFE9" in js
+    assert "🟩" not in js
+    assert "data-grid-suggestions" not in js
     assert "c.uf" not in js
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
@@ -161,15 +166,13 @@ def test_grid_fluxo_logado(client: TestClient):
     assert row and col
     clube = pool_celula(row, col)[0]
 
-    # 1–2 letras não revelam lista
+    # 1–2 letras: API não devolve sugestões
     curto = client.get(
         "/grid/api/buscar",
         params={"linha": 0, "coluna": 0, "q": clube["nome"][:1]},
     )
     assert curto.status_code == 200
-    assert curto.json()["pronto"] is False
     assert curto.json()["itens"] == []
-    assert curto.json()["min_chars"] == 3
 
     busca = client.get(
         "/grid/api/buscar",
@@ -177,12 +180,12 @@ def test_grid_fluxo_logado(client: TestClient):
     )
     assert busca.status_code == 200
     assert busca.json()["pronto"] is True
-    assert busca.json()["total"] >= DENSIDADE_MIN
-    assert any(x["id"] == clube["id"] for x in busca.json()["itens"])
+    assert busca.json()["itens"] == []
+    assert busca.json().get("sugestoes") is False
 
     chute = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
+        json={"linha": 0, "coluna": 0, "nome": clube["nome"]},
     )
     assert chute.status_code == 200
     body = chute.json()
@@ -191,7 +194,7 @@ def test_grid_fluxo_logado(client: TestClient):
 
     chute2 = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
+        json={"linha": 0, "coluna": 0, "nome": clube["nome"]},
     )
     assert chute2.status_code == 409
 
@@ -230,11 +233,28 @@ def test_texto_share_usa_verde_e_vermelho():
         [None, None, None],
     ]
     text = texto_share(dia="2026-08-09", celulas=celulas)
-    assert "🟩🟥⬜" in text
-    assert "⬜🟩🟥" in text
+    assert "🟩 🟥 ⬜" in text
+    assert "⬜ 🟩 🟥" in text
     assert "⬛" not in text
     assert "2/9" in text
     assert "https://thdfm.com.br/grid" in text
+    # bytes UTF-8 corretos dos quadrados (não latin-1)
+    raw = text.encode("utf-8")
+    assert "🟩".encode("utf-8") in raw
+    assert "🟥".encode("utf-8") in raw
+
+
+def test_resolver_clube_por_nome_sem_sugestoes():
+    from src.grid_game import resolver_clube_por_nome
+
+    clube = clubes_grid()[0]
+    hit = resolver_clube_por_nome(clube["nome"])
+    assert hit["id"] == clube["id"]
+    try:
+        resolver_clube_por_nome("xyzclubeinexistente999")
+        assert False, "deveria falhar"
+    except ValueError as exc:
+        assert "não encontrado" in str(exc).casefold() or "nao encontrado" in str(exc).casefold()
 
 
 def test_ranking_e_stats_grid(client: TestClient):

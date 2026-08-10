@@ -126,8 +126,8 @@
   <form method="dialog" class="grid-modal-card" data-grid-form>
     <header class="grid-modal-head">
       <div>
-        <strong data-grid-modal-title>Buscar clube</strong>
-        <p class="grid-modal-count"><span data-grid-count>0</span> possíveis</p>
+        <strong data-grid-modal-title>Chutar clube</strong>
+        <p class="grid-modal-count"><span data-grid-count>0</span> possíveis nesta célula</p>
       </div>
       <button type="submit" class="grid-modal-x" value="cancel" aria-label="Fechar">×</button>
     </header>
@@ -137,17 +137,20 @@
       name="q"
       autocomplete="off"
       spellcheck="false"
-      placeholder="Digite pelo menos 3 letras…"
+      placeholder="Digite o nome do clube…"
       data-grid-search
     />
-    <ul class="grid-suggestions" data-grid-suggestions></ul>
-    <p class="grid-modal-note">Uma tentativa por célula. Sugestões só após 3 letras · nomes oficiais do catálogo.</p>
+    <p class="grid-modal-hint" data-grid-modal-hint hidden></p>
+    <div class="grid-modal-actions">
+      <button type="submit" class="btn" value="chute" data-grid-chute>Chutar</button>
+    </div>
+    <p class="grid-modal-note">Uma tentativa por célula · digite o nome (sem lista de sugestões).</p>
   </form>
 </dialog>
 
-<script type="application/json" id="grid-boot">{{ {"puzzle": puzzle, "progresso": progresso, "streak": streak}|tojson }}</script>
+<script type="application/json" id="grid-boot">{{ {"puzzle": puzzle, "progresso": progresso, "streak": streak, "share": share}|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=5" defer></script>
+<script src="/static/grid.js?v=6" defer></script>
 {% endblock %}
