@@ -120,6 +120,10 @@ def test_meu_perfil_alterar_senha_volta_ao_editar(client: TestClient):
 
 def test_meu_perfil_publico(client: TestClient):
     login_admin(client)
+    from src import db as dbmod
+
+    dono = dbmod.get_participante_por_admin_login("mazeta")
+    assert dono
     r = client.get("/meu-perfil")
     assert r.status_code == 200
     assert "meu perfil" in r.text.lower()
@@ -133,11 +137,14 @@ def test_meu_perfil_publico(client: TestClient):
     assert 'id="bolao"' in r.text
     assert 'id="recados"' in r.text
     assert 'data-viewer-id="' in r.text
+    assert f'data-viewer-id="{dono["id"]}"' in r.text
     assert "/static/prototipo-perfil.js?v=24" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-post-nome" in js
     assert "proto-steam-post-av-link" in js
     assert "autor_id" in js
+    assert "resolveAutorId" in js
+    assert "perfilHref" in js
     assert 'class="proto-steam-panel"' in r.text
     assert "No bolão" in r.text
     assert 'href="/classificacao"' in r.text
@@ -224,6 +231,8 @@ def test_perfil_outro_usuario(client: TestClient):
     assert "Benevides" in r.text
     assert 'data-fixado="1"' in r.text
     assert 'data-own="0"' in r.text
+    assert f'data-viewer-id="{part["id"]}"' in r.text
+    assert f'data-target-id="{alvo["id"]}"' in r.text
     assert 'id="proto-perfil-fixado"' in r.text
     assert 'id="public-amigo-pedir"' not in r.text
     assert 'id="recados"' in r.text
