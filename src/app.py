@@ -1164,16 +1164,22 @@ def _recado_midia_url(midia_path: str | None) -> str:
     return f"/recados-midia/{rel}"
 
 
+def _recado_item_payload(r: dict) -> dict:
+    item = dict(r)
+    item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
+    item["midia"] = _recado_midia_url(item.pop("midia_path", None))
+    kids = item.pop("respostas", None) or []
+    item["respostas"] = [_recado_item_payload(k) for k in kids if isinstance(k, dict)]
+    return item
+
+
 def _recados_payload(target_id: int | None, voter_id: int | None = None) -> list[dict]:
     if not target_id:
         return []
-    out = []
-    for r in db.listar_recados(int(target_id), voter_id=voter_id):
-        item = dict(r)
-        item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
-        item["midia"] = _recado_midia_url(item.pop("midia_path", None))
-        out.append(item)
-    return out
+    return [
+        _recado_item_payload(r)
+        for r in db.listar_recados(int(target_id), voter_id=voter_id)
+    ]
 
 
 @app.get("/meu-perfil", response_class=HTMLResponse)
@@ -1340,16 +1346,18 @@ async def perfil_recados_post(request: Request, participante_id: int):
     voter = _voter_sessao(request)
     if not voter:
         return JSONResponse({"erro": "Não autorizado"}, status_code=401)
-    if int(voter["id"]) == int(participante_id):
-        return JSONResponse({"erro": "Não pode deixar recado no próprio perfil"}, status_code=403)
 
     texto = ""
     midia_rel: str | None = None
+    parent_id: int | None = None
     ctype = (request.headers.get("content-type") or "").lower()
     try:
         if "multipart/form-data" in ctype:
             form = await request.form()
             texto = str(form.get("texto") or "")
+            raw_parent = form.get("parent_id")
+            if raw_parent not in (None, ""):
+                parent_id = int(raw_parent)
             upload = form.get("midia")
             if upload is not None and hasattr(upload, "read"):
                 ext = Path(getattr(upload, "filename", "") or "").suffix.lower()
@@ -1369,8 +1377,15 @@ async def perfil_recados_post(request: Request, participante_id: int):
         else:
             body = await request.json()
             texto = (body or {}).get("texto") or ""
+            raw_parent = (body or {}).get("parent_id")
+            if raw_parent not in (None, ""):
+                parent_id = int(raw_parent)
     except Exception:
         return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+
+    # Recado raiz: só visitantes. Resposta: dono do mural também pode.
+    if parent_id is None and int(voter["id"]) == int(participante_id):
+        return JSONResponse({"erro": "Não pode deixar recado no próprio perfil"}, status_code=403)
 
     try:
         criado = db.criar_recado(
@@ -1378,17 +1393,18 @@ async def perfil_recados_post(request: Request, participante_id: int):
             voter["id"],
             texto,
             midia_path=midia_rel,
+            parent_id=parent_id,
         )
     except (TypeError, ValueError) as exc:
         if midia_rel:
             db._apagar_arquivo_recado(midia_rel)
-        return JSONResponse({"erro": str(exc)}, status_code=400)
-    item = dict(criado)
-    item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
-    item["midia"] = _recado_midia_url(item.pop("midia_path", None))
+        msg = str(exc)
+        if "não encontrado" in msg:
+            return JSONResponse({"erro": msg}, status_code=404)
+        return JSONResponse({"erro": msg}, status_code=400)
     return JSONResponse(
         {
-            "recado": item,
+            "recado": _recado_item_payload(criado),
             "recados": _recados_payload(participante_id, voter_id=voter["id"]),
         }
     )

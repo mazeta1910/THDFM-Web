@@ -55,7 +55,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=31" in r.text
+    assert "/static/prototipo-perfil.js?v=32" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -136,7 +136,7 @@ def test_recado_com_imagem_e_gif(client: TestClient, tmp_path, monkeypatch):
     assert r.status_code == 200
     assert "/recados-midia/" in r.text
     assert "data-recado-midia" in r.text
-    assert "/static/prototipo-perfil.js?v=31" in r.text
+    assert "/static/prototipo-perfil.js?v=32" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-feed-midia" in js
     assert "FormData" in js
@@ -212,9 +212,76 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     assert "button.proto-steam-reacao" in css
     assert "width: auto" in css
     assert "data-reacao-add" in js
-    assert "/static/prototipo-perfil.js?v=31" in r.text
+    assert "/static/prototipo-perfil.js?v=32" in r.text
     assert "👍" in r.text
     assert "Reage A" in r.text
+
+
+def test_responder_recado_dono_e_visitante(client: TestClient):
+    """Dono do mural e visitantes podem responder; só 1 nível de thread."""
+    alvo = _login_part(client, "Alvo Thread", "alvo.thread", "11990009130")
+    client.cookies.clear()
+    autor = _login_part(client, "Autor Thread", "autor.thread", "11990009131")
+
+    r = client.post(f"/perfil/{alvo['id']}/recados", json={"texto": "e aí chefia"})
+    assert r.status_code == 200
+    root = r.json()["recado"]
+    rid = int(root["id"])
+    assert root.get("parent_id") is None
+    assert root.get("respostas") == []
+
+    # visitante responde
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        json={"texto": "tô de olho", "parent_id": rid},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["recado"]["texto"] == "tô de olho"
+    assert data["recado"]["parent_id"] == str(rid)
+    assert len(data["recados"]) == 1
+    assert len(data["recados"][0]["respostas"]) == 1
+    assert data["recados"][0]["respostas"][0]["autor_id"] == autor["id"]
+
+    # não aninha resposta em resposta
+    reply_id = int(data["recado"]["id"])
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        json={"texto": "nível 2", "parent_id": reply_id},
+    )
+    assert r.status_code == 400
+
+    # dono do mural responde no próprio perfil
+    client.cookies.clear()
+    client.get(f"/p/{alvo['token']}")
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        json={"texto": "valeu irmão", "parent_id": rid},
+    )
+    assert r.status_code == 200
+    assert r.json()["recado"]["autor_id"] == alvo["id"]
+    assert len(r.json()["recados"][0]["respostas"]) == 2
+
+    # raiz no próprio perfil continua bloqueada
+    r = client.post(f"/perfil/{alvo['id']}/recados", json={"texto": "auto raiz"})
+    assert r.status_code == 403
+
+    # apagar raiz remove respostas
+    r = client.delete(f"/perfil/{alvo['id']}/recados/{rid}")
+    assert r.status_code == 200
+    assert r.json()["recados"] == []
+    assert dbmod.listar_recados(alvo["id"]) == []
+
+    r = client.get(f"/perfil/{alvo['id']}")
+    assert r.status_code == 200
+    assert "/static/prototipo-perfil.js?v=32" in r.text
+    js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "data-reply-toggle" in js
+    assert "proto-steam-respostas" in js
+    assert "parent_id" in js
+    assert ".proto-steam-respostas" in css
+    assert ".proto-steam-reply-form" in css
 
 
 def test_notificacao_recados_envelope(client: TestClient):

@@ -80,7 +80,7 @@ def test_api_nutela_voto_e_perfil(client: TestClient):
     assert "data-proto-nutela" in r.text
     assert ">nutella</span>" in r.text
     assert "medidor nutella" in r.text
-    assert "/static/prototipo-perfil.js?v=31" in r.text
+    assert "/static/prototipo-perfil.js?v=32" in r.text
 
     r = client.put(
         f"/perfil/{votante['id']}/nutela",
