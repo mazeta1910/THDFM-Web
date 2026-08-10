@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scrape Série A final standings (2003–2025) and all-time artilheiros from pt.wikipedia."""
+"""Scrape Série A final standings (1959–2025) and all-time artilheiros from pt.wikipedia."""
 
 from __future__ import annotations
 
@@ -16,11 +16,20 @@ UA = "THDFM-GridBot/1.0 (THDFM Grid historical data; https://github.com/mazeta19
 API = "https://pt.wikipedia.org/w/api.php"
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "data" / "torneios"
-PAUSE_S = 0.6
+PAUSE_S = 0.55
+
+# 1967/1968: página base é desambiguação; usamos o Robertão (mais clubes / tabela final).
+YEAR_PAGE_OVERRIDES = {
+    1967: "Campeonato Brasileiro de Futebol de 1967 (Torneio Roberto Gomes Pedrosa)",
+    1968: "Campeonato Brasileiro de Futebol de 1968 (Torneio Roberto Gomes Pedrosa)",
+}
 
 YEAR_PAGES = {
-    y: f"Campeonato Brasileiro de Futebol de {y}" for y in range(2003, 2026)
+    y: YEAR_PAGE_OVERRIDES.get(y, f"Campeonato Brasileiro de Futebol de {y}")
+    for y in range(1959, 2026)
 }
+
+POS_RE = re.compile(r"^(\d{1,2})[ºª°.]?$")
 
 
 def api_get(params: dict) -> dict:
@@ -65,38 +74,63 @@ def table_rows(html_table: str) -> list[list[str]]:
     return out
 
 
-def find_standings_table(page_html: str) -> list[list[str]] | None:
-    """Pick the main final league table: Pos + Equipe/Time + Pts + ~20 rows."""
+def _norm_header_cell(h: str) -> str:
+    hl = re.sub(r"\.mw-parser-output\b.*?\{.*?\}", " ", h, flags=re.S)
+    hl = re.sub(r"\{[^}]*\}", " ", hl)
+    hl = re.sub(r"@media[^{]*\{.*?\}", " ", hl, flags=re.S)
+    hl = re.sub(r"\s+", " ", hl).strip().lower()
+    if len(hl) > 40:
+        m = re.search(
+            r"(pos\.?|equipes?|times?|clubes?|pts|pg|p|j|v|e|d|gp|gc|sg|gm|gs)\s*$",
+            hl,
+        )
+        if m:
+            hl = m.group(1)
+    return hl
+
+
+def score_standings_grid(rows: list[list[str]]) -> int:
+    if len(rows) < 8:
+        return -1
+    head = " ".join(rows[0]).lower()
+    head2 = " ".join(rows[1]).lower() if len(rows) > 1 else ""
+    head3 = " ".join(rows[2]).lower() if len(rows) > 2 else ""
+    blob = f"{head} {head2} {head3}"
+    if not (
+        re.search(r"\bpts\b|\bpg\b|\bpt\b", blob)
+        or any(c.strip().lower() in ("p", "pts", "pg", "pt") for c in rows[0] + (rows[1] if len(rows) > 1 else []))
+    ):
+        return -1
+    if not re.search(r"pos|equipe|time|clube|classif", blob):
+        return -1
+    score = len(rows)
+    if re.search(r"\bgp\b|\bgf\b|gols pró|gols pro|\bgm\b", blob):
+        score += 50
+    if re.search(r"\bgc\b|\bga\b|gols contra|\bgs\b", blob):
+        score += 20
+    n_ranked = 0
+    for r in rows[1:]:
+        if not r:
+            continue
+        if POS_RE.match(r[0].strip()):
+            n_ranked += 1
+        elif len(r) > 1 and POS_RE.match(r[0].strip()) is None and POS_RE.match(
+            re.sub(r"[^\dºª°.]", "", r[0])
+        ):
+            n_ranked += 1
+    score += n_ranked
+    if n_ranked < 8:
+        return -1
+    return score
+
+
+def find_standings_table_fallback(page_html: str) -> list[list[str]] | None:
+    """Fallback: melhor tabela Pos+Pts na página inteira (era pontos corridos)."""
     candidates: list[tuple[int, list[list[str]]]] = []
     for m in re.finditer(r"<table[^>]*>(.*?)</table>", page_html, re.S | re.I):
         rows = table_rows(m.group(0))
-        if len(rows) < 10:
-            continue
-        head = " ".join(rows[0]).lower()
-        # skip style-noise headers by also checking row1
-        head2 = " ".join(rows[1]).lower() if len(rows) > 1 else ""
-        blob = head + " " + head2
-        # Pts / PG / bare "P" (common on older PT wiki tables)
-        if not (
-            re.search(r"\bpts\b|\bpg\b", blob)
-            or re.search(r"(^|[\s|/])p([\s|/]|$)", " ".join(rows[0]).lower())
-            or any(c.strip().lower() in ("p", "pts", "pg") for c in rows[0])
-        ):
-            continue
-        if not re.search(r"pos|equipe|time|clube|classif", blob):
-            continue
-        # prefer tables with GP/GC or SG
-        score = len(rows)
-        if re.search(r"\bgp\b|\bgf\b|gols pró|gols pro|\bgm\b", blob):
-            score += 50
-        if re.search(r"\bgc\b|\bga\b|gols contra|\bgs\b", blob):
-            score += 20
-        # data rows looking like rank numbers
-        n_ranked = sum(
-            1 for r in rows[1:] if r and re.fullmatch(r"\d{1,2}", r[0].rstrip("."))
-        )
-        score += n_ranked
-        if n_ranked >= 16:
+        score = score_standings_grid(rows)
+        if score >= 0:
             candidates.append((score, rows))
     if not candidates:
         return None
@@ -104,43 +138,116 @@ def find_standings_table(page_html: str) -> list[list[str]] | None:
     return candidates[0][1]
 
 
-def map_standings_columns(header: list[str]) -> dict[str, int]:
+def find_classificacao_section_table(page_html: str) -> list[list[str]] | None:
+    """Prefere tabelas sob Classificação final > geral > Classificação."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(page_html, "html.parser")
+    headings = list(soup.find_all(re.compile(r"^h[2-4]$")))
+    patterns = [
+        r"classifica[cç][aã]o\s+final",
+        r"classifica[cç][aã]o\s+geral",
+        r"^classifica[cç][aã]o$",
+        r"^classifica[cç][aã]o\b",
+    ]
+    for pat in patterns:
+        for h in headings:
+            title = h.get_text(" ", strip=True)
+            if not re.search(pat, title, re.I):
+                continue
+            # ignorar módulos Azul/Branco de 1987 e grupos
+            if re.search(r"m[oó]dulo\s+(azul|branco)|grupo\s+[a-d]\b", title, re.I):
+                continue
+            level = int(h.name[1])
+            grids: list[list[list[str]]] = []
+            for el in h.find_all_next():
+                if (
+                    getattr(el, "name", None)
+                    and re.match(r"^h[2-4]$", el.name)
+                    and int(el.name[1]) <= level
+                    and el is not h
+                ):
+                    break
+                if getattr(el, "name", None) == "table":
+                    grid = expand_table_grid(el)
+                    if score_standings_grid(grid) >= 0:
+                        grids.append(grid)
+            if not grids:
+                continue
+            grids.sort(key=lambda g: -score_standings_grid(g))
+            return grids[0]
+    return None
+
+
+def find_standings_table(page_html: str) -> list[list[str]] | None:
+    return find_classificacao_section_table(page_html) or find_standings_table_fallback(
+        page_html
+    )
+
+
+def map_standings_columns(header: list[str], sample: list[str] | None = None) -> dict[str, int]:
     idxs: dict[str, int] = {}
-    for i, h in enumerate(header):
-        # strip embedded CSS / mediawiki style noise, keep trailing label
-        hl = re.sub(r"\.mw-parser-output\b.*?\{.*?\}", " ", h, flags=re.S)
-        hl = re.sub(r"\{[^}]*\}", " ", hl)
-        hl = re.sub(r"@media[^{]*\{.*?\}", " ", hl, flags=re.S)
-        hl = re.sub(r"\s+", " ", hl).strip().lower()
-        # if still huge, keep last token-ish words
-        if len(hl) > 40:
-            m = re.search(r"(pos\.?|equipes?|times?|clubes?|pts|pg|p|j|v|e|d|gp|gc|sg|gm|gs)\s*$", hl)
-            if m:
-                hl = m.group(1)
+    norms = [_norm_header_cell(h) for h in header]
+    for i, hl in enumerate(norms):
         if "pos" not in idxs and (hl.startswith("pos") or hl in ("pos", "pos.")):
             idxs["pos"] = i
         elif "nome" not in idxs and re.search(r"equipe|time|clube", hl):
             idxs["nome"] = i
-        elif "pts" not in idxs and (hl in ("pts", "pg", "p") or hl.startswith("pts")):
+        elif "pts" not in idxs and (hl in ("pts", "pg", "p", "pt") or hl.startswith("pts")):
             idxs["pts"] = i
-        elif "j" not in idxs and hl in ("j", "jogos", "partidas", "pld"):
+        elif "j" not in idxs and hl in ("j", "jogos", "partidas", "pld", "g"):
+            # "G" = jogos em tabelas italianizadas; só se pts já mapeado
+            if hl == "g" and "pts" not in idxs:
+                continue
             idxs["j"] = i
         elif "v" not in idxs and hl in ("v", "vitórias", "vitorias", "w"):
             idxs["v"] = i
         elif "e" not in idxs and hl in ("e", "empates"):
             idxs["e"] = i
-        elif "d" not in idxs and hl in ("d", "derrotas", "l"):
-            idxs["d"] = i
+        elif "d" not in idxs and hl in ("d", "derrotas", "l", "p") and i != idxs.get("pts"):
+            # "P" às vezes é derrotas (perdidos) em tabelas italianizadas
+            if hl == "p" and "pts" in idxs:
+                idxs["d"] = i
+            elif hl != "p":
+                idxs["d"] = i
         elif "gp" not in idxs and hl in ("gp", "gf", "gols pró", "gols pro", "gm"):
             idxs["gp"] = i
         elif "gc" not in idxs and hl in ("gc", "ga", "gols contra", "gs"):
             idxs["gc"] = i
-        elif "sg" not in idxs and (hl in ("sg", "gd") or hl.startswith("saldo")):
+        elif "sg" not in idxs and (hl in ("sg", "gd", "dr") or hl.startswith("saldo")):
             idxs["sg"] = i
+
     if "pos" not in idxs:
         idxs["pos"] = 0
     if "nome" not in idxs and len(header) > 1:
         idxs["nome"] = 1
+
+    # Wiki antiga: cabeçalho "Time | | PG" com dados "1 | Palmeiras | 42"
+    if sample:
+        pos_i = idxs["pos"]
+        nome_i = idxs["nome"]
+        pos_cell = sample[pos_i] if pos_i < len(sample) else ""
+        nome_cell = sample[nome_i] if nome_i < len(sample) else ""
+        if pos_i == nome_i or (
+            POS_RE.match(pos_cell.strip()) and POS_RE.match(nome_cell.strip())
+        ):
+            # achar primeira coluna de texto que não seja posição
+            for i, cell in enumerate(sample):
+                if POS_RE.match(cell.strip()):
+                    idxs["pos"] = i
+                    for j in range(i + 1, len(sample)):
+                        if sample[j].strip() and not POS_RE.match(sample[j].strip()):
+                            if not re.fullmatch(r"[\d+\-]+", sample[j].strip()):
+                                idxs["nome"] = j
+                                break
+                    break
+        elif not POS_RE.match(pos_cell.strip()) and POS_RE.match(
+            sample[0].strip() if sample else ""
+        ):
+            idxs["pos"] = 0
+            if nome_i == 0:
+                idxs["nome"] = 1
+
     if "v" not in idxs and "pts" in idxs and "j" in idxs:
         j = idxs["j"]
         if j + 3 < len(header):
@@ -151,26 +258,54 @@ def map_standings_columns(header: list[str]) -> dict[str, int]:
 
 
 def parse_standings(rows: list[list[str]], ano: int, fonte: str) -> list[dict]:
-    # Find header row: first with Pts/P
+    # Pular linhas-título ("Classificação final", "Tabela de classificação")
     header_i = 0
-    for i, r in enumerate(rows[:3]):
+    for i, r in enumerate(rows[:4]):
         joined = " ".join(r)
-        if re.search(r"\bPts\b|\bPG\b", joined, re.I) or any(
-            c.strip().lower() in ("p", "pts", "pg") for c in r
+        if re.search(r"\bPts\b|\bPG\b|\bPt\b", joined, re.I) or any(
+            c.strip().lower() in ("p", "pts", "pg", "pt") for c in r
         ):
+            # evitar linha que só repete o título da seção
+            if re.search(r"classifica|tabela de", joined, re.I) and not re.search(
+                r"\b(J|V|E|D|GP|GC)\b", joined, re.I
+            ):
+                continue
             header_i = i
             break
     header = rows[header_i]
-    col = map_standings_columns(header)
+    sample = None
+    for r in rows[header_i + 1 : header_i + 6]:
+        if r and POS_RE.match(r[0].strip()):
+            sample = r
+            break
+        if r and len(r) > 1 and POS_RE.match(r[0].strip()):
+            sample = r
+            break
+    col = map_standings_columns(header, sample)
     out: list[dict] = []
     for r in rows[header_i + 1 :]:
         if not r:
             continue
-        pos_s = r[col["pos"]] if col["pos"] < len(r) else ""
-        pos_s = pos_s.rstrip(".")
-        if not re.fullmatch(r"\d{1,2}", pos_s):
-            continue
+        while len(r) < len(header):
+            r = r + [""]
+        pos_raw = r[col["pos"]] if col["pos"] < len(r) else ""
+        m_pos = POS_RE.match(pos_raw.strip())
+        if not m_pos:
+            # às vezes pos está na col 0 mesmo com mapa errado
+            m_pos = POS_RE.match(r[0].strip())
+            if m_pos and col["nome"] == 0:
+                col = dict(col)
+                col["pos"] = 0
+                col["nome"] = 1
+            else:
+                continue
+        pos_s = m_pos.group(1)
         nome_raw = r[col["nome"]] if col["nome"] < len(r) else ""
+        # escudo vazio entre pos e nome
+        if not nome_raw.strip() and col["nome"] + 1 < len(r):
+            nome_raw = r[col["nome"] + 1]
+        if POS_RE.match(nome_raw.strip()) or re.fullmatch(r"\d+", nome_raw.strip()):
+            continue
         nome = strip_club_noise(nome_raw)
         if not nome or len(nome) < 2:
             continue
@@ -212,7 +347,10 @@ def scrape_year_standings(ano: int) -> list[dict]:
     table = find_standings_table(html)
     if not table:
         raise RuntimeError(f"Nenhuma tabela de classificação encontrada em {title}")
-    return parse_standings(table, ano, url)
+    rows = parse_standings(table, ano, url)
+    if len(rows) < 8:
+        raise RuntimeError(f"{title}: só {len(rows)} linhas úteis na classificação")
+    return rows
 
 
 def expand_table_grid(table) -> list[list[str]]:
@@ -522,13 +660,15 @@ Gerado por `scripts/scrape_serie_a_wiki.py` via API da pt.wikipedia.
 
 ## Arquivos
 
-- `classificacoes_serie_a.csv` — tabelas finais **2003–2025** (pontos corridos), UTF-8 BOM, `;`
+- `classificacoes_serie_a.csv` — tabelas finais **1959–2025**, UTF-8 BOM, `;`
 - `artilheiros_serie_a.csv` — artilheiros por edição (1937–2025), UTF-8 BOM, `;`
 
 ## Notas
 
-- Classificações: era pontos corridos; anos pré-2003 não inclusos neste scrape.
-- Artilheiros: base na lista agregada da Wikipedia; **2003–2025** sobrescritos pelas páginas anuais (a lista agregada tem erros pontuais, ex. 2016).
+- Classificações: prioriza seção **Classificação final** (depois geral). Inclui Taça Brasil / Robertão / mata-mata; posições refletem o desfecho do torneio, não só pontos.
+- **1967–1968:** página base é desambiguação; scrape usa o **Torneio Roberto Gomes Pedrosa** (há também Taça Brasil no Wiki).
+- **Melhor ataque / mais gols por edição:** derivar do maior `gp` na classificação (não precisa de CSV extra).
+- Artilheiros (jogadores): lista agregada + override **2003–2025** pelas páginas anuais.
 - Empates de artilharia: uma linha por jogador empatado no máximo de gols da edição.
 - Nomes podem precisar de aliases no join FM (`Atlético-MG` vs `Atlético Mineiro`, etc.).
 - Dependência: `beautifulsoup4` (rowspan nas tabelas).
