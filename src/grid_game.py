@@ -18,6 +18,7 @@ TZ_SP = ZoneInfo("America/Sao_Paulo")
 GRID_SIZE = 3
 DENSIDADE_MIN = 4
 BUSCA_LIMITE = 12
+BUSCA_MIN_CHARS = 3
 
 REGIOES: dict[str, set[str]] = {
     "Norte": {"AC", "AP", "AM", "PA", "RO", "RR", "TO"},
@@ -343,24 +344,28 @@ def buscar_celula(
     pool = pool_celula(row, col)
     total = len(pool)
     query = (q or "").strip().casefold()
-    if query:
+    pronto = len(query) >= BUSCA_MIN_CHARS
+    if pronto:
         filtrados = [c for c in pool if query in c["nome_norm"]]
+        itens = [
+            {
+                "id": c["id"],
+                "nome": c["nome"],
+                "uf": c["uf"],
+                "emblema": c["emblema"],
+            }
+            for c in filtrados[: max(1, min(int(limite), 30))]
+        ]
     else:
         filtrados = []
-    itens = [
-        {
-            "id": c["id"],
-            "nome": c["nome"],
-            "uf": c["uf"],
-            "emblema": c["emblema"],
-        }
-        for c in filtrados[: max(1, min(int(limite), 30))]
-    ]
+        itens = []
     return {
         "total": total,
-        "filtrados": len(filtrados) if query else total,
+        "filtrados": len(filtrados) if pronto else total,
         "itens": itens,
         "query": q or "",
+        "min_chars": BUSCA_MIN_CHARS,
+        "pronto": pronto,
     }
 
 

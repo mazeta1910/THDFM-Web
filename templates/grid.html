@@ -74,11 +74,11 @@
       name="q"
       autocomplete="off"
       spellcheck="false"
-      placeholder="Digite o nome oficial do clube…"
+      placeholder="Digite pelo menos 3 letras…"
       data-grid-search
     />
     <ul class="grid-suggestions" data-grid-suggestions></ul>
-    <p class="grid-modal-note">Uma tentativa por célula. Só entram nomes oficiais do catálogo.</p>
+    <p class="grid-modal-note">Uma tentativa por célula. Sugestões só após 3 letras · nomes oficiais do catálogo.</p>
   </form>
 </dialog>
 
@@ -86,5 +86,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=1" defer></script>
+<script src="/static/grid.js?v=2" defer></script>
 {% endblock %}
