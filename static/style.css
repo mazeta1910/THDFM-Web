@@ -10790,6 +10790,7 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.35rem;
 }
 .proto-bolao-badge {
