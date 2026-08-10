@@ -78,7 +78,9 @@ def test_api_nutela_voto_e_perfil(client: TestClient):
     assert 'id="proto-nutela-resumo"' in r.text
     assert '"media": 75' in r.text or '"media":75' in r.text
     assert "data-proto-nutela" in r.text
-    assert "/static/prototipo-perfil.js?v=27" in r.text
+    assert ">nutella</span>" in r.text
+    assert "medidor nutella" in r.text
+    assert "/static/prototipo-perfil.js?v=28" in r.text
 
     r = client.put(
         f"/perfil/{votante['id']}/nutela",
@@ -86,6 +88,7 @@ def test_api_nutela_voto_e_perfil(client: TestClient):
         follow_redirects=False,
     )
     assert r.status_code == 403
+    assert r.json()["erro"] == "Não pode votar no próprio nutella"
 
 
 def test_meu_perfil_mostra_media_nutela(client: TestClient):
@@ -100,5 +103,6 @@ def test_meu_perfil_mostra_media_nutela(client: TestClient):
     assert 'data-pode-votar="0"' in r.text
     assert "data-proto-nutela" not in r.text
     assert 'id="proto-nutela-resumo"' in r.text
+    assert ">nutella</span>" in r.text
     assert '"media": 10' in r.text or '"media":10' in r.text
     assert '"count": 1' in r.text or '"count":1' in r.text
