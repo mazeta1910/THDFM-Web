@@ -436,7 +436,7 @@ def _migrate_perfil_karma(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_perfil_nutela(conn: sqlite3.Connection) -> None:
-    """Votos nutela↔raíz do perfil (média 0–100 agregada por participante)."""
+    """Votos nutella↔raíz do perfil (média 0–100 agregada por participante)."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS perfil_nutela_votos (
