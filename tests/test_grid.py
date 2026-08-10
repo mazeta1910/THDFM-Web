@@ -49,10 +49,12 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Prévia privada" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=1" in r.text
+    assert "/static/grid.js?v=2" in r.text
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
+    js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
+    assert "MIN_CHARS = 3" in js
 
     hoje = client.get("/grid/api/hoje")
     assert hoje.status_code == 200
@@ -66,11 +68,22 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert row and col
     clube = pool_celula(row, col)[0]
 
+    # 1–2 letras não revelam lista
+    curto = client.get(
+        "/grid/api/buscar",
+        params={"linha": 0, "coluna": 0, "q": clube["nome"][:1]},
+    )
+    assert curto.status_code == 200
+    assert curto.json()["pronto"] is False
+    assert curto.json()["itens"] == []
+    assert curto.json()["min_chars"] == 3
+
     busca = client.get(
         "/grid/api/buscar",
         params={"linha": 0, "coluna": 0, "q": clube["nome"][:3]},
     )
     assert busca.status_code == 200
+    assert busca.json()["pronto"] is True
     assert busca.json()["total"] >= DENSIDADE_MIN
     assert any(x["id"] == clube["id"] for x in busca.json()["itens"])
 

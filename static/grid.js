@@ -28,6 +28,7 @@
   let active = null; // {linha, coluna}
   let searchTimer = 0;
   let shareText = "";
+  const MIN_CHARS = 3;
 
   function emptyBoard() {
     return Array.from({ length: size }, () => Array.from({ length: size }, () => null));
@@ -132,7 +133,9 @@
     active = { linha, coluna };
     const n = cellBtn(linha, coluna)?.getAttribute("data-possiveis") || "0";
     if (countEl) countEl.textContent = n;
-    if (suggestions) suggestions.innerHTML = "";
+    if (suggestions) {
+      suggestions.innerHTML = `<li class="grid-sug-empty">Digite pelo menos ${MIN_CHARS} letras para ver sugestões.</li>`;
+    }
     if (searchInput) {
       searchInput.value = "";
       searchInput.focus();
@@ -147,10 +150,21 @@
 
   async function runSearch(q) {
     if (!active) return;
+    const query = String(q || "").trim();
+    if (query.length < MIN_CHARS) {
+      if (countEl) {
+        const n = cellBtn(active.linha, active.coluna)?.getAttribute("data-possiveis") || "0";
+        countEl.textContent = n;
+      }
+      if (suggestions) {
+        suggestions.innerHTML = `<li class="grid-sug-empty">Digite pelo menos ${MIN_CHARS} letras para ver sugestões.</li>`;
+      }
+      return;
+    }
     const params = new URLSearchParams({
       linha: String(active.linha),
       coluna: String(active.coluna),
-      q: q || "",
+      q: query,
     });
     const r = await fetch(`/grid/api/buscar?${params}`, {
       headers: { Accept: "application/json" },
@@ -160,12 +174,6 @@
     if (countEl) countEl.textContent = String(data.filtrados ?? data.total ?? 0);
     if (!suggestions) return;
     const itens = Array.isArray(data.itens) ? data.itens : [];
-    if (!q) {
-      suggestions.innerHTML = `<li class="grid-sug-empty">Digite para filtrar os ${escapeHtml(
-        String(data.total || 0)
-      )} clubes possíveis.</li>`;
-      return;
-    }
     if (!itens.length) {
       suggestions.innerHTML = `<li class="grid-sug-empty">Nenhum clube com esse nome.</li>`;
       return;
