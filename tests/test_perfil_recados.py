@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from src import db as dbmod
+from src.config import ROOT_DIR
 from tests.conftest import login_admin
 
 
@@ -54,7 +55,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=28" in r.text
+    assert "/static/prototipo-perfil.js?v=29" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -86,6 +87,64 @@ def test_meu_perfil_embute_recados(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "no meu mural" in r.text
+
+
+def test_reacoes_toggle_e_agregam(client: TestClient):
+    alvo = dbmod.criar_participante("Alvo Reacao", status="liberado", celular="11990009110")
+    a = _login_part(client, "Reage A", "reage.a", "11990009111")
+    recado = dbmod.criar_recado(alvo["id"], a["id"], "reage aí")
+    rid = int(recado["id"])
+
+    r = client.put(
+        f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
+        json={"emoji": "👍"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["recado_id"] == str(rid)
+    assert data["reacoes"] == [{"emoji": "👍", "count": 1, "mine": True}]
+    assert data["recados"][0]["reacoes"] == [{"emoji": "👍", "count": 1, "mine": True}]
+
+    client.cookies.clear()
+    _login_part(client, "Reage B", "reage.b", "11990009112")
+    r = client.put(
+        f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
+        json={"emoji": "👍"},
+    )
+    assert r.status_code == 200
+    assert r.json()["reacoes"] == [{"emoji": "👍", "count": 2, "mine": True}]
+
+    # toggle remove o próprio voto
+    r = client.put(
+        f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
+        json={"emoji": "👍"},
+    )
+    assert r.status_code == 200
+    assert r.json()["reacoes"] == [{"emoji": "👍", "count": 1, "mine": False}]
+
+    r = client.put(
+        f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
+        json={"emoji": "🔥"},
+    )
+    assert r.status_code == 200
+    emojis = {x["emoji"]: x for x in r.json()["reacoes"]}
+    assert emojis["👍"]["count"] == 1
+    assert emojis["🔥"]["count"] == 1
+    assert emojis["🔥"]["mine"] is True
+
+    r = client.put(
+        f"/perfil/{alvo['id']}/recados/{rid}/reacoes",
+        json={"emoji": "💩"},
+    )
+    assert r.status_code == 400
+
+    r = client.get(f"/perfil/{alvo['id']}")
+    assert r.status_code == 200
+    js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
+    assert "proto-steam-reacao" in js
+    assert "data-reacao-add" in js
+    assert "/static/prototipo-perfil.js?v=29" in r.text
+    assert "👍" in r.text
 
 
 def test_notificacao_recados_envelope(client: TestClient):
