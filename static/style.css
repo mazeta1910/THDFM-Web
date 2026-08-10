@@ -12402,6 +12402,7 @@ button.grid-cell,
   border: 1px solid var(--border);
   background: var(--bg);
   white-space: pre-wrap;
+  text-align: center;
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1.05rem;
   line-height: 1.55;

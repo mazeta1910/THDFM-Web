@@ -128,6 +128,9 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'href="#ranking"' not in r.text
     assert "data-grid-streak" in r.text
     assert "grid-title" in r.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".grid-share-text" in css
+    assert "text-align: center" in css.split(".grid-share-text", 1)[1].split("}", 1)[0]
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")
