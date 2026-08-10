@@ -77,9 +77,9 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
     assert "/static/prototipo-perfil.js?v=31" in r.text
-    assert "/static/prototipo-times.js?v=17" in r.text
+    assert "/static/prototipo-times.js?v=18" in r.text
     assert 'id="proto-perfil-soft"' in r.text
-    assert "/static/style.css?v=287" in r.text
+    assert "/static/style.css?v=288" in r.text
     assert 'id="proto-ufs-toggle"' in r.text
     assert 'class="proto-times-ufs is-collapsed"' in r.text
     assert 'id="proto-uf-grid" hidden' in r.text
