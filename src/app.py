@@ -1179,6 +1179,19 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     }
 
 
+def _grid_resumo_perfil(participante_id: int | None) -> dict | None:
+    """Agregados do THDFM Grid para o bloco do perfil."""
+    if not participante_id:
+        return None
+    try:
+        pid = int(participante_id)
+    except (TypeError, ValueError):
+        return None
+    stats = db.grid_stats_participante(pid)
+    stats["ranking_url"] = "/grid/ranking"
+    return stats
+
+
 def _recado_midia_url(midia_path: str | None) -> str:
     rel = (midia_path or "").strip()
     if not rel or "/" in rel or "\\" in rel or ".." in rel:
@@ -1229,6 +1242,7 @@ def meu_perfil(request: Request):
         is_own_view=is_own_view,
         perfil_fixado=None,
         bolao_perfil=_bolao_resumo_perfil(part["id"] if part else None),
+        grid_perfil=_grid_resumo_perfil(part["id"] if part else None),
         perfil_target_id=part["id"] if part else None,
         perfil_viewer_id=part["id"] if part else None,
         karma_resumo=karma,
@@ -1292,6 +1306,7 @@ def perfil_participante(request: Request, participante_id: int):
         perfil_fixado=fixado,
         perfil_fixado_json=json.dumps(fixado, ensure_ascii=False),
         bolao_perfil=_bolao_resumo_perfil(part["id"]),
+        grid_perfil=_grid_resumo_perfil(part["id"]),
         perfil_target_id=part["id"],
         perfil_viewer_id=voter_id,
         karma_resumo=karma,
@@ -2571,6 +2586,16 @@ def grid_page(request: Request):
         streak=streak,
         grid_privado=True,
     )
+
+
+@app.get("/grid/ranking", response_class=HTMLResponse)
+def grid_ranking_page(request: Request):
+    """Ranking de quem mais preencheu o Grid (login liberado)."""
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    linhas = db.ranking_grid(limite=100)
+    return render(request, "grid_ranking.html", linhas=linhas)
 
 
 @app.get("/grid/api/hoje")

@@ -4436,3 +4436,130 @@ def grid_streak(participante_id: int, *, ate_dia: str | None = None) -> int:
         streak += 1
         cursor = cursor - timedelta(days=1)
     return streak
+
+
+def _contar_celulas_ok(celulas: Any) -> tuple[int, int]:
+    """Devolve (acertos, preenchidas) a partir do JSON 3×3."""
+    ok = 0
+    filled = 0
+    if not isinstance(celulas, list):
+        return 0, 0
+    for row in celulas:
+        if not isinstance(row, list):
+            continue
+        for cell in row:
+            if not isinstance(cell, dict) or not cell.get("clube"):
+                continue
+            filled += 1
+            if cell.get("ok"):
+                ok += 1
+    return ok, filled
+
+
+def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
+    """Ranking: dias finalizados → células corretas → streak."""
+    lim = max(1, min(int(limite), 200))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.id AS participante_id, p.nome, p.avatar_path,
+                   g.dia, g.celulas_json, g.finalizado
+            FROM grid_progresso g
+            JOIN participantes p ON p.id = g.participante_id
+            WHERE p.status = 'liberado'
+            ORDER BY p.id ASC, g.dia DESC
+            """
+        ).fetchall()
+    agg: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        pid = int(row["participante_id"])
+        item = agg.setdefault(
+            pid,
+            {
+                "participante_id": pid,
+                "nome": (row["nome"] or "").strip() or "alguém",
+                "avatar_path": row["avatar_path"],
+                "dias_finalizados": 0,
+                "celulas_ok": 0,
+                "celulas_preenchidas": 0,
+            },
+        )
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        ok, filled = _contar_celulas_ok(celulas)
+        item["celulas_ok"] += ok
+        item["celulas_preenchidas"] += filled
+        if row["finalizado"]:
+            item["dias_finalizados"] += 1
+    out: list[dict[str, Any]] = []
+    for pid, item in agg.items():
+        if item["celulas_preenchidas"] <= 0 and item["dias_finalizados"] <= 0:
+            continue
+        item["streak"] = grid_streak(pid)
+        item["taxa"] = (
+            round(100.0 * item["celulas_ok"] / item["celulas_preenchidas"])
+            if item["celulas_preenchidas"]
+            else 0
+        )
+        out.append(item)
+    out.sort(
+        key=lambda r: (
+            -int(r["dias_finalizados"]),
+            -int(r["celulas_ok"]),
+            -int(r["streak"]),
+            (r["nome"] or "").casefold(),
+        )
+    )
+    for i, item in enumerate(out[:lim], start=1):
+        item["posicao"] = i
+    return out[:lim]
+
+
+def grid_stats_participante(participante_id: int) -> dict[str, Any]:
+    """Agregados do Grid para o bloco do perfil."""
+    pid = int(participante_id)
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia, celulas_json, finalizado
+            FROM grid_progresso
+            WHERE participante_id = ?
+            ORDER BY dia DESC
+            """,
+            (pid,),
+        ).fetchall()
+    dias_finalizados = 0
+    celulas_ok = 0
+    celulas_preenchidas = 0
+    for row in rows:
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        ok, filled = _contar_celulas_ok(celulas)
+        celulas_ok += ok
+        celulas_preenchidas += filled
+        if row["finalizado"]:
+            dias_finalizados += 1
+    streak = grid_streak(pid)
+    taxa = None
+    if celulas_preenchidas:
+        taxa = round(100.0 * celulas_ok / celulas_preenchidas)
+    ranking = ranking_grid(limite=500)
+    posicao = None
+    for item in ranking:
+        if int(item["participante_id"]) == pid:
+            posicao = item.get("posicao")
+            break
+    return {
+        "dias_finalizados": dias_finalizados,
+        "celulas_ok": celulas_ok,
+        "celulas_preenchidas": celulas_preenchidas,
+        "taxa": taxa,
+        "streak": streak,
+        "posicao": posicao,
+        "total_ranking": len(ranking),
+        "jogou": bool(rows),
+    }

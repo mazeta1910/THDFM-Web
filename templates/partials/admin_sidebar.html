@@ -9,7 +9,8 @@
 {% set on_admin_cobranca = path.startswith('/admin/cobranca') %}
 {% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
-{% set on_grid = path.startswith('/grid') %}
+{% set on_grid = path == '/grid' or path.startswith('/grid/api') %}
+{% set on_grid_ranking = path.startswith('/grid/ranking') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_xonhometro = path.startswith('/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
@@ -94,6 +95,7 @@
               {% if is_mazeta %}
               <a class="admin-side-link {% if on_grid %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
               {% endif %}
+              <a class="admin-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('classificacao') }}<span>Ranking Grid</span></a>
             </div>
           </details>
         </div>

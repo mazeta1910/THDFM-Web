@@ -12215,6 +12215,12 @@ button.proto-text-btn:disabled {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+.grid-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
 .grid-board-wrap {
   padding: 0.85rem;
 }
@@ -12432,6 +12438,66 @@ button.grid-cell,
   color: var(--muted);
   font-size: 0.74rem;
 }
+.grid-rank-page {
+  display: grid;
+  gap: 1rem;
+}
+.grid-rank-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+.grid-rank-card {
+  padding: 0.35rem 0.55rem 0.55rem;
+}
+.grid-rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.grid-rank-table th,
+.grid-rank-table td {
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+.grid-rank-table th {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+.grid-rank-table .col-pos {
+  width: 2.6rem;
+  color: var(--muted);
+  font-weight: 800;
+}
+.grid-rank-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.grid-rank-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+  min-width: 0;
+}
+.grid-rank-player:hover span {
+  text-decoration: underline;
+}
+.grid-rank-player .planilha-avatar,
+.grid-rank-player .planilha-avatar-fallback {
+  width: 1.85rem;
+  height: 1.85rem;
+  flex: 0 0 auto;
+}
 @media (max-width: 640px) {
   .grid-board {
     grid-template-columns: minmax(4.2rem, 0.95fr) repeat(3, minmax(0, 1fr));
@@ -12442,4 +12508,8 @@ button.grid-cell,
   .grid-cell { min-height: 4.6rem; }
   .grid-cell-embl { width: 1.6rem; height: 1.6rem; }
   .grid-cell-nome { font-size: 0.6rem; }
+  .grid-rank-table th[data-sort-key="taxa"],
+  .grid-rank-table td:nth-child(5) {
+    display: none;
+  }
 }

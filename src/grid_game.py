@@ -88,7 +88,12 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def clubes_grid() -> tuple[dict[str, Any], ...]:
-    return tuple(_clube_enriquecido(dict(c)) for c in carregar_clubes() if c.get("tem_emblema"))
+    """Só clubes BR (UF em região) entram no puzzle — exterior fica no perfil/times."""
+    return tuple(
+        _clube_enriquecido(dict(c))
+        for c in carregar_clubes()
+        if c.get("tem_emblema") and (c.get("uf") or "") in UF_PARA_REGIAO
+    )
 
 
 @lru_cache(maxsize=1)

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "macros/avatar.html" import avatar %}
+{% block title %}Ranking do Grid — THDFM{% endblock %}
+{% block content %}
+<section class="grid-rank-page">
+  <header class="grid-rank-head">
+    <div>
+      <p class="grid-kicker">THDFM Grid</p>
+      <h1 class="grid-title">Ranking</h1>
+      <p class="grid-sub">Quem mais zerou o puzzle diário · desempate por acertos e streak</p>
+    </div>
+    {% if is_mazeta %}
+    <a class="btn secondary" href="/grid">Jogar hoje</a>
+    {% endif %}
+  </header>
+
+  <div class="card grid-rank-card">
+    {% if linhas %}
+    <div class="table-wrap">
+      <table class="grid-rank-table" data-classificacao-sort>
+        <thead>
+          <tr>
+            <th class="col-pos">#</th>
+            <th>Jogador</th>
+            <th class="num" data-sort-key="dias">Dias</th>
+            <th class="num" data-sort-key="acertos">Acertos</th>
+            <th class="num" data-sort-key="taxa">%</th>
+            <th class="num" data-sort-key="streak">Streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in linhas %}
+          <tr>
+            <td class="col-pos">{{ r.posicao }}º</td>
+            <td>
+              <a class="grid-rank-player" href="/perfil/{{ r.participante_id }}">
+                {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar") }}
+                <span>{{ r.nome }}</span>
+              </a>
+            </td>
+            <td class="num" data-sort-value="{{ r.dias_finalizados }}">{{ r.dias_finalizados }}</td>
+            <td class="num" data-sort-value="{{ r.celulas_ok }}">{{ r.celulas_ok }}</td>
+            <td class="num" data-sort-value="{{ r.taxa }}">{{ r.taxa }}%</td>
+            <td class="num" data-sort-value="{{ r.streak }}">{{ r.streak }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="proto-steam-empty">Ninguém zerou o Grid ainda.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
