@@ -37,6 +37,7 @@ EMBLEMAS_FM_DIR = CLUBES_DIR / "emblemas-por-id"
 COMPROVANTES_DIR = DATA_DIR / "comprovantes"
 AVATARES_DIR = DATA_DIR / "avatars"
 BANNERS_DIR = DATA_DIR / "banners"
+RECADOS_DIR = DATA_DIR / "recados"
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "troque-esta-senha")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
@@ -108,6 +109,8 @@ AVATAR_PADRAO_STEM = "avatar-padrao"
 BANNER_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 BANNER_MAX_BYTES = 3 * 1024 * 1024
 BANNER_PRESETS = ("padrao", "laranja", "gramado", "noite", "carbono", "ouro")
+RECADO_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+RECADO_MAX_BYTES = 4 * 1024 * 1024
 PERFIL_TIMES_MAX = 12
 NOME_MAX_LEN = 30
 

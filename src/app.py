@@ -36,6 +36,9 @@ from src.config import (
     BANNER_MAX_BYTES,
     BANNER_PRESETS,
     BANNERS_DIR,
+    RECADO_EXTS,
+    RECADO_MAX_BYTES,
+    RECADOS_DIR,
     CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
@@ -139,6 +142,7 @@ EMBLEMAS_FM_DIR.mkdir(parents=True, exist_ok=True)
 COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_DIR.mkdir(parents=True, exist_ok=True)
+RECADOS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
@@ -146,6 +150,7 @@ app.mount("/emblemas-fm", StaticFiles(directory=str(EMBLEMAS_FM_DIR)), name="emb
 app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="bandeiras_uf")
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 app.mount("/banners", StaticFiles(directory=str(BANNERS_DIR)), name="banners")
+app.mount("/recados-midia", StaticFiles(directory=str(RECADOS_DIR)), name="recados_midia")
 
 # Rate limit em memória: chave → timestamps de tentativas
 _AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
@@ -1142,6 +1147,13 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     }
 
 
+def _recado_midia_url(midia_path: str | None) -> str:
+    rel = (midia_path or "").strip()
+    if not rel or "/" in rel or "\\" in rel or ".." in rel:
+        return ""
+    return f"/recados-midia/{rel}"
+
+
 def _recados_payload(target_id: int | None, voter_id: int | None = None) -> list[dict]:
     if not target_id:
         return []
@@ -1149,6 +1161,7 @@ def _recados_payload(target_id: int | None, voter_id: int | None = None) -> list
     for r in db.listar_recados(int(target_id), voter_id=voter_id):
         item = dict(r)
         item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
+        item["midia"] = _recado_midia_url(item.pop("midia_path", None))
         out.append(item)
     return out
 
@@ -1319,16 +1332,50 @@ async def perfil_recados_post(request: Request, participante_id: int):
         return JSONResponse({"erro": "Não autorizado"}, status_code=401)
     if int(voter["id"]) == int(participante_id):
         return JSONResponse({"erro": "Não pode deixar recado no próprio perfil"}, status_code=403)
+
+    texto = ""
+    midia_rel: str | None = None
+    ctype = (request.headers.get("content-type") or "").lower()
     try:
-        body = await request.json()
+        if "multipart/form-data" in ctype:
+            form = await request.form()
+            texto = str(form.get("texto") or "")
+            upload = form.get("midia")
+            if upload is not None and hasattr(upload, "read"):
+                ext = Path(getattr(upload, "filename", "") or "").suffix.lower()
+                if ext not in RECADO_EXTS:
+                    return JSONResponse(
+                        {"erro": "Mídia deve ser jpg/png/webp/gif"},
+                        status_code=400,
+                    )
+                data = await upload.read()
+                if not data or len(data) > RECADO_MAX_BYTES:
+                    return JSONResponse(
+                        {"erro": "Mídia inválida ou maior que 4MB"},
+                        status_code=400,
+                    )
+                midia_rel = f"{voter['id']}_{participante_id}_{int(time.time())}{ext}"
+                (RECADOS_DIR / midia_rel).write_bytes(data)
+        else:
+            body = await request.json()
+            texto = (body or {}).get("texto") or ""
     except Exception:
-        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+        return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+
     try:
-        criado = db.criar_recado(participante_id, voter["id"], (body or {}).get("texto") or "")
+        criado = db.criar_recado(
+            participante_id,
+            voter["id"],
+            texto,
+            midia_path=midia_rel,
+        )
     except (TypeError, ValueError) as exc:
+        if midia_rel:
+            db._apagar_arquivo_recado(midia_rel)
         return JSONResponse({"erro": str(exc)}, status_code=400)
     item = dict(criado)
     item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
+    item["midia"] = _recado_midia_url(item.pop("midia_path", None))
     return JSONResponse(
         {
             "recado": item,

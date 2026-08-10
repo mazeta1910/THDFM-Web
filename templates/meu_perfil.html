@@ -204,10 +204,27 @@
         </div>
         {% if not is_own_view %}
         <form class="proto-steam-compose" id="public-recado-form">
-          <textarea class="proto-steam-field" rows="2" maxlength="280" placeholder="Deixe um recado…" required></textarea>
-          <button type="submit" class="proto-ico-btn proto-ico-btn--accent" title="Postar recado" aria-label="Postar recado">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
-          </button>
+          <div class="proto-steam-compose-main">
+            <textarea class="proto-steam-field" rows="2" maxlength="280" placeholder="Deixe um recado…"></textarea>
+            <div class="proto-steam-compose-preview" data-recado-preview-wrap hidden>
+              <img alt="" data-recado-preview />
+              <button type="button" class="proto-steam-compose-preview-x" data-recado-midia-clear title="Remover imagem" aria-label="Remover imagem">×</button>
+            </div>
+          </div>
+          <div class="proto-steam-compose-actions">
+            <label class="proto-ico-btn" title="Anexar imagem ou GIF" aria-label="Anexar imagem ou GIF">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,.gif"
+                hidden
+                data-recado-midia
+              />
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            </label>
+            <button type="submit" class="proto-ico-btn proto-ico-btn--accent" title="Postar recado" aria-label="Postar recado">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+            </button>
+          </div>
         </form>
         {% endif %}
         <ul class="proto-steam-feed" id="public-recados-list"></ul>
@@ -220,5 +237,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=29" defer></script>
+<script src="/static/prototipo-perfil.js?v=30" defer></script>
 {% endblock %}

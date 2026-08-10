@@ -55,7 +55,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=29" in r.text
+    assert "/static/prototipo-perfil.js?v=30" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -87,6 +87,59 @@ def test_meu_perfil_embute_recados(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "no meu mural" in r.text
+
+
+def test_recado_com_imagem_e_gif(client: TestClient, tmp_path, monkeypatch):
+    from src import app as app_mod
+
+    midia_dir = tmp_path / "recados"
+    midia_dir.mkdir()
+    monkeypatch.setattr(app_mod, "RECADOS_DIR", midia_dir)
+    monkeypatch.setattr("src.config.RECADOS_DIR", midia_dir)
+
+    alvo = dbmod.criar_participante("Alvo Midia", status="liberado", celular="11990009120")
+    _login_part(client, "Autor Midia", "autor.midia", "11990009121")
+
+    # só imagem
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        data={"texto": ""},
+        files={"midia": ("meme.gif", b"GIF89a-fake", "image/gif")},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["recado"]["texto"] == ""
+    assert data["recado"]["midia"].startswith("/recados-midia/")
+    assert data["recados"][0]["midia"].startswith("/recados-midia/")
+    rel = data["recado"]["midia"].rsplit("/", 1)[-1]
+    assert (midia_dir / rel).is_file()
+
+    # texto + png
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        data={"texto": "olha o print"},
+        files={"midia": ("print.png", b"\x89PNG\r\n\x1a\n-fake", "image/png")},
+    )
+    assert r.status_code == 200
+    assert r.json()["recado"]["texto"] == "olha o print"
+    assert r.json()["recado"]["midia"].startswith("/recados-midia/")
+
+    # extensão inválida
+    r = client.post(
+        f"/perfil/{alvo['id']}/recados",
+        data={"texto": "x"},
+        files={"midia": ("doc.pdf", b"%PDF", "application/pdf")},
+    )
+    assert r.status_code == 400
+
+    r = client.get(f"/perfil/{alvo['id']}")
+    assert r.status_code == 200
+    assert "/recados-midia/" in r.text
+    assert "data-recado-midia" in r.text
+    assert "/static/prototipo-perfil.js?v=30" in r.text
+    js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
+    assert "proto-steam-feed-midia" in js
+    assert "FormData" in js
 
 
 def test_reacoes_toggle_e_agregam(client: TestClient):
@@ -143,7 +196,7 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-reacao" in js
     assert "data-reacao-add" in js
-    assert "/static/prototipo-perfil.js?v=29" in r.text
+    assert "/static/prototipo-perfil.js?v=30" in r.text
     assert "👍" in r.text
 
 

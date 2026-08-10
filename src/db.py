@@ -456,19 +456,45 @@ def _migrate_perfil_nutela(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_perfil_recados(conn: sqlite3.Connection) -> None:
-    """Recados do mural, atrelados ao perfil de destino."""
+    """Recados do mural, atrelados ao perfil de destino (texto e/ou mídia)."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS perfil_recados (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           target_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
           autor_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
-          texto TEXT NOT NULL,
-          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
-          CHECK (length(trim(texto)) > 0)
+          texto TEXT NOT NULL DEFAULT '',
+          midia_path TEXT,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
         )
         """
     )
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(perfil_recados)").fetchall()}
+    if "midia_path" not in cols:
+        conn.execute("ALTER TABLE perfil_recados ADD COLUMN midia_path TEXT")
+    # Bases antigas tinham CHECK(texto não vazio) — reconstrói sem o CHECK
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='perfil_recados'"
+    ).fetchone()
+    sql = (row["sql"] or "") if row else ""
+    if "CHECK" in sql.upper():
+        conn.executescript(
+            """
+            CREATE TABLE perfil_recados__new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              target_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+              autor_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+              texto TEXT NOT NULL DEFAULT '',
+              midia_path TEXT,
+              criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            );
+            INSERT INTO perfil_recados__new (id, target_id, autor_id, texto, midia_path, criado_em)
+            SELECT id, target_id, autor_id, COALESCE(texto, ''), midia_path, criado_em
+            FROM perfil_recados;
+            DROP TABLE perfil_recados;
+            ALTER TABLE perfil_recados__new RENAME TO perfil_recados;
+            """
+        )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_perfil_recados_target "
         "ON perfil_recados(target_id, id DESC)"
@@ -4007,6 +4033,20 @@ def toggle_recado_reacao(
     return reacoes_dos_recados([rid], voter_id=vid).get(rid, [])
 
 
+def _apagar_arquivo_recado(midia_path: str | None) -> None:
+    rel = (midia_path or "").strip()
+    if not rel or "/" in rel or "\\" in rel or ".." in rel:
+        return
+    try:
+        from src import config as cfg
+
+        path = cfg.RECADOS_DIR / rel
+        if path.is_file():
+            path.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def listar_recados(
     target_id: int,
     *,
@@ -4018,7 +4058,7 @@ def listar_recados(
     with get_db() as conn:
         rows = conn.execute(
             """
-            SELECT r.id, r.target_id, r.autor_id, r.texto, r.criado_em,
+            SELECT r.id, r.target_id, r.autor_id, r.texto, r.midia_path, r.criado_em,
                    a.nome AS autor_nome, a.avatar_path AS autor_avatar
             FROM perfil_recados r
             JOIN participantes a ON a.id = r.autor_id
@@ -4046,6 +4086,7 @@ def listar_recados(
                 "avatar_path": row["autor_avatar"],
                 "iniciais": (nome[:2] if nome else "??").upper(),
                 "texto": row["texto"] or "",
+                "midia_path": row["midia_path"] or None,
                 "at": at or None,
                 "reacoes": reacoes_map.get(rid, []),
             }
@@ -4053,11 +4094,20 @@ def listar_recados(
     return out
 
 
-def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
+def criar_recado(
+    target_id: int,
+    autor_id: int,
+    texto: str,
+    *,
+    midia_path: str | None = None,
+) -> dict[str, Any]:
     tid = int(target_id)
     aid = int(autor_id)
     body = (texto or "").strip()
-    if not body:
+    midia = (midia_path or "").strip() or None
+    if midia and ("/" in midia or "\\" in midia or ".." in midia):
+        raise ValueError("mídia inválida")
+    if not body and not midia:
         raise ValueError("recado vazio")
     if len(body) > 280:
         body = body[:280]
@@ -4067,19 +4117,20 @@ def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
     autor = get_participante(aid)
     if not autor or autor.get("status") != "liberado":
         raise ValueError("autor inválido")
+    extras_midia: list[str] = []
     with get_db() as conn:
         cur = conn.execute(
             """
-            INSERT INTO perfil_recados (target_id, autor_id, texto)
-            VALUES (?, ?, ?)
+            INSERT INTO perfil_recados (target_id, autor_id, texto, midia_path)
+            VALUES (?, ?, ?, ?)
             """,
-            (tid, aid, body),
+            (tid, aid, body, midia),
         )
         rid = int(cur.lastrowid)
         # mantém só os N mais recentes no mural
         extras = conn.execute(
             """
-            SELECT id FROM perfil_recados
+            SELECT id, midia_path FROM perfil_recados
             WHERE target_id = ?
             ORDER BY id DESC
             LIMIT -1 OFFSET ?
@@ -4087,7 +4138,11 @@ def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
             (tid, PERFIL_RECADOS_MAX),
         ).fetchall()
         for row in extras:
+            if row["midia_path"]:
+                extras_midia.append(str(row["midia_path"]))
             conn.execute("DELETE FROM perfil_recados WHERE id = ?", (row["id"],))
+    for rel in extras_midia:
+        _apagar_arquivo_recado(rel)
     lista = listar_recados(tid, limite=1, voter_id=aid)
     for item in lista:
         if item["id"] == str(rid):
@@ -4100,6 +4155,7 @@ def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
         "avatar_path": autor.get("avatar_path"),
         "iniciais": ((autor.get("nome") or "??")[:2]).upper(),
         "texto": body,
+        "midia_path": midia,
         "at": None,
         "reacoes": [],
     }
@@ -4110,10 +4166,11 @@ def apagar_recado(target_id: int, recado_id: int, *, actor_id: int) -> bool:
     tid = int(target_id)
     rid = int(recado_id)
     aid = int(actor_id)
+    midia_rel: str | None = None
     with get_db() as conn:
         row = conn.execute(
             """
-            SELECT id, target_id, autor_id FROM perfil_recados
+            SELECT id, target_id, autor_id, midia_path FROM perfil_recados
             WHERE id = ? AND target_id = ?
             """,
             (rid, tid),
@@ -4122,8 +4179,10 @@ def apagar_recado(target_id: int, recado_id: int, *, actor_id: int) -> bool:
             return False
         if aid != int(row["target_id"]) and aid != int(row["autor_id"]):
             raise ValueError("sem permissão")
+        midia_rel = row["midia_path"]
         conn.execute("DELETE FROM perfil_recados WHERE id = ?", (rid,))
-        return True
+    _apagar_arquivo_recado(midia_rel)
+    return True
 
 
 def contar_recados_novos(target_id: int) -> int:
