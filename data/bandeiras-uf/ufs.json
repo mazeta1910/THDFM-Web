@@ -190,6 +190,13 @@
       "regiao": "Norte",
       "arquivo": "TO.svg",
       "fonte": "Bandeira_do_Tocantins.svg"
+    },
+    {
+      "uf": "EX",
+      "nome": "Exterior",
+      "regiao": "Exterior",
+      "arquivo": "EX.svg",
+      "fonte": "custom"
     }
   ]
 }

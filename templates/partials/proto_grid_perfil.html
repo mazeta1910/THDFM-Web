@@ -1,0 +1,41 @@
+{# Stats do THDFM Grid no perfil. #}
+<div class="proto-steam-panel-head">
+  <h2 class="proto-steam-panel-title">THDFM Grid</h2>
+  {% if grid_perfil and grid_perfil.ranking_url %}
+  <a class="proto-steam-panel-link" href="{{ grid_perfil.ranking_url }}">Ver ranking</a>
+  {% endif %}
+</div>
+
+{% if grid_perfil and grid_perfil.jogou %}
+<div class="proto-bolao-stats proto-grid-stats">
+  <div class="proto-bolao-stat">
+    <span class="proto-bolao-stat-label">Dias zerados</span>
+    <strong class="proto-bolao-stat-value">{{ grid_perfil.dias_finalizados }}</strong>
+    <span class="proto-bolao-stat-sub">grades completas</span>
+  </div>
+  <div class="proto-bolao-stat">
+    <span class="proto-bolao-stat-label">Acertos</span>
+    <strong class="proto-bolao-stat-value">{{ grid_perfil.celulas_ok }}</strong>
+    <span class="proto-bolao-stat-sub">
+      de {{ grid_perfil.celulas_preenchidas }} células
+      {% if grid_perfil.taxa is not none %}· {{ grid_perfil.taxa }}%{% endif %}
+    </span>
+  </div>
+  <div class="proto-bolao-stat">
+    <span class="proto-bolao-stat-label">Streak</span>
+    <strong class="proto-bolao-stat-value">{{ grid_perfil.streak }}</strong>
+    <span class="proto-bolao-stat-sub">dias seguidos</span>
+  </div>
+  <div class="proto-bolao-stat">
+    <span class="proto-bolao-stat-label">Ranking</span>
+    <strong class="proto-bolao-stat-value">
+      {% if grid_perfil.posicao %}{{ grid_perfil.posicao }}º{% else %}—{% endif %}
+    </strong>
+    <span class="proto-bolao-stat-sub">
+      {% if grid_perfil.total_ranking %}de {{ grid_perfil.total_ranking }}{% else %}ainda só{% endif %}
+    </span>
+  </div>
+</div>
+{% else %}
+<p class="proto-steam-empty">Ainda não jogou o Grid.</p>
+{% endif %}

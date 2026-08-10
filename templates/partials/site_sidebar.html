@@ -87,6 +87,7 @@
           {% endif %}
           {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
           <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
+          <a class="site-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('competicao') }}<span>Ranking Grid</span></a>
           <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
           <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Transparência</span></a>
           {% endif %}

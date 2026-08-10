@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=291" />
+  <link rel="stylesheet" href="/static/style.css?v=292" />
   {% if ADSENSE_CLIENT %}
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT }}"
      crossorigin="anonymous"></script>
@@ -42,6 +42,7 @@
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
+{% set on_grid_ranking = path.startswith('/grid/ranking') %}
 {% set on_xonhometro = path.startswith('/xonhometro') or path.startswith('/admin/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
 {% set on_grupo_listra = path.startswith('/grupo/listra') or path.startswith('/admin/listra') %}
