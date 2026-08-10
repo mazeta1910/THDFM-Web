@@ -283,7 +283,7 @@ def test_montar_portal_mostra_pontos_por_acerto(client: TestClient):
     assert "Gols Casa +5" in r.text
     assert "planilha-pts-total" in r.text
     assert ">Pênaltis<" not in r.text
-    assert "/static/style.css?v=295" in r.text
+    assert "/static/style.css?v=296" in r.text
 
     db.set_janela("volta")
     jogo_volta = next(j for j in c["jogos"] if j.get("perna") == "volta")

@@ -1188,7 +1188,7 @@ def _grid_resumo_perfil(participante_id: int | None) -> dict | None:
     except (TypeError, ValueError):
         return None
     stats = db.grid_stats_participante(pid)
-    stats["ranking_url"] = "/grid/ranking"
+    stats["ranking_url"] = "/grid#ranking"
     return stats
 
 
@@ -2625,18 +2625,18 @@ def grid_page(request: Request):
         puzzle=puzzle,
         progresso=progresso,
         streak=streak,
+        linhas=db.ranking_grid(limite=100),
         grid_privado=False,
     )
 
 
 @app.get("/grid/ranking", response_class=HTMLResponse)
 def grid_ranking_page(request: Request):
-    """Ranking de quem mais preencheu o Grid (login liberado)."""
+    """Compat: ranking agora vive em /grid#ranking."""
     neg = _require_perfil(request)
     if neg:
         return neg
-    linhas = db.ranking_grid(limite=100)
-    return render(request, "grid_ranking.html", linhas=linhas)
+    return RedirectResponse("/grid#ranking", status_code=303)
 
 
 @app.get("/grid/api/hoje")
