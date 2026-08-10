@@ -2633,22 +2633,28 @@ def grid_page(request: Request):
         neg = _require_perfil(request)
         if neg:
             return neg
-    from src.grid_game import dia_grid, puzzle_publico
+    from src.grid_game import dia_grid, parse_celulas_progresso, puzzle_publico, texto_share
 
     dia = dia_grid()
     puzzle = puzzle_publico(dia)
     voter = _grid_voter(request)
     progresso = None
     streak = 0
+    share = None
     if voter:
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
+        if progresso and progresso.get("finalizado"):
+            share = texto_share(
+                dia=dia, celulas=parse_celulas_progresso(progresso.get("celulas"))
+            )
     return render(
         request,
         "grid.html",
         puzzle=puzzle,
         progresso=progresso,
         streak=streak,
+        share=share,
         linhas=db.ranking_grid(limite=100),
         grid_privado=False,
     )
@@ -2673,14 +2679,25 @@ def grid_api_hoje(request: Request):
     dia = dia_grid()
     puzzle = puzzle_publico(dia)
     voter = _grid_voter(request)
-    progresso = db.get_grid_progresso(voter["id"], dia) if voter else None
-    streak = db.grid_streak(voter["id"], ate_dia=dia) if voter else 0
+    progresso = None
+    streak = 0
+    share = None
+    if voter:
+        progresso = db.get_grid_progresso(voter["id"], dia)
+        streak = db.grid_streak(voter["id"], ate_dia=dia)
+        if progresso and progresso.get("finalizado"):
+            from src.grid_game import parse_celulas_progresso, texto_share
+
+            share = texto_share(
+                dia=dia, celulas=parse_celulas_progresso(progresso.get("celulas"))
+            )
     return JSONResponse(
         {
             "puzzle": puzzle,
             "progresso": progresso,
             "streak": streak,
             "pode_salvar": bool(voter),
+            "share": share,
         }
     )
 
@@ -2713,6 +2730,7 @@ async def grid_api_chute(request: Request):
         celulas_completas,
         dia_grid,
         parse_celulas_progresso,
+        resolver_clube_por_nome,
         texto_share,
         validar_chute,
     )
@@ -2725,10 +2743,16 @@ async def grid_api_chute(request: Request):
         linha = int((body or {}).get("linha"))
         coluna = int((body or {}).get("coluna"))
         clube_id = str((body or {}).get("clube_id") or "").strip()
+        nome = str((body or {}).get("nome") or "").strip()
     except (TypeError, ValueError):
         return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+    if not clube_id and nome:
+        try:
+            clube_id = str(resolver_clube_por_nome(nome)["id"])
+        except ValueError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=400)
     if not clube_id:
-        return JSONResponse({"erro": "Escolha um clube"}, status_code=400)
+        return JSONResponse({"erro": "Digite o nome do clube"}, status_code=400)
 
     dia = dia_grid()
     voter = _grid_voter(request)

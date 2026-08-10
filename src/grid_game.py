@@ -365,6 +365,7 @@ def buscar_celula(
     q: str,
     limite: int = BUSCA_LIMITE,
 ) -> dict[str, Any]:
+    """Compat: não devolve mais lista de clubes (evita spoiler do pool certo)."""
     puzzle = gerar_puzzle(dia)
     if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
         raise ValueError("célula inválida")
@@ -376,28 +377,37 @@ def buscar_celula(
     total = len(pool)
     query = (q or "").strip().casefold()
     pronto = len(query) >= BUSCA_MIN_CHARS
-    if pronto:
-        filtrados = [c for c in pool if query in c["nome_norm"]]
-        itens = [
-            {
-                "id": c["id"],
-                "nome": c["nome"],
-                "uf": c["uf"],
-                "emblema": c["emblema"],
-            }
-            for c in filtrados[: max(1, min(int(limite), 30))]
-        ]
-    else:
-        filtrados = []
-        itens = []
     return {
         "total": total,
-        "filtrados": len(filtrados) if pronto else total,
-        "itens": itens,
+        "filtrados": total,
+        "itens": [],
         "query": q or "",
         "min_chars": BUSCA_MIN_CHARS,
         "pronto": pronto,
+        "sugestoes": False,
     }
+
+
+def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
+    """Resolve chute digitado → clube do catálogo (sem autocomplete)."""
+    query = (nome or "").strip().casefold()
+    if len(query) < BUSCA_MIN_CHARS:
+        raise ValueError(f"Digite pelo menos {BUSCA_MIN_CHARS} letras do nome")
+    exatos = [c for c in clubes_grid() if c["nome_norm"] == query]
+    if len(exatos) == 1:
+        return exatos[0]
+    if len(exatos) > 1:
+        raise ValueError("Nome ambíguo — use o nome oficial completo")
+    contem = [c for c in clubes_grid() if query in c["nome_norm"]]
+    if len(contem) == 1:
+        return contem[0]
+    if not contem:
+        raise ValueError("Clube não encontrado no catálogo")
+    # Vários parciais: só aceita se um começa com a query e os outros não
+    prefixos = [c for c in contem if c["nome_norm"].startswith(query)]
+    if len(prefixos) == 1:
+        return prefixos[0]
+    raise ValueError("Vários clubes batem — digite o nome completo")
 
 
 def validar_chute(
@@ -437,7 +447,14 @@ def texto_share(
     celulas: list[list[dict[str, Any] | None]],
     url: str = "https://thdfm.com.br/grid",
 ) -> str:
-    """Texto estilo Wordle/Hoops para Twitter/WhatsApp."""
+    """Texto estilo Wordle/Hoops para Twitter/WhatsApp.
+
+    Usa escapes explícitos dos quadrados coloridos (Unicode 12) para o
+    texto não depender de charset do arquivo-fonte no cliente.
+    """
+    sq_ok = "\U0001f7e9"  # 🟩
+    sq_miss = "\U0001f7e5"  # 🟥
+    sq_empty = "\u2b1c"  # ⬜
     linhas_emoji: list[str] = []
     acertos = 0
     tentadas = 0
@@ -446,15 +463,16 @@ def texto_share(
         for c in range(GRID_SIZE):
             cell = celulas[r][c] if r < len(celulas) and c < len(celulas[r]) else None
             if not cell:
-                row_e.append("⬜")
+                row_e.append(sq_empty)
                 continue
             tentadas += 1
             if cell.get("ok"):
-                row_e.append("🟩")
+                row_e.append(sq_ok)
                 acertos += 1
             else:
-                row_e.append("🟥")
-        linhas_emoji.append("".join(row_e))
+                row_e.append(sq_miss)
+        # Espaço entre quadrados: alguns clientes WhatsApp renderizam melhor
+        linhas_emoji.append(" ".join(row_e))
     try:
         d = date.fromisoformat(dia)
         rotulo = d.strftime("%d/%m/%Y")
