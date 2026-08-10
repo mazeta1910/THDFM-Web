@@ -29,39 +29,7 @@
   let browserOpen = !compact;
   let ufAtiva = "";
   let query = "";
-  const lockedIds = loadLockedIds();
-  let selected = ensureLockedSelected(loadSelected());
-
-  function loadSoftBoot() {
-    const softEl = document.getElementById("proto-perfil-soft");
-    if (!softEl) return null;
-    try {
-      return JSON.parse(softEl.textContent || "null");
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function loadLockedIds() {
-    const data = loadSoftBoot();
-    const fromSoft = data && Array.isArray(data.times_locked) ? data.times_locked : [];
-    return fromSoft.filter((id) => typeof id === "string" && id);
-  }
-
-  function isLocked(id) {
-    return lockedIds.indexOf(id) >= 0;
-  }
-
-  function ensureLockedSelected(ids) {
-    const out = [];
-    for (const id of lockedIds) {
-      if (out.indexOf(id) < 0) out.push(id);
-    }
-    for (const id of ids || []) {
-      if (typeof id === "string" && out.indexOf(id) < 0) out.push(id);
-    }
-    return out;
-  }
+  let selected = loadSelected();
 
   function loadSelectedFromLs() {
     try {
@@ -74,24 +42,28 @@
   }
 
   function loadSelected() {
-    const data = loadSoftBoot();
-    if (data && Array.isArray(data.times_ids)) {
-      const ids = data.times_ids.filter((id) => typeof id === "string");
-      // Servidor vazio + LS antigo: mantém LS até o usuário salvar de novo
-      if (!ids.length && !lockedIds.length) {
-        const local = loadSelectedFromLs();
-        if (local.length) return local;
-      }
+    const softEl = document.getElementById("proto-perfil-soft");
+    if (softEl) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+        const data = JSON.parse(softEl.textContent || "null");
+        if (data && Array.isArray(data.times_ids)) {
+          const ids = data.times_ids.filter((id) => typeof id === "string");
+          // Servidor vazio + LS antigo: mantém LS até o usuário salvar de novo
+          if (!ids.length) {
+            const local = loadSelectedFromLs();
+            if (local.length) return local;
+          }
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+          } catch (_) {}
+          return ids;
+        }
       } catch (_) {}
-      return ids;
     }
     return loadSelectedFromLs();
   }
 
   function saveSelected() {
-    selected = ensureLockedSelected(selected);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
     } catch (_) {}
@@ -196,19 +168,15 @@
     if (openBtn) openBtn.setAttribute("title", "Editar times");
     chipsEl.innerHTML = items
       .map((c) => {
-        const locked = isLocked(c.id);
         const img = c.emblema
           ? `<img src="${escapeAttr(c.emblema)}" alt="" width="28" height="28" loading="lazy" />`
           : `<span class="proto-chip-ph" aria-hidden="true">⚽</span>`;
-        const remove = locked
-          ? `<span class="proto-chip-lock" title="Fixo no perfil" aria-label="Fixo no perfil">fixo</span>`
-          : `<button type="button" class="proto-chip-x" data-remove="${escapeAttr(c.id)}" aria-label="Remover ${escapeAttr(c.nome)}">×</button>`;
         return `
-      <li class="proto-chip${locked ? " is-locked" : ""}">
+      <li class="proto-chip">
         ${img}
         <span>${escapeHtml(c.nome)}</span>
         <span class="proto-chip-uf">${escapeHtml(c.uf || "")}</span>
-        ${remove}
+        <button type="button" class="proto-chip-x" data-remove="${escapeAttr(c.id)}" aria-label="Remover ${escapeAttr(c.nome)}">×</button>
       </li>`;
       })
       .join("");
@@ -262,14 +230,9 @@
   }
 
   function toggle(id) {
-    if (!id) return;
     const i = selected.indexOf(id);
-    if (i >= 0) {
-      if (isLocked(id)) return;
-      selected.splice(i, 1);
-    } else {
-      selected.push(id);
-    }
+    if (i >= 0) selected.splice(i, 1);
+    else selected.push(id);
     saveSelected();
     renderPicked();
     renderList();
@@ -364,7 +327,7 @@
 
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
-      selected = ensureLockedSelected([]);
+      selected = [];
       saveSelected();
       renderPicked();
       renderList();
