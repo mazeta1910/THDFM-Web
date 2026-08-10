@@ -38,7 +38,7 @@ def test_meu_perfil_editar_tem_seletor(client: TestClient):
     assert "Times do coração" in r.text
     assert "Torcedor Misto" in r.text
     assert 'id="proto-times"' in r.text
-    assert "/static/prototipo-times.js?v=18" in r.text
+    assert "/static/prototipo-times.js?v=19" in r.text
     assert 'data-clubes-src="/meu-perfil/clubes.json"' in r.text
     assert 'id="proto-ufs-toggle"' in r.text
     assert 'class="proto-times-ufs is-collapsed"' in r.text

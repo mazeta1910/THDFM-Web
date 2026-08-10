@@ -10050,24 +10050,6 @@ html[data-theme="light"] .listra-perm-table th {
   color: var(--text);
   background: var(--hover-bg);
 }
-.proto-chip.is-locked {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-.proto-chip-lock {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 0.15rem 0 0;
-  padding: 0.05rem 0.35rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1.2;
-  user-select: none;
-}
 .proto-times-clear {
   width: auto;
   margin-top: 0.65rem;
