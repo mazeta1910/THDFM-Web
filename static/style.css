@@ -12473,10 +12473,6 @@ button.grid-cell,
   height: 40px;
   object-fit: contain;
 }
-.grid-sug small {
-  color: var(--muted);
-  margin-left: 0.25rem;
-}
 .grid-sug-empty {
   padding: 0.55rem 0.35rem;
   color: var(--muted);

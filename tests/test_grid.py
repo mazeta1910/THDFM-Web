@@ -89,20 +89,21 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Prévia privada" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=3" in r.text
+    assert "/static/grid.js?v=4" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert "data-grid-share-wa" in r.text
     assert "aria-label=\"Compartilhar no WhatsApp\"" in r.text
     assert "WhatsApp</button>" not in r.text
+    js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
+    assert "MIN_CHARS = 3" in js
+    assert "c.uf" not in js
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
     assert 'href="/grid/ranking"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
-    js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
-    assert "MIN_CHARS = 3" in js
 
     hoje = client.get("/grid/api/hoje")
     assert hoje.status_code == 200
