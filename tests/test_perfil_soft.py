@@ -83,7 +83,7 @@ def test_api_meu_perfil_soft_e_pagina(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-perfil-soft"' in r.text
     assert "Salve o bolão" in r.text
-    assert "/static/prototipo-times.js?v=16" in r.text
+    assert "/static/prototipo-times.js?v=17" in r.text
 
 
 def test_perfil_publico_mostra_times_e_banner(client: TestClient):

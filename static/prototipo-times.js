@@ -257,17 +257,6 @@
     if (metaEl) metaEl.textContent = "Lista fechada";
   }
 
-  let searchTimer = null;
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        query = searchInput.value;
-        renderList();
-      }, 120);
-    });
-  }
-
   function setUfsCollapsed(collapsed) {
     if (!ufsSection || !ufsToggle || !ufGrid) return;
     ufsSection.classList.toggle("is-collapsed", collapsed);
@@ -276,12 +265,31 @@
     ufsToggle.setAttribute("title", collapsed ? "Expandir estados" : "Minimizar estados");
   }
 
+  let searchTimer = null;
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        query = searchInput.value;
+        // Ao digitar, prioriza sugestões logo abaixo do box
+        if (String(query || "").trim()) setUfsCollapsed(true);
+        ensureClubes().then(() => renderList());
+      }, 120);
+    });
+  }
+
   if (ufsToggle) {
     ufsToggle.addEventListener("click", () => {
       const collapsed = !(ufsSection && ufsSection.classList.contains("is-collapsed"));
       setUfsCollapsed(collapsed);
     });
     setUfsCollapsed(true);
+  }
+
+  // Clique no título também expande/recolhe
+  const ufsTitle = document.getElementById("proto-ufs-title");
+  if (ufsTitle && ufsToggle) {
+    ufsTitle.addEventListener("click", () => ufsToggle.click());
   }
 
   if (ufGrid) {

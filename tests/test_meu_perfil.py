@@ -77,17 +77,22 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
     assert "/static/prototipo-perfil.js?v=28" in r.text
-    assert "/static/prototipo-times.js?v=16" in r.text
+    assert "/static/prototipo-times.js?v=17" in r.text
     assert 'id="proto-perfil-soft"' in r.text
-    assert "/static/style.css?v=283" in r.text
+    assert "/static/style.css?v=284" in r.text
     assert 'id="proto-ufs-toggle"' in r.text
     assert 'class="proto-times-ufs is-collapsed"' in r.text
     assert 'id="proto-uf-grid" hidden' in r.text
     assert 'id="proto-dindao"' in r.text
     assert "Dindão" in r.text
-    assert "selected.length < 4" in (ROOT_DIR / "static" / "prototipo-times.js").read_text(
-        encoding="utf-8"
-    )
+    # Sugestões ficam logo abaixo da busca; Por estado vem depois
+    assert r.text.index('id="proto-list"') < r.text.index('id="proto-times-ufs"')
+    times_js = (ROOT_DIR / "static" / "prototipo-times.js").read_text(encoding="utf-8")
+    times_css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert "selected.length < 4" in times_js
+    assert "ensureClubes().then(() => renderList())" in times_js
+    assert ".proto-times-ufs.is-collapsed .proto-times-uf-grid" in times_css
+    assert "display: none !important" in times_css
     assert "Protótipo ·" not in r.text
 
 
