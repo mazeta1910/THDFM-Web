@@ -57,8 +57,9 @@ def calcular_classificacao() -> list[dict]:
 
     confrontos = list_confrontos_completos()
     participantes = [p for p in list_participantes() if p.get("status") == "liberado"]
-    snapshot = load_snapshot() or {}
+    snapshot = snapshot_para_calculo()
     baseline = snapshot.get("somas", {})
+    posicoes_ant = snapshot.get("posicoes") or {}
 
     linhas: list[dict] = []
     for p in participantes:
@@ -184,7 +185,8 @@ def calcular_classificacao() -> list[dict]:
         pts.fidelidade = fid_bonus
         pts.indice_fidelidade = (fid_indice / fid_jogos) if fid_jogos else 0.0
 
-        soma_base = baseline.get(p["nome"], 0)
+        pid_key = str(int(p["id"]))
+        soma_base = baseline.get(pid_key, 0)
         rod = pts.soma - soma_base
         linhas.append(
             {
@@ -208,11 +210,10 @@ def calcular_classificacao() -> list[dict]:
         key=lambda r: (-r["soma"], -r["indice_fidelidade"], r["participante"].lower())
     )
     total = len(linhas)
-    posicoes_ant = snapshot.get("posicoes") or {}
     for i, row in enumerate(linhas, start=1):
         row["posicao"] = i
         row["zona"] = _zona_classificacao(i, total)
-        prev = posicoes_ant.get(row["participante"])
+        prev = posicoes_ant.get(str(int(row["participante_id"])))
         if prev is None:
             row["movimento"] = None
         else:
@@ -251,9 +252,121 @@ def _zona_classificacao(posicao: int, total: int) -> str:
 def snapshot_atual(linhas: list[dict] | None = None) -> dict:
     rows = linhas if linhas is not None else calcular_classificacao()
     return {
-        "somas": {r["participante"]: r["soma"] for r in rows},
-        "posicoes": {r["participante"]: r["posicao"] for r in rows},
+        "somas": {str(int(r["participante_id"])): r["soma"] for r in rows},
+        "posicoes": {str(int(r["participante_id"])): r["posicao"] for r in rows},
+        "por_id": True,
     }
+
+
+def _mapa_nome_para_id_snapshot() -> dict[str, int]:
+    """Nomes atuais + da última rodada confirmada → id (história vence em conflito)."""
+    from src.db import get_rodada_historico, list_rodadas_historico
+
+    mapa: dict[str, int] = {}
+    for p in list_participantes():
+        nome = (p.get("nome") or "").strip()
+        if nome:
+            mapa[nome] = int(p["id"])
+    hist = list_rodadas_historico()
+    if hist:
+        full = get_rodada_historico(int(hist[-1]["id"]))
+        for linha in (full or {}).get("linhas") or []:
+            nome = (linha.get("participante") or "").strip()
+            pid = linha.get("participante_id")
+            if nome and pid is not None:
+                mapa[nome] = int(pid)
+    return mapa
+
+
+def normalizar_snapshot_por_id(snapshot: dict | None) -> tuple[dict, bool]:
+    """Converte snapshot antigo (chave=nome) para chave=participante_id."""
+    raw = snapshot or {}
+    somas_in = dict(raw.get("somas") or {})
+    pos_in = dict(raw.get("posicoes") or {})
+    if raw.get("por_id") and somas_in and all(str(k).isdigit() for k in somas_in):
+        return (
+            {
+                "somas": {str(k): v for k, v in somas_in.items()},
+                "posicoes": {str(k): v for k, v in pos_in.items()},
+                "por_id": True,
+            },
+            False,
+        )
+    precisa = any(not str(k).isdigit() for k in list(somas_in) + list(pos_in))
+    if not precisa and somas_in:
+        return (
+            {
+                "somas": {str(k): v for k, v in somas_in.items()},
+                "posicoes": {str(k): v for k, v in pos_in.items()},
+                "por_id": True,
+            },
+            not bool(raw.get("por_id")),
+        )
+    mapa = _mapa_nome_para_id_snapshot() if precisa else {}
+    somas: dict[str, int | float] = {}
+    posicoes: dict[str, int] = {}
+    for k, v in somas_in.items():
+        key = str(k)
+        if key.isdigit():
+            somas[key] = v
+        else:
+            pid = mapa.get(key)
+            if pid is not None:
+                somas[str(pid)] = v
+    for k, v in pos_in.items():
+        key = str(k)
+        if key.isdigit():
+            posicoes[key] = v
+        else:
+            pid = mapa.get(key)
+            if pid is not None:
+                posicoes[str(pid)] = v
+    out = {"somas": somas, "posicoes": posicoes, "por_id": True}
+    changed = (out["somas"] != {str(k): v for k, v in somas_in.items()}) or (
+        out["posicoes"] != {str(k): v for k, v in pos_in.items()}
+    ) or (not raw.get("por_id"))
+    return out, changed
+
+
+def snapshot_para_calculo() -> dict:
+    """Carrega o baseline e migra chave nome→id uma vez, se necessário."""
+    from src.db import save_snapshot
+
+    raw = load_snapshot() or {}
+    normalizado, changed = normalizar_snapshot_por_id(raw)
+    if changed and (normalizado.get("somas") or normalizado.get("posicoes") or raw):
+        save_snapshot(normalizado)
+    return normalizado
+
+
+def enriquecer_avatares_historico(linhas: list[dict]) -> list[dict]:
+    """Se o arquivo congelado sumiu (troca de foto), usa o avatar atual do id."""
+    from src.config import AVATARES_DIR
+    from src.db import get_participante
+
+    def _arquivo_ok(rel: str | None) -> bool:
+        path = (rel or "").strip()
+        if not path or "/" in path or "\\" in path or ".." in path:
+            return False
+        return (AVATARES_DIR / path).is_file()
+
+    cache: dict[int, dict | None] = {}
+    out: list[dict] = []
+    for row in linhas:
+        r = dict(row)
+        if not _arquivo_ok(r.get("avatar_path")):
+            pid = r.get("participante_id")
+            if pid is not None:
+                pid_i = int(pid)
+                if pid_i not in cache:
+                    cache[pid_i] = get_participante(pid_i)
+                part = cache[pid_i]
+                cur = (part or {}).get("avatar_path") if part else None
+                r["avatar_path"] = cur if _arquivo_ok(cur) else None
+            else:
+                r["avatar_path"] = None
+        out.append(r)
+    return out
 
 
 _HIST_KEYS = (
