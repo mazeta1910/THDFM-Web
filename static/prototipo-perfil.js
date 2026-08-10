@@ -240,39 +240,56 @@
     return data;
   }
 
+  function mapRecadoItem(d, fallbackTargetId) {
+    const autorId = Number(d && d.autor_id);
+    const texto = d && d.texto != null ? String(d.texto).slice(0, 280) : "";
+    const midia = d && d.midia ? String(d.midia) : "";
+    if (!texto && !midia) return null;
+    return {
+      id: String((d && d.id) || uid()),
+      texto,
+      midia,
+      autor: (d && d.autor) || "",
+      autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
+      avatar: (d && d.avatar) || "",
+      iniciais: (d && d.iniciais) || "",
+      at: (d && d.at) || null,
+      target_id: (d && d.target_id) || fallbackTargetId || null,
+      reacoes: normReacoes(d && d.reacoes),
+    };
+  }
+
   function loadRecadosEmbedded() {
     const el = document.getElementById("proto-recados");
     if (!el) return [];
     try {
       const data = JSON.parse(el.textContent || "[]");
       if (!Array.isArray(data)) return [];
-      return data
-        .filter((d) => d && d.texto)
-        .map((d) => {
-          const autorId = Number(d.autor_id);
-          return {
-            id: String(d.id || uid()),
-            texto: String(d.texto).slice(0, 280),
-            autor: d.autor || "",
-            autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
-            avatar: d.avatar || "",
-            iniciais: d.iniciais || "",
-            at: d.at || null,
-            target_id: d.target_id || null,
-            reacoes: normReacoes(d.reacoes),
-          };
-        });
+      return data.map((d) => mapRecadoItem(d)).filter(Boolean);
     } catch (_) {
       return [];
     }
   }
 
-  async function postRecado(targetId, texto) {
-    const r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ texto }),
-    });
+  async function postRecado(targetId, { texto, file } = {}) {
+    const bodyTexto = String(texto || "").trim().slice(0, 280);
+    let r;
+    if (file) {
+      const form = new FormData();
+      form.append("texto", bodyTexto);
+      form.append("midia", file, file.name || "midia.jpg");
+      r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: form,
+      });
+    } else {
+      r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: bodyTexto }),
+      });
+    }
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const err = new Error((data && data.erro) || "Falha ao postar recado");
@@ -557,7 +574,14 @@
                 : ""
             }
           </div>
-          <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
+          ${d.texto ? `<p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>` : ""}
+          ${
+            d.midia
+              ? `<a class="proto-steam-feed-midia" href="${escapeHtml(d.midia)}" target="_blank" rel="noopener noreferrer">
+                  <img src="${escapeHtml(d.midia)}" alt="" loading="lazy" />
+                </a>`
+              : ""
+          }
           ${renderReacoesHtml(d.reacoes, { canReact })}
         </div>
       </li>`;
@@ -1359,22 +1383,7 @@
 
     function applyRecadosList(list) {
       if (!Array.isArray(list)) return;
-      recados = list
-        .filter((d) => d && d.texto)
-        .map((d) => {
-          const autorId = Number(d.autor_id);
-          return {
-            id: String(d.id || uid()),
-            texto: String(d.texto).slice(0, 280),
-            autor: d.autor || "",
-            autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
-            avatar: d.avatar || "",
-            iniciais: d.iniciais || "",
-            at: d.at || null,
-            target_id: d.target_id || targetId || null,
-            reacoes: normReacoes(d.reacoes),
-          };
-        });
+      recados = list.map((d) => mapRecadoItem(d, targetId)).filter(Boolean);
       refreshRecados();
     }
 
@@ -1409,15 +1418,61 @@
     const recadoForm = document.getElementById("public-recado-form");
     if (recadoForm && !isOwn && targetId) {
       const submitBtn = recadoForm.querySelector('button[type="submit"]');
+      const midiaInput = recadoForm.querySelector("[data-recado-midia]");
+      const previewWrap = recadoForm.querySelector("[data-recado-preview-wrap]");
+      const previewImg = recadoForm.querySelector("[data-recado-preview]");
+      const clearMidiaBtn = recadoForm.querySelector("[data-recado-midia-clear]");
+      let midiaFile = null;
+      let midiaObjectUrl = "";
+
+      function clearMidiaPreview() {
+        midiaFile = null;
+        if (midiaInput) midiaInput.value = "";
+        if (midiaObjectUrl) {
+          try {
+            URL.revokeObjectURL(midiaObjectUrl);
+          } catch (_) {}
+          midiaObjectUrl = "";
+        }
+        if (previewImg) previewImg.removeAttribute("src");
+        if (previewWrap) previewWrap.hidden = true;
+      }
+
+      if (midiaInput) {
+        midiaInput.addEventListener("change", () => {
+          const file = midiaInput.files && midiaInput.files[0];
+          if (!file) {
+            clearMidiaPreview();
+            return;
+          }
+          const okType = /^image\/(jpeg|png|webp|gif)$/i.test(file.type || "");
+          if (!okType || file.size > 4 * 1024 * 1024) {
+            clearMidiaPreview();
+            return;
+          }
+          midiaFile = file;
+          if (midiaObjectUrl) {
+            try {
+              URL.revokeObjectURL(midiaObjectUrl);
+            } catch (_) {}
+          }
+          midiaObjectUrl = URL.createObjectURL(file);
+          if (previewImg) previewImg.src = midiaObjectUrl;
+          if (previewWrap) previewWrap.hidden = false;
+        });
+      }
+      if (clearMidiaBtn) clearMidiaBtn.addEventListener("click", () => clearMidiaPreview());
+
       recadoForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const texto = ((recadoForm.querySelector("textarea") || {}).value || "").trim();
-        if (!texto) return;
+        if (!texto && !midiaFile) return;
         if (submitBtn) submitBtn.disabled = true;
-        postRecado(targetId, texto.slice(0, 280))
+        postRecado(targetId, { texto: texto.slice(0, 280), file: midiaFile })
           .then((data) => {
             applyRecadosList(data.recados || []);
             recadoForm.reset();
+            clearMidiaPreview();
           })
           .catch(() => {})
           .finally(() => {
