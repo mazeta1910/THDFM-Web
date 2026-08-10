@@ -11385,11 +11385,13 @@ button.proto-steam-reacao-pick,
   padding: 0;
 }
 .proto-recados-pager {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
   gap: 0.65rem;
   margin: 0.75rem 0 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .proto-recados-pager-btn {
   width: auto;
@@ -11402,6 +11404,14 @@ button.proto-steam-reacao-pick,
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
+  justify-self: center;
+}
+.proto-recados-pager-btn[data-recados-prev] {
+  justify-self: end;
+}
+.proto-recados-pager-btn[data-recados-next] {
+  justify-self: start;
 }
 .proto-recados-pager-btn:hover:not(:disabled) {
   border-color: var(--accent);
@@ -11416,6 +11426,8 @@ button.proto-steam-reacao-pick,
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  justify-self: center;
+  text-align: center;
 }
 .proto-steam-feed-item {
   padding: 0.7rem 0.8rem;
