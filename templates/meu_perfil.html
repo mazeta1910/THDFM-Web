@@ -38,6 +38,7 @@
   <script type="application/json" id="proto-perfil-fixado">{{ perfil_fixado_json | safe }}</script>
   {% endif %}
   <script type="application/json" id="proto-karma-resumo">{{ karma_resumo_json | default('null') | safe }}</script>
+  <script type="application/json" id="proto-nutela-resumo">{{ nutela_resumo_json | default('null') | safe }}</script>
 
   <article class="proto-steam-card">
     <div class="proto-steam-banner-wrap">
@@ -135,27 +136,30 @@
                 {% endif %}
               </div>
               {% endfor %}
+              {% set nutela_boot = nutela_resumo if nutela_resumo is defined and nutela_resumo else none %}
+              {% set nutela_media = nutela_boot.media if nutela_boot else 50 %}
+              {% set nutela_voto = nutela_boot.meu_voto if nutela_boot and nutela_boot.meu_voto is not none else nutela_media %}
               <div
-                class="proto-steam-nutela proto-steam-nutela--inline {% if not is_own_view %}proto-steam-nutela--votavel{% endif %}"
+                class="proto-steam-nutela proto-steam-nutela--inline {% if pode_votar %}proto-steam-nutela--votavel{% endif %}"
                 data-nutela
-                style="--nutela: 50%; --nutela-voto: 50%"
+                style="--nutela: {{ nutela_media }}%; --nutela-voto: {{ nutela_voto }}%"
               >
                 <span class="proto-steam-nutela-end is-nutela">nutela</span>
                 <div class="proto-steam-nutela-meter">
                   <div class="proto-steam-nutela-track" aria-hidden="true">
                     <span class="proto-steam-nutela-marker" data-nutela-marker title="Média da galera"></span>
-                    {% if not is_own_view %}
-                    <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" hidden></span>
+                    {% if pode_votar %}
+                    <span class="proto-steam-nutela-marker proto-steam-nutela-marker--voto" data-nutela-voto-marker title="Seu voto" {% if not nutela_boot or nutela_boot.meu_voto is none %}hidden{% endif %}></span>
                     {% endif %}
                   </div>
-                  {% if not is_own_view %}
+                  {% if pode_votar %}
                   <input
                     class="proto-steam-nutela-range"
                     type="range"
                     min="0"
                     max="100"
                     step="1"
-                    value="50"
+                    value="{{ nutela_voto }}"
                     aria-label="Seu voto no medidor nutela a raíz"
                     data-proto-nutela
                   />
@@ -202,5 +206,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=23" defer></script>
+<script src="/static/prototipo-perfil.js?v=24" defer></script>
 {% endblock %}

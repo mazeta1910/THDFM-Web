@@ -969,6 +969,7 @@ def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
     nome = (part.get("nome") or "").strip() or "Participante"
     iniciais = (nome[:2] if nome else "??").upper()
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
+    nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
     return {
         "slug": str(part["id"]),
         "nome": nome,
@@ -981,7 +982,9 @@ def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
         "karma": karma["medias"],
         "karma_counts": karma["counts"],
         "karma_meu_voto": karma["meu_voto"],
-        "nutela": 50,
+        "nutela": nutela["media"],
+        "nutela_count": nutela["count"],
+        "nutela_meu_voto": nutela["meu_voto"],
         "iniciais": iniciais,
     }
 
@@ -1133,6 +1136,7 @@ def meu_perfil(request: Request):
     is_own_view = como != "visitante"
     part = _voter_sessao(request)
     karma = db.karma_resumo(part["id"], voter_id=part["id"]) if part else None
+    nutela = db.nutela_resumo(part["id"], voter_id=part["id"]) if part else None
     return render(
         request,
         "meu_perfil.html",
@@ -1144,6 +1148,8 @@ def meu_perfil(request: Request):
         perfil_target_id=part["id"] if part else None,
         karma_resumo=karma,
         karma_resumo_json=json.dumps(karma, ensure_ascii=False) if karma else "null",
+        nutela_resumo=nutela,
+        nutela_resumo_json=json.dumps(nutela, ensure_ascii=False) if nutela else "null",
         pode_votar_karma=False,
     )
 
@@ -1174,6 +1180,7 @@ def perfil_participante(request: Request, participante_id: int):
     voter_id = int(sess["id"]) if sess else None
     fixado = _perfil_publico_payload(part, voter_id=voter_id)
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
+    nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
     return render(
         request,
         "meu_perfil.html",
@@ -1186,6 +1193,8 @@ def perfil_participante(request: Request, participante_id: int):
         perfil_target_id=part["id"],
         karma_resumo=karma,
         karma_resumo_json=json.dumps(karma, ensure_ascii=False),
+        nutela_resumo=nutela,
+        nutela_resumo_json=json.dumps(nutela, ensure_ascii=False),
         pode_votar_karma=bool(karma.get("pode_votar")),
     )
 
@@ -1226,6 +1235,43 @@ async def perfil_karma_put(request: Request, participante_id: int):
     except (TypeError, ValueError) as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
     return JSONResponse(db.karma_resumo(participante_id, voter_id=voter["id"]))
+
+
+@app.get("/perfil/{participante_id:int}/nutela")
+def perfil_nutela_get(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    return JSONResponse(db.nutela_resumo(participante_id, voter_id=voter["id"] if voter else None))
+
+
+@app.put("/perfil/{participante_id:int}/nutela")
+async def perfil_nutela_put(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    if not voter:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    if int(voter["id"]) == int(participante_id):
+        return JSONResponse({"erro": "Não pode votar no próprio nutela"}, status_code=403)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    valor = (body or {}).get("valor")
+    try:
+        db.salvar_nutela_voto(voter["id"], participante_id, valor)
+    except (TypeError, ValueError) as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(db.nutela_resumo(participante_id, voter_id=voter["id"]))
 
 
 @app.get("/meu-perfil/clubes.json")

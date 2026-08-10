@@ -417,6 +417,26 @@ def _migrate_perfil_karma(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_perfil_nutela(conn: sqlite3.Connection) -> None:
+    """Votos nutela↔raíz do perfil (média 0–100 agregada por participante)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfil_nutela_votos (
+          voter_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          target_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          valor INTEGER NOT NULL CHECK (valor BETWEEN 0 AND 100),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          PRIMARY KEY (voter_id, target_id),
+          CHECK (voter_id != target_id)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_perfil_nutela_target "
+        "ON perfil_nutela_votos(target_id)"
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -427,6 +447,7 @@ def init_db() -> None:
         _migrate_xonhometro(conn)
         _migrate_listra(conn)
         _migrate_perfil_karma(conn)
+        _migrate_perfil_nutela(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -3623,6 +3644,62 @@ def karma_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]:
         "target_id": tid,
         "medias": medias,
         "counts": counts,
+        "meu_voto": meu_voto if voter_id is not None and int(voter_id) != tid else None,
+        "pode_votar": bool(voter_id is not None and int(voter_id) != tid),
+    }
+
+
+def salvar_nutela_voto(voter_id: int, target_id: int, valor: int) -> None:
+    v = int(valor)
+    if v < 0 or v > 100:
+        raise ValueError("valor inválido")
+    if int(voter_id) == int(target_id):
+        raise ValueError("não pode votar no próprio nutela")
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO perfil_nutela_votos (voter_id, target_id, valor, updated_at)
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(voter_id, target_id) DO UPDATE SET
+              valor = excluded.valor,
+              updated_at = datetime('now', 'localtime')
+            """,
+            (int(voter_id), int(target_id), v),
+        )
+
+
+def nutela_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]:
+    """Média 0–100 (50 sem votos), contagem e voto do visitante."""
+    tid = int(target_id)
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT AVG(valor * 1.0) AS media, COUNT(*) AS n
+            FROM perfil_nutela_votos
+            WHERE target_id = ?
+            """,
+            (tid,),
+        ).fetchone()
+        n = int(row["n"] or 0) if row else 0
+        if n > 0:
+            media = int(max(0, min(100, round(float(row["media"])))))
+        else:
+            media = 50
+        meu_voto = None
+        if voter_id is not None and int(voter_id) != tid:
+            voto = conn.execute(
+                """
+                SELECT valor FROM perfil_nutela_votos
+                WHERE target_id = ? AND voter_id = ?
+                """,
+                (tid, int(voter_id)),
+            ).fetchone()
+            if voto:
+                meu_voto = int(voto["valor"])
+    return {
+        "target_id": tid,
+        "media": media,
+        "count": n,
         "meu_voto": meu_voto if voter_id is not None and int(voter_id) != tid else None,
         "pode_votar": bool(voter_id is not None and int(voter_id) != tid),
     }
