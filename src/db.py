@@ -474,6 +474,27 @@ def _migrate_perfil_recados(conn: sqlite3.Connection) -> None:
         "ON perfil_recados(target_id, id DESC)"
     )
 
+
+def _migrate_perfil_recado_reacoes(conn: sqlite3.Connection) -> None:
+    """Reações estilo Discord nos recados do mural."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfil_recado_reacoes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          recado_id INTEGER NOT NULL REFERENCES perfil_recados(id) ON DELETE CASCADE,
+          voter_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          emoji TEXT NOT NULL,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          UNIQUE (recado_id, voter_id, emoji)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_perfil_recado_reacoes_recado "
+        "ON perfil_recado_reacoes(recado_id)"
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -486,6 +507,7 @@ def init_db() -> None:
         _migrate_perfil_karma(conn)
         _migrate_perfil_nutela(conn)
         _migrate_perfil_recados(conn)
+        _migrate_perfil_recado_reacoes(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -3885,9 +3907,112 @@ def nutela_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]
 
 
 PERFIL_RECADOS_MAX = 40
+RECADO_REACOES_EMOJI = (
+    "👍",
+    "❤️",
+    "😂",
+    "😮",
+    "😢",
+    "😡",
+    "🔥",
+    "👏",
+    "🎉",
+    "🙏",
+)
 
 
-def listar_recados(target_id: int, *, limite: int = PERFIL_RECADOS_MAX) -> list[dict[str, Any]]:
+def _normalizar_recado_emoji(emoji: str) -> str:
+    em = (emoji or "").strip()
+    if em not in RECADO_REACOES_EMOJI:
+        raise ValueError("emoji inválido")
+    return em
+
+
+def reacoes_dos_recados(
+    recado_ids: list[int],
+    *,
+    voter_id: int | None = None,
+) -> dict[int, list[dict[str, Any]]]:
+    """Agrega reações por recado: [{emoji, count, mine}, ...] na ordem de aparição."""
+    ids = [int(x) for x in recado_ids if x is not None]
+    if not ids:
+        return {}
+    placeholders = ",".join("?" for _ in ids)
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT recado_id, emoji, COUNT(*) AS n,
+                   MIN(criado_em) AS first_at,
+                   MAX(CASE WHEN voter_id = ? THEN 1 ELSE 0 END) AS mine
+            FROM perfil_recado_reacoes
+            WHERE recado_id IN ({placeholders})
+            GROUP BY recado_id, emoji
+            ORDER BY first_at ASC, emoji ASC
+            """,
+            (int(voter_id) if voter_id else 0, *ids),
+        ).fetchall()
+    out: dict[int, list[dict[str, Any]]] = {i: [] for i in ids}
+    for row in rows:
+        rid = int(row["recado_id"])
+        out.setdefault(rid, []).append(
+            {
+                "emoji": row["emoji"],
+                "count": int(row["n"] or 0),
+                "mine": bool(row["mine"]),
+            }
+        )
+    return out
+
+
+def toggle_recado_reacao(
+    recado_id: int,
+    voter_id: int,
+    emoji: str,
+    *,
+    target_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Liga/desliga a reação do votante; devolve o resumo do recado."""
+    rid = int(recado_id)
+    vid = int(voter_id)
+    em = _normalizar_recado_emoji(emoji)
+    voter = get_participante(vid)
+    if not voter or voter.get("status") != "liberado":
+        raise ValueError("votante inválido")
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, target_id FROM perfil_recados WHERE id = ?",
+            (rid,),
+        ).fetchone()
+        if not row:
+            raise ValueError("recado não encontrado")
+        if target_id is not None and int(row["target_id"]) != int(target_id):
+            raise ValueError("recado não encontrado")
+        existing = conn.execute(
+            """
+            SELECT id FROM perfil_recado_reacoes
+            WHERE recado_id = ? AND voter_id = ? AND emoji = ?
+            """,
+            (rid, vid, em),
+        ).fetchone()
+        if existing:
+            conn.execute("DELETE FROM perfil_recado_reacoes WHERE id = ?", (existing["id"],))
+        else:
+            conn.execute(
+                """
+                INSERT INTO perfil_recado_reacoes (recado_id, voter_id, emoji)
+                VALUES (?, ?, ?)
+                """,
+                (rid, vid, em),
+            )
+    return reacoes_dos_recados([rid], voter_id=vid).get(rid, [])
+
+
+def listar_recados(
+    target_id: int,
+    *,
+    limite: int = PERFIL_RECADOS_MAX,
+    voter_id: int | None = None,
+) -> list[dict[str, Any]]:
     tid = int(target_id)
     lim = max(1, min(int(limite), PERFIL_RECADOS_MAX))
     with get_db() as conn:
@@ -3903,15 +4028,18 @@ def listar_recados(target_id: int, *, limite: int = PERFIL_RECADOS_MAX) -> list[
             """,
             (tid, lim),
         ).fetchall()
+    ids = [int(row["id"]) for row in rows]
+    reacoes_map = reacoes_dos_recados(ids, voter_id=voter_id)
     out: list[dict[str, Any]] = []
     for row in rows:
         nome = (row["autor_nome"] or "").strip() or "alguém"
         at = row["criado_em"] or ""
         if at and "T" not in str(at):
             at = str(at).replace(" ", "T", 1)
+        rid = int(row["id"])
         out.append(
             {
-                "id": str(row["id"]),
+                "id": str(rid),
                 "target_id": int(row["target_id"]),
                 "autor_id": int(row["autor_id"]),
                 "autor": nome,
@@ -3919,6 +4047,7 @@ def listar_recados(target_id: int, *, limite: int = PERFIL_RECADOS_MAX) -> list[
                 "iniciais": (nome[:2] if nome else "??").upper(),
                 "texto": row["texto"] or "",
                 "at": at or None,
+                "reacoes": reacoes_map.get(rid, []),
             }
         )
     return out
@@ -3959,7 +4088,7 @@ def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
         ).fetchall()
         for row in extras:
             conn.execute("DELETE FROM perfil_recados WHERE id = ?", (row["id"],))
-    lista = listar_recados(tid, limite=1)
+    lista = listar_recados(tid, limite=1, voter_id=aid)
     for item in lista:
         if item["id"] == str(rid):
             return item
@@ -3972,6 +4101,7 @@ def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
         "iniciais": ((autor.get("nome") or "??")[:2]).upper(),
         "texto": body,
         "at": None,
+        "reacoes": [],
     }
 
 

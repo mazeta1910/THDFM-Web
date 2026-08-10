@@ -10951,6 +10951,108 @@ a.proto-steam-post-nome:focus-visible {
 .proto-steam-post-head .proto-ico-btn {
   margin-left: auto;
 }
+.proto-steam-reacoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem;
+  margin-top: 0.4rem;
+}
+.proto-steam-reacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin: 0;
+  padding: 0.12rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--bg) 72%, #000);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.proto-steam-reacao:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.proto-steam-reacao:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+.proto-steam-reacao.is-mine {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.proto-steam-reacao-count {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.proto-steam-reacao.is-mine .proto-steam-reacao-count {
+  color: var(--text);
+}
+.proto-steam-reacao-add-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.proto-steam-reacao-add {
+  display: inline-grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.55rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--bg) 72%, #000);
+  color: var(--muted);
+  cursor: pointer;
+}
+.proto-steam-reacao-add:hover,
+.proto-steam-reacao-add[aria-expanded="true"] {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+.proto-steam-reacao-picker {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.3rem);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  width: max-content;
+  max-width: min(14rem, 70vw);
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--panel, var(--bg)) 92%, #000);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+.proto-steam-reacao-picker[hidden] {
+  display: none !important;
+}
+.proto-steam-reacao-pick {
+  display: inline-grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.proto-steam-reacao-pick:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
 .proto-steam-pedidos {
   list-style: none;
   margin: 0;
