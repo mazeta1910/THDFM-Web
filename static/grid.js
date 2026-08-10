@@ -67,8 +67,11 @@
     btn.classList.add("is-done", data.ok ? "is-ok" : "is-miss");
     btn.disabled = true;
     const clube = data.clube || {};
+    const embl = clube.emblema
+      ? `<img class="grid-cell-embl" src="${escapeHtml(clube.emblema)}" alt="" />`
+      : `<span class="grid-cell-embl grid-cell-embl--miss" aria-hidden="true">✕</span>`;
     btn.innerHTML = `
-      <img class="grid-cell-embl" src="${escapeHtml(clube.emblema || "")}" alt="" />
+      ${embl}
       <span class="grid-cell-nome">${escapeHtml(clube.nome || "")}</span>`;
   }
 
