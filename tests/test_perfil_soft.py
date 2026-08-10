@@ -77,7 +77,7 @@ def test_api_meu_perfil_soft_e_pagina(client: TestClient):
     assert '"laranja"' in r.text
     assert ids[0] in r.text
     assert 'data-banner="laranja"' in r.text
-    assert "/static/prototipo-perfil.js?v=25" in r.text
+    assert "/static/prototipo-perfil.js?v=26" in r.text
 
     r = client.get("/meu-perfil/editar")
     assert r.status_code == 200

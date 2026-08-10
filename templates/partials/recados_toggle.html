@@ -1,0 +1,17 @@
+{# Envelope de recados novos — à esquerda do toggle de tema #}
+{% set n_recados = recados_novos_count if recados_novos_count is defined else 0 %}
+{% if participante_nav and participante_nav.status == 'liberado' and n_recados > 0 %}
+<a
+  class="recados-toggle"
+  id="recados-toggle"
+  href="/meu-perfil#recados"
+  title="{% if n_recados == 1 %}1 recado novo{% else %}{{ n_recados }} recados novos{% endif %}"
+  aria-label="{% if n_recados == 1 %}1 recado novo no seu perfil{% else %}{{ n_recados }} recados novos no seu perfil{% endif %}"
+>
+  <svg class="recados-toggle-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="m3 7 9 6 9-6" />
+  </svg>
+  <span class="recados-toggle-badge" aria-hidden="true">{% if n_recados > 9 %}9+{% else %}{{ n_recados }}{% endif %}</span>
+</a>
+{% endif %}

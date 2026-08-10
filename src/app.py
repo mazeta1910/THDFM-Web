@@ -342,6 +342,15 @@ def render(request: Request, name: str, **ctx):
     else:
         ctx.setdefault("admin_nome", admin_nome(request))
     ctx.setdefault("participante_nav", part_nav)
+    if "recados_novos_count" not in ctx:
+        try:
+            ctx["recados_novos_count"] = (
+                db.contar_recados_novos(part_nav["id"])
+                if part_nav and part_nav.get("status") == "liberado"
+                else 0
+            )
+        except Exception:
+            ctx["recados_novos_count"] = 0
     if "social_links" not in ctx:
         ctx.update({k: v for k, v in _taxa_ctx().items() if k == "social_links"})
     if is_adm and "admin_pendentes_count" not in ctx:
@@ -1133,6 +1142,17 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     }
 
 
+def _recados_payload(target_id: int | None) -> list[dict]:
+    if not target_id:
+        return []
+    out = []
+    for r in db.listar_recados(int(target_id)):
+        item = dict(r)
+        item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
+        out.append(item)
+    return out
+
+
 @app.get("/meu-perfil", response_class=HTMLResponse)
 def meu_perfil(request: Request):
     """Visão pública do próprio perfil. Use ?como=visitante para simular outro usuário."""
@@ -1147,6 +1167,9 @@ def meu_perfil(request: Request):
     karma = db.karma_resumo(part["id"], voter_id=part["id"]) if part else None
     nutela = db.nutela_resumo(part["id"], voter_id=part["id"]) if part else None
     soft = db.perfil_soft_do_participante(part) if part else None
+    recados = _recados_payload(part["id"] if part else None)
+    if part:
+        db.marcar_recados_vistos(part["id"])
     return render(
         request,
         "meu_perfil.html",
@@ -1163,6 +1186,8 @@ def meu_perfil(request: Request):
         nutela_resumo_json=json.dumps(nutela, ensure_ascii=False) if nutela else "null",
         perfil_soft=soft,
         perfil_soft_json=json.dumps(soft, ensure_ascii=False) if soft else "null",
+        recados_json=json.dumps(recados, ensure_ascii=False),
+        recados_novos_count=0,
         pode_votar_karma=False,
     )
 
@@ -1206,6 +1231,7 @@ def perfil_participante(request: Request, participante_id: int):
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
     nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
     soft = db.perfil_soft_do_participante(part)
+    recados = _recados_payload(part["id"])
     return render(
         request,
         "meu_perfil.html",
@@ -1223,6 +1249,7 @@ def perfil_participante(request: Request, participante_id: int):
         nutela_resumo_json=json.dumps(nutela, ensure_ascii=False),
         perfil_soft=soft,
         perfil_soft_json=json.dumps(soft, ensure_ascii=False),
+        recados_json=json.dumps(recados, ensure_ascii=False),
         pode_votar_karma=bool(karma.get("pode_votar")),
     )
 
@@ -1263,6 +1290,60 @@ async def perfil_karma_put(request: Request, participante_id: int):
     except (TypeError, ValueError) as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
     return JSONResponse(db.karma_resumo(participante_id, voter_id=voter["id"]))
+
+
+@app.get("/perfil/{participante_id:int}/recados")
+def perfil_recados_get(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    return JSONResponse({"recados": _recados_payload(participante_id)})
+
+
+@app.post("/perfil/{participante_id:int}/recados")
+async def perfil_recados_post(request: Request, participante_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    if not voter:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    if int(voter["id"]) == int(participante_id):
+        return JSONResponse({"erro": "Não pode deixar recado no próprio perfil"}, status_code=403)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        criado = db.criar_recado(participante_id, voter["id"], (body or {}).get("texto") or "")
+    except (TypeError, ValueError) as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    item = dict(criado)
+    item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
+    return JSONResponse({"recado": item, "recados": _recados_payload(participante_id)})
+
+
+@app.delete("/perfil/{participante_id:int}/recados/{recado_id:int}")
+def perfil_recados_delete(request: Request, participante_id: int, recado_id: int):
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    voter = _voter_sessao(request)
+    if not voter:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    try:
+        ok = db.apagar_recado(participante_id, recado_id, actor_id=voter["id"])
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=403)
+    if not ok:
+        return JSONResponse({"erro": "Recado não encontrado"}, status_code=404)
+    return JSONResponse({"ok": True, "recados": _recados_payload(participante_id)})
 
 
 @app.get("/perfil/{participante_id:int}/nutela")

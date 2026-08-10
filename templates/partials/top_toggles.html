@@ -1,4 +1,4 @@
-{# Atalhos fixos no canto: chrome Admin/Usuário (só Dono) + tema #}
+{# Atalhos fixos no canto: chrome Admin/Usuário (só Dono) + recados + tema #}
 <div class="top-toggles" id="top-toggles">
   {% if is_dono and path != '/admin/login' %}
   <button
@@ -13,5 +13,6 @@
     <span class="chrome-mode-toggle-label">{% if admin_layout %}Usuário{% else %}Admin{% endif %}</span>
   </button>
   {% endif %}
+  {% include "partials/recados_toggle.html" %}
   {% include "partials/theme_toggle.html" %}
 </div>

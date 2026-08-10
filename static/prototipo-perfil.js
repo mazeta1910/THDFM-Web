@@ -240,6 +240,62 @@
     return data;
   }
 
+  function loadRecadosEmbedded() {
+    const el = document.getElementById("proto-recados");
+    if (!el) return [];
+    try {
+      const data = JSON.parse(el.textContent || "[]");
+      if (!Array.isArray(data)) return [];
+      return data
+        .filter((d) => d && d.texto)
+        .map((d) => {
+          const autorId = Number(d.autor_id);
+          return {
+            id: String(d.id || uid()),
+            texto: String(d.texto).slice(0, 280),
+            autor: d.autor || "",
+            autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
+            avatar: d.avatar || "",
+            iniciais: d.iniciais || "",
+            at: d.at || null,
+            target_id: d.target_id || null,
+          };
+        });
+    } catch (_) {
+      return [];
+    }
+  }
+
+  async function postRecado(targetId, texto) {
+    const r = await fetch(`/perfil/${encodeURIComponent(targetId)}/recados`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ texto }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao postar recado");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+  async function deleteRecadoApi(targetId, recadoId) {
+    const r = await fetch(
+      `/perfil/${encodeURIComponent(targetId)}/recados/${encodeURIComponent(recadoId)}`,
+      { method: "DELETE", headers: { Accept: "application/json" } }
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao apagar recado");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+
 
   async function putPerfilSoft(payload) {
     const r = await fetch("/meu-perfil/soft", {
@@ -1195,23 +1251,27 @@
       }
     }
 
-    const ownerIdNum = Number(targetId);
-    const owner = {
-      id: Number.isFinite(ownerIdNum) && ownerIdNum > 0 ? ownerIdNum : null,
-      nome: ownerNome,
-    };
+    let recados = targetId ? loadRecadosEmbedded() : [];
 
-    let recados = loadPosts(RECADOS_KEY);
-    let recadosDirty = false;
-    recados = recados.map((d) => {
-      const resolved = resolveAutorId(d, viewer, owner);
-      if (resolved && !d.autor_id) {
-        recadosDirty = true;
-        return { ...d, autor_id: resolved };
-      }
-      return d;
-    });
-    if (recadosDirty) save(RECADOS_KEY, recados);
+    function applyRecadosList(list) {
+      if (!Array.isArray(list)) return;
+      recados = list
+        .filter((d) => d && d.texto)
+        .map((d) => {
+          const autorId = Number(d.autor_id);
+          return {
+            id: String(d.id || uid()),
+            texto: String(d.texto).slice(0, 280),
+            autor: d.autor || "",
+            autor_id: Number.isFinite(autorId) && autorId > 0 ? autorId : null,
+            avatar: d.avatar || "",
+            iniciais: d.iniciais || "",
+            at: d.at || null,
+            target_id: d.target_id || targetId || null,
+          };
+        });
+      refreshRecados();
+    }
 
     function refreshRecados() {
       renderPosts(
@@ -1221,12 +1281,11 @@
         recados,
         {
           canDelete: isOwn,
-          viewer,
-          owner,
           onDelete: (id) => {
-            recados = recados.filter((x) => x.id !== id);
-            save(RECADOS_KEY, recados);
-            refreshRecados();
+            if (!targetId || !id) return;
+            deleteRecadoApi(targetId, id)
+              .then((data) => applyRecadosList(data.recados || []))
+              .catch(() => {});
           },
         }
       );
@@ -1235,28 +1294,22 @@
     refreshRecados();
 
     const recadoForm = document.getElementById("public-recado-form");
-    if (recadoForm && !isOwn) {
+    if (recadoForm && !isOwn && targetId) {
+      const submitBtn = recadoForm.querySelector('button[type="submit"]');
       recadoForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const texto = ((recadoForm.querySelector("textarea") || {}).value || "").trim();
         if (!texto) return;
-        const autorId =
-          viewer.id ||
-          resolveAutorId({ autor: viewer.nome, autor_id: null }, viewer, owner);
-        if (!autorId) return;
-        recados.unshift({
-          id: uid(),
-          texto: texto.slice(0, 280),
-          autor: viewer.nome,
-          autor_id: autorId,
-          avatar: viewer.avatar,
-          iniciais: viewer.iniciais,
-          at: new Date().toISOString(),
-        });
-        recados = recados.slice(0, 40);
-        save(RECADOS_KEY, recados);
-        recadoForm.reset();
-        refreshRecados();
+        if (submitBtn) submitBtn.disabled = true;
+        postRecado(targetId, texto.slice(0, 280))
+          .then((data) => {
+            applyRecadosList(data.recados || []);
+            recadoForm.reset();
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (submitBtn) submitBtn.disabled = false;
+          });
       });
     }
 

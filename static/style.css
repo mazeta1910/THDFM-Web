@@ -428,7 +428,8 @@ nav.site-nav-desktop a.active {
   top: 0.85rem;
 }
 .theme-toggle,
-.chrome-mode-toggle {
+.chrome-mode-toggle,
+a.recados-toggle {
   position: relative;
   top: auto;
   right: auto;
@@ -450,6 +451,8 @@ nav.site-nav-desktop a.active {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   flex-shrink: 0;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 .chrome-mode-toggle {
   width: auto;
@@ -463,6 +466,31 @@ nav.site-nav-desktop a.active {
 }
 .theme-toggle {
   overflow: hidden;
+}
+a.recados-toggle:hover,
+a.recados-toggle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+.recados-toggle-icon {
+  display: block;
+}
+.recados-toggle-badge {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.15rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.05rem;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--card);
 }
 .chrome-mode-toggle:hover,
 .theme-toggle:hover {
@@ -10655,7 +10683,10 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   gap: 0.35rem 1rem;
   margin-bottom: 0.35rem;
 }
-.proto-steam-banner-panel-head .proto-steam-panel-title {
+.proto-steam-banner-panel-head #recados {
+  scroll-margin-top: 5.5rem;
+}
+.proto-steam-panel-title {
   margin: 0;
 }
 .proto-steam-banner-actions {
@@ -10956,6 +10987,7 @@ a.proto-steam-post-nome:focus-visible {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
+  scroll-margin-top: 5.5rem;
 }
 .proto-steam-panel-title {
   margin: 0 0 0.65rem;

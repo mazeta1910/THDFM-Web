@@ -44,6 +44,7 @@
   <script type="application/json" id="proto-karma-resumo">{{ karma_resumo_json | default('null') | safe }}</script>
   <script type="application/json" id="proto-nutela-resumo">{{ nutela_resumo_json | default('null') | safe }}</script>
   <script type="application/json" id="proto-perfil-soft">{{ perfil_soft_json | default('null') | safe }}</script>
+  <script type="application/json" id="proto-recados">{{ recados_json | default('[]') | safe }}</script>
 
   <article class="proto-steam-card">
     <div class="proto-steam-banner-wrap">
@@ -219,5 +220,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=25" defer></script>
+<script src="/static/prototipo-perfil.js?v=26" defer></script>
 {% endblock %}

@@ -185,6 +185,10 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN password_hash TEXT")
     if "credenciais_em" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN credenciais_em TEXT")
+    if "recados_visto_ate" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN recados_visto_ate INTEGER NOT NULL DEFAULT 0"
+        )
     if "perfil_frase" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN perfil_frase TEXT")
     if "perfil_relacionamento" not in cols:
@@ -451,6 +455,25 @@ def _migrate_perfil_nutela(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_perfil_recados(conn: sqlite3.Connection) -> None:
+    """Recados do mural, atrelados ao perfil de destino."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfil_recados (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          target_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          autor_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          texto TEXT NOT NULL,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          CHECK (length(trim(texto)) > 0)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_perfil_recados_target "
+        "ON perfil_recados(target_id, id DESC)"
+    )
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -462,6 +485,7 @@ def init_db() -> None:
         _migrate_listra(conn)
         _migrate_perfil_karma(conn)
         _migrate_perfil_nutela(conn)
+        _migrate_perfil_recados(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -511,7 +535,7 @@ def set_fase_atual(fase: str) -> None:
 _PARTICIPANTE_COLS = (
     "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
     "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login, "
-    "username, password_hash, credenciais_em, "
+    "username, password_hash, credenciais_em, recados_visto_ate, "
     "perfil_frase, perfil_relacionamento, perfil_aniversario, "
     "banner_preset, banner_path, times_json"
 )
@@ -3859,3 +3883,147 @@ def nutela_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]
     }
 
 
+
+PERFIL_RECADOS_MAX = 40
+
+
+def listar_recados(target_id: int, *, limite: int = PERFIL_RECADOS_MAX) -> list[dict[str, Any]]:
+    tid = int(target_id)
+    lim = max(1, min(int(limite), PERFIL_RECADOS_MAX))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT r.id, r.target_id, r.autor_id, r.texto, r.criado_em,
+                   a.nome AS autor_nome, a.avatar_path AS autor_avatar
+            FROM perfil_recados r
+            JOIN participantes a ON a.id = r.autor_id
+            WHERE r.target_id = ?
+            ORDER BY r.id DESC
+            LIMIT ?
+            """,
+            (tid, lim),
+        ).fetchall()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        nome = (row["autor_nome"] or "").strip() or "alguém"
+        at = row["criado_em"] or ""
+        if at and "T" not in str(at):
+            at = str(at).replace(" ", "T", 1)
+        out.append(
+            {
+                "id": str(row["id"]),
+                "target_id": int(row["target_id"]),
+                "autor_id": int(row["autor_id"]),
+                "autor": nome,
+                "avatar_path": row["autor_avatar"],
+                "iniciais": (nome[:2] if nome else "??").upper(),
+                "texto": row["texto"] or "",
+                "at": at or None,
+            }
+        )
+    return out
+
+
+def criar_recado(target_id: int, autor_id: int, texto: str) -> dict[str, Any]:
+    tid = int(target_id)
+    aid = int(autor_id)
+    body = (texto or "").strip()
+    if not body:
+        raise ValueError("recado vazio")
+    if len(body) > 280:
+        body = body[:280]
+    alvo = get_participante(tid)
+    if not alvo or alvo.get("status") != "liberado":
+        raise ValueError("perfil inválido")
+    autor = get_participante(aid)
+    if not autor or autor.get("status") != "liberado":
+        raise ValueError("autor inválido")
+    with get_db() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO perfil_recados (target_id, autor_id, texto)
+            VALUES (?, ?, ?)
+            """,
+            (tid, aid, body),
+        )
+        rid = int(cur.lastrowid)
+        # mantém só os N mais recentes no mural
+        extras = conn.execute(
+            """
+            SELECT id FROM perfil_recados
+            WHERE target_id = ?
+            ORDER BY id DESC
+            LIMIT -1 OFFSET ?
+            """,
+            (tid, PERFIL_RECADOS_MAX),
+        ).fetchall()
+        for row in extras:
+            conn.execute("DELETE FROM perfil_recados WHERE id = ?", (row["id"],))
+    lista = listar_recados(tid, limite=1)
+    for item in lista:
+        if item["id"] == str(rid):
+            return item
+    return {
+        "id": str(rid),
+        "target_id": tid,
+        "autor_id": aid,
+        "autor": (autor.get("nome") or "").strip() or "alguém",
+        "avatar_path": autor.get("avatar_path"),
+        "iniciais": ((autor.get("nome") or "??")[:2]).upper(),
+        "texto": body,
+        "at": None,
+    }
+
+
+def apagar_recado(target_id: int, recado_id: int, *, actor_id: int) -> bool:
+    """Dono do mural ou autor do recado podem apagar."""
+    tid = int(target_id)
+    rid = int(recado_id)
+    aid = int(actor_id)
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT id, target_id, autor_id FROM perfil_recados
+            WHERE id = ? AND target_id = ?
+            """,
+            (rid, tid),
+        ).fetchone()
+        if not row:
+            return False
+        if aid != int(row["target_id"]) and aid != int(row["autor_id"]):
+            raise ValueError("sem permissão")
+        conn.execute("DELETE FROM perfil_recados WHERE id = ?", (rid,))
+        return True
+
+
+def contar_recados_novos(target_id: int) -> int:
+    """Quantos recados no mural ainda não foram vistos pelo dono."""
+    tid = int(target_id)
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM perfil_recados r
+            JOIN participantes p ON p.id = r.target_id
+            WHERE r.target_id = ?
+              AND r.id > COALESCE(p.recados_visto_ate, 0)
+            """,
+            (tid,),
+        ).fetchone()
+    return int(row["n"] or 0) if row else 0
+
+
+def marcar_recados_vistos(target_id: int) -> int:
+    """Marca o mural como lido até o último recado atual. Devolve o id visto."""
+    tid = int(target_id)
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(MAX(id), 0) AS max_id FROM perfil_recados WHERE target_id = ?",
+            (tid,),
+        ).fetchone()
+        max_id = int(row["max_id"] or 0) if row else 0
+        conn.execute(
+            "UPDATE participantes SET recados_visto_ate = ? WHERE id = ?",
+            (max_id, tid),
+        )
+    return max_id
