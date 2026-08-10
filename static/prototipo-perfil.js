@@ -323,7 +323,26 @@
         emoji: String(x.emoji),
         count: Math.max(1, Math.round(Number(x.count) || 1)),
         mine: !!x.mine,
+        autores: Array.isArray(x.autores)
+          ? x.autores
+              .filter((a) => a && (a.nome || a.id))
+              .map((a) => ({
+                id: Number(a.id) || null,
+                nome: String(a.nome || "alguém").slice(0, 40),
+              }))
+          : [],
       }));
+  }
+
+  function reacaoAutoresTip(autores, count) {
+    const nomes = (autores || []).map((a) => a.nome).filter(Boolean);
+    if (!nomes.length) {
+      return count === 1 ? "1 reação" : `${count} reações`;
+    }
+    const maxShow = 8;
+    if (nomes.length <= maxShow) return nomes.join("\n");
+    const extra = nomes.length - maxShow;
+    return `${nomes.slice(0, maxShow).join("\n")}\n+${extra}`;
   }
 
   async function toggleRecadoReacao(targetId, recadoId, emoji) {
@@ -504,9 +523,17 @@
     const chips = (reacoes || [])
       .map((r) => {
         const em = escapeHtml(r.emoji);
-        return `<button type="button" class="proto-steam-reacao${r.mine ? " is-mine" : ""}" data-reacao="${em}" title="${em}" aria-label="Reação ${em}: ${r.count}${r.mine ? ", sua" : ""}" ${canReact ? "" : "disabled"}>
-          <span aria-hidden="true">${em}</span><span class="proto-steam-reacao-count">${r.count}</span>
-        </button>`;
+        const tip = escapeHtml(reacaoAutoresTip(r.autores, r.count)).replace(/\n/g, "<br>");
+        const autoresLabel = (r.autores || []).map((a) => a.nome).filter(Boolean).join(", ");
+        const aria = `Reação ${em}: ${r.count}${r.mine ? ", sua" : ""}${
+          autoresLabel ? ` · ${autoresLabel}` : ""
+        }`;
+        return `<span class="proto-steam-reacao-wrap">
+          <button type="button" class="proto-steam-reacao${r.mine ? " is-mine" : ""}" data-reacao="${em}" aria-label="${escapeHtml(aria)}" ${canReact ? "" : "disabled"}>
+            <span aria-hidden="true">${em}</span><span class="proto-steam-reacao-count">${r.count}</span>
+          </button>
+          <span class="proto-steam-reacao-tip" role="tooltip">${tip}</span>
+        </span>`;
       })
       .join("");
     const addBtn = canReact

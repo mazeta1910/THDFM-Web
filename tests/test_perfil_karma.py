@@ -90,7 +90,7 @@ def test_api_karma_voto_e_perfil(client: TestClient):
     assert 'data-target-id="' + str(alvo["id"]) + '"' in r.text
     assert '"confiavel": 2' in r.text or '"confiavel":2' in r.text
     assert "data-karma-cycle" in r.text
-    assert "/static/prototipo-perfil.js?v=30" in r.text
+    assert "/static/prototipo-perfil.js?v=31" in r.text
 
     # próprio perfil: não vota
     r = client.put(

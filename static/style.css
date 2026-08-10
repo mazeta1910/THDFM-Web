@@ -11017,21 +11017,39 @@ a.proto-steam-post-nome:focus-visible {
   align-items: center;
   gap: 0.28rem;
   margin-top: 0.4rem;
+  width: fit-content;
+  max-width: 100%;
 }
+.proto-steam-reacao-wrap {
+  position: relative;
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+button.proto-steam-reacao,
 .proto-steam-reacao {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.28rem;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  height: auto;
   margin: 0;
-  padding: 0.12rem 0.42rem;
+  padding: 0.18rem 0.45rem;
   border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
   border-radius: 0.5rem;
   background: color-mix(in srgb, var(--bg) 72%, #000);
   color: var(--text);
   font: inherit;
   font-size: 0.78rem;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 .proto-steam-reacao:disabled {
   cursor: default;
@@ -11054,14 +11072,54 @@ a.proto-steam-post-nome:focus-visible {
 .proto-steam-reacao.is-mine .proto-steam-reacao-count {
   color: var(--text);
 }
+.proto-steam-reacao-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.35rem);
+  z-index: 8;
+  transform: translateX(-50%);
+  display: none;
+  width: max-content;
+  max-width: min(14rem, 70vw);
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--panel, var(--bg2)) 94%, #000);
+  color: var(--text);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+  white-space: normal;
+}
+.proto-steam-reacao-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: color-mix(in srgb, var(--panel, var(--bg2)) 94%, #000);
+}
+.proto-steam-reacao-wrap:hover .proto-steam-reacao-tip,
+.proto-steam-reacao-wrap:focus-within .proto-steam-reacao-tip {
+  display: block;
+}
 .proto-steam-reacao-add-wrap {
   position: relative;
   display: inline-flex;
+  width: auto;
+  flex: 0 0 auto;
 }
+button.proto-steam-reacao-add,
 .proto-steam-reacao-add {
   display: inline-grid;
   place-items: center;
   width: 1.7rem;
+  min-width: 1.7rem;
+  max-width: 1.7rem;
   height: 1.55rem;
   margin: 0;
   padding: 0;
@@ -11069,7 +11127,11 @@ a.proto-steam-post-nome:focus-visible {
   border-radius: 0.45rem;
   background: color-mix(in srgb, var(--bg) 72%, #000);
   color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 .proto-steam-reacao-add:hover,
 .proto-steam-reacao-add[aria-expanded="true"] {
@@ -11096,17 +11158,22 @@ a.proto-steam-post-nome:focus-visible {
 .proto-steam-reacao-picker[hidden] {
   display: none !important;
 }
+button.proto-steam-reacao-pick,
 .proto-steam-reacao-pick {
   display: inline-grid;
   place-items: center;
   width: 1.85rem;
+  min-width: 1.85rem;
+  max-width: 1.85rem;
   height: 1.85rem;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 0.4rem;
   background: transparent;
+  color: inherit;
   font-size: 1.05rem;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
 }
