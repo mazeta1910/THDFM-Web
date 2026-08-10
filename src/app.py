@@ -286,6 +286,24 @@ def is_dono(request: Request) -> bool:
     return admin_ok(request) and admin_papel(request) == "dono"
 
 
+def is_mazeta(request: Request) -> bool:
+    """Acesso privado a features em preview (ex.: /grid)."""
+    if not admin_ok(request):
+        return False
+    return (request.session.get("admin_login") or "").strip().lower() == "mazeta"
+
+
+def require_mazeta(request: Request) -> RedirectResponse | None:
+    if is_mazeta(request):
+        return None
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    return RedirectResponse(
+        "/admin?erro=" + quote("Prévia privada — só o Mazeta por enquanto."),
+        status_code=303,
+    )
+
+
 def require_dono(request: Request) -> RedirectResponse | None:
     if not admin_ok(request):
         return _redirect_acesso("entrar")
@@ -321,6 +339,7 @@ def render(request: Request, name: str, **ctx):
     ctx.setdefault("ui_mode", ui)
     ctx.setdefault("admin_papel", admin_papel(request) if is_adm else "")
     ctx.setdefault("is_dono", is_dono(request) if is_adm else False)
+    ctx.setdefault("is_mazeta", is_mazeta(request) if is_adm else False)
     ctx.setdefault(
         "admin_papel_label",
         {"dono": "Dono", "moderador": "Moderador"}.get(
@@ -2513,6 +2532,154 @@ def classificacao(request: Request):
         rodada_atual_id=rodada_sel["id"] if rodada_sel else None,
         rodada_sel=rodada_sel,
         hall=hall_data.get("cards") or [],
+    )
+
+
+def _grid_neg_json(request: Request) -> JSONResponse | None:
+    if is_mazeta(request):
+        return None
+    if not admin_ok(request):
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    return JSONResponse({"erro": "Prévia privada — só o Mazeta"}, status_code=403)
+
+
+def _grid_voter(request: Request) -> dict | None:
+    return _voter_sessao(request)
+
+
+@app.get("/grid", response_class=HTMLResponse)
+def grid_page(request: Request):
+    """THDFM Grid — prévia privada (somente Mazeta)."""
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid, puzzle_publico
+
+    dia = dia_grid()
+    puzzle = puzzle_publico(dia)
+    voter = _grid_voter(request)
+    progresso = None
+    streak = 0
+    if voter:
+        progresso = db.get_grid_progresso(voter["id"], dia)
+        streak = db.grid_streak(voter["id"], ate_dia=dia)
+    return render(
+        request,
+        "grid.html",
+        puzzle=puzzle,
+        progresso=progresso,
+        streak=streak,
+        grid_privado=True,
+    )
+
+
+@app.get("/grid/api/hoje")
+def grid_api_hoje(request: Request):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid, puzzle_publico
+
+    dia = dia_grid()
+    puzzle = puzzle_publico(dia)
+    voter = _grid_voter(request)
+    progresso = db.get_grid_progresso(voter["id"], dia) if voter else None
+    streak = db.grid_streak(voter["id"], ate_dia=dia) if voter else 0
+    return JSONResponse(
+        {
+            "puzzle": puzzle,
+            "progresso": progresso,
+            "streak": streak,
+            "pode_salvar": bool(voter),
+        }
+    )
+
+
+@app.get("/grid/api/buscar")
+def grid_api_buscar(
+    request: Request,
+    linha: int = 0,
+    coluna: int = 0,
+    q: str = "",
+):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import buscar_celula, dia_grid
+
+    try:
+        data = buscar_celula(dia=dia_grid(), linha=int(linha), coluna=int(coluna), q=q)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(data)
+
+
+@app.post("/grid/api/chute")
+async def grid_api_chute(request: Request):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import (
+        celulas_completas,
+        dia_grid,
+        parse_celulas_progresso,
+        texto_share,
+        validar_chute,
+    )
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        linha = int((body or {}).get("linha"))
+        coluna = int((body or {}).get("coluna"))
+        clube_id = str((body or {}).get("clube_id") or "").strip()
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+    if not clube_id:
+        return JSONResponse({"erro": "Escolha um clube"}, status_code=400)
+
+    dia = dia_grid()
+    voter = _grid_voter(request)
+    celulas = [[None for _ in range(3)] for _ in range(3)]
+    if voter:
+        prog = db.get_grid_progresso(voter["id"], dia)
+        if prog:
+            celulas = parse_celulas_progresso(prog.get("celulas"))
+            if celulas[linha][coluna] is not None:
+                return JSONResponse({"erro": "Célula já jogada"}, status_code=409)
+
+    try:
+        resultado = validar_chute(
+            dia=dia, linha=linha, coluna=coluna, clube_id=clube_id
+        )
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+
+    celulas[linha][coluna] = {
+        "ok": resultado["ok"],
+        "clube": resultado["clube"],
+    }
+    finalizado = celulas_completas(celulas)
+    progresso = None
+    streak = 0
+    if voter:
+        progresso = db.salvar_grid_progresso(
+            voter["id"], dia, celulas, finalizado=finalizado
+        )
+        streak = db.grid_streak(voter["id"], ate_dia=dia)
+
+    share = texto_share(dia=dia, celulas=celulas) if finalizado else None
+    return JSONResponse(
+        {
+            "resultado": resultado,
+            "celulas": celulas,
+            "finalizado": finalizado,
+            "progresso": progresso,
+            "streak": streak,
+            "share": share,
+        }
     )
 
 
