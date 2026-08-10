@@ -233,6 +233,11 @@
         {% endif %}
         <ul class="proto-steam-feed" id="public-recados-list"></ul>
         <p class="proto-steam-empty" id="public-recados-empty">Nenhum recado ainda.</p>
+        <nav class="proto-recados-pager" id="public-recados-pager" hidden aria-label="Páginas de recados">
+          <button type="button" class="proto-recados-pager-btn" data-recados-prev aria-label="Página anterior">Anterior</button>
+          <span class="proto-recados-pager-label" data-recados-page-label>1 / 1</span>
+          <button type="button" class="proto-recados-pager-btn" data-recados-next aria-label="Próxima página">Próxima</button>
+        </nav>
       </section>
       {# TEXTOS PARA REESCREVER — fim #}
     </div>
@@ -241,5 +246,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=32" defer></script>
+<script src="/static/prototipo-perfil.js?v=33" defer></script>
 {% endblock %}

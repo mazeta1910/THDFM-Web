@@ -92,12 +92,16 @@
               {% if is_dono %}
               <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
               {% endif %}
-              {% if is_mazeta %}
-              <a class="admin-side-link {% if on_grid %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
-              {% endif %}
-              <a class="admin-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('classificacao') }}<span>Ranking Grid</span></a>
             </div>
           </details>
+        </div>
+      </details>
+
+      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
+        <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Jogos e Passatempos</span></summary>
+        <div class="admin-menu-items">
+          <a class="admin-side-link {% if on_grid %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
+          <a class="admin-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('classificacao') }}<span>Ranking Grid</span></a>
         </div>
       </details>
 

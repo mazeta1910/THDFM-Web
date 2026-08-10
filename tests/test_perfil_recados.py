@@ -35,11 +35,17 @@ def test_api_recados_por_perfil(client: TestClient):
     r = client.get(f"/perfil/{alvo['id']}/recados")
     assert r.status_code == 200
     assert r.json()["recados"] == []
+    assert r.json()["total"] == 0
+    assert r.json()["pagina"] == 1
+    assert r.json()["por_pagina"] == 5
+    assert r.json()["paginas"] == 1
 
     r = client.post(f"/perfil/{alvo['id']}/recados", json={"texto": "e aí xonha"})
     assert r.status_code == 200
     data = r.json()
     assert len(data["recados"]) == 1
+    assert data["total"] == 1
+    assert data["pagina"] == 1
     assert data["recados"][0]["texto"] == "e aí xonha"
     assert data["recados"][0]["autor_id"] == votante["id"]
     assert data["recados"][0]["target_id"] == alvo["id"]
@@ -55,7 +61,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=32" in r.text
+    assert "/static/prototipo-perfil.js?v=33" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -136,7 +142,7 @@ def test_recado_com_imagem_e_gif(client: TestClient, tmp_path, monkeypatch):
     assert r.status_code == 200
     assert "/recados-midia/" in r.text
     assert "data-recado-midia" in r.text
-    assert "/static/prototipo-perfil.js?v=32" in r.text
+    assert "/static/prototipo-perfil.js?v=33" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-feed-midia" in js
     assert "FormData" in js
@@ -212,7 +218,7 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     assert "button.proto-steam-reacao" in css
     assert "width: auto" in css
     assert "data-reacao-add" in js
-    assert "/static/prototipo-perfil.js?v=32" in r.text
+    assert "/static/prototipo-perfil.js?v=33" in r.text
     assert "👍" in r.text
     assert "Reage A" in r.text
 
@@ -274,7 +280,7 @@ def test_responder_recado_dono_e_visitante(client: TestClient):
 
     r = client.get(f"/perfil/{alvo['id']}")
     assert r.status_code == 200
-    assert "/static/prototipo-perfil.js?v=32" in r.text
+    assert "/static/prototipo-perfil.js?v=33" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "data-reply-toggle" in js
@@ -310,3 +316,42 @@ def test_notificacao_recados_envelope(client: TestClient):
     assert dbmod.contar_recados_novos(dono["id"]) == 0
     r = client.get("/classificacao")
     assert 'id="recados-toggle"' not in r.text
+
+
+def test_recados_paginados_5_por_pagina(client: TestClient):
+    alvo = _login_part(client, "Alvo Page", "alvo.page", "11990009120")
+    client.cookies.clear()
+    autor = _login_part(client, "Autor Page", "autor.page", "11990009121")
+
+    for i in range(6):
+        r = client.post(f"/perfil/{alvo['id']}/recados", json={"texto": f"msg {i}"})
+        assert r.status_code == 200
+
+    r = client.get(f"/perfil/{alvo['id']}/recados")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 6
+    assert data["por_pagina"] == 5
+    assert data["paginas"] == 2
+    assert data["pagina"] == 1
+    assert len(data["recados"]) == 5
+
+    r = client.get(f"/perfil/{alvo['id']}/recados?pagina=2")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["pagina"] == 2
+    assert len(data["recados"]) == 1
+
+    # dono vê o mural com pager no HTML
+    client.cookies.clear()
+    part = dbmod.criar_participante("Dono Page", status="liberado", celular="11990009122")
+    dbmod.definir_credenciais(part["id"], "dono.page", "senha12345")
+    for i in range(6):
+        dbmod.criar_recado(part["id"], autor["id"], f"mural {i}")
+    client.get(f"/p/{part['token']}")
+    r = client.get("/meu-perfil")
+    assert r.status_code == 200
+    assert 'id="public-recados-pager"' in r.text
+    assert "data-recados-prev" in r.text
+    assert "data-recados-next" in r.text
+
