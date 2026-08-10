@@ -272,14 +272,46 @@
 
   function loadRecadosEmbedded() {
     const el = document.getElementById("proto-recados");
-    if (!el) return [];
+    if (!el) return { recados: [], total: 0, pagina: 1, por_pagina: 5, paginas: 1 };
     try {
-      const data = JSON.parse(el.textContent || "[]");
-      if (!Array.isArray(data)) return [];
-      return data.map((d) => mapRecadoItem(d)).filter(Boolean);
+      const data = JSON.parse(el.textContent || "{}");
+      if (Array.isArray(data)) {
+        return {
+          recados: data.map((d) => mapRecadoItem(d)).filter(Boolean),
+          total: data.length,
+          pagina: 1,
+          por_pagina: 5,
+          paginas: 1,
+        };
+      }
+      if (!data || typeof data !== "object") {
+        return { recados: [], total: 0, pagina: 1, por_pagina: 5, paginas: 1 };
+      }
+      const itens = Array.isArray(data.recados) ? data.recados : [];
+      return {
+        recados: itens.map((d) => mapRecadoItem(d)).filter(Boolean),
+        total: Number(data.total) || itens.length,
+        pagina: Math.max(1, Number(data.pagina) || 1),
+        por_pagina: Math.max(1, Number(data.por_pagina) || 5),
+        paginas: Math.max(1, Number(data.paginas) || 1),
+      };
     } catch (_) {
-      return [];
+      return { recados: [], total: 0, pagina: 1, por_pagina: 5, paginas: 1 };
     }
+  }
+
+  async function fetchRecadosPage(targetId, pagina) {
+    const r = await fetch(
+      `/perfil/${encodeURIComponent(targetId)}/recados?pagina=${encodeURIComponent(pagina)}`,
+      { headers: { Accept: "application/json" } }
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao carregar recados");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
   }
 
   async function postRecado(targetId, { texto, file, parentId } = {}) {
@@ -1529,21 +1561,75 @@
       }
     }
 
-    let recados = targetId ? loadRecadosEmbedded() : [];
+    let recadosBoot = targetId ? loadRecadosEmbedded() : {
+      recados: [],
+      total: 0,
+      pagina: 1,
+      por_pagina: 5,
+      paginas: 1,
+    };
+    let recados = recadosBoot.recados || [];
+    let recadosPagina = recadosBoot.pagina || 1;
+    let recadosPaginas = recadosBoot.paginas || 1;
+    let recadosTotal = recadosBoot.total || 0;
     const canReact = !!(viewer && viewer.id && targetId);
     const canReply = !!(viewer && viewer.id && targetId);
 
-    function applyRecadosList(list) {
-      if (!Array.isArray(list)) return;
+    function applyRecadosPayload(data, { keepPage } = {}) {
+      if (!data || typeof data !== "object") return;
+      const list = Array.isArray(data.recados) ? data.recados : [];
       recados = list.map((d) => mapRecadoItem(d, targetId)).filter(Boolean);
+      recadosTotal = Number(data.total) || 0;
+      recadosPaginas = Math.max(1, Number(data.paginas) || 1);
+      if (keepPage) {
+        recadosPagina = Math.min(
+          Math.max(1, Number(data.pagina) || recadosPagina || 1),
+          recadosPaginas
+        );
+      } else {
+        recadosPagina = Math.max(1, Number(data.pagina) || 1);
+      }
       refreshRecados();
     }
 
+    function applyRecadosList(list) {
+      if (!Array.isArray(list)) return;
+      applyRecadosPayload({
+        recados: list,
+        total: list.length,
+        pagina: 1,
+        paginas: 1,
+      });
+    }
+
+    function updateRecadosPager() {
+      const pager = document.getElementById("public-recados-pager");
+      const label = document.querySelector("[data-recados-page-label]");
+      const prev = document.querySelector("[data-recados-prev]");
+      const next = document.querySelector("[data-recados-next]");
+      if (!pager) return;
+      const show = recadosTotal > 0 && recadosPaginas > 1;
+      pager.hidden = !show;
+      if (label) label.textContent = `${recadosPagina} / ${recadosPaginas}`;
+      if (prev) prev.disabled = recadosPagina <= 1;
+      if (next) next.disabled = recadosPagina >= recadosPaginas;
+    }
+
+    function goRecadosPage(pagina) {
+      if (!targetId) return;
+      const dest = Math.min(Math.max(1, pagina), recadosPaginas || 1);
+      fetchRecadosPage(targetId, dest)
+        .then((data) => applyRecadosPayload(data, { keepPage: true }))
+        .catch(() => {});
+    }
+
     function refreshRecados() {
+      const countEl = document.getElementById("public-recados-count");
+      if (countEl) countEl.textContent = `(${recadosTotal})`;
       renderPosts(
         document.getElementById("public-recados-list"),
         document.getElementById("public-recados-empty"),
-        document.getElementById("public-recados-count"),
+        null,
         recados,
         {
           canDelete: isOwn,
@@ -1553,24 +1639,32 @@
           onDelete: (id) => {
             if (!targetId || !id) return;
             deleteRecadoApi(targetId, id)
-              .then((data) => applyRecadosList(data.recados || []))
+              .then((data) => applyRecadosPayload(data))
               .catch(() => {});
           },
           onToggleReacao: (id, emoji) => {
             if (!targetId || !id || !emoji) return;
             toggleRecadoReacao(targetId, id, emoji)
-              .then((data) => applyRecadosList(data.recados || []))
+              .then((data) => applyRecadosPayload(data, { keepPage: true }))
               .catch(() => {});
           },
           onReply: (parentId, texto) => {
             if (!targetId || !parentId || !texto) return Promise.resolve();
             return postRecado(targetId, { texto, parentId }).then((data) => {
-              applyRecadosList(data.recados || []);
+              applyRecadosPayload(data);
             });
           },
         }
       );
+      updateRecadosPager();
     }
+
+    document.querySelector("[data-recados-prev]")?.addEventListener("click", () => {
+      if (recadosPagina > 1) goRecadosPage(recadosPagina - 1);
+    });
+    document.querySelector("[data-recados-next]")?.addEventListener("click", () => {
+      if (recadosPagina < recadosPaginas) goRecadosPage(recadosPagina + 1);
+    });
 
     refreshRecados();
 
@@ -1629,7 +1723,7 @@
         if (submitBtn) submitBtn.disabled = true;
         postRecado(targetId, { texto: texto.slice(0, 280), file: midiaFile })
           .then((data) => {
-            applyRecadosList(data.recados || []);
+            applyRecadosPayload(data);
             recadoForm.reset();
             clearMidiaPreview();
           })

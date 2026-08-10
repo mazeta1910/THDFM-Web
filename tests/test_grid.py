@@ -72,22 +72,29 @@ def test_grid_exige_login(client: TestClient):
     assert r.status_code in (303, 302)
 
 
-def test_grid_bloqueia_nao_mazeta(client: TestClient, monkeypatch):
-    login_admin(client)
-    monkeypatch.setattr("src.app.is_mazeta", lambda request: False)
-    r = client.get("/grid", follow_redirects=False)
-    assert r.status_code in (303, 302)
-    assert "/admin" in (r.headers.get("location") or "")
+def test_grid_liberado_para_participante(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Grid User", status="liberado", celular="11991112201")
+    dbmod.definir_credenciais(part["id"], "grid.user", "senha12345")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get("/grid")
+    assert r.status_code == 200
+    assert "THDFM Grid" in r.text
+    assert "Prévia privada" not in r.text
+    assert "Puzzle diário" in r.text
     api = client.get("/grid/api/hoje")
-    assert api.status_code == 403
+    assert api.status_code == 200
+    assert api.json()["pode_salvar"] is True
 
 
-def test_grid_mazeta_fluxo(client: TestClient):
+def test_grid_fluxo_logado(client: TestClient):
     login_admin(client)
     r = client.get("/grid")
     assert r.status_code == 200
     assert "THDFM Grid" in r.text
-    assert "Prévia privada" in r.text
+    assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
     assert "/static/grid.js?v=4" in r.text
     assert "data-virada-ms=" in r.text
@@ -95,6 +102,9 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert "data-grid-share-wa" in r.text
     assert "aria-label=\"Compartilhar no WhatsApp\"" in r.text
     assert "WhatsApp</button>" not in r.text
+    assert "Jogos e Passatempos" in (
+        ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
+    ).read_text(encoding="utf-8")
     js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
     assert "MIN_CHARS = 3" in js
     assert "c.uf" not in js
@@ -154,6 +164,22 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert chute2.status_code == 409
 
 
+def _celula_ok(clube_id: str = "1") -> dict:
+    return {"ok": True, "clube": {"id": clube_id, "nome": "Clube X"}}
+
+
+def test_grid_reset_lancamento_zera_progresso(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Reset Grid", status="liberado", celular="11991112202")
+    full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    assert dbmod.ranking_grid()
+    assert dbmod.limpar_grid_progresso() >= 1
+    assert dbmod.ranking_grid() == []
+    assert dbmod.grid_stats_participante(part["id"])["jogou"] is False
+
+
 def test_chute_errado_marca_miss():
     puzzle = gerar_puzzle("2026-08-15")
     row = categoria_por_id(puzzle["linhas"][0]["id"])
@@ -177,10 +203,6 @@ def test_texto_share_usa_verde_e_vermelho():
     assert "⬛" not in text
     assert "2/9" in text
     assert "https://thdfm.com.br/grid" in text
-
-
-def _celula_ok(clube_id: str = "1") -> dict:
-    return {"ok": True, "clube": {"id": clube_id, "nome": "Clube X"}}
 
 
 def test_ranking_e_stats_grid(client: TestClient):
@@ -250,3 +272,4 @@ def test_grid_ranking_page(client: TestClient):
     assert "Ranking" in r.text
     assert "Rank Viewer" in r.text
     assert "Dias" in r.text
+    assert "Jogar hoje" in r.text

@@ -27,7 +27,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=294" />
+  <link rel="stylesheet" href="/static/style.css?v=295" />
   {% if ADSENSE_CLIENT %}
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT }}"
      crossorigin="anonymous"></script>
@@ -43,6 +43,7 @@
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_grid_ranking = path.startswith('/grid/ranking') %}
+{% set on_grid = path == '/grid' or path.startswith('/grid/api') %}
 {% set on_xonhometro = path.startswith('/xonhometro') or path.startswith('/admin/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
 {% set on_grupo_listra = path.startswith('/grupo/listra') or path.startswith('/admin/listra') %}

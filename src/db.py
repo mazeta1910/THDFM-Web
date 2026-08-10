@@ -546,6 +546,18 @@ def _migrate_grid_progresso(conn: sqlite3.Connection) -> None:
     )
 
 
+def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
+    """Zera o progresso do Grid uma vez — lançamento público (ranking do zero)."""
+    chave = "grid_progresso_reset_v1"
+    if conn.execute("SELECT 1 FROM meta WHERE chave = ?", (chave,)).fetchone():
+        return
+    conn.execute("DELETE FROM grid_progresso")
+    conn.execute(
+        "INSERT INTO meta (chave, valor) VALUES (?, ?)",
+        (chave, "1"),
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -560,6 +572,7 @@ def init_db() -> None:
         _migrate_perfil_recados(conn)
         _migrate_perfil_recado_reacoes(conn)
         _migrate_grid_progresso(conn)
+        _reset_grid_progresso_lancamento(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -3959,6 +3972,7 @@ def nutela_resumo(target_id: int, voter_id: int | None = None) -> dict[str, Any]
 
 
 PERFIL_RECADOS_MAX = 40
+PERFIL_RECADOS_POR_PAGINA = 5
 PERFIL_RECADO_RESPOSTAS_MAX = 30
 RECADO_REACOES_EMOJI = (
     "👍",
@@ -4123,14 +4137,30 @@ def _recado_dict_from_row(
     }
 
 
+def contar_recados_raiz(target_id: int) -> int:
+    tid = int(target_id)
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM perfil_recados
+            WHERE target_id = ? AND parent_id IS NULL
+            """,
+            (tid,),
+        ).fetchone()
+    return int(row["n"] or 0) if row else 0
+
+
 def listar_recados(
     target_id: int,
     *,
     limite: int = PERFIL_RECADOS_MAX,
+    offset: int = 0,
     voter_id: int | None = None,
 ) -> list[dict[str, Any]]:
     tid = int(target_id)
     lim = max(1, min(int(limite), PERFIL_RECADOS_MAX))
+    off = max(0, int(offset))
     with get_db() as conn:
         roots = conn.execute(
             """
@@ -4140,9 +4170,9 @@ def listar_recados(
             JOIN participantes a ON a.id = r.autor_id
             WHERE r.target_id = ? AND r.parent_id IS NULL
             ORDER BY r.id DESC
-            LIMIT ?
+            LIMIT ? OFFSET ?
             """,
-            (tid, lim),
+            (tid, lim, off),
         ).fetchall()
         root_ids = [int(row["id"]) for row in roots]
         replies: list[sqlite3.Row] = []
@@ -4182,6 +4212,13 @@ def listar_recados(
             )
         )
     return out
+
+
+def limpar_grid_progresso() -> int:
+    """Apaga todo o progresso do Grid (ranking/streak)."""
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM grid_progresso")
+        return int(cur.rowcount or 0)
 
 
 def _apagar_recados_e_midias(

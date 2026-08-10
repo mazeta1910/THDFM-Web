@@ -74,6 +74,16 @@
       </details>
       {% endif %}
 
+      {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
+      <details class="site-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
+        <summary class="site-menu-summary">{{ ico('competicao', 13) }}<span>Jogos e Passatempos</span></summary>
+        <div class="site-menu-items">
+          <a class="site-side-link {% if on_grid %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
+          <a class="site-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('classificacao') }}<span>Ranking Grid</span></a>
+        </div>
+      </details>
+      {% endif %}
+
       <details class="site-menu-group" data-group="bolao" open>
         <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Bolão CdB</span></summary>
         <div class="site-menu-items">
@@ -87,7 +97,6 @@
           {% endif %}
           {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
           <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
-          <a class="site-side-link {% if on_grid_ranking %}active{% endif %}" href="/grid/ranking">{{ ico('competicao') }}<span>Ranking Grid</span></a>
           <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>
           <a class="site-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Transparência</span></a>
           {% endif %}

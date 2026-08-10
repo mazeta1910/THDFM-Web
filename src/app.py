@@ -1208,13 +1208,44 @@ def _recado_item_payload(r: dict) -> dict:
     return item
 
 
-def _recados_payload(target_id: int | None, voter_id: int | None = None) -> list[dict]:
+def _recados_payload(
+    target_id: int | None,
+    voter_id: int | None = None,
+    *,
+    pagina: int = 1,
+    por_pagina: int | None = None,
+) -> dict:
+    """Lista paginada de recados-raiz (respostas vêm aninhadas)."""
+    from math import ceil
+
+    lim = int(por_pagina) if por_pagina is not None else db.PERFIL_RECADOS_POR_PAGINA
+    lim = max(1, min(lim, db.PERFIL_RECADOS_MAX))
+    page = max(1, int(pagina or 1))
     if not target_id:
-        return []
-    return [
+        return {
+            "recados": [],
+            "total": 0,
+            "pagina": 1,
+            "por_pagina": lim,
+            "paginas": 1,
+        }
+    tid = int(target_id)
+    total = db.contar_recados_raiz(tid)
+    paginas = max(1, ceil(total / lim) if total else 1)
+    if page > paginas:
+        page = paginas
+    offset = (page - 1) * lim
+    itens = [
         _recado_item_payload(r)
-        for r in db.listar_recados(int(target_id), voter_id=voter_id)
+        for r in db.listar_recados(tid, limite=lim, offset=offset, voter_id=voter_id)
     ]
+    return {
+        "recados": itens,
+        "total": total,
+        "pagina": page,
+        "por_pagina": lim,
+        "paginas": paginas,
+    }
 
 
 @app.get("/meu-perfil", response_class=HTMLResponse)
@@ -1367,8 +1398,16 @@ def perfil_recados_get(request: Request, participante_id: int):
     if not part or part.get("status") != "liberado":
         return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
     voter = _voter_sessao(request)
+    try:
+        pagina = int(request.query_params.get("pagina") or 1)
+    except (TypeError, ValueError):
+        pagina = 1
     return JSONResponse(
-        {"recados": _recados_payload(participante_id, voter_id=voter["id"] if voter else None)}
+        _recados_payload(
+            participante_id,
+            voter_id=voter["id"] if voter else None,
+            pagina=pagina,
+        )
     )
 
 
@@ -1442,7 +1481,7 @@ async def perfil_recados_post(request: Request, participante_id: int):
     return JSONResponse(
         {
             "recado": _recado_item_payload(criado),
-            "recados": _recados_payload(participante_id, voter_id=voter["id"]),
+            **_recados_payload(participante_id, voter_id=voter["id"], pagina=1),
         }
     )
 
@@ -1462,7 +1501,10 @@ def perfil_recados_delete(request: Request, participante_id: int, recado_id: int
     if not ok:
         return JSONResponse({"erro": "Recado não encontrado"}, status_code=404)
     return JSONResponse(
-        {"ok": True, "recados": _recados_payload(participante_id, voter_id=voter["id"])}
+        {
+            "ok": True,
+            **_recados_payload(participante_id, voter_id=voter["id"], pagina=1),
+        }
     )
 
 
@@ -1501,7 +1543,7 @@ async def perfil_recado_reacao_put(request: Request, participante_id: int, recad
         {
             "recado_id": str(recado_id),
             "reacoes": reacoes,
-            "recados": _recados_payload(participante_id, voter_id=voter["id"]),
+            **_recados_payload(participante_id, voter_id=voter["id"], pagina=1),
         }
     )
 
@@ -2551,11 +2593,10 @@ def classificacao(request: Request):
 
 
 def _grid_neg_json(request: Request) -> JSONResponse | None:
-    if is_mazeta(request):
+    """Grid liberado para perfil autenticado (mesmo critério do mural)."""
+    if _require_perfil(request) is None:
         return None
-    if not admin_ok(request):
-        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
-    return JSONResponse({"erro": "Prévia privada — só o Mazeta"}, status_code=403)
+    return JSONResponse({"erro": "Não autorizado"}, status_code=401)
 
 
 def _grid_voter(request: Request) -> dict | None:
@@ -2564,8 +2605,8 @@ def _grid_voter(request: Request) -> dict | None:
 
 @app.get("/grid", response_class=HTMLResponse)
 def grid_page(request: Request):
-    """THDFM Grid — prévia privada (somente Mazeta)."""
-    neg = require_mazeta(request)
+    """THDFM Grid — puzzle diário (liberado para participantes logados)."""
+    neg = _require_perfil(request)
     if neg:
         return neg
     from src.grid_game import dia_grid, puzzle_publico
@@ -2584,7 +2625,7 @@ def grid_page(request: Request):
         puzzle=puzzle,
         progresso=progresso,
         streak=streak,
-        grid_privado=True,
+        grid_privado=False,
     )
 
 
