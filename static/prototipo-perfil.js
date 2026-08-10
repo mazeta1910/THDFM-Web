@@ -346,7 +346,6 @@
     let html = "";
     for (let i = 1; i <= 3; i++) {
       const on = i <= n;
-      // Off: mesmo emoji, cinza/transparente via .proto-steam-icon (sem is-on)
       html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${glyph}</span>`;
     }
     el.innerHTML = html;
