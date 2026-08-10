@@ -342,12 +342,12 @@
   function paintIcons(el, icon, level) {
     if (!el) return;
     const n = Math.max(0, Math.min(3, level | 0));
+    const glyph = escapeHtml(icon);
     let html = "";
     for (let i = 1; i <= 3; i++) {
       const on = i <= n;
-      html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${
-        on ? escapeHtml(icon) : "·"
-      }</span>`;
+      // Off: mesmo emoji, cinza/transparente via .proto-steam-icon (sem is-on)
+      html += `<span class="proto-steam-icon${on ? " is-on" : ""}" aria-hidden="true">${glyph}</span>`;
     }
     el.innerHTML = html;
   }

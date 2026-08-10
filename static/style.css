@@ -10565,7 +10565,7 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
 .proto-steam-icon {
   width: 1.05em;
   text-align: center;
-  opacity: 0.22;
+  opacity: 0.38;
   filter: grayscale(1);
 }
 .proto-steam-icon.is-on {

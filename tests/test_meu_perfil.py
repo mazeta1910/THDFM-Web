@@ -76,10 +76,10 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
-    assert "/static/prototipo-perfil.js?v=26" in r.text
+    assert "/static/prototipo-perfil.js?v=27" in r.text
     assert "/static/prototipo-times.js?v=16" in r.text
     assert 'id="proto-perfil-soft"' in r.text
-    assert "/static/style.css?v=282" in r.text
+    assert "/static/style.css?v=283" in r.text
     assert 'id="proto-ufs-toggle"' in r.text
     assert 'class="proto-times-ufs is-collapsed"' in r.text
     assert 'id="proto-uf-grid" hidden' in r.text
@@ -139,7 +139,7 @@ def test_meu_perfil_publico(client: TestClient):
     assert 'id="recados"' in r.text
     assert 'data-viewer-id="' in r.text
     assert f'data-viewer-id="{dono["id"]}"' in r.text
-    assert "/static/prototipo-perfil.js?v=26" in r.text
+    assert "/static/prototipo-perfil.js?v=27" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-post-nome" in js
     assert "proto-steam-post-av-link" in js
@@ -204,7 +204,7 @@ def test_meu_perfil_visitante(client: TestClient):
     assert "data-karma-cycle" not in r.text
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
-    assert "/static/prototipo-perfil.js?v=26" in r.text
+    assert "/static/prototipo-perfil.js?v=27" in r.text
 
 
 def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
@@ -217,7 +217,7 @@ def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
     assert 'id="proto-karma-resumo"' in r.text
-    assert "/static/prototipo-perfil.js?v=26" in r.text
+    assert "/static/prototipo-perfil.js?v=27" in r.text
 
 
 def test_perfil_outro_usuario(client: TestClient):
