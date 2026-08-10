@@ -613,6 +613,15 @@ def home(request: Request):
     return _render_home(request)
 
 
+@app.get("/favicon.ico")
+def favicon():
+    """Logo THDFM na aba do navegador (mesmo arquivo do brasão)."""
+    path = STATIC / "img" / "thdfm-logo.png"
+    if not path.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(path, media_type="image/png")
+
+
 @app.get("/ads.txt", response_class=PlainTextResponse)
 def ads_txt():
     """Autorização de vendedores para o Google AdSense."""

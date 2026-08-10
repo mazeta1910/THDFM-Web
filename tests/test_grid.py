@@ -125,6 +125,9 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "grid-result-top" in r.text
     assert "data-grid-chute" in r.text
     assert "data-grid-suggestions" not in r.text
+    assert 'href="#ranking"' not in r.text
+    assert "data-grid-streak" in r.text
+    assert "grid-title" in r.text
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")
@@ -134,7 +137,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Jogos e Passatempos" in site_side
     assert site_side.index("Jogos e Passatempos") < site_side.index("Bolão CdB")
     assert 'href="/grid"' in site_side
-    assert "/grid" in site_side and "Ranking Grid" in site_side
+    assert "Ranking Grid" not in site_side
     # fora do submenu Bolão
     bolao_block = site_side.split('data-group="bolao"', 1)[1].split("</details>", 1)[0]
     assert "THDFM Grid" not in bolao_block
@@ -148,9 +151,15 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
-    assert 'href="/grid#ranking"' in (
+    admin_side = (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
+    assert "Ranking Grid" not in admin_side
+    assert 'rel="icon" href="/static/img/thdfm-logo.png"' in r.text
+    assert (ROOT_DIR / "static" / "img" / "thdfm-logo.png").is_file()
+    fav = client.get("/favicon.ico")
+    assert fav.status_code == 200
+    assert fav.headers.get("content-type", "").startswith("image/png")
 
     hoje = client.get("/grid/api/hoje")
     assert hoje.status_code == 200
@@ -331,6 +340,6 @@ def test_grid_ranking_inline_e_redirect(client: TestClient):
     assert 'id="ranking"' in r.text
     assert "Rank Viewer" in r.text
     assert "Dias" in r.text
-    assert 'href="#ranking"' in r.text
-    assert "grid-result-top" in r.text
+    assert 'href="#ranking"' not in r.text
+    assert "data-grid-streak" in r.text
     assert "grid-share-actions" in r.text
