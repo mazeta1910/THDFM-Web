@@ -1142,11 +1142,11 @@ def _bolao_resumo_perfil(participante_id: int | None) -> dict | None:
     }
 
 
-def _recados_payload(target_id: int | None) -> list[dict]:
+def _recados_payload(target_id: int | None, voter_id: int | None = None) -> list[dict]:
     if not target_id:
         return []
     out = []
-    for r in db.listar_recados(int(target_id)):
+    for r in db.listar_recados(int(target_id), voter_id=voter_id):
         item = dict(r)
         item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
         out.append(item)
@@ -1167,7 +1167,7 @@ def meu_perfil(request: Request):
     karma = db.karma_resumo(part["id"], voter_id=part["id"]) if part else None
     nutela = db.nutela_resumo(part["id"], voter_id=part["id"]) if part else None
     soft = db.perfil_soft_do_participante(part) if part else None
-    recados = _recados_payload(part["id"] if part else None)
+    recados = _recados_payload(part["id"] if part else None, voter_id=part["id"] if part else None)
     if part:
         db.marcar_recados_vistos(part["id"])
     return render(
@@ -1231,7 +1231,7 @@ def perfil_participante(request: Request, participante_id: int):
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
     nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
     soft = db.perfil_soft_do_participante(part)
-    recados = _recados_payload(part["id"])
+    recados = _recados_payload(part["id"], voter_id=voter_id)
     return render(
         request,
         "meu_perfil.html",
@@ -1300,7 +1300,10 @@ def perfil_recados_get(request: Request, participante_id: int):
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
-    return JSONResponse({"recados": _recados_payload(participante_id)})
+    voter = _voter_sessao(request)
+    return JSONResponse(
+        {"recados": _recados_payload(participante_id, voter_id=voter["id"] if voter else None)}
+    )
 
 
 @app.post("/perfil/{participante_id:int}/recados")
@@ -1326,7 +1329,12 @@ async def perfil_recados_post(request: Request, participante_id: int):
         return JSONResponse({"erro": str(exc)}, status_code=400)
     item = dict(criado)
     item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
-    return JSONResponse({"recado": item, "recados": _recados_payload(participante_id)})
+    return JSONResponse(
+        {
+            "recado": item,
+            "recados": _recados_payload(participante_id, voter_id=voter["id"]),
+        }
+    )
 
 
 @app.delete("/perfil/{participante_id:int}/recados/{recado_id:int}")
@@ -1343,7 +1351,49 @@ def perfil_recados_delete(request: Request, participante_id: int, recado_id: int
         return JSONResponse({"erro": str(exc)}, status_code=403)
     if not ok:
         return JSONResponse({"erro": "Recado não encontrado"}, status_code=404)
-    return JSONResponse({"ok": True, "recados": _recados_payload(participante_id)})
+    return JSONResponse(
+        {"ok": True, "recados": _recados_payload(participante_id, voter_id=voter["id"])}
+    )
+
+
+@app.put("/perfil/{participante_id:int}/recados/{recado_id:int}/reacoes")
+async def perfil_recado_reacao_put(request: Request, participante_id: int, recado_id: int):
+    """Toggle de reação estilo Discord num recado do mural."""
+    neg = _require_perfil(request)
+    if neg:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    part = db.get_participante(participante_id)
+    if not part or part.get("status") != "liberado":
+        return JSONResponse({"erro": "Perfil não encontrado"}, status_code=404)
+    voter = _voter_sessao(request)
+    if not voter:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    emoji = (body or {}).get("emoji") or ""
+    try:
+        reacoes = db.toggle_recado_reacao(
+            recado_id,
+            voter["id"],
+            emoji,
+            target_id=participante_id,
+        )
+    except ValueError as exc:
+        msg = str(exc)
+        if "não encontrado" in msg:
+            return JSONResponse({"erro": "Recado não encontrado"}, status_code=404)
+        return JSONResponse({"erro": msg}, status_code=400)
+    except TypeError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "recado_id": str(recado_id),
+            "reacoes": reacoes,
+            "recados": _recados_payload(participante_id, voter_id=voter["id"]),
+        }
+    )
 
 
 @app.get("/perfil/{participante_id:int}/nutela")

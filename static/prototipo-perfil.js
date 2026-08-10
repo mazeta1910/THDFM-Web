@@ -259,6 +259,7 @@
             iniciais: d.iniciais || "",
             at: d.at || null,
             target_id: d.target_id || null,
+            reacoes: normReacoes(d.reacoes),
           };
         });
     } catch (_) {
@@ -289,6 +290,37 @@
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const err = new Error((data && data.erro) || "Falha ao apagar recado");
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+  const RECADO_REACOES = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "👏", "🎉", "🙏"];
+
+  function normReacoes(list) {
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((x) => x && x.emoji && Number(x.count) > 0)
+      .map((x) => ({
+        emoji: String(x.emoji),
+        count: Math.max(1, Math.round(Number(x.count) || 1)),
+        mine: !!x.mine,
+      }));
+  }
+
+  async function toggleRecadoReacao(targetId, recadoId, emoji) {
+    const r = await fetch(
+      `/perfil/${encodeURIComponent(targetId)}/recados/${encodeURIComponent(recadoId)}/reacoes`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      }
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error((data && data.erro) || "Falha ao reagir");
       err.status = r.status;
       throw err;
     }
@@ -451,12 +483,38 @@
       }));
   }
 
+  function renderReacoesHtml(reacoes, { canReact } = {}) {
+    const chips = (reacoes || [])
+      .map((r) => {
+        const em = escapeHtml(r.emoji);
+        return `<button type="button" class="proto-steam-reacao${r.mine ? " is-mine" : ""}" data-reacao="${em}" title="${em}" aria-label="Reação ${em}: ${r.count}${r.mine ? ", sua" : ""}" ${canReact ? "" : "disabled"}>
+          <span aria-hidden="true">${em}</span><span class="proto-steam-reacao-count">${r.count}</span>
+        </button>`;
+      })
+      .join("");
+    const addBtn = canReact
+      ? `<div class="proto-steam-reacao-add-wrap">
+          <button type="button" class="proto-steam-reacao-add" data-reacao-add title="Adicionar reação" aria-label="Adicionar reação" aria-expanded="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 18a8 8 0 1 1-.001-16.001A8 8 0 0 1 12 20zm-4.2-7.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4zm8.4 0a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4zM12 17.2c-2.1 0-3.9-1.2-4.7-3h1.7c.6 1 1.7 1.6 3 1.6s2.4-.6 3-1.6h1.7c-.8 1.8-2.6 3-4.7 3z"/></svg>
+          </button>
+          <div class="proto-steam-reacao-picker" hidden role="listbox" aria-label="Escolher reação">
+            ${RECADO_REACOES.map(
+              (em) =>
+                `<button type="button" class="proto-steam-reacao-pick" data-reacao-pick="${escapeHtml(em)}" role="option" title="${escapeHtml(em)}" aria-label="${escapeHtml(em)}">${escapeHtml(em)}</button>`
+            ).join("")}
+          </div>
+        </div>`
+      : "";
+    if (!chips && !addBtn) return "";
+    return `<div class="proto-steam-reacoes">${chips}${addBtn}</div>`;
+  }
+
   function renderPosts(
     listEl,
     emptyEl,
     countEl,
     items,
-    { canDelete, onDelete, authorFallback, viewer, owner } = {}
+    { canDelete, onDelete, canReact, onToggleReacao, authorFallback, viewer, owner } = {}
   ) {
     if (countEl) countEl.textContent = `(${items.length})`;
     if (!listEl) return;
@@ -500,6 +558,7 @@
             }
           </div>
           <p class="proto-steam-feed-texto">${escapeHtml(d.texto)}</p>
+          ${renderReacoesHtml(d.reacoes, { canReact })}
         </div>
       </li>`;
       })
@@ -509,6 +568,51 @@
       listEl.querySelectorAll("[data-del]").forEach((btn) => {
         btn.addEventListener("click", () => onDelete(btn.getAttribute("data-del")));
       });
+    }
+
+    if (canReact && typeof onToggleReacao === "function") {
+      const closePickers = (except) => {
+        listEl.querySelectorAll(".proto-steam-reacao-picker").forEach((p) => {
+          if (except && p === except) return;
+          p.hidden = true;
+          const add = p.parentElement && p.parentElement.querySelector("[data-reacao-add]");
+          if (add) add.setAttribute("aria-expanded", "false");
+        });
+      };
+      listEl.querySelectorAll("[data-reacao]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const li = btn.closest("[data-id]");
+          if (!li) return;
+          onToggleReacao(li.getAttribute("data-id"), btn.getAttribute("data-reacao"));
+        });
+      });
+      listEl.querySelectorAll("[data-reacao-add]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const wrap = btn.closest(".proto-steam-reacao-add-wrap");
+          const picker = wrap && wrap.querySelector(".proto-steam-reacao-picker");
+          if (!picker) return;
+          const open = picker.hidden;
+          closePickers(picker);
+          picker.hidden = !open;
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      });
+      listEl.querySelectorAll("[data-reacao-pick]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const li = btn.closest("[data-id]");
+          if (!li) return;
+          closePickers();
+          onToggleReacao(li.getAttribute("data-id"), btn.getAttribute("data-reacao-pick"));
+        });
+      });
+      if (!listEl._reacaoOutsideBound) {
+        listEl._reacaoOutsideBound = true;
+        document.addEventListener("click", (e) => {
+          if (!listEl.contains(e.target)) closePickers();
+        });
+      }
     }
   }
 
@@ -1251,6 +1355,7 @@
     }
 
     let recados = targetId ? loadRecadosEmbedded() : [];
+    const canReact = !!(viewer && viewer.id && targetId);
 
     function applyRecadosList(list) {
       if (!Array.isArray(list)) return;
@@ -1267,6 +1372,7 @@
             iniciais: d.iniciais || "",
             at: d.at || null,
             target_id: d.target_id || targetId || null,
+            reacoes: normReacoes(d.reacoes),
           };
         });
       refreshRecados();
@@ -1280,9 +1386,17 @@
         recados,
         {
           canDelete: isOwn,
+          canReact,
+          viewer,
           onDelete: (id) => {
             if (!targetId || !id) return;
             deleteRecadoApi(targetId, id)
+              .then((data) => applyRecadosList(data.recados || []))
+              .catch(() => {});
+          },
+          onToggleReacao: (id, emoji) => {
+            if (!targetId || !id || !emoji) return;
+            toggleRecadoReacao(targetId, id, emoji)
               .then((data) => applyRecadosList(data.recados || []))
               .catch(() => {});
           },
