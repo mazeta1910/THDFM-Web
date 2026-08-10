@@ -9,6 +9,7 @@
 {% set on_admin_cobranca = path.startswith('/admin/cobranca') %}
 {% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
+{% set on_grid = path.startswith('/grid') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_xonhometro = path.startswith('/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
@@ -89,6 +90,9 @@
               </a>
               {% if is_dono %}
               <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+              {% endif %}
+              {% if is_mazeta %}
+              <a class="admin-side-link {% if on_grid %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
               {% endif %}
             </div>
           </details>

@@ -530,6 +530,22 @@ def _migrate_perfil_recado_reacoes(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_grid_progresso(conn: sqlite3.Connection) -> None:
+    """Progresso diário do THDFM Grid (streak/histórico por participante)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_progresso (
+          participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          dia TEXT NOT NULL,
+          celulas_json TEXT NOT NULL DEFAULT '[]',
+          finalizado INTEGER NOT NULL DEFAULT 0,
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          PRIMARY KEY (participante_id, dia)
+        )
+        """
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -543,6 +559,7 @@ def init_db() -> None:
         _migrate_perfil_nutela(conn)
         _migrate_perfil_recados(conn)
         _migrate_perfil_recado_reacoes(conn)
+        _migrate_grid_progresso(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -4341,3 +4358,81 @@ def marcar_recados_vistos(target_id: int) -> int:
             (max_id, tid),
         )
     return max_id
+
+
+def get_grid_progresso(participante_id: int, dia: str) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT participante_id, dia, celulas_json, finalizado, atualizado_em
+            FROM grid_progresso
+            WHERE participante_id = ? AND dia = ?
+            """,
+            (int(participante_id), str(dia)),
+        ).fetchone()
+        if not row:
+            return None
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        return {
+            "participante_id": int(row["participante_id"]),
+            "dia": row["dia"],
+            "celulas": celulas,
+            "finalizado": bool(row["finalizado"]),
+            "atualizado_em": row["atualizado_em"],
+        }
+
+
+def salvar_grid_progresso(
+    participante_id: int,
+    dia: str,
+    celulas: list,
+    *,
+    finalizado: bool = False,
+) -> dict[str, Any]:
+    pid = int(participante_id)
+    dia_s = str(dia)
+    payload = json.dumps(celulas, ensure_ascii=False)
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO grid_progresso (participante_id, dia, celulas_json, finalizado, atualizado_em)
+            VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(participante_id, dia) DO UPDATE SET
+              celulas_json = excluded.celulas_json,
+              finalizado = excluded.finalizado,
+              atualizado_em = datetime('now', 'localtime')
+            """,
+            (pid, dia_s, payload, 1 if finalizado else 0),
+        )
+    out = get_grid_progresso(pid, dia_s)
+    assert out is not None
+    return out
+
+
+def grid_streak(participante_id: int, *, ate_dia: str | None = None) -> int:
+    """Dias consecutivos finalizados até ate_dia (inclusive), contando para trás."""
+    from datetime import date, timedelta
+
+    from src.grid_game import dia_grid
+
+    pid = int(participante_id)
+    fim = date.fromisoformat(ate_dia or dia_grid())
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia FROM grid_progresso
+            WHERE participante_id = ? AND finalizado = 1 AND dia <= ?
+            ORDER BY dia DESC
+            """,
+            (pid, fim.isoformat()),
+        ).fetchall()
+    feitos = {r["dia"] for r in rows}
+    streak = 0
+    cursor = fim
+    while cursor.isoformat() in feitos:
+        streak += 1
+        cursor = cursor - timedelta(days=1)
+    return streak

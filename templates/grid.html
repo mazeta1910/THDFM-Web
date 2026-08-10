@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}THDFM Grid (prévia){% endblock %}
+{% block content %}
+<section
+  class="grid-page"
+  id="thdfm-grid"
+  data-dia="{{ puzzle.dia }}"
+  data-streak="{{ streak }}"
+  data-pode-salvar="1"
+>
+  <header class="grid-head">
+    <div>
+      <p class="grid-kicker">Prévia privada · só Mazeta</p>
+      <h1 class="grid-title">THDFM Grid</h1>
+      <p class="grid-sub">Acerte um clube em cada célula · 1 tentativa por casa · puzzle de {{ puzzle.dia }}</p>
+    </div>
+    <div class="grid-meta">
+      <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
+    </div>
+  </header>
+
+  <div class="grid-board-wrap card">
+    <div class="grid-board" data-grid-board aria-label="Grade do dia">
+      <div class="grid-corner" aria-hidden="true"></div>
+      {% for col in puzzle.colunas %}
+      <div class="grid-axis grid-axis--col" title="{{ col.rotulo }}">{{ col.rotulo }}</div>
+      {% endfor %}
+      {% for row in puzzle.linhas %}
+      {% set ri = loop.index0 %}
+      <div class="grid-axis grid-axis--row" title="{{ row.rotulo }}">{{ row.rotulo }}</div>
+      {% for col in puzzle.colunas %}
+      {% set ci = loop.index0 %}
+      <button
+        type="button"
+        class="grid-cell"
+        data-grid-cell
+        data-linha="{{ ri }}"
+        data-coluna="{{ ci }}"
+        data-possiveis="{{ puzzle.densidades[ri][ci] }}"
+        aria-label="Célula linha {{ ri + 1 }}, coluna {{ ci + 1 }}"
+      >
+        <span class="grid-cell-empty">+</span>
+      </button>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
+  </div>
+
+  <div class="grid-result card" data-grid-result hidden>
+    <h2 class="grid-result-title">Resultado</h2>
+    <p class="grid-result-score" data-grid-score></p>
+    <pre class="grid-share-text" data-grid-share-text></pre>
+    <div class="grid-share-actions">
+      <button type="button" class="btn" data-grid-share-wa>WhatsApp</button>
+      <button type="button" class="btn secondary" data-grid-share-x>Twitter / X</button>
+      <button type="button" class="btn secondary" data-grid-copy>Copiar</button>
+    </div>
+  </div>
+</section>
+
+<dialog class="grid-modal" id="grid-modal" data-grid-modal>
+  <form method="dialog" class="grid-modal-card" data-grid-form>
+    <header class="grid-modal-head">
+      <div>
+        <strong data-grid-modal-title>Buscar clube</strong>
+        <p class="grid-modal-count"><span data-grid-count>0</span> possíveis</p>
+      </div>
+      <button type="submit" class="grid-modal-x" value="cancel" aria-label="Fechar">×</button>
+    </header>
+    <input
+      class="grid-search"
+      type="search"
+      name="q"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Digite o nome oficial do clube…"
+      data-grid-search
+    />
+    <ul class="grid-suggestions" data-grid-suggestions></ul>
+    <p class="grid-modal-note">Uma tentativa por célula. Só entram nomes oficiais do catálogo.</p>
+  </form>
+</dialog>
+
+<script type="application/json" id="grid-boot">{{ {"puzzle": puzzle, "progresso": progresso, "streak": streak}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/grid.js?v=1" defer></script>
+{% endblock %}
