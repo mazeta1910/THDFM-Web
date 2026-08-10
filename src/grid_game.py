@@ -37,13 +37,34 @@ _SEM_MARKERS = ("sem divisão", "sem divisao")
 
 
 def dia_grid(agora: datetime | None = None) -> str:
-    """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD)."""
+    """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD). Vira à 00:00 SP."""
     now = agora or datetime.now(TZ_SP)
     if now.tzinfo is None:
         now = now.replace(tzinfo=TZ_SP)
     else:
         now = now.astimezone(TZ_SP)
     return now.date().isoformat()
+
+
+def rotulo_dia(dia: str) -> str:
+    try:
+        return date.fromisoformat(dia).strftime("%d/%m/%Y")
+    except ValueError:
+        return dia
+
+
+def ms_ate_proxima_virada(agora: datetime | None = None) -> int:
+    """Milissegundos até a próxima 00:00 em America/Sao_Paulo."""
+    from datetime import time, timedelta
+
+    now = agora or datetime.now(TZ_SP)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=TZ_SP)
+    else:
+        now = now.astimezone(TZ_SP)
+    amanha = now.date() + timedelta(days=1)
+    virada = datetime.combine(amanha, time.min, tzinfo=TZ_SP)
+    return max(0, int((virada - now).total_seconds() * 1000))
 
 
 def normalizar_serie(divisao: str | None) -> str | None:
@@ -327,8 +348,13 @@ def categoria_por_id(cat_id: str) -> Categoria | None:
 
 def puzzle_publico(dia: str | None = None) -> dict[str, Any]:
     p = gerar_puzzle(dia)
-    # densidades ajudam o "N possíveis" sem revelar clubes
-    return p
+    dia_s = p["dia"]
+    return {
+        **p,
+        "rotulo": rotulo_dia(dia_s),
+        "virada_em_ms": ms_ate_proxima_virada(),
+        "tz": "America/Sao_Paulo",
+    }
 
 
 def buscar_celula(
@@ -427,7 +453,7 @@ def texto_share(
                 row_e.append("🟩")
                 acertos += 1
             else:
-                row_e.append("⬛")
+                row_e.append("🟥")
         linhas_emoji.append("".join(row_e))
     try:
         d = date.fromisoformat(dia)

@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from fastapi.testclient import TestClient
 
 from src.config import ROOT_DIR
 from src.grid_game import (
     DENSIDADE_MIN,
+    TZ_SP,
     categoria_por_id,
     clubes_grid,
     clubes_por_id,
+    dia_grid,
     gerar_puzzle,
+    ms_ate_proxima_virada,
     pool_celula,
+    texto_share,
     validar_chute,
 )
 from tests.conftest import login_admin
@@ -26,6 +33,23 @@ def test_gerar_puzzle_deterministico_e_denso():
     assert len(a["colunas"]) == 3
     for row in a["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
+
+
+def test_virada_meia_noite_sao_paulo():
+    antes = datetime(2026, 8, 10, 23, 59, 30, tzinfo=TZ_SP)
+    depois = datetime(2026, 8, 11, 0, 0, 0, tzinfo=TZ_SP)
+    assert dia_grid(antes) == "2026-08-10"
+    assert dia_grid(depois) == "2026-08-11"
+    assert gerar_puzzle(dia_grid(antes)) != gerar_puzzle(dia_grid(depois))
+
+    ms = ms_ate_proxima_virada(antes)
+    assert 0 < ms <= 30_000 + 50
+    assert ms_ate_proxima_virada(depois) > 23 * 60 * 60 * 1000
+
+    # UTC 03:00 == 00:00 SP (sem horário de verão)
+    utc = ZoneInfo("UTC")
+    assert dia_grid(datetime(2026, 8, 11, 2, 59, tzinfo=utc)) == "2026-08-10"
+    assert dia_grid(datetime(2026, 8, 11, 3, 0, tzinfo=utc)) == "2026-08-11"
 
 
 def test_vancouver_whitecaps_no_catalogo_fora_do_puzzle():
@@ -65,7 +89,12 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Prévia privada" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=2" in r.text
+    assert "/static/grid.js?v=3" in r.text
+    assert "data-virada-ms=" in r.text
+    assert "00:00 (Brasília)" in r.text
+    assert "data-grid-share-wa" in r.text
+    assert "aria-label=\"Compartilhar no WhatsApp\"" in r.text
+    assert "WhatsApp</button>" not in r.text
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
@@ -79,6 +108,8 @@ def test_grid_mazeta_fluxo(client: TestClient):
     assert hoje.status_code == 200
     data = hoje.json()
     assert data["puzzle"]["tamanho"] == 3
+    assert data["puzzle"]["rotulo"]
+    assert isinstance(data["puzzle"]["virada_em_ms"], int)
     assert data["pode_salvar"] is True
 
     puzzle = data["puzzle"]
@@ -131,6 +162,20 @@ def test_chute_errado_marca_miss():
     outro = next(c for c in clubes_grid() if c["id"] not in pool_ids)
     res = validar_chute(dia="2026-08-15", linha=0, coluna=0, clube_id=outro["id"])
     assert res["ok"] is False
+
+
+def test_texto_share_usa_verde_e_vermelho():
+    celulas = [
+        [{"ok": True, "clube": {"id": "1"}}, {"ok": False, "clube": {"id": "2"}}, None],
+        [None, {"ok": True, "clube": {"id": "3"}}, {"ok": False, "clube": {"id": "4"}}],
+        [None, None, None],
+    ]
+    text = texto_share(dia="2026-08-09", celulas=celulas)
+    assert "🟩🟥⬜" in text
+    assert "⬜🟩🟥" in text
+    assert "⬛" not in text
+    assert "2/9" in text
+    assert "https://thdfm.com.br/grid" in text
 
 
 def _celula_ok(clube_id: str = "1") -> dict:
