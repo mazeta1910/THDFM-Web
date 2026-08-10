@@ -96,22 +96,35 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=4" in r.text
+    assert "/static/grid.js?v=5" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert "data-grid-share-wa" in r.text
     assert "aria-label=\"Compartilhar no WhatsApp\"" in r.text
     assert "WhatsApp</button>" not in r.text
+    assert 'id="ranking"' in r.text
+    assert "grid-result-top" in r.text
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")
+    site_side = (
+        ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
+    ).read_text(encoding="utf-8")
+    assert "Jogos e Passatempos" in site_side
+    assert site_side.index("Jogos e Passatempos") < site_side.index("Bolão CdB")
+    assert 'href="/grid"' in site_side
+    assert "/grid" in site_side and "Ranking Grid" in site_side
+    # fora do submenu Bolão
+    bolao_block = site_side.split('data-group="bolao"', 1)[1].split("</details>", 1)[0]
+    assert "THDFM Grid" not in bolao_block
+    assert "Ranking Grid" not in bolao_block
     js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
     assert "MIN_CHARS = 3" in js
     assert "c.uf" not in js
     assert 'href="/grid"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
-    assert 'href="/grid/ranking"' in (
+    assert 'href="/grid#ranking"' in (
         ROOT_DIR / "templates" / "partials" / "admin_sidebar.html"
     ).read_text(encoding="utf-8")
 
@@ -251,12 +264,13 @@ def test_perfil_mostra_bloco_grid(client: TestClient):
     assert 'id="grid"' in r.text
     assert "THDFM Grid" in r.text
     assert "Dias zerados" in r.text
-    assert 'href="/grid/ranking"' in r.text
+    assert 'href="/grid#ranking"' in r.text
 
 
-def test_grid_ranking_page(client: TestClient):
-    r = client.get("/grid/ranking", follow_redirects=False)
-    assert r.status_code in (303, 302)
+def test_grid_ranking_inline_e_redirect(client: TestClient):
+    r_guest = client.get("/grid/ranking", follow_redirects=False)
+    assert r_guest.status_code in (303, 302)
+    assert "acesso=entrar" in (r_guest.headers.get("location") or "")
 
     from src import db as dbmod
 
@@ -264,12 +278,20 @@ def test_grid_ranking_page(client: TestClient):
     dbmod.definir_credenciais(part["id"], "rank.viewer", "senha12345")
     client.get(f"/p/{part['token']}")
 
+    r_redir = client.get("/grid/ranking", follow_redirects=False)
+    assert r_redir.status_code in (303, 302)
+    loc = r_redir.headers.get("location") or ""
+    assert "/grid" in loc
+    assert "#ranking" in loc
+
     full = [[_celula_ok("1") for _ in range(3)] for _ in range(3)]
     dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
 
-    r = client.get("/grid/ranking")
+    r = client.get("/grid")
     assert r.status_code == 200
-    assert "Ranking" in r.text
+    assert 'id="ranking"' in r.text
     assert "Rank Viewer" in r.text
     assert "Dias" in r.text
-    assert "Jogar hoje" in r.text
+    assert 'href="#ranking"' in r.text
+    assert "grid-result-top" in r.text
+    assert "grid-share-actions" in r.text

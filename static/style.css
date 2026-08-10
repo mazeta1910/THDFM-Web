@@ -12383,13 +12383,21 @@ button.grid-cell,
   font-weight: 900;
 }
 .grid-result-score {
-  margin: 0 0 0.65rem;
+  margin: 0;
   color: var(--muted);
   font-size: 1.02rem;
   font-weight: 700;
 }
+.grid-result-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin: 0 0 0.65rem;
+}
 .grid-share-text {
-  margin: 0 0 0.85rem;
+  margin: 0;
   padding: 0.9rem 1rem;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -12404,7 +12412,27 @@ button.grid-cell,
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
+  margin-left: auto;
+}
+.grid-rank-inline {
+  display: grid;
+  gap: 0.75rem;
+  scroll-margin-top: 4.5rem;
+}
+.grid-rank-inline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+.grid-rank-inline-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 900;
+  line-height: 1.15;
 }
 .grid-share-btn {
   display: inline-flex;
