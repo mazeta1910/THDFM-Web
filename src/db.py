@@ -4825,10 +4825,14 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
             (r["nome"] or "").casefold(),
         )
     )
-    for i, item in enumerate(out[:lim], start=1):
-        item["posicao"] = i
-    return anexar_hall_borda(out[:lim])
+    from src.ranking import _zona_classificacao
 
+    total = len(out)
+    limited = out[:lim]
+    for i, item in enumerate(limited, start=1):
+        item["posicao"] = i
+        item["zona"] = _zona_classificacao(i, total)
+    return anexar_hall_borda(limited)
 
 def grid_stats_participante(participante_id: int) -> dict[str, Any]:
     """Agregados do Grid para o bloco do perfil."""

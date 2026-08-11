@@ -3,7 +3,7 @@
 <div class="card grid-rank-card">
   {% if linhas %}
   <div class="table-wrap">
-    <table class="grid-rank-table" data-classificacao-sort>
+    <table class="grid-rank-table" data-classificacao-sort data-grid-rank-table>
       <thead>
         <tr>
           <th class="col-pos">#</th>
@@ -16,12 +16,23 @@
       </thead>
       <tbody>
         {% for r in linhas %}
-        <tr>
+        <tr
+          class="zona-{{ r.zona or 'meio' }}{% if r.posicao > 5 %} grid-rank-extra{% endif %}"
+          {% if r.posicao > 5 %}hidden{% endif %}
+          data-grid-rank-row
+        >
           <td class="col-pos">{{ r.posicao }}º</td>
           <td>
             <a class="grid-rank-player" href="/perfil/{{ r.participante_id }}">
               {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar", borda=r.hall_borda) }}
-              <span>{{ r.nome }}</span>
+              {% if r.posicao == 1 %}
+              <span class="grid-rank-crown" title="Líder" aria-label="Líder">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path fill="currentColor" d="M3 7l4 5 5-8 5 8 4-5v11H3V7zm2 9h14v2H5v-2z"/>
+                </svg>
+              </span>
+              {% endif %}
+              <span class="grid-rank-nome">{{ r.nome }}</span>
             </a>
           </td>
           <td class="num" data-sort-value="{{ r.dias_finalizados }}">{{ r.dias_finalizados }}</td>
@@ -33,6 +44,16 @@
       </tbody>
     </table>
   </div>
+  {% if linhas|length > 5 %}
+  <div class="grid-rank-mais-wrap">
+    <button
+      type="button"
+      class="btn secondary grid-rank-ver-mais"
+      data-grid-rank-mais
+      aria-expanded="false"
+    >Ver mais</button>
+  </div>
+  {% endif %}
   {% else %}
   <p class="proto-steam-empty">Ninguém zerou o Grid ainda. Seja o primeiro!</p>
   {% endif %}

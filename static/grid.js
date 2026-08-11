@@ -418,4 +418,17 @@
   if (filled >= size * size) showResult(boot.share || null);
   initDaltonismo();
   agendarVirada();
+
+  const btnMais = document.querySelector("[data-grid-rank-mais]");
+  if (btnMais) {
+    btnMais.addEventListener("click", () => {
+      const open = btnMais.getAttribute("aria-expanded") === "true";
+      const next = !open;
+      btnMais.setAttribute("aria-expanded", next ? "true" : "false");
+      btnMais.textContent = next ? "Ver menos" : "Ver mais";
+      document.querySelectorAll(".grid-rank-extra").forEach((tr) => {
+        tr.hidden = !next;
+      });
+    });
+  }
 })();
