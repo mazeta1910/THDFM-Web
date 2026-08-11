@@ -105,8 +105,9 @@ HALL_HERO_DEFAULT = (
     "<p>Quem apoia o projeto com doação entra aqui — para sempre.<br>"
     "Ordenado pelo total doado.</p>"
 )
+HALL_RECADO_MAX_HTML = 8000
 
-_HALL_HERO_TAGS = frozenset(
+_HALL_HTML_TAGS = frozenset(
     {
         "p",
         "br",
@@ -126,12 +127,28 @@ _HALL_HERO_TAGS = frozenset(
         "div",
         "span",
         "hr",
+        "font",
     }
 )
-_HALL_HERO_ATTRS = {
+_HALL_HTML_ATTRS = {
     "a": frozenset({"href", "title", "target", "rel"}),
     "img": frozenset({"src", "alt", "width", "height", "loading"}),
+    "span": frozenset({"style"}),
+    "div": frozenset({"style"}),
+    "p": frozenset({"style"}),
+    "font": frozenset({"face", "size", "color"}),
 }
+_HALL_STYLE_PROPS = frozenset(
+    {
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        "text-decoration",
+        "color",
+    }
+)
+_HALL_FONT_SIZES = frozenset({"1", "2", "3", "4", "5", "6", "7"})
 
 
 def _hall_hero_url_ok(attr: str, value: str) -> bool:
@@ -150,8 +167,41 @@ def _hall_hero_url_ok(attr: str, value: str) -> bool:
     return True
 
 
-def sanitize_hall_hero_html(raw: str | None) -> str:
-    """HTML permitido no header do Hall (texto + imagens)."""
+def _hall_style_ok(raw: str) -> str:
+    """Mantém só propriedades tipográficas seguras."""
+    from html import escape
+
+    out: list[str] = []
+    for part in (raw or "").split(";"):
+        if ":" not in part:
+            continue
+        prop, _, val = part.partition(":")
+        p = prop.strip().lower()
+        v = val.strip()
+        if p not in _HALL_STYLE_PROPS or not v:
+            continue
+        low = v.lower()
+        if "expression" in low or "url(" in low or "javascript:" in low:
+            continue
+        if p == "font-size":
+            # 12px, 1.2em, 120%, medium…
+            if not re.fullmatch(
+                r"(\d+(\.\d+)?(px|pt|em|rem|%)|xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)",
+                low,
+            ):
+                continue
+        if p == "color":
+            if not re.fullmatch(
+                r"(#[0-9a-f]{3,8}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|[a-z]+)",
+                low,
+            ):
+                continue
+        out.append(f"{p}: {escape(v, quote=True)}")
+    return "; ".join(out)
+
+
+def sanitize_hall_html(raw: str | None, *, empty_default: str = "") -> str:
+    """HTML permitido no Hall (hero/recado): texto formatado + imagens."""
     from html import escape
     from html.parser import HTMLParser
 
@@ -162,7 +212,7 @@ def sanitize_hall_hero_html(raw: str | None) -> str:
 
         def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             t = tag.lower()
-            if t not in _HALL_HERO_TAGS:
+            if t not in _HALL_HTML_TAGS:
                 return
             if t == "br":
                 self.out.append("<br>")
@@ -170,7 +220,7 @@ def sanitize_hall_hero_html(raw: str | None) -> str:
             if t == "hr":
                 self.out.append("<hr>")
                 return
-            allowed = _HALL_HERO_ATTRS.get(t, frozenset())
+            allowed = _HALL_HTML_ATTRS.get(t, frozenset())
             parts = [f"<{t}"]
             for name, val in attrs:
                 n = (name or "").lower()
@@ -179,6 +229,14 @@ def sanitize_hall_hero_html(raw: str | None) -> str:
                 if n in ("href", "src") and not _hall_hero_url_ok(n, val):
                     continue
                 if n == "target" and val not in ("_blank", "_self"):
+                    continue
+                if n == "size" and str(val).strip() not in _HALL_FONT_SIZES:
+                    continue
+                if n == "style":
+                    cleaned = _hall_style_ok(val)
+                    if not cleaned:
+                        continue
+                    parts.append(f' style="{cleaned}"')
                     continue
                 parts.append(f' {n}="{escape(val, quote=True)}"')
                 if t == "a" and n == "href" and 'rel="' not in "".join(parts):
@@ -190,7 +248,7 @@ def sanitize_hall_hero_html(raw: str | None) -> str:
 
         def handle_endtag(self, tag: str) -> None:
             t = tag.lower()
-            if t in _HALL_HERO_TAGS and t not in ("br", "hr", "img"):
+            if t in _HALL_HTML_TAGS and t not in ("br", "hr", "img"):
                 self.out.append(f"</{t}>")
 
         def handle_data(self, data: str) -> None:
@@ -204,14 +262,25 @@ def sanitize_hall_hero_html(raw: str | None) -> str:
 
     html = (raw or "").strip()
     if not html:
-        return HALL_HERO_DEFAULT
+        return empty_default
     parser = _San()
     try:
         parser.feed(html)
         parser.close()
     except Exception:
-        return HALL_HERO_DEFAULT
+        return empty_default
     cleaned = "".join(parser.out).strip()
-    # Remove tags vazias inúteis
-    cleaned = re.sub(r"(?i)<(p|div|span)>\s*</\1>", "", cleaned).strip()
-    return cleaned or HALL_HERO_DEFAULT
+    cleaned = re.sub(r"(?i)<(p|div|span|font)>\s*</\1>", "", cleaned).strip()
+    if len(cleaned) > HALL_RECADO_MAX_HTML:
+        cleaned = cleaned[:HALL_RECADO_MAX_HTML]
+    return cleaned or empty_default
+
+
+def sanitize_hall_hero_html(raw: str | None) -> str:
+    """HTML do header do Hall (fallback para o texto padrão)."""
+    return sanitize_hall_html(raw, empty_default=HALL_HERO_DEFAULT)
+
+
+def sanitize_hall_recado_html(raw: str | None) -> str:
+    """HTML do recado da lenda (pode ficar vazio)."""
+    return sanitize_hall_html(raw, empty_default="")

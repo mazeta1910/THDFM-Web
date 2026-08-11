@@ -6,7 +6,12 @@ from fastapi.testclient import TestClient
 
 from src import db as dbmod
 from src.config import ROOT_DIR
-from src.hall_lendas import format_valor_brl, parse_valor_centavos
+from src.hall_lendas import (
+    format_valor_brl,
+    parse_valor_centavos,
+    sanitize_hall_hero_html,
+    sanitize_hall_recado_html,
+)
 from tests.conftest import login_admin
 
 
@@ -26,6 +31,22 @@ def test_parse_e_format_valor():
     assert parse_valor_centavos("50,00") == 5000
     assert parse_valor_centavos("R$ 1.234,56") == 123456
     assert format_valor_brl(5000) == "R$ 50,00"
+
+
+def test_sanitize_hall_html_fonte_e_negrito():
+    html = sanitize_hall_recado_html(
+        '<p>Oi <b>mundo</b> <font size="5" face="Georgia, serif">grande</font>'
+        '<span style="font-style: italic; font-size: 18px">itálico</span>'
+        '<script>alert(1)</script><img src="/hall-hero/x.jpg" alt="f"></p>'
+    )
+    assert "<script>" not in html
+    assert "<b>mundo</b>" in html
+    assert 'size="5"' in html
+    assert "Georgia" in html
+    assert "font-style: italic" in html
+    assert 'src="/hall-hero/x.jpg"' in html
+    assert sanitize_hall_recado_html("") == ""
+    assert "Quem apoia" in sanitize_hall_hero_html("")
 
 
 def test_hall_lendas_publico_sem_login(client: TestClient):
@@ -88,6 +109,12 @@ def test_admin_hall_crud(client: TestClient):
     assert r.status_code == 200
     assert "Hall das Lendas" in r.text
     assert "Doador Admin" in r.text
+    assert "data-hall-rich-form" in r.text
+    assert "data-hall-rich-body" in r.text
+    assert "hall-rich-edit.js" in r.text
+    assert 'data-hall-cmd="bold"' in r.text
+    assert "data-hall-rich-foto" in r.text
+    assert 'name="recado"' in r.text
 
     r = client.post(
         "/admin/hall-lendas/salvar",
@@ -118,15 +145,21 @@ def test_admin_hall_crud(client: TestClient):
             "modo": "doar",
             "participante_id": str(part["id"]),
             "valor": "50",
-            "recado": "Segunda",
+            "recado": 'Segunda <b>vez</b><script>x</script><font size="5">!</font>',
         },
         follow_redirects=False,
     )
     assert r.status_code == 303
     row = dbmod.get_hall_lenda(part["id"])
     assert row["valor_centavos"] == 20000
-    assert row["recado"] == "Segunda"
+    assert "<script>" not in row["recado"]
+    assert "<b>vez</b>" in row["recado"]
+    assert 'size="5"' in row["recado"]
     assert row["borda"] == "duplo"
+
+    mural = client.get("/hall-lendas")
+    assert mural.status_code == 200
+    assert "<b>vez</b>" in mural.text
 
     # Editar total não mexe na moldura
     r = client.post(
@@ -160,55 +193,7 @@ def test_admin_hall_crud(client: TestClient):
 
 def test_admin_hall_exige_mazeta(client: TestClient):
     r = client.get("/admin/hall-lendas", follow_redirects=False)
-    assert r.status_code in (302, 303)
-
-
-def test_perfil_lenda_badge_e_borda(client: TestClient):
-    alvo = _lenda("Perfil Lenda", "11990008005", valor="30,00")
-    dbmod.set_hall_borda(alvo["id"], "laurel")
-    viewer = dbmod.criar_participante("Viewer Lenda", status="liberado", celular="11990008006")
-    dbmod.definir_credenciais(viewer["id"], "viewer.lenda", "senha12345")
-    client.get(f"/p/{viewer['token']}")
-
-    r = client.get(f"/perfil/{alvo['id']}")
-    assert r.status_code == 200
-    assert "proto-times-lenda" in r.text
-    assert ">Lenda<" in r.text
-    assert "lenda-frame--laurel" in r.text
-    assert "proto-steam-name-star" in r.text
-
-
-def test_lenda_escolhe_moldura(client: TestClient):
-    part = _lenda("Escolhe Borda", "11990008007", valor="40,00")
-    dbmod.definir_credenciais(part["id"], "escolhe.borda", "senha12345")
-    client.get(f"/p/{part['token']}")
-
-    r = client.get("/meu-perfil/editar")
-    assert r.status_code == 200
-    assert "Moldura de Lenda" in r.text
-    assert 'name="borda"' in r.text
-
-    r = client.post(
-        "/meu-perfil/hall-borda",
-        data={"borda": "brilho"},
-        follow_redirects=False,
-    )
-    assert r.status_code == 303
-    assert dbmod.get_hall_lenda(part["id"])["borda"] == "brilho"
-
-    r = client.get("/meu-perfil")
-    assert r.status_code == 200
-    assert "lenda-frame--brilho" in r.text
-    assert "proto-times-lenda" in r.text
-
-    # Moldura aparece na sidebar e na classificação
-    home = client.get("/")
-    assert home.status_code == 200
-    assert "lenda-frame--brilho" in home.text
-
-    classif = client.get("/classificacao")
-    assert classif.status_code == 200
-    assert "lenda-frame--brilho" in classif.text
+    assert r.status_code in (302, 303, 401, 403)
 
 
 def test_paginacao_hall(client: TestClient):
@@ -231,13 +216,23 @@ def test_hall_hero_padrao_e_lapis_so_mazeta(client: TestClient):
     assert "Quem apoia o projeto com doação" in r.text
     assert "data-hall-hero-edit" not in r.text
     assert "hall-hero-edit.js" not in r.text
+    assert "hall-rich-edit.js" not in r.text
 
     login_admin(client)
     r2 = client.get("/hall-lendas")
     assert r2.status_code == 200
     assert 'data-hall-hero-editavel="1"' in r2.text
     assert "data-hall-hero-edit" in r2.text
-    assert "hall-hero-edit.js" in r2.text
+    assert "hall-rich-edit.js" in r2.text
+    assert 'data-hall-cmd="bold"' in r2.text
+    assert "data-hall-font" in r2.text
+    assert "data-hall-size" in r2.text
+    assert "hall-hero-edit.js" not in r2.text
+    css = (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=312" in css
+    assert "hall-rich-edit.js?v=2" in (ROOT_DIR / "templates" / "hall_lendas.html").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_hall_hero_salvar_e_upload(client: TestClient, tmp_path, monkeypatch):

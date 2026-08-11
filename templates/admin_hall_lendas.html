@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/hall_rich.html" import hall_rich_toolbar %}
 {% block title %}Admin · Hall das Lendas{% endblock %}
 {% block content %}
 <section class="card hall-admin">
@@ -22,8 +23,16 @@
     </select>
     <label class="hall-admin-label" for="hall-valor">Valor (R$)</label>
     <input id="hall-valor" class="hall-admin-input" name="valor" type="text" inputmode="decimal" placeholder="100,00" required />
-    <label class="hall-admin-label" for="hall-recado">Recado (opcional)</label>
-    <textarea id="hall-recado" class="hall-admin-input" name="recado" rows="3" maxlength="500" placeholder="Mensagem que aparece no mural"></textarea>
+    <span class="hall-admin-label">Recado (opcional)</span>
+    <div class="hall-rich hall-rich--admin" data-hall-rich-form>
+      {{ hall_rich_toolbar() }}
+      <div
+        class="hall-rich-body hall-admin-input"
+        data-hall-rich-body
+        data-placeholder="Mensagem que aparece no mural — selecione trechos para formatar"
+      ></div>
+      <input type="hidden" name="recado" value="" data-hall-rich-input />
+    </div>
     <div class="hall-admin-actions">
       <button type="submit" class="btn" style="width:auto">Salvar doação</button>
     </div>
@@ -40,14 +49,18 @@
         <strong>{{ l.nome }}</strong>
         <span>{{ l.valor_rotulo }} · {{ l.quando_rotulo }} · moldura: {{ l.borda_rotulo }}</span>
       </header>
-      {% if l.recado %}<p class="hall-admin-recado">“{{ l.recado }}”</p>{% endif %}
+      {% if l.recado %}<div class="hall-admin-recado">{{ l.recado | safe }}</div>{% endif %}
       <form method="post" action="/admin/hall-lendas/salvar" class="hall-admin-edit">
         <input type="hidden" name="modo" value="editar" />
         <input type="hidden" name="participante_id" value="{{ l.participante_id }}" />
         <label class="hall-admin-label">Total (R$)</label>
         <input class="hall-admin-input" name="valor_total" type="text" value="{{ '%.2f'|format(l.valor_centavos / 100) }}" />
-        <label class="hall-admin-label">Recado</label>
-        <textarea class="hall-admin-input" name="recado" rows="2" maxlength="500">{{ l.recado }}</textarea>
+        <span class="hall-admin-label">Recado</span>
+        <div class="hall-rich hall-rich--admin" data-hall-rich-form>
+          {{ hall_rich_toolbar() }}
+          <div class="hall-rich-body hall-admin-input" data-hall-rich-body>{{ l.recado | safe }}</div>
+          <input type="hidden" name="recado" value="" data-hall-rich-input />
+        </div>
         <div class="hall-admin-actions">
           <button type="submit" class="btn" style="width:auto">Atualizar</button>
         </div>
@@ -61,4 +74,5 @@
   </div>
 </section>
 {% endif %}
+<script src="/static/hall-rich-edit.js?v=2" defer></script>
 {% endblock %}

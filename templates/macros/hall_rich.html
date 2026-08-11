@@ -1,0 +1,38 @@
+{# Toolbar tipográfica + foto para editores do Hall (hero / recado). #}
+{% macro hall_rich_toolbar(with_save=false, with_cancel=false) -%}
+<div class="hall-rich-toolbar" data-hall-rich-toolbar>
+  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" data-hall-rich-file hidden />
+  <div class="hall-rich-fmt" role="group" aria-label="Formatação">
+    <button type="button" class="hall-rich-tool" data-hall-cmd="bold" title="Negrito" aria-label="Negrito"><strong>N</strong></button>
+    <button type="button" class="hall-rich-tool" data-hall-cmd="italic" title="Itálico" aria-label="Itálico"><em>I</em></button>
+    <button type="button" class="hall-rich-tool" data-hall-cmd="underline" title="Sublinhado" aria-label="Sublinhado"><span style="text-decoration:underline">S</span></button>
+    <select class="hall-rich-select" data-hall-font title="Fonte" aria-label="Fonte">
+      <option value="">Fonte</option>
+      <option value="Georgia, serif">Georgia</option>
+      <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
+      <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+      <option value="Verdana, sans-serif">Verdana</option>
+      <option value="'Courier New', monospace">Courier</option>
+      <option value="Impact, sans-serif">Impact</option>
+    </select>
+    <select class="hall-rich-select" data-hall-size title="Tamanho" aria-label="Tamanho da fonte">
+      <option value="">Tam.</option>
+      <option value="2">Pequeno</option>
+      <option value="3">Normal</option>
+      <option value="4">Médio</option>
+      <option value="5">Grande</option>
+      <option value="6">Enorme</option>
+    </select>
+    <button type="button" class="hall-rich-tool" data-hall-size-step="-1" title="Diminuir fonte" aria-label="Diminuir fonte">A−</button>
+    <button type="button" class="hall-rich-tool" data-hall-size-step="1" title="Aumentar fonte" aria-label="Aumentar fonte">A+</button>
+  </div>
+  <button type="button" class="hall-rich-tool" data-hall-rich-foto>Foto</button>
+  {% if with_save %}
+  <button type="button" class="hall-rich-tool hall-rich-tool--accent" data-hall-hero-salvar>Salvar</button>
+  {% endif %}
+  {% if with_cancel %}
+  <button type="button" class="hall-rich-tool" data-hall-hero-cancelar>Cancelar</button>
+  {% endif %}
+  <span class="hall-rich-status" data-hall-rich-status hidden></span>
+</div>
+{%- endmacro %}

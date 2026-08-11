@@ -13317,8 +13317,116 @@ button.grid-admin-dia-btn,
   width: auto;
   height: auto;
   margin: 0.75rem 0;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, #d4a017 30%, var(--border));
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #d4a017 28%, var(--border));
+}
+.hall-lendas-hero-body font,
+.hall-lendas-hero-body span[style],
+.hall-lendas-recado font,
+.hall-lendas-recado span[style] {
+  line-height: 1.35;
+}
+.hall-lendas-hero-toolbar-wrap {
+  margin: 0.85rem 0 0;
+}
+/* Toolbar rica compartilhada (hero + recado admin) */
+.hall-rich {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+}
+.hall-rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.hall-rich-fmt {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.hall-rich-tool,
+.hall-rich-select {
+  margin: 0 !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 0.35rem 0.55rem !important;
+  border-radius: 8px !important;
+  border: 1px solid color-mix(in srgb, #d4a017 40%, var(--border)) !important;
+  background: color-mix(in srgb, var(--bg) 70%, var(--card)) !important;
+  color: var(--text) !important;
+  font-size: 0.82rem !important;
+  font-family: inherit !important;
+  line-height: 1.2 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+.hall-rich-select {
+  padding-right: 0.35rem !important;
+  max-width: 8.5rem;
+}
+.hall-rich-tool:hover,
+.hall-rich-select:hover,
+.hall-rich-tool:focus-visible,
+.hall-rich-select:focus-visible {
+  border-color: color-mix(in srgb, #d4a017 70%, var(--border)) !important;
+  outline: none;
+}
+.hall-rich-tool--accent {
+  background: color-mix(in srgb, #d4a017 22%, var(--bg)) !important;
+  color: #f0d060 !important;
+  font-weight: 700;
+}
+.hall-rich-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.hall-rich-status.is-erro {
+  color: #e57373;
+}
+.hall-rich-body {
+  min-width: 0;
+  outline: none;
+}
+.hall-rich-body:focus-visible {
+  border-color: color-mix(in srgb, #d4a017 55%, var(--border));
+}
+.hall-rich-body img {
+  display: block;
+  max-width: min(100%, 22rem);
+  height: auto;
+  margin: 0.45rem 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.hall-rich--admin .hall-rich-body.hall-admin-input {
+  width: 100%;
+  min-height: 5.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-family: inherit;
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.hall-rich-body[data-placeholder]:empty::before,
+.hall-lendas-hero-body[data-placeholder].is-placeholder::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.hall-rich-body[data-placeholder]:empty::before {
+  display: block;
 }
 .hall-lendas-hero.is-editing .hall-lendas-hero-body {
   margin-top: 0.35rem;
@@ -13329,36 +13437,6 @@ button.grid-admin-dia-btn,
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   color: var(--text);
   outline: none;
-}
-.hall-lendas-hero-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem;
-  margin: 0.75rem 0 0;
-}
-.hall-lendas-hero-tool {
-  width: auto;
-  margin: 0;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, #d4a017 45%, var(--border));
-  background: color-mix(in srgb, var(--bg) 80%, var(--card));
-  color: #e2b93d;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.hall-lendas-hero-tool--accent {
-  background: color-mix(in srgb, #d4a017 22%, var(--bg));
-  color: #f0d060;
-}
-.hall-lendas-hero-tool-status {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.hall-lendas-hero-tool-status.is-erro {
-  color: #e57373;
 }
 .hall-lendas-proto-tag {
   margin: 0.75rem 0 0;
@@ -13495,8 +13573,22 @@ button.grid-admin-dia-btn,
   background: color-mix(in srgb, #d4a017 8%, var(--bg));
   color: var(--text);
   font-size: 0.95rem;
-  line-height: 1.4;
-  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.hall-lendas-recado p {
+  margin: 0 0 0.45rem;
+}
+.hall-lendas-recado p:last-child {
+  margin-bottom: 0;
+}
+.hall-lendas-recado img {
+  display: block;
+  max-width: min(100%, 18rem);
+  height: auto;
+  margin: 0.45rem 0;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #d4a017 25%, var(--border));
 }
 .hall-lendas-valor {
   margin: 0.55rem 0 0;
@@ -13635,8 +13727,17 @@ button.grid-admin-dia-btn,
 }
 .hall-admin-recado {
   margin: 0 0 0.65rem;
-  font-style: italic;
   color: var(--text);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.hall-admin-recado img {
+  display: block;
+  max-width: min(100%, 16rem);
+  height: auto;
+  margin: 0.4rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .proto-times-lenda {

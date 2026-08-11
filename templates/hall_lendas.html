@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/hall_rich.html" import hall_rich_toolbar %}
 {% block title %}Hall das Lendas — THDFM{% endblock %}
 {% block og_title %}Hall das Lendas{% endblock %}
 {% block og_description %}Mural das lendas THDFM — doações que sustentam o projeto.{% endblock %}
@@ -35,16 +36,12 @@
     <div
       class="hall-lendas-hero-body"
       data-hall-hero-body
-      {% if is_mazeta %}data-placeholder="Escreva o que quiser. Use o botão Foto para adicionar imagens."{% endif %}
+      {% if is_mazeta %}data-placeholder="Selecione trechos para negrito, itálico, fonte e tamanho. Use Foto para imagens."{% endif %}
     >{{ hero_html | safe }}</div>
 
     {% if is_mazeta %}
-    <div class="hall-lendas-hero-toolbar" data-hall-hero-toolbar hidden>
-      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" data-hall-hero-file hidden />
-      <button type="button" class="hall-lendas-hero-tool" data-hall-hero-foto>Foto</button>
-      <button type="button" class="hall-lendas-hero-tool hall-lendas-hero-tool--accent" data-hall-hero-salvar>Salvar</button>
-      <button type="button" class="hall-lendas-hero-tool" data-hall-hero-cancelar>Cancelar</button>
-      <span class="hall-lendas-hero-tool-status" data-hall-hero-status hidden></span>
+    <div class="hall-lendas-hero-toolbar-wrap" data-hall-hero-toolbar hidden>
+      {{ hall_rich_toolbar(with_save=true, with_cancel=true) }}
     </div>
     <p class="hall-lendas-admin-link">
       <a href="/admin/hall-lendas">Gerenciar Hall</a>
@@ -80,7 +77,7 @@
         </div>
         <p class="hall-lendas-quando">{{ l.quando_rotulo }}</p>
         {% if l.recado %}
-        <blockquote class="hall-lendas-recado">“{{ l.recado }}”</blockquote>
+        <div class="hall-lendas-recado">{{ l.recado | safe }}</div>
         {% endif %}
         {% if is_mazeta %}
         <p class="hall-lendas-valor">Total doado: <strong>{{ l.valor_rotulo }}</strong></p>
@@ -111,6 +108,6 @@
   {% endif %}
 </section>
 {% if is_mazeta %}
-<script src="/static/hall-hero-edit.js?v=1" defer></script>
+<script src="/static/hall-rich-edit.js?v=2" defer></script>
 {% endif %}
 {% endblock %}
