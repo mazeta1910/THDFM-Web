@@ -40,7 +40,7 @@
     }
   })();
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=301" />
+  <link rel="stylesheet" href="/static/style.css?v=302" />
   {% if ADSENSE_CLIENT %}
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT }}"
      crossorigin="anonymous"></script>
@@ -551,6 +551,120 @@
   })();
   </script>
   {% endif %}
+  <script>
+  (() => {
+    /** Reordena submenus arrastáveis; Portal/Admin ficam fixos. */
+    function initSidebarSortable(root) {
+      if (!root) return;
+      const sortable = root.querySelector("[data-menu-sortable]");
+      if (!sortable) return;
+      const scope = root.getAttribute("data-menu-scope") || "site";
+      const userId = (root.getAttribute("data-user-id") || "").trim();
+      const storageKey = `thdfm-sidebar-ordem-v1:${scope}:${userId || "guest"}`;
+
+      const parseOrdemAttr = () => {
+        const raw = root.getAttribute("data-sidebar-ordem") || "";
+        if (!raw) return null;
+        try {
+          const data = JSON.parse(raw);
+          if (Array.isArray(data)) return data;
+          if (data && Array.isArray(data[scope])) return data[scope];
+        } catch (e) {}
+        return null;
+      };
+      const readLocal = () => {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          const arr = raw ? JSON.parse(raw) : null;
+          return Array.isArray(arr) ? arr : null;
+        } catch (e) {
+          return null;
+        }
+      };
+      const writeLocal = (ordem) => {
+        try { localStorage.setItem(storageKey, JSON.stringify(ordem)); } catch (e) {}
+      };
+      const currentOrdem = () =>
+        Array.from(sortable.querySelectorAll(":scope > [data-group]"))
+          .map((el) => el.getAttribute("data-group"))
+          .filter(Boolean);
+
+      const applyOrdem = (ordem) => {
+        if (!Array.isArray(ordem) || !ordem.length) return;
+        const byId = new Map();
+        Array.from(sortable.querySelectorAll(":scope > [data-group]")).forEach((el) => {
+          byId.set(el.getAttribute("data-group"), el);
+        });
+        ordem.forEach((id) => {
+          const el = byId.get(id);
+          if (el) {
+            sortable.appendChild(el);
+            byId.delete(id);
+          }
+        });
+        byId.forEach((el) => sortable.appendChild(el));
+      };
+
+      const serverOrdem = parseOrdemAttr();
+      const localOrdem = readLocal();
+      // Preferência local (mais recente no aparelho); senão ordem do servidor.
+      applyOrdem(localOrdem || serverOrdem);
+
+      const persist = (ordem) => {
+        writeLocal(ordem);
+        if (!userId) return;
+        fetch("/conta/sidebar-ordem", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ scope, ordem }),
+        }).catch(() => {});
+      };
+
+      let dragging = null;
+      sortable.querySelectorAll(":scope > [data-group]").forEach((group) => {
+        const handle = group.querySelector(":scope > summary .site-menu-drag");
+        if (!handle) return;
+        const blockToggle = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        };
+        handle.addEventListener("click", blockToggle);
+        handle.addEventListener("mousedown", (e) => e.stopPropagation());
+        handle.addEventListener("dragstart", (e) => {
+          dragging = group;
+          group.classList.add("is-dragging");
+          try {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", group.getAttribute("data-group") || "");
+          } catch (err) {}
+        });
+        handle.addEventListener("dragend", () => {
+          if (dragging) dragging.classList.remove("is-dragging");
+          sortable.querySelectorAll(".is-drag-over").forEach((el) => el.classList.remove("is-drag-over"));
+          dragging = null;
+          persist(currentOrdem());
+        });
+        group.addEventListener("dragover", (e) => {
+          if (!dragging || dragging === group) return;
+          e.preventDefault();
+          group.classList.add("is-drag-over");
+          const rect = group.getBoundingClientRect();
+          const before = e.clientY < rect.top + rect.height / 2;
+          if (before) sortable.insertBefore(dragging, group);
+          else sortable.insertBefore(dragging, group.nextSibling);
+        });
+        group.addEventListener("dragleave", () => group.classList.remove("is-drag-over"));
+        group.addEventListener("drop", (e) => {
+          e.preventDefault();
+          group.classList.remove("is-drag-over");
+        });
+      });
+    }
+
+    initSidebarSortable(document.getElementById("site-sidebar"));
+    initSidebarSortable(document.getElementById("admin-sidebar"));
+  })();
+  </script>
   <script>
   (function () {
     const root = document.getElementById("acesso-drawer-root");

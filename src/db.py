@@ -203,6 +203,8 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN banner_path TEXT")
     if "times_json" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN times_json TEXT")
+    if "sidebar_ordem_json" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN sidebar_ordem_json TEXT")
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_admin_login "
         "ON participantes(admin_login) WHERE admin_login IS NOT NULL AND admin_login != ''"
@@ -624,7 +626,7 @@ _PARTICIPANTE_COLS = (
     "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login, "
     "username, password_hash, credenciais_em, recados_visto_ate, "
     "perfil_frase, perfil_relacionamento, perfil_aniversario, "
-    "banner_preset, banner_path, times_json"
+    "banner_preset, banner_path, times_json, sidebar_ordem_json"
 )
 
 
@@ -1650,6 +1652,55 @@ def salvar_perfil_soft(
             f"UPDATE participantes SET {', '.join(sets)} WHERE id = ?",
             args,
         )
+
+
+def salvar_sidebar_ordem(
+    participante_id: int,
+    *,
+    scope: str,
+    ordem: list[str],
+) -> dict[str, list[str]]:
+    """Persiste ordem dos submenus arrastáveis (site/admin) no participante."""
+    import json
+
+    escopo = (scope or "").strip().lower()
+    if escopo not in {"site", "admin"}:
+        raise ValueError("escopo inválido")
+    if not isinstance(ordem, list):
+        raise ValueError("ordem inválida")
+    limpa: list[str] = []
+    for item in ordem:
+        s = str(item or "").strip()
+        if not s or s in limpa:
+            continue
+        if len(s) > 64:
+            continue
+        limpa.append(s)
+        if len(limpa) >= 40:
+            break
+
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT sidebar_ordem_json FROM participantes WHERE id = ?",
+            (int(participante_id),),
+        ).fetchone()
+        if not row:
+            raise ValueError("participante inválido")
+        atual: dict[str, Any] = {}
+        raw = row["sidebar_ordem_json"] if row else None
+        if raw:
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    atual = parsed
+            except (TypeError, json.JSONDecodeError):
+                atual = {}
+        atual[escopo] = limpa
+        conn.execute(
+            "UPDATE participantes SET sidebar_ordem_json = ? WHERE id = ?",
+            (json.dumps(atual, ensure_ascii=False), int(participante_id)),
+        )
+    return {k: list(v) for k, v in atual.items() if isinstance(v, list)}
 
 
 def salvar_banner(participante_id: int, relative_path: str | None) -> None:

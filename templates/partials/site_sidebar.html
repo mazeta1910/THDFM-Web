@@ -10,8 +10,15 @@
 {% set liberado_ok = participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
 {% set liberado_sem_senha = participante_nav and participante_nav.status == 'liberado' and not participante_nav.password_hash %}
 {% from "partials/nav_icons.html" import ico %}
+{% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
 
-<aside class="site-sidebar" id="site-sidebar">
+<aside
+  class="site-sidebar"
+  id="site-sidebar"
+  data-menu-scope="site"
+  data-user-id="{{ participante_nav.id if participante_nav else '' }}"
+  data-sidebar-ordem="{{ sidebar_ordem_raw|e }}"
+>
   <div class="site-brand">
     <div class="site-brand-top">
       <a href="/" class="site-brand-link">
@@ -55,18 +62,40 @@
 
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
-      <details class="site-menu-group" data-group="portal">
-        <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>
-        <div class="site-menu-items">
-          <a class="site-side-link {% if on_home and not on_entrar and not on_login and not on_loguin %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
-          <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
-          <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
-        </div>
-      </details>
+      <div class="site-menu-fixed" data-menu-fixed>
+        <button
+          type="button"
+          class="site-hall-lendas"
+          disabled
+          aria-disabled="true"
+          title="Em breve"
+        >
+          <svg class="site-hall-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+          </svg>
+          <span class="site-hall-lendas-text">Hall das Lendas</span>
+          <svg class="site-hall-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+          </svg>
+        </button>
 
+        <details class="site-menu-group" data-group="portal" data-menu-pinned>
+          <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>
+          <div class="site-menu-items">
+            <a class="site-side-link {% if on_home and not on_entrar and not on_login and not on_loguin %}active{% endif %}" href="/">{{ ico('inicio') }}<span>Início</span></a>
+            <a class="site-side-link" href="/#em-desenvolvimento">{{ ico('sistema') }}<span>Em desenvolvimento</span></a>
+            <a class="site-side-link" href="#site-footer">{{ ico('transparencia') }}<span>Redes sociais</span></a>
+          </div>
+        </details>
+      </div>
+
+      <div class="site-menu-sortable" data-menu-sortable>
       {% if guest %}
       <details class="site-menu-group site-menu-group--acesso" data-group="acesso" open>
-        <summary class="site-menu-summary">{{ ico('acesso', 13) }}<span>Acesso</span></summary>
+        <summary class="site-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('acesso', 13) }}<span>Acesso</span>
+        </summary>
         <div class="site-menu-items">
           <a class="site-side-link site-side-link--destaque {% if on_entrar %}active{% endif %}" href="/?acesso=entrar" data-acesso-open="entrar">{{ ico('acesso') }}<span>Entrar</span></a>
           <a class="site-side-link {% if on_login %}active{% endif %}" href="/?acesso=recuperar" data-acesso-open="recuperar">{{ ico('inscricao') }}<span>Recuperar link</span></a>
@@ -76,7 +105,10 @@
 
       {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
       <details class="site-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
-        <summary class="site-menu-summary">{{ ico('competicao', 13) }}<span>Jogos e Passatempos</span></summary>
+        <summary class="site-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
+        </summary>
         <div class="site-menu-items">
           <a class="site-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
         </div>
@@ -84,7 +116,10 @@
       {% endif %}
 
       <details class="site-menu-group" data-group="bolao" open>
-        <summary class="site-menu-summary">{{ ico('meu-bolao', 13) }}<span>Bolão CdB</span></summary>
+        <summary class="site-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('meu-bolao', 13) }}<span>Bolão CdB</span>
+        </summary>
         <div class="site-menu-items">
           <a class="site-side-link" href="/#bolao">{{ ico('competicao') }}<span>Sobre o bolão</span></a>
           {% if liberado_ok %}
@@ -104,7 +139,10 @@
 
       {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
       <details class="site-menu-group" data-group="grupo-whatsapp" open>
-        <summary class="site-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
+        <summary class="site-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span>
+        </summary>
         <div class="site-menu-items">
           <a class="site-side-link {% if on_grupo_bans %}active{% endif %}" href="/grupo/bans">{{ ico('bans') }}<span>Contador de Bans</span></a>
           <a class="site-side-link {% if on_grupo_listra %}active{% endif %}" href="/grupo/listra">{{ ico('listra') }}<span>Listra</span></a>
@@ -123,13 +161,17 @@
 
       {% if guest %}
       <details class="site-menu-group site-menu-group--marlon" data-group="marlon" open>
-        <summary class="site-menu-summary">{{ ico('admin', 13) }}<span>Marlon <span class="marlon-sobrenome" data-marlon-sobrenome>Wietzikowski</span></span></summary>
+        <summary class="site-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('admin', 13) }}<span>Marlon <span class="marlon-sobrenome" data-marlon-sobrenome>Wietzikowski</span></span>
+        </summary>
         <div class="site-menu-items">
           <p class="site-menu-marlon-hint">Sub-menu exclusivo</p>
           <a class="site-side-link site-side-link--loguin {% if on_loguin %}active{% endif %}" href="/?acesso=loguin" data-loguin-open>{{ ico('admin') }}<span>Loguin</span></a>
         </div>
       </details>
       {% endif %}
+      </div>
     </div>
     <div class="site-side-sair-wrap">
       {% if participante_nav %}

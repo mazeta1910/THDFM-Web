@@ -27,7 +27,14 @@
 {% set cobranca_n = admin_cobranca_count|default(0) %}
 {% from "partials/nav_icons.html" import ico %}
 
-<aside class="admin-sidebar" id="admin-sidebar">
+{% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
+<aside
+  class="admin-sidebar"
+  id="admin-sidebar"
+  data-menu-scope="admin"
+  data-user-id="{{ participante_nav.id if participante_nav else '' }}"
+  data-sidebar-ordem="{{ sidebar_ordem_raw|e }}"
+>
   <div class="admin-brand">
     <div class="admin-brand-top">
       <strong>Painel de Admin — Bolão THDFM</strong>
@@ -68,44 +75,53 @@
   </div>
   <nav class="admin-side-nav" aria-label="Menu do painel">
     <div class="admin-side-nav-scroll">
-      <details class="admin-menu-group" data-group="admin" open>
-        <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
-        <div class="admin-menu-items">
-          <details class="admin-menu-subgroup" data-group="admin-competicao" open>
-            <summary class="admin-menu-subsummary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
-            <div class="admin-menu-items admin-menu-items--nested">
-              <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
-              <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
-            </div>
-          </details>
-          <details class="admin-menu-subgroup" data-group="admin-participantes" open>
-            <summary class="admin-menu-subsummary">{{ ico('participantes', 13) }}<span>Participantes</span></summary>
-            <div class="admin-menu-items admin-menu-items--nested">
-              <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
-                {{ ico('inscricoes') }}<span>Inscrições</span>
-                {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
-              </a>
-              <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
-                {{ ico('whatsapp') }}<span>Quem palpitou</span>
-                {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
-              </a>
-              {% if is_dono %}
-              <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
-              {% endif %}
-            </div>
-          </details>
-        </div>
-      </details>
+      <div class="admin-menu-fixed" data-menu-fixed>
+        <details class="admin-menu-group" data-group="admin" data-menu-pinned open>
+          <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
+          <div class="admin-menu-items">
+            <details class="admin-menu-subgroup" data-group="admin-competicao" open>
+              <summary class="admin-menu-subsummary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
+              <div class="admin-menu-items admin-menu-items--nested">
+                <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
+                <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+              </div>
+            </details>
+            <details class="admin-menu-subgroup" data-group="admin-participantes" open>
+              <summary class="admin-menu-subsummary">{{ ico('participantes', 13) }}<span>Participantes</span></summary>
+              <div class="admin-menu-items admin-menu-items--nested">
+                <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
+                  {{ ico('inscricoes') }}<span>Inscrições</span>
+                  {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
+                </a>
+                <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
+                  {{ ico('whatsapp') }}<span>Quem palpitou</span>
+                  {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
+                </a>
+                {% if is_dono %}
+                <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+                {% endif %}
+              </div>
+            </details>
+          </div>
+        </details>
+      </div>
 
+      <div class="admin-menu-sortable" data-menu-sortable>
       <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
-        <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Jogos e Passatempos</span></summary>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
+        </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
         </div>
       </details>
 
       <details class="admin-menu-group" data-group="competicao" open>
-        <summary class="admin-menu-summary">{{ ico('classificacao', 13) }}<span>Bolão</span></summary>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('classificacao', 13) }}<span>Bolão</span>
+        </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
           <a class="admin-side-link {% if on_transparencia %}active{% endif %}" href="/transparencia">{{ ico('transparencia') }}<span>Portal da Transparência</span></a>
@@ -114,7 +130,10 @@
       </details>
 
       <details class="admin-menu-group" data-group="grupo-whatsapp" {% if on_grupo_whatsapp or on_admin_xonhometro %}open{% endif %}>
-        <summary class="admin-menu-summary">{{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span></summary>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span>
+        </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grupo_bans %}active{% endif %}" href="/grupo/bans">{{ ico('bans') }}<span>Contador de Bans</span></a>
           <a class="admin-side-link {% if on_grupo_listra %}active{% endif %}" href="/grupo/listra">{{ ico('listra') }}<span>Listra</span></a>
@@ -130,7 +149,10 @@
       </details>
 
       <details class="admin-menu-group" data-group="meu-bolao" open>
-        <summary class="admin-menu-summary">{{ ico('meu-bolao', 13) }}<span>Meu Bolão</span></summary>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('meu-bolao', 13) }}<span>Meu Bolão</span>
+        </summary>
         <div class="admin-menu-items">
           {% if participante_nav and participante_nav.status == 'liberado' %}
           <a class="admin-side-link {% if on_palpites %}active{% endif %}" href="/bolao/meus-palpites">{{ ico('palpites') }}<span>Meus Palpites</span></a>
@@ -139,6 +161,7 @@
           {% endif %}
         </div>
       </details>
+      </div>
     </div>
 
     <a class="admin-side-link admin-side-sair admin-side-sair-fixed" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
