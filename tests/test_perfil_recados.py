@@ -61,7 +61,7 @@ def test_api_recados_por_perfil(client: TestClient):
     assert r.status_code == 200
     assert 'id="proto-recados"' in r.text
     assert "e aí xonha" in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
 
     # não posta no próprio
     r = client.post(f"/perfil/{votante['id']}/recados", json={"texto": "auto"})
@@ -142,7 +142,7 @@ def test_recado_com_imagem_e_gif(client: TestClient, tmp_path, monkeypatch):
     assert r.status_code == 200
     assert "/recados-midia/" in r.text
     assert "data-recado-midia" in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-feed-midia" in js
     assert "FormData" in js
@@ -218,7 +218,7 @@ def test_reacoes_toggle_e_agregam(client: TestClient):
     assert "button.proto-steam-reacao" in css
     assert "width: auto" in css
     assert "data-reacao-add" in js
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
     assert "👍" in r.text
     assert "Reage A" in r.text
 
@@ -280,7 +280,7 @@ def test_responder_recado_dono_e_visitante(client: TestClient):
 
     r = client.get(f"/perfil/{alvo['id']}")
     assert r.status_code == 200
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "data-reply-toggle" in js

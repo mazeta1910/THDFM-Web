@@ -4,7 +4,7 @@
 <section class="card hall-admin">
   <p class="credenciais-kicker">Só Mazeta</p>
   <h1>Hall das Lendas</h1>
-  <p class="login-lead">Registrar doações, editar recados/molduras e remover lendas. Valores ficam ocultos no mural público.</p>
+  <p class="login-lead">Registrar doações, editar recados e remover lendas. A moldura do avatar é escolhida pela própria lenda no perfil. Valores ficam ocultos no mural público.</p>
   <p><a href="/hall-lendas">Ver mural público</a></p>
 
   {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
@@ -24,12 +24,6 @@
     <input id="hall-valor" class="hall-admin-input" name="valor" type="text" inputmode="decimal" placeholder="100,00" required />
     <label class="hall-admin-label" for="hall-recado">Recado (opcional)</label>
     <textarea id="hall-recado" class="hall-admin-input" name="recado" rows="3" maxlength="500" placeholder="Mensagem que aparece no mural"></textarea>
-    <label class="hall-admin-label" for="hall-borda">Moldura inicial</label>
-    <select id="hall-borda" name="borda" class="hall-admin-input">
-      {% for b in bordas %}
-      <option value="{{ b.id }}">{{ b.rotulo }}</option>
-      {% endfor %}
-    </select>
     <div class="hall-admin-actions">
       <button type="submit" class="btn" style="width:auto">Salvar doação</button>
     </div>
@@ -44,7 +38,7 @@
     <article class="hall-admin-item">
       <header>
         <strong>{{ l.nome }}</strong>
-        <span>{{ l.valor_rotulo }} · {{ l.quando_rotulo }} · {{ l.borda_rotulo }}</span>
+        <span>{{ l.valor_rotulo }} · {{ l.quando_rotulo }} · moldura: {{ l.borda_rotulo }}</span>
       </header>
       {% if l.recado %}<p class="hall-admin-recado">“{{ l.recado }}”</p>{% endif %}
       <form method="post" action="/admin/hall-lendas/salvar" class="hall-admin-edit">
@@ -54,12 +48,6 @@
         <input class="hall-admin-input" name="valor_total" type="text" value="{{ '%.2f'|format(l.valor_centavos / 100) }}" />
         <label class="hall-admin-label">Recado</label>
         <textarea class="hall-admin-input" name="recado" rows="2" maxlength="500">{{ l.recado }}</textarea>
-        <label class="hall-admin-label">Moldura</label>
-        <select name="borda" class="hall-admin-input">
-          {% for b in bordas %}
-          <option value="{{ b.id }}" {% if b.id == l.borda %}selected{% endif %}>{{ b.rotulo }}</option>
-          {% endfor %}
-        </select>
         <div class="hall-admin-actions">
           <button type="submit" class="btn" style="width:auto">Atualizar</button>
         </div>

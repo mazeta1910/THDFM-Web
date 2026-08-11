@@ -78,7 +78,7 @@
 
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
-        <div class="proto-steam-avatar{% if show_lenda %} proto-steam-avatar--{{ borda_lenda }}{% endif %}" aria-hidden="true">
+        <div class="proto-steam-avatar{% if show_lenda %} lenda-frame lenda-frame--{{ borda_lenda }} lenda-frame--lg{% endif %}" aria-hidden="true">
           {% if fixado and fixado.avatar_url %}
           <img src="{{ fixado.avatar_url }}" alt="" width="112" height="112" data-public-avatar />
           {% elif fixado %}
@@ -256,5 +256,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/prototipo-perfil.js?v=33" defer></script>
+<script src="/static/prototipo-perfil.js?v=34" defer></script>
 {% endblock %}

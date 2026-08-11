@@ -39,7 +39,7 @@ def test_hall_lendas_publico_sem_login(client: TestClient):
     assert "João JEC" in r.text
     assert "Segue o baile" in r.text
     assert "hall-lendas-badge" in r.text
-    assert "hall-lendas-avatar--anel" in r.text
+    assert "lenda-frame--anel" in r.text
     # Valores ocultos para o público
     assert "R$ 500,00" not in r.text
     assert "Total doado" not in r.text
@@ -105,9 +105,13 @@ def test_admin_hall_crud(client: TestClient):
     assert row is not None
     assert row["valor_centavos"] == 15000
     assert row["recado"] == "Primeira doação"
-    assert row["borda"] == "duplo"
+    assert row["borda"] == "anel"  # padrão; moldura é do usuário
 
-    # Re-doar soma
+    # Usuário escolhe moldura
+    dbmod.set_hall_borda(part["id"], "duplo")
+    assert dbmod.get_hall_lenda(part["id"])["borda"] == "duplo"
+
+    # Re-doar soma e NÃO sobrescreve moldura do usuário
     r = client.post(
         "/admin/hall-lendas/salvar",
         data={
@@ -115,7 +119,6 @@ def test_admin_hall_crud(client: TestClient):
             "participante_id": str(part["id"]),
             "valor": "50",
             "recado": "Segunda",
-            "borda": "brilho",
         },
         follow_redirects=False,
     )
@@ -123,9 +126,9 @@ def test_admin_hall_crud(client: TestClient):
     row = dbmod.get_hall_lenda(part["id"])
     assert row["valor_centavos"] == 20000
     assert row["recado"] == "Segunda"
-    assert row["borda"] == "brilho"
+    assert row["borda"] == "duplo"
 
-    # Editar total
+    # Editar total não mexe na moldura
     r = client.post(
         "/admin/hall-lendas/salvar",
         data={
@@ -133,14 +136,18 @@ def test_admin_hall_crud(client: TestClient):
             "participante_id": str(part["id"]),
             "valor_total": "99,90",
             "recado": "Ajuste",
-            "borda": "laurel",
         },
         follow_redirects=False,
     )
     assert r.status_code == 303
     row = dbmod.get_hall_lenda(part["id"])
     assert row["valor_centavos"] == 9990
-    assert row["borda"] == "laurel"
+    assert row["borda"] == "duplo"
+
+    admin_html = client.get("/admin/hall-lendas").text
+    assert "Moldura inicial" not in admin_html
+    assert 'name="borda"' not in admin_html
+    assert "escolhida pela própria lenda" in admin_html
 
     r = client.post(
         "/admin/hall-lendas/apagar",
@@ -167,7 +174,7 @@ def test_perfil_lenda_badge_e_borda(client: TestClient):
     assert r.status_code == 200
     assert "proto-times-lenda" in r.text
     assert ">Lenda<" in r.text
-    assert "proto-steam-avatar--laurel" in r.text
+    assert "lenda-frame--laurel" in r.text
     assert "proto-steam-name-star" in r.text
 
 
@@ -191,8 +198,17 @@ def test_lenda_escolhe_moldura(client: TestClient):
 
     r = client.get("/meu-perfil")
     assert r.status_code == 200
-    assert "proto-steam-avatar--brilho" in r.text
+    assert "lenda-frame--brilho" in r.text
     assert "proto-times-lenda" in r.text
+
+    # Moldura aparece na sidebar e na classificação
+    home = client.get("/")
+    assert home.status_code == 200
+    assert "lenda-frame--brilho" in home.text
+
+    classif = client.get("/classificacao")
+    assert classif.status_code == 200
+    assert "lenda-frame--brilho" in classif.text
 
 
 def test_paginacao_hall(client: TestClient):
@@ -205,3 +221,4 @@ def test_paginacao_hall(client: TestClient):
     r2 = client.get("/hall-lendas?pagina=2")
     assert r2.status_code == 200
     assert "Anterior" in r2.text
+    assert "lenda-frame--" in r.text

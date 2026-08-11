@@ -87,11 +87,11 @@
             <div class="classificacao-player">
               {% if r.participante_id is defined and r.participante_id %}
               <a class="classificacao-player-link" href="/perfil/{{ r.participante_id }}" title="Ver perfil">
-                {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
+                {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar", borda=r.hall_borda) }}
                 <span class="classificacao-nome">{{ r.participante }}</span>
               </a>
               {% else %}
-              {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar") }}
+              {{ avatar(r.avatar_path, r.participante, class_prefix="classificacao-avatar", borda=r.hall_borda) }}
               <span class="classificacao-nome">{{ r.participante }}</span>
               {% endif %}
               {% if sou_eu %}<span class="eu-badge">você</span>{% endif %}
@@ -181,7 +181,7 @@
                 {% if g.mostrar_fotos and g.pessoas_foto %}
                 <div class="hall-avatars" data-count="{{ g.pessoas_foto|length }}" aria-hidden="true">
                   {% for p in g.pessoas_foto %}
-                  {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
+                  {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar", borda=p.hall_borda) }}
                   {% endfor %}
                   {% if g.fotos_extra %}
                   <span class="hall-avatar-more">+{{ g.fotos_extra }}</span>
@@ -199,7 +199,7 @@
                 {% if card.mostrar_fotos and card.pessoas_foto %}
                 <div class="hall-avatars" data-count="{{ card.pessoas_foto|length }}" aria-hidden="true">
                   {% for p in card.pessoas_foto %}
-                  {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar") }}
+                  {{ avatar(p.avatar_path, p.nome, class_prefix="hall-avatar", borda=p.hall_borda) }}
                   {% endfor %}
                   {% if card.fotos_extra %}
                   <span class="hall-avatar-more">+{{ card.fotos_extra }}</span>

@@ -4827,7 +4827,7 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
     )
     for i, item in enumerate(out[:lim], start=1):
         item["posicao"] = i
-    return out[:lim]
+    return anexar_hall_borda(out[:lim])
 
 
 def grid_stats_participante(participante_id: int) -> dict[str, Any]:
@@ -5054,6 +5054,46 @@ def apagar_hall_lenda(participante_id: int) -> bool:
             (int(participante_id),),
         )
         return int(cur.rowcount or 0) > 0
+
+
+def map_hall_bordas(participante_ids: list[int] | tuple[int, ...] | set[int]) -> dict[int, str]:
+    """Mapa participante_id → borda (só quem é lenda)."""
+    from src.hall_lendas import borda_ok
+
+    ids = sorted({int(x) for x in participante_ids if x is not None})
+    if not ids:
+        return {}
+    placeholders = ",".join("?" * len(ids))
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT participante_id, borda FROM hall_lendas WHERE participante_id IN ({placeholders})",
+            ids,
+        ).fetchall()
+    return {int(r["participante_id"]): borda_ok(r["borda"]) for r in rows}
+
+
+def anexar_hall_borda(
+    itens: list[dict[str, Any]],
+    *,
+    id_key: str = "participante_id",
+) -> list[dict[str, Any]]:
+    """Injeta hall_borda / is_lenda em cada dict (in-place)."""
+    ids: list[int] = []
+    for it in itens:
+        raw = it.get(id_key)
+        if raw is None and id_key != "id":
+            raw = it.get("id")
+        if raw is not None:
+            ids.append(int(raw))
+    mapa = map_hall_bordas(ids)
+    for it in itens:
+        raw = it.get(id_key)
+        if raw is None and id_key != "id":
+            raw = it.get("id")
+        borda = mapa.get(int(raw)) if raw is not None else None
+        it["hall_borda"] = borda
+        it["is_lenda"] = borda is not None
+    return itens
 
 
 def list_participantes_liberados() -> list[dict[str, Any]]:

@@ -39,7 +39,7 @@
     {% for l in lendas %}
     <article class="hall-lendas-card" role="listitem" data-borda="{{ l.borda }}">
       <div class="hall-lendas-card-rank" aria-hidden="true">#{{ ((pagina - 1) * 10) + loop.index }}</div>
-      <div class="hall-lendas-avatar hall-lendas-avatar--{{ l.borda }}" aria-hidden="true">
+      <div class="hall-lendas-avatar lenda-frame lenda-frame--{{ l.borda }} lenda-frame--lg" aria-hidden="true">
         {% if l.avatar_url %}
         <img src="{{ l.avatar_url }}" alt="" width="88" height="88" />
         {% else %}

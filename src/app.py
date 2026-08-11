@@ -374,6 +374,11 @@ def render(request: Request, name: str, **ctx):
             ctx.setdefault("admin_nome", nome_cfg)
     else:
         ctx.setdefault("admin_nome", admin_nome(request))
+    if part_nav:
+        part_nav = dict(part_nav)
+        lenda_nav = db.get_hall_lenda(int(part_nav["id"]))
+        part_nav["hall_borda"] = (lenda_nav or {}).get("borda")
+        part_nav["is_lenda"] = bool(lenda_nav)
     ctx.setdefault("participante_nav", part_nav)
     ctx.setdefault(
         "public_base_url",
@@ -1221,13 +1226,34 @@ def _recado_midia_url(midia_path: str | None) -> str:
     return f"/recados-midia/{rel}"
 
 
-def _recado_item_payload(r: dict) -> dict:
+def _recado_item_payload(r: dict, *, hall_bordas: dict[int, str] | None = None) -> dict:
     item = dict(r)
     item["avatar"] = avatar_url(item.pop("avatar_path", None)) or ""
     item["midia"] = _recado_midia_url(item.pop("midia_path", None))
+    aid = item.get("autor_id")
+    if hall_bordas is not None and aid is not None:
+        item["hall_borda"] = hall_bordas.get(int(aid))
+    elif aid is not None:
+        item["hall_borda"] = (db.get_hall_lenda(int(aid)) or {}).get("borda")
+    else:
+        item["hall_borda"] = None
     kids = item.pop("respostas", None) or []
-    item["respostas"] = [_recado_item_payload(k) for k in kids if isinstance(k, dict)]
+    item["respostas"] = [
+        _recado_item_payload(k, hall_bordas=hall_bordas)
+        for k in kids
+        if isinstance(k, dict)
+    ]
     return item
+
+
+def _recados_collect_autor_ids(itens: list[dict]) -> list[int]:
+    ids: list[int] = []
+    for it in itens:
+        aid = it.get("autor_id")
+        if aid is not None:
+            ids.append(int(aid))
+        ids.extend(_recados_collect_autor_ids(it.get("respostas") or []))
+    return ids
 
 
 def _recados_payload(
@@ -1257,12 +1283,13 @@ def _recados_payload(
     if page > paginas:
         page = paginas
     offset = (page - 1) * lim
-    itens = [
-        _recado_item_payload(r)
-        for r in db.listar_recados(tid, limite=lim, offset=offset, voter_id=voter_id)
-    ]
+    brutos = db.listar_recados(
+        tid, limite=lim, offset=offset, voter_id=voter_id
+    )
+    bordas = db.map_hall_bordas(_recados_collect_autor_ids(brutos))
+    recados = [_recado_item_payload(r, hall_bordas=bordas) for r in brutos]
     return {
-        "recados": itens,
+        "recados": recados,
         "total": total,
         "pagina": page,
         "por_pagina": lim,
@@ -1731,6 +1758,17 @@ def _hall_lenda_publica(item: dict) -> dict:
     }
 
 
+def _participante_com_hall(part: dict | None) -> dict | None:
+    """Cópia do participante com hall_borda / is_lenda para templates."""
+    if not part:
+        return part
+    out = dict(part)
+    lenda = db.get_hall_lenda(int(out["id"]))
+    out["hall_borda"] = (lenda or {}).get("borda")
+    out["is_lenda"] = bool(lenda)
+    return out
+
+
 @app.get("/hall-lendas", response_class=HTMLResponse)
 def hall_lendas_page(request: Request, pagina: int = 1):
     """Hall das Lendas — mural público."""
@@ -1760,8 +1798,6 @@ def admin_hall_lendas(request: Request):
     neg = require_mazeta(request)
     if neg:
         return neg
-    from src.hall_lendas import BORDAS
-
     data = db.listar_hall_lendas(pagina=1, por_pagina=200)
     lendas = [_hall_lenda_publica(x) for x in data["itens"]]
     return render(
@@ -1769,7 +1805,6 @@ def admin_hall_lendas(request: Request):
         "admin_hall_lendas.html",
         lendas=lendas,
         candidatos=db.list_participantes_liberados(),
-        bordas=BORDAS,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
     )
@@ -1791,17 +1826,16 @@ async def admin_hall_lendas_salvar(request: Request):
             status_code=303,
         )
     recado = str(form.get("recado") or "").strip()
-    borda = str(form.get("borda") or "").strip() or None
     modo = str(form.get("modo") or "doar").strip()
     try:
         if modo == "editar":
             raw_total = str(form.get("valor_total") or "").strip()
             total = parse_valor_centavos(raw_total) if raw_total else None
+            # Moldura é escolhida só pela lenda no perfil — admin não altera.
             db.upsert_hall_lenda(
                 pid,
                 valor_centavos_add=0,
                 recado=recado,
-                borda=borda,
                 substituir_valor=total,
             )
             msg = "Lenda atualizada"
@@ -1813,7 +1847,6 @@ async def admin_hall_lendas_salvar(request: Request):
                 pid,
                 valor_centavos_add=centavos,
                 recado=recado if recado else None,
-                borda=borda,
             )
             msg = "Doação registrada no Hall"
     except ValueError as exc:
@@ -2620,6 +2653,9 @@ def admin_cobranca(request: Request):
         if not diag["ok"]:
             n_sem_wa += 1
 
+    db.anexar_hall_borda(status.get("incompletos") or [], id_key="id")
+    db.anexar_hall_borda(status.get("completos") or [], id_key="id")
+
     return render(
         request,
         "admin_cobranca.html",
@@ -2772,6 +2808,7 @@ def classificacao(request: Request):
         fase = db.get_meta("fase_atual", "oitavas")
         janela = db.get_janela()
 
+    db.anexar_hall_borda(linhas)
     hall_data = trofeus_hall(fase if not modo_historico else fase)
     return render(
         request,
@@ -3316,6 +3353,7 @@ def _render_meus_palpites(request: Request, part: dict):
     janela = db.get_janela()
     # Ida só editável na fase atual e quando a janela ainda é ida.
     perna_default = "volta" if janela == "volta" else "ida"
+    part = _participante_com_hall(dict(part))
     return render(
         request,
         "palpites.html",
@@ -3467,7 +3505,7 @@ def conta_participante(request: Request, token: str):
     return render(
         request,
         "conta.html",
-        participante=part,
+        participante=_participante_com_hall(part),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
     )

@@ -46,7 +46,7 @@
     <div class="admin-brand-user-row {% if on_conta %}is-active{% endif %}">
       <button
         type="button"
-        class="avatar-edit-trigger admin-brand-avatar-wrap"
+        class="avatar-edit-trigger admin-brand-avatar-wrap{% if participante_nav.hall_borda %} lenda-frame lenda-frame--{{ participante_nav.hall_borda }}{% endif %}"
         data-avatar-edit
         aria-label="Alterar foto de perfil"
       >

@@ -174,12 +174,19 @@
   }
 
   function avatarHtml(person) {
+    const borda = String((person && person.hall_borda) || "")
+      .trim()
+      .toLowerCase();
+    const frameOpen = borda
+      ? `<span class="lenda-frame lenda-frame--${escapeHtml(borda)}">`
+      : "";
+    const frameClose = borda ? "</span>" : "";
     if (person.avatar) {
-      return `<img class="proto-steam-post-av" src="${escapeHtml(person.avatar)}" alt="" width="36" height="36" />`;
+      return `${frameOpen}<img class="proto-steam-post-av" src="${escapeHtml(person.avatar)}" alt="" width="36" height="36" />${frameClose}`;
     }
-    return `<span class="proto-steam-post-av proto-steam-post-av--fb" aria-hidden="true">${escapeHtml(
+    return `${frameOpen}<span class="proto-steam-post-av proto-steam-post-av--fb" aria-hidden="true">${escapeHtml(
       (person.iniciais || (person.nome || "?").slice(0, 2)).toUpperCase()
-    )}</span>`;
+    )}</span>${frameClose}`;
   }
 
   function emptyKarmaMedias() {

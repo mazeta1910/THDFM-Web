@@ -1,9 +1,12 @@
-{# Foto do participante com fallback de iniciais #}
-{% macro avatar(path, nome, class_prefix="planilha-avatar", alt="") -%}
+{# Foto do participante com fallback de iniciais + moldura de Lenda #}
+{% macro avatar(path, nome, class_prefix="planilha-avatar", alt="", borda="") -%}
 {% set url = avatar_url(path) -%}
+{% set b = (borda or '')|trim|lower -%}
+{% if b %}<span class="lenda-frame lenda-frame--{{ b }}">{% endif -%}
 {% if url -%}
 <img class="{{ class_prefix }}" src="{{ url }}" alt="{{ alt }}" />
 {%- else -%}
 <span class="{{ class_prefix }} {{ class_prefix }}-fallback">{{ (nome or '??')[:2]|upper }}</span>
-{%- endif %}
+{%- endif -%}
+{% if b %}</span>{% endif -%}
 {%- endmacro %}

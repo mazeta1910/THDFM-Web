@@ -5,7 +5,7 @@
 {% block wrap_class %}wide palpites-page{% endblock %}
 {% block content %}
 <h1 class="palpites-hello">
-  {{ avatar(participante.avatar_path, participante.nome, class_prefix="palpites-hello-avatar", alt="") }}
+  {{ avatar(participante.avatar_path, participante.nome, class_prefix="palpites-hello-avatar", alt="", borda=participante.hall_borda) }}
   <span class="palpites-hello-text">Olá, {{ participante.nome }}!</span>
 </h1>
 <p class="palpites-lead">Faça aqui os seus palpites. <strong class="palpites-save-hint">Lembre de salvar</strong> antes de sair da página.</p>
