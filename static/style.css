@@ -12517,46 +12517,62 @@ button.grid-cell,
   flex-wrap: nowrap;
   align-items: stretch;
   width: auto;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
   background: color-mix(in srgb, var(--bg) 88%, var(--accent));
 }
+/* Sobrescreve o `button { width:100%; background: accent }` global */
+button.grid-daltonismo-btn,
 .grid-daltonismo-btn {
   appearance: none;
-  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 0;
   margin: 0;
   padding: 0.28rem 0.5rem;
+  border: 0;
+  border-radius: 0;
   font: inherit;
   font-size: 0.68rem;
   font-weight: 800;
+  line-height: 1.15;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
-  line-height: 1.15;
   flex: 0 0 auto;
   white-space: nowrap;
+  text-align: center;
 }
+button.grid-daltonismo-btn + button.grid-daltonismo-btn,
 .grid-daltonismo-btn + .grid-daltonismo-btn {
   border-left: 1px solid var(--border);
 }
+button.grid-daltonismo-btn[aria-pressed="true"],
+button.grid-daltonismo-btn.is-active,
 .grid-daltonismo-btn[aria-pressed="true"],
 .grid-daltonismo-btn.is-active {
   color: var(--text);
   background: color-mix(in srgb, var(--accent) 28%, var(--bg));
 }
+button.grid-daltonismo-btn:hover,
 .grid-daltonismo-btn:hover {
   color: var(--text);
 }
 
 /*
-  Daltonismo: remapeia acerto/erro para paletas distinguíveis
-  (protanopia/deuteranopia ≈ vermelho–verde; tritanopia ≈ azul–amarelo).
+  Daltonismo: remapeia acerto/erro (também com grid já finalizado).
+  Usa `button.grid-cell` para ganhar do estilo base das células.
 */
+.grid-page[data-daltonismo-mode="protanopia"] button.grid-cell.is-ok,
 .grid-page[data-daltonismo-mode="protanopia"] .grid-cell.is-ok {
   border-color: color-mix(in srgb, #2b6cb0 60%, var(--border));
   background: color-mix(in srgb, #2b6cb0 18%, var(--bg));
 }
+.grid-page[data-daltonismo-mode="protanopia"] button.grid-cell.is-miss,
 .grid-page[data-daltonismo-mode="protanopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #dd6b20 55%, var(--border));
   background: color-mix(in srgb, #dd6b20 16%, var(--bg));
@@ -12566,10 +12582,12 @@ button.grid-cell,
   color: #dd6b20;
 }
 
+.grid-page[data-daltonismo-mode="deuteranopia"] button.grid-cell.is-ok,
 .grid-page[data-daltonismo-mode="deuteranopia"] .grid-cell.is-ok {
   border-color: color-mix(in srgb, #3182ce 60%, var(--border));
   background: color-mix(in srgb, #3182ce 18%, var(--bg));
 }
+.grid-page[data-daltonismo-mode="deuteranopia"] button.grid-cell.is-miss,
 .grid-page[data-daltonismo-mode="deuteranopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #d69e2e 55%, var(--border));
   background: color-mix(in srgb, #d69e2e 16%, var(--bg));
@@ -12579,10 +12597,12 @@ button.grid-cell,
   color: #d69e2e;
 }
 
+.grid-page[data-daltonismo-mode="tritanopia"] button.grid-cell.is-ok,
 .grid-page[data-daltonismo-mode="tritanopia"] .grid-cell.is-ok {
-  border-color: color-mix(in srgb, #38a169 60%, var(--border));
-  background: color-mix(in srgb, #38a169 18%, var(--bg));
+  border-color: color-mix(in srgb, #805ad5 60%, var(--border));
+  background: color-mix(in srgb, #805ad5 18%, var(--bg));
 }
+.grid-page[data-daltonismo-mode="tritanopia"] button.grid-cell.is-miss,
 .grid-page[data-daltonismo-mode="tritanopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #c53030 55%, var(--border));
   background: color-mix(in srgb, #c53030 16%, var(--bg));
@@ -12610,7 +12630,9 @@ button.grid-cell,
   .grid-daltonismo-toggles {
     width: auto;
   }
+  button.grid-daltonismo-btn,
   .grid-daltonismo-btn {
+    width: auto;
     flex: 0 0 auto;
     padding: 0.26rem 0.42rem;
     font-size: 0.64rem;
