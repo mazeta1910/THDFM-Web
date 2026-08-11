@@ -108,6 +108,33 @@ def test_montar_quartas_via_admin(client):
     assert "Quartas" in admin.text
 
 
+def test_quartas_ordem_casa_corrige_invertidos(client):
+    """Grêmio, Galo, Vitória e Santos devem mandar na volta (clube_b)."""
+    from src.seed_data import QUARTAS
+
+    # Monta de propósito invertido (mandante da volta no lado A).
+    invertidos = [
+        {"clube_a": p["clube_b"], "clube_b": p["clube_a"]} for p in QUARTAS
+    ]
+    db.substituir_confrontos_fase("quartas", invertidos)
+    quartas = db.list_confrontos_completos("quartas")
+    assert len(quartas) == 4
+    for c, want in zip(quartas, QUARTAS, strict=True):
+        assert c["clube_a"] == want["clube_a"]
+        assert c["clube_b"] == want["clube_b"]
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        assert ida["mandante_clube_id"] == "a"
+        assert volta["mandante_clube_id"] == "b"
+
+    # init_db também é idempotente
+    db.init_db()
+    again = db.list_confrontos_completos("quartas")
+    for c, want in zip(again, QUARTAS, strict=True):
+        assert c["clube_a"] == want["clube_a"]
+        assert c["clube_b"] == want["clube_b"]
+
+
 def test_seed_oitavas_tem_horarios_da_volta(client):
     from src.seed_data import OITAVAS
 

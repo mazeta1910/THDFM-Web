@@ -68,6 +68,15 @@ OITAVAS = [
     },
 ]
 
+# Quartas 2026: clube_a manda na ida; clube_b decide em casa na volta.
+# Ordem das chaves = foto oficial (quartas 1–4).
+QUARTAS = [
+    {"clube_a": "Internacional", "clube_b": "Grêmio"},  # GRE decide em casa
+    {"clube_a": "Cruzeiro", "clube_b": "Atlético-MG"},  # Galo decide em casa
+    {"clube_a": "Vasco", "clube_b": "Vitória"},  # Vitória decide em casa
+    {"clube_a": "Palmeiras", "clube_b": "Santos"},  # Santos decide em casa
+]
+
 _WEEKDAYS_PT = ("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
 
 # Nomes curtos para grids compactos (mobile 2 colunas). Emblemas usam o nome completo.
