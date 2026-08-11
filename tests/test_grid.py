@@ -31,14 +31,14 @@ from tests.conftest import login_admin
 _PUZZLE_2026_08_10 = {
     "dia": "2026-08-10",
     "linhas": [
-        {"id": "uf:SP", "tipo": "uf", "valor": "SP", "rotulo": "Clube de SP"},
-        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
-        {"id": "regiao:Nordeste", "tipo": "regiao", "valor": "Nordeste", "rotulo": "Região Nordeste"},
+        {"id": "termina:L", "tipo": "termina", "valor": "L", "rotulo": "Nome termina com L"},
+        {"id": "termina:iro", "tipo": "termina", "valor": "iro", "rotulo": "Nome termina com iro"},
+        {"id": "termina:ano", "tipo": "termina", "valor": "ano", "rotulo": "Nome termina com ano"},
     ],
     "colunas": [
-        {"id": "letra:S", "tipo": "letra", "valor": "S", "rotulo": "Nome começa com S"},
-        {"id": "letra:B", "tipo": "letra", "valor": "B", "rotulo": "Nome começa com B"},
-        {"id": "letra:P", "tipo": "letra", "valor": "P", "rotulo": "Nome começa com P"},
+        {"id": "regiao:Nordeste", "tipo": "regiao", "valor": "Nordeste", "rotulo": "Região Nordeste"},
+        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
+        {"id": "regiao:Sudeste", "tipo": "regiao", "valor": "Sudeste", "rotulo": "Região Sudeste"},
     ],
 }
 
@@ -68,6 +68,9 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
     assert "premio:melhor_ataque" not in cats_antes
     assert "titulo:campeao_br" in cats_depois
     assert "premio:artilheiro" in cats_depois
+    # Terminações (letra/sílaba) entram no pool clássico
+    assert "termina:ense" in cats_antes
+    assert "termina:A" in cats_antes
 
     hist = historico_serie_a()
     assert len(hist.get("titulo:campeao_br") or []) >= DENSIDADE_MIN
@@ -77,6 +80,34 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
     assert p["dia"] == "2026-08-11"
     for row in p["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
+
+
+def test_categoria_termina_com_letra_e_silaba():
+    from src.grid_game import Categoria, categorias_compativeis, clube_bate_categoria
+
+    ense = categoria_por_id("termina:ense", "2026-08-10")
+    assert ense is not None
+    assert ense.rotulo == "Nome termina com ense"
+    letra_e = categoria_por_id("termina:E", "2026-08-10")
+    assert letra_e is not None
+
+    bateu = False
+    for c in clubes_grid():
+        if clube_bate_categoria(c, ense):
+            assert c["nome_core"].endswith("ense")
+            assert clube_bate_categoria(c, letra_e)
+            bateu = True
+            break
+    assert bateu
+
+    assert categorias_compativeis(ense, letra_e) is True
+    assert categorias_compativeis(
+        ense, Categoria("termina:A", "termina", "A", "Nome termina com A")
+    ) is False
+    assert categorias_compativeis(
+        Categoria("termina:eiro", "termina", "eiro", "x"),
+        Categoria("termina:iro", "termina", "iro", "y"),
+    ) is True
 
 
 def test_virada_meia_noite_sao_paulo():

@@ -40,6 +40,32 @@ _TIPOS_HISTORICOS = frozenset(
     {"titulo", "premio", "participacao", "longevidade", "paridade"}
 )
 
+# Sufixos/sílabas comuns em nomes de clubes BR (pool do eixo "termina com").
+TERMINACOES_SILABAS: tuple[str, ...] = (
+    "ense",
+    "ano",
+    "ica",
+    "rio",
+    "eiro",
+    "iro",
+    "ria",
+    "ina",
+    "eira",
+    "ara",
+    "ico",
+    "opolis",
+    "olis",
+    "inho",
+    "cruz",
+    "ista",
+    "cano",
+    "aba",
+    "orte",
+    "port",
+    "ema",
+    "elo",
+)
+
 REGIOES: dict[str, set[str]] = {
     "Norte": {"AC", "AP", "AM", "PA", "RO", "RR", "TO"},
     "Nordeste": {"AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"},
@@ -217,12 +243,21 @@ class Categoria:
 def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
     nome = c["nome"]
     letra = nome[:1].upper() if nome and nome[0].isalpha() else ""
+    nome_norm = fold_txt(nome)
+    core = nome_core_norm(nome_norm)
+    termina_letra = ""
+    for ch in reversed(core):
+        if ch.isalpha():
+            termina_letra = ch.upper()
+            break
     return {
         **c,
         "serie": normalizar_serie(c.get("divisao")),
         "regiao": UF_PARA_REGIAO.get(c.get("uf") or ""),
         "letra": letra,
-        "nome_norm": fold_txt(nome),
+        "nome_norm": nome_norm,
+        "nome_core": core,
+        "termina_letra": termina_letra,
     }
 
 
@@ -256,6 +291,14 @@ def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
         return clube.get("serie") == cat.valor
     if cat.tipo == "letra":
         return clube.get("letra") == cat.valor
+    if cat.tipo == "termina":
+        core = clube.get("nome_core") or nome_core_norm(clube.get("nome_norm") or "")
+        suf = fold_txt(cat.valor)
+        if not suf:
+            return False
+        if len(suf) == 1:
+            return (clube.get("termina_letra") or "") == suf.upper()
+        return core.endswith(suf)
     if cat.tipo in _TIPOS_HISTORICOS:
         ids = historico_serie_a().get(cat.id)
         return bool(ids) and clube.get("id") in ids
@@ -266,6 +309,14 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     """False quando a interseção é logicamente impossível."""
     if a.id == b.id:
         return False
+    # Terminações: letras/sílabas distintas só cruzam se uma for sufixo da outra
+    # (ex.: ense ∩ e; eiro ∩ iro). Caso contrário, vazio.
+    if a.tipo == "termina" and b.tipo == "termina":
+        va = fold_txt(a.valor)
+        vb = fold_txt(b.valor)
+        if not va or not vb or va == vb:
+            return False
+        return va.endswith(vb) or vb.endswith(va)
     if a.tipo == b.tipo and a.valor != b.valor:
         # dois UFs / duas séries / duas letras distintas nunca intersectam
         return False
@@ -333,6 +384,33 @@ def _montar_categorias(dia: str) -> list[Categoria]:
                 Categoria(f"letra:{letra}", "letra", letra, f"Nome começa com {letra}")
             )
 
+    for letra in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        n = sum(1 for c in clubes if c.get("termina_letra") == letra)
+        if n >= DENSIDADE_MIN:
+            cats.append(
+                Categoria(
+                    f"termina:{letra}",
+                    "termina",
+                    letra,
+                    f"Nome termina com {letra}",
+                )
+            )
+
+    for silaba in TERMINACOES_SILABAS:
+        suf = fold_txt(silaba)
+        if not suf:
+            continue
+        n = sum(1 for c in clubes if (c.get("nome_core") or "").endswith(suf))
+        if n >= DENSIDADE_MIN:
+            cats.append(
+                Categoria(
+                    f"termina:{suf}",
+                    "termina",
+                    suf,
+                    f"Nome termina com {suf}",
+                )
+            )
+
     if historico_ativo(dia):
         hist = historico_serie_a()
         ids_grid = {c["id"] for c in clubes}
@@ -364,7 +442,7 @@ def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
         by_tipo.setdefault(c.tipo, []).append(c)
         rng.shuffle(by_tipo[c.tipo])
 
-    # Estratégia estável: um eixo "atributo/história", outro "letra"
+    # Estratégia estável: um eixo "atributo/história", outro "nome (começa/termina)"
     geo = (
         list(by_tipo.get("uf") or [])
         + list(by_tipo.get("regiao") or [])
@@ -375,9 +453,9 @@ def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
         + list(by_tipo.get("longevidade") or [])
         + list(by_tipo.get("paridade") or [])
     )
-    letras = list(by_tipo.get("letra") or [])
+    nome_eixo = list(by_tipo.get("letra") or []) + list(by_tipo.get("termina") or [])
     rng.shuffle(geo)
-    rng.shuffle(letras)
+    rng.shuffle(nome_eixo)
 
     templates = [
         ("geo", "letra"),
@@ -389,7 +467,7 @@ def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
 
     def montar_eixo(kind: str) -> list[list[Categoria]]:
         if kind == "letra":
-            return [list(x) for x in _combinacoes(letras, GRID_SIZE, rng, limite=40)]
+            return [list(x) for x in _combinacoes(nome_eixo, GRID_SIZE, rng, limite=40)]
         if kind == "geo":
             return [list(x) for x in _combinacoes(geo, GRID_SIZE, rng, limite=60)]
         # mix: tenta misturar tipos
