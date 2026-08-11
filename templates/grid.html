@@ -62,17 +62,17 @@
     </div>
     <div class="grid-board-footer">
       <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
-      <div class="grid-miopia" data-grid-miopia>
-        <span class="grid-miopia-label" id="grid-miopia-label">Miopia</span>
+      <div class="grid-daltonismo" data-grid-daltonismo>
+        <span class="grid-daltonismo-label" id="grid-daltonismo-label">Daltonismo</span>
         <div
-          class="grid-miopia-toggles"
+          class="grid-daltonismo-toggles"
           role="radiogroup"
-          aria-labelledby="grid-miopia-label"
+          aria-labelledby="grid-daltonismo-label"
         >
-          <button type="button" class="grid-miopia-btn" data-miopia="off" aria-pressed="true" title="Miopia desligada">Off</button>
-          <button type="button" class="grid-miopia-btn" data-miopia="leve" aria-pressed="false" title="Miopia leve">Leve</button>
-          <button type="button" class="grid-miopia-btn" data-miopia="moderada" aria-pressed="false" title="Miopia moderada">Moderada</button>
-          <button type="button" class="grid-miopia-btn" data-miopia="alta" aria-pressed="false" title="Miopia alta">Alta</button>
+          <button type="button" class="grid-daltonismo-btn" data-daltonismo="off" aria-pressed="true" title="Cores padrão">Off</button>
+          <button type="button" class="grid-daltonismo-btn" data-daltonismo="protanopia" aria-pressed="false" title="Protanopia (dificuldade com vermelho)">Protanopia</button>
+          <button type="button" class="grid-daltonismo-btn" data-daltonismo="deuteranopia" aria-pressed="false" title="Deuteranopia (dificuldade com verde)">Deuteranopia</button>
+          <button type="button" class="grid-daltonismo-btn" data-daltonismo="tritanopia" aria-pressed="false" title="Tritanopia (dificuldade com azul/amarelo)">Tritanopia</button>
         </div>
       </div>
     </div>
@@ -167,5 +167,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=9" defer></script>
+<script src="/static/grid.js?v=10" defer></script>
 {% endblock %}
