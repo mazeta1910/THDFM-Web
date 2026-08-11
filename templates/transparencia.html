@@ -149,7 +149,7 @@
           <td class="planilha-nome">
             {% if row.tipo == 'palpite' %}
             <span class="planilha-nome-com-foto">
-              {{ avatar(row.avatar_path, row.nome) }}
+              {{ avatar(row.avatar_path, row.nome, borda=row.hall_borda) }}
               <span class="planilha-nome-texto">{{ row.nome }}</span>
             </span>
             {% else %}

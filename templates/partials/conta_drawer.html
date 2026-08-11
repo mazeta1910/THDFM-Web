@@ -31,7 +31,7 @@
         <div class="conta-top conta-top--drawer">
           <button
             type="button"
-            class="avatar-edit-trigger avatar-preview"
+            class="avatar-edit-trigger avatar-preview{% if p.hall_borda %} lenda-frame lenda-frame--{{ p.hall_borda }}{% endif %}"
             id="conta-drawer-avatar-preview"
             data-avatar-edit
             aria-label="Alterar foto de perfil"

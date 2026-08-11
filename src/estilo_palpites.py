@@ -297,7 +297,10 @@ def _pessoas_de(
     nomes: list[str],
     by_id: dict[int, dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    from src.db import map_hall_bordas
+
     out: list[dict[str, Any]] = []
+    mapa = map_hall_bordas(ids or [])
     for i, pid in enumerate(ids or []):
         p = by_id.get(int(pid))
         if p:
@@ -306,6 +309,7 @@ def _pessoas_de(
                     "id": int(pid),
                     "nome": p.get("nome") or (nomes[i] if i < len(nomes) else ""),
                     "avatar_path": p.get("avatar_path"),
+                    "hall_borda": mapa.get(int(pid)),
                 }
             )
         else:
@@ -314,6 +318,7 @@ def _pessoas_de(
                     "id": int(pid),
                     "nome": nomes[i] if i < len(nomes) else "",
                     "avatar_path": None,
+                    "hall_borda": mapa.get(int(pid)),
                 }
             )
     return out

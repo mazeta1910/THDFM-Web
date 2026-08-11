@@ -12,7 +12,7 @@
       <div class="conta-top">
         <button
           type="button"
-          class="avatar-edit-trigger avatar-preview"
+          class="avatar-edit-trigger avatar-preview{% if participante.hall_borda %} lenda-frame lenda-frame--{{ participante.hall_borda }}{% endif %}"
           data-avatar-edit-page
           aria-label="Alterar foto de perfil"
         >

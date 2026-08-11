@@ -87,7 +87,7 @@
       <div class="ref inscricao-item inscricao-item-fab cobranca-item {% if not p.wa_url %}cobranca-item-sem-wa{% endif %}">
         <div class="inscricao-item-head">
           <div class="cobranca-nome-row">
-            {{ avatar(p.avatar_path, p.nome, class_prefix="cobranca-avatar") }}
+            {{ avatar(p.avatar_path, p.nome, class_prefix="cobranca-avatar", borda=p.hall_borda) }}
             <strong class="inscricao-nome">{{ p.nome }}</strong>
           </div>
           <div class="inscricao-item-end">
@@ -171,7 +171,7 @@
       <div class="ref inscricao-item cobranca-item">
         <div class="inscricao-item-head">
           <div class="cobranca-nome-row">
-            {{ avatar(p.avatar_path, p.nome, class_prefix="cobranca-avatar") }}
+            {{ avatar(p.avatar_path, p.nome, class_prefix="cobranca-avatar", borda=p.hall_borda) }}
             <strong class="inscricao-nome">{{ p.nome }}</strong>
           </div>
           <div class="inscricao-item-end">

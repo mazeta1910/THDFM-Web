@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.db import list_confrontos_completos, list_participantes, palpites_do_participante
+from src.db import list_confrontos_completos, list_participantes, map_hall_bordas, palpites_do_participante
 from src.scoring import classificar_palpite, lado_por_clube, pontos_detalhados
 from src.seed_data import formatar_inicio_jogo
 
@@ -366,6 +366,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
     confrontos = list_confrontos_completos(fase)
     liberados = [p for p in list_participantes() if p.get("status") == "liberado"]
     liberados.sort(key=lambda p: (p.get("nome") or "").casefold())
+    hall_bordas = map_hall_bordas([p["id"] for p in liberados])
 
     cache_palpites = {p["id"]: palpites_do_participante(p["id"]) for p in liberados}
     tabelas: list[dict] = []
@@ -424,7 +425,9 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
                 base = {
                     "tipo": "palpite",
                     "nome": p["nome"],
+                    "participante_id": p["id"],
                     "avatar_path": p.get("avatar_path"),
+                    "hall_borda": hall_bordas.get(int(p["id"])),
                 }
                 if not pj:
                     if exigir_resultado:
