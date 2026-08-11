@@ -39,8 +39,8 @@ def test_modulos_existem_e_expoem_apis():
     assert "thdfmOpenAvatarCrop" in crop
     drawers = (ROOT / "static" / "drawers.js").read_text(encoding="utf-8")
     assert "acesso-drawer-root" in drawers
-    assert "conta-drawer-root" in drawers
     assert "loguin-drawer-root" in drawers
+    assert "conta-drawer-root" not in drawers
     theme = (ROOT / "static" / "theme.js").read_text(encoding="utf-8")
     assert "thdfm-theme" in theme
     assert "theme-toggle" in theme
