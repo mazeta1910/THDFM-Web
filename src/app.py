@@ -113,6 +113,8 @@ def _path_publico(path: str) -> bool:
     # Inscrição: página só mostra “encerrada”; POST também precisa chegar no handler
     if path == "/inscricao":
         return True
+    if path == "/hall-lendas" or path.startswith("/hall-lendas/"):
+        return True
     return False
 
 
@@ -1030,6 +1032,7 @@ def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
     karma = db.karma_resumo(part["id"], voter_id=voter_id)
     nutela = db.nutela_resumo(part["id"], voter_id=voter_id)
     soft = db.perfil_soft_do_participante(part)
+    lenda = db.get_hall_lenda(int(part["id"]))
     return {
         "slug": str(part["id"]),
         "nome": nome,
@@ -1048,6 +1051,8 @@ def _perfil_publico_payload(part: dict, *, voter_id: int | None = None) -> dict:
         "nutela_count": nutela["count"],
         "nutela_meu_voto": nutela["meu_voto"],
         "iniciais": iniciais,
+        "is_lenda": bool(lenda),
+        "hall_borda": (lenda or {}).get("borda") or "anel",
     }
 
 
@@ -1280,6 +1285,7 @@ def meu_perfil(request: Request):
     nutela = db.nutela_resumo(part["id"], voter_id=part["id"]) if part else None
     soft = db.perfil_soft_do_participante(part) if part else None
     recados = _recados_payload(part["id"] if part else None, voter_id=part["id"] if part else None)
+    lenda = db.get_hall_lenda(part["id"]) if part else None
     if part:
         db.marcar_recados_vistos(part["id"])
     return render(
@@ -1302,6 +1308,8 @@ def meu_perfil(request: Request):
         recados_json=json.dumps(recados, ensure_ascii=False),
         recados_novos_count=0,
         pode_votar_karma=False,
+        is_lenda=bool(lenda),
+        hall_borda=(lenda or {}).get("borda") or "anel",
     )
 
 
@@ -1313,8 +1321,11 @@ def meu_perfil_editar(request: Request):
     neg = _require_perfil(request)
     if neg:
         return neg
+    from src.hall_lendas import BORDAS
+
     part = _voter_sessao(request)
     soft = db.perfil_soft_do_participante(part) if part else None
+    lenda = db.get_hall_lenda(part["id"]) if part else None
     return render(
         request,
         "meu_perfil_editar.html",
@@ -1322,6 +1333,11 @@ def meu_perfil_editar(request: Request):
         **_taxa_ctx(),
         perfil_soft=soft,
         perfil_soft_json=json.dumps(soft, ensure_ascii=False) if soft else "null",
+        is_lenda=bool(lenda),
+        hall_borda=(lenda or {}).get("borda") or "anel",
+        hall_bordas=BORDAS,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
     )
 
 
@@ -1700,70 +1716,166 @@ def legado_prototipo_perfil(request: Request):
     return RedirectResponse(f"/meu-perfil/editar{suffix}", status_code=301)
 
 
-# Protótipo visual — Hall das Lendas (dados fictícios; valores só p/ Mazeta).
-_HALL_LENDAS_PROTO = (
-    {
-        "nome": "Ramos",
-        "iniciais": "R",
-        "avatar_url": None,
-        "perfil_url": "#",
-        "recado": "Pelo grupo, pelo bolão e por mais uma temporada de caos organizado.",
-        "quando_rotulo": "08/08/2026 · 21:14",
-        "valor_centavos": 50000,
-        "valor_rotulo": "R$ 500,00",
-        "borda": "anel",
-        "borda_rotulo": "Anel ouro",
-    },
-    {
-        "nome": "João JEC",
-        "iniciais": "JJ",
-        "avatar_url": None,
-        "perfil_url": "#",
-        "recado": "Aqui é THDFM. Quero ver minha cara no mural com estrela.",
-        "quando_rotulo": "09/08/2026 · 19:02",
-        "valor_centavos": 25000,
-        "valor_rotulo": "R$ 250,00",
-        "borda": "duplo",
-        "borda_rotulo": "Traço duplo",
-    },
-    {
-        "nome": "Benevides",
-        "iniciais": "B",
-        "avatar_url": None,
-        "perfil_url": "#",
-        "recado": "Doação simbólica. Long live the hall.",
-        "quando_rotulo": "10/08/2026 · 12:40",
-        "valor_centavos": 12000,
-        "valor_rotulo": "R$ 120,00",
-        "borda": "brilho",
-        "borda_rotulo": "Brilho",
-    },
-)
+# Protótipo removido — Hall das Lendas usa a tabela hall_lendas.
 
-_HALL_LENDAS_BORDAS = (
-    {"id": "anel", "rotulo": "Anel ouro", "sample": "A"},
-    {"id": "duplo", "rotulo": "Traço duplo", "sample": "D"},
-    {"id": "brilho", "rotulo": "Brilho", "sample": "B"},
-    {"id": "laurel", "rotulo": "Laureado", "sample": "L"},
-)
+
+def _hall_lenda_publica(item: dict) -> dict:
+    """Card do mural com avatar URL e link de perfil."""
+    pid = int(item["participante_id"])
+    nome = item.get("nome") or "alguém"
+    return {
+        **item,
+        "avatar_url": avatar_url(item.get("avatar_path")),
+        "iniciais": (nome[:2] if nome else "??").upper(),
+        "perfil_url": f"/perfil/{pid}",
+    }
 
 
 @app.get("/hall-lendas", response_class=HTMLResponse)
-def hall_lendas_page(request: Request):
-    """Hall das Lendas — protótipo só Mazeta até o lançamento público."""
-    neg = require_mazeta(request)
-    if neg:
-        return neg
-    lendas = sorted(
-        _HALL_LENDAS_PROTO,
-        key=lambda x: (-int(x["valor_centavos"]), x["nome"].casefold()),
-    )
+def hall_lendas_page(request: Request, pagina: int = 1):
+    """Hall das Lendas — mural público."""
+    from src.hall_lendas import HALL_POR_PAGINA
+
+    try:
+        pag = max(1, int(pagina or 1))
+    except (TypeError, ValueError):
+        pag = 1
+    data = db.listar_hall_lendas(pagina=pag, por_pagina=HALL_POR_PAGINA)
+    lendas = [_hall_lenda_publica(x) for x in data["itens"]]
     return render(
         request,
         "hall_lendas.html",
         lendas=lendas,
-        bordas=_HALL_LENDAS_BORDAS,
+        pagina=data["pagina"],
+        paginas=data["paginas"],
+        total=data["total"],
+        tem_anterior=data["tem_anterior"],
+        tem_proxima=data["tem_proxima"],
         ui_mode="user",
+    )
+
+
+@app.get("/admin/hall-lendas", response_class=HTMLResponse)
+def admin_hall_lendas(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    from src.hall_lendas import BORDAS
+
+    data = db.listar_hall_lendas(pagina=1, por_pagina=200)
+    lendas = [_hall_lenda_publica(x) for x in data["itens"]]
+    return render(
+        request,
+        "admin_hall_lendas.html",
+        lendas=lendas,
+        candidatos=db.list_participantes_liberados(),
+        bordas=BORDAS,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/admin/hall-lendas/salvar")
+async def admin_hall_lendas_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    from src.hall_lendas import parse_valor_centavos
+
+    form = await request.form()
+    try:
+        pid = int(str(form.get("participante_id") or "").strip())
+    except (TypeError, ValueError):
+        return RedirectResponse(
+            "/admin/hall-lendas?erro=" + quote("Escolha o participante"),
+            status_code=303,
+        )
+    recado = str(form.get("recado") or "").strip()
+    borda = str(form.get("borda") or "").strip() or None
+    modo = str(form.get("modo") or "doar").strip()
+    try:
+        if modo == "editar":
+            raw_total = str(form.get("valor_total") or "").strip()
+            total = parse_valor_centavos(raw_total) if raw_total else None
+            db.upsert_hall_lenda(
+                pid,
+                valor_centavos_add=0,
+                recado=recado,
+                borda=borda,
+                substituir_valor=total,
+            )
+            msg = "Lenda atualizada"
+        else:
+            centavos = parse_valor_centavos(str(form.get("valor") or "").strip())
+            if centavos <= 0 and not db.get_hall_lenda(pid):
+                raise ValueError("informe um valor de doação")
+            db.upsert_hall_lenda(
+                pid,
+                valor_centavos_add=centavos,
+                recado=recado if recado else None,
+                borda=borda,
+            )
+            msg = "Doação registrada no Hall"
+    except ValueError as exc:
+        return RedirectResponse(
+            "/admin/hall-lendas?erro=" + quote(str(exc)),
+            status_code=303,
+        )
+    return RedirectResponse(
+        "/admin/hall-lendas?msg=" + quote(msg),
+        status_code=303,
+    )
+
+
+@app.post("/admin/hall-lendas/apagar")
+async def admin_hall_lendas_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        pid = int(str(form.get("participante_id") or "").strip())
+    except (TypeError, ValueError):
+        return RedirectResponse(
+            "/admin/hall-lendas?erro=" + quote("Participante inválido"),
+            status_code=303,
+        )
+    if db.apagar_hall_lenda(pid):
+        return RedirectResponse(
+            "/admin/hall-lendas?msg=" + quote("Lenda removida"),
+            status_code=303,
+        )
+    return RedirectResponse(
+        "/admin/hall-lendas?erro=" + quote("Lenda não encontrada"),
+        status_code=303,
+    )
+
+
+@app.post("/meu-perfil/hall-borda")
+async def meu_perfil_hall_borda(request: Request):
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    part = _voter_sessao(request) or _participante_sessao(request)
+    if not part:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    if not db.is_lenda(int(part["id"])):
+        return RedirectResponse(
+            "/meu-perfil/editar?erro=" + quote("Só lendas escolhem moldura"),
+            status_code=303,
+        )
+    form = await request.form()
+    borda = str(form.get("borda") or "").strip()
+    try:
+        db.set_hall_borda(int(part["id"]), borda)
+    except ValueError as exc:
+        return RedirectResponse(
+            "/meu-perfil/editar?erro=" + quote(str(exc)),
+            status_code=303,
+        )
+    return RedirectResponse(
+        "/meu-perfil/editar?msg=" + quote("Moldura atualizada"),
+        status_code=303,
     )
 
 

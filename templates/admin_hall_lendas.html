@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Admin · Hall das Lendas{% endblock %}
+{% block content %}
+<section class="card hall-admin">
+  <p class="credenciais-kicker">Só Mazeta</p>
+  <h1>Hall das Lendas</h1>
+  <p class="login-lead">Registrar doações, editar recados/molduras e remover lendas. Valores ficam ocultos no mural público.</p>
+  <p><a href="/hall-lendas">Ver mural público</a></p>
+
+  {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+
+  <form class="hall-admin-form" method="post" action="/admin/hall-lendas/salvar">
+    <input type="hidden" name="modo" value="doar" />
+    <h2 class="hall-admin-h">Nova doação / criar lenda</h2>
+    <label class="hall-admin-label" for="hall-pid">Participante</label>
+    <select id="hall-pid" name="participante_id" class="hall-admin-input" required>
+      <option value="">Selecione…</option>
+      {% for p in candidatos %}
+      <option value="{{ p.id }}">{{ p.nome }}{% if p.username %} (@{{ p.username }}){% endif %}</option>
+      {% endfor %}
+    </select>
+    <label class="hall-admin-label" for="hall-valor">Valor (R$)</label>
+    <input id="hall-valor" class="hall-admin-input" name="valor" type="text" inputmode="decimal" placeholder="100,00" required />
+    <label class="hall-admin-label" for="hall-recado">Recado (opcional)</label>
+    <textarea id="hall-recado" class="hall-admin-input" name="recado" rows="3" maxlength="500" placeholder="Mensagem que aparece no mural"></textarea>
+    <label class="hall-admin-label" for="hall-borda">Moldura inicial</label>
+    <select id="hall-borda" name="borda" class="hall-admin-input">
+      {% for b in bordas %}
+      <option value="{{ b.id }}">{{ b.rotulo }}</option>
+      {% endfor %}
+    </select>
+    <div class="hall-admin-actions">
+      <button type="submit" class="btn" style="width:auto">Salvar doação</button>
+    </div>
+  </form>
+</section>
+
+{% if lendas %}
+<section class="card hall-admin" style="margin-top:1rem">
+  <h2 class="hall-admin-h">Lendas ({{ lendas|length }})</h2>
+  <div class="hall-admin-list">
+    {% for l in lendas %}
+    <article class="hall-admin-item">
+      <header>
+        <strong>{{ l.nome }}</strong>
+        <span>{{ l.valor_rotulo }} · {{ l.quando_rotulo }} · {{ l.borda_rotulo }}</span>
+      </header>
+      {% if l.recado %}<p class="hall-admin-recado">“{{ l.recado }}”</p>{% endif %}
+      <form method="post" action="/admin/hall-lendas/salvar" class="hall-admin-edit">
+        <input type="hidden" name="modo" value="editar" />
+        <input type="hidden" name="participante_id" value="{{ l.participante_id }}" />
+        <label class="hall-admin-label">Total (R$)</label>
+        <input class="hall-admin-input" name="valor_total" type="text" value="{{ '%.2f'|format(l.valor_centavos / 100) }}" />
+        <label class="hall-admin-label">Recado</label>
+        <textarea class="hall-admin-input" name="recado" rows="2" maxlength="500">{{ l.recado }}</textarea>
+        <label class="hall-admin-label">Moldura</label>
+        <select name="borda" class="hall-admin-input">
+          {% for b in bordas %}
+          <option value="{{ b.id }}" {% if b.id == l.borda %}selected{% endif %}>{{ b.rotulo }}</option>
+          {% endfor %}
+        </select>
+        <div class="hall-admin-actions">
+          <button type="submit" class="btn" style="width:auto">Atualizar</button>
+        </div>
+      </form>
+      <form method="post" action="/admin/hall-lendas/apagar" onsubmit="return confirm('Remover {{ l.nome }} do Hall?');">
+        <input type="hidden" name="participante_id" value="{{ l.participante_id }}" />
+        <button type="submit" class="btn secondary" style="width:auto;margin-top:0.4rem">Remover</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

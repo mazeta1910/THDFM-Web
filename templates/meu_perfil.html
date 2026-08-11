@@ -14,6 +14,8 @@
 {% set target_id = perfil_target_id if perfil_target_id is defined else (fixado.participante_id if fixado else (participante_nav.id if participante_nav else '')) %}
 {% set viewer_id = perfil_viewer_id if perfil_viewer_id is defined and perfil_viewer_id else (participante_nav.id if participante_nav else '') %}
 {% set pode_votar = pode_votar_karma if pode_votar_karma is defined else (not is_own_view and fixado) %}
+{% set show_lenda = (fixado.is_lenda if fixado else (is_lenda if is_lenda is defined else false)) %}
+{% set borda_lenda = (fixado.hall_borda if fixado and fixado.hall_borda else (hall_borda if hall_borda is defined else 'anel')) %}
 
 <div
   class="proto-steam"
@@ -76,7 +78,7 @@
 
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
-        <div class="proto-steam-avatar" aria-hidden="true">
+        <div class="proto-steam-avatar{% if show_lenda %} proto-steam-avatar--{{ borda_lenda }}{% endif %}" aria-hidden="true">
           {% if fixado and fixado.avatar_url %}
           <img src="{{ fixado.avatar_url }}" alt="" width="112" height="112" data-public-avatar />
           {% elif fixado %}
@@ -90,6 +92,11 @@
 
         <div class="proto-steam-hero-main">
           <div class="proto-steam-name-row">
+            {% if show_lenda %}
+            <svg class="proto-steam-name-star" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" title="Lenda">
+              <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+            </svg>
+            {% endif %}
             <h1 class="proto-steam-name" data-public-nome>{% if fixado %}{{ fixado.nome }}{% else %}{{ viewer_nome }}{% endif %}</h1>
             {% if bolao_perfil and bolao_perfil.disponivel %}
             <p class="proto-steam-bolao-line proto-steam-bolao-line--name">
@@ -109,6 +116,9 @@
             </p>
             {% endif %}
             <span class="proto-times-badges">
+              {% if show_lenda %}
+              <span class="proto-times-misto proto-times-lenda">Lenda</span>
+              {% endif %}
               <span class="proto-times-misto" id="public-misto" hidden>Torcedor Misto</span>
               <span class="proto-times-misto proto-times-dindao" id="public-dindao" hidden title="4 ou mais times do coração">Dindão</span>
             </span>

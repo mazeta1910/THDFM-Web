@@ -17,8 +17,10 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     html = r.text
     assert "site-hall-lendas" in html
     assert "Hall das Lendas" in html
-    # Prévia: visitantes veem disabled; link só para Mazeta
-    assert 'disabled' in html.split("site-hall-lendas", 1)[1].split(">", 1)[0]
+    # Público: link ativo para todos
+    chunk = html.split("site-hall-lendas", 1)[1].split(">", 1)[0]
+    assert "disabled" not in chunk
+    assert 'href="/hall-lendas"' in html
     assert "site-hall-star" in html
     assert 'data-menu-pinned' in html
     assert 'data-group="portal"' in html
@@ -37,8 +39,8 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     side = (ROOT_DIR / "templates" / "partials" / "site_sidebar.html").read_text(
         encoding="utf-8"
     )
-    assert "{% if is_mazeta %}" in side
     assert 'href="/hall-lendas"' in side
+    assert "Em breve" not in side
 
 
 def test_sidebar_ordem_api_e_persistencia(client: TestClient):

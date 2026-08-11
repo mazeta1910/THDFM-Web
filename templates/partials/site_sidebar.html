@@ -63,11 +63,11 @@
   <nav class="site-side-nav" aria-label="Menu THDFM">
     <div class="site-side-nav-scroll">
       <div class="site-menu-fixed" data-menu-fixed>
-        {% if is_mazeta %}
         <a
           class="site-hall-lendas {% if on_hall_lendas %}active{% endif %}"
           href="/hall-lendas"
-          title="Hall das Lendas (prévia)"
+          title="Hall das Lendas"
+          {% if on_hall_lendas %}aria-current="page"{% endif %}
         >
           <svg class="site-hall-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
             <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
@@ -77,23 +77,6 @@
             <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
           </svg>
         </a>
-        {% else %}
-        <button
-          type="button"
-          class="site-hall-lendas"
-          disabled
-          aria-disabled="true"
-          title="Em breve"
-        >
-          <svg class="site-hall-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
-          </svg>
-          <span class="site-hall-lendas-text">Hall das Lendas</span>
-          <svg class="site-hall-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
-          </svg>
-        </button>
-        {% endif %}
 
         <details class="site-menu-group" data-group="portal" data-menu-pinned>
           <summary class="site-menu-summary">{{ ico('inicio', 13) }}<span>Portal</span></summary>

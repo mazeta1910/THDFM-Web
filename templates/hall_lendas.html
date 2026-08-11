@@ -19,21 +19,26 @@
     </h1>
     <p class="hall-lendas-lead">
       Quem apoia o projeto com doação entra aqui — para sempre.
-      Ordenado pelo total doado · valores só o Mazeta vê.
+      Ordenado pelo total doado.
     </p>
-    <p class="hall-lendas-proto-tag">Protótipo visual · prévia só Mazeta · dados fictícios</p>
+    {% if is_mazeta %}
+    <p class="hall-lendas-admin-link">
+      <a href="/admin/hall-lendas">Gerenciar Hall</a>
+    </p>
+    {% endif %}
   </header>
 
   {% if is_mazeta %}
   <p class="hall-lendas-admin-note msg">
-    Visão Mazeta: totais de doação visíveis nos cards abaixo (ocultos para o público).
+    Visão Mazeta: totais de doação visíveis nos cards (ocultos para o público).
   </p>
   {% endif %}
 
+  {% if lendas %}
   <div class="hall-lendas-grid" role="list">
     {% for l in lendas %}
     <article class="hall-lendas-card" role="listitem" data-borda="{{ l.borda }}">
-      <div class="hall-lendas-card-rank" aria-hidden="true">#{{ loop.index }}</div>
+      <div class="hall-lendas-card-rank" aria-hidden="true">#{{ ((pagina - 1) * 10) + loop.index }}</div>
       <div class="hall-lendas-avatar hall-lendas-avatar--{{ l.borda }}" aria-hidden="true">
         {% if l.avatar_url %}
         <img src="{{ l.avatar_url }}" alt="" width="88" height="88" />
@@ -50,32 +55,35 @@
           <span class="hall-lendas-badge">Lenda</span>
         </div>
         <p class="hall-lendas-quando">{{ l.quando_rotulo }}</p>
+        {% if l.recado %}
         <blockquote class="hall-lendas-recado">“{{ l.recado }}”</blockquote>
+        {% endif %}
         {% if is_mazeta %}
         <p class="hall-lendas-valor">Total doado: <strong>{{ l.valor_rotulo }}</strong></p>
         {% endif %}
-        <p class="hall-lendas-borda-label">Moldura: {{ l.borda_rotulo }}</p>
       </div>
     </article>
     {% endfor %}
   </div>
 
   <footer class="hall-lendas-foot">
-    <p>Mostrando {{ lendas|length }} de {{ lendas|length }} · no lançamento: 10 por página.</p>
+    <p>
+      Mostrando {{ lendas|length }} de {{ total }}
+      {% if paginas > 1 %} · página {{ pagina }} / {{ paginas }}{% endif %}
+    </p>
+    {% if paginas > 1 %}
+    <nav class="hall-lendas-pager" aria-label="Paginação do Hall">
+      {% if tem_anterior %}
+      <a class="hall-lendas-page-link" href="/hall-lendas?pagina={{ pagina - 1 }}">Anterior</a>
+      {% endif %}
+      {% if tem_proxima %}
+      <a class="hall-lendas-page-link" href="/hall-lendas?pagina={{ pagina + 1 }}">Próxima</a>
+      {% endif %}
+    </nav>
+    {% endif %}
   </footer>
-
-  <section class="hall-lendas-bordas-demo" aria-label="Modelos de moldura (protótipo)">
-    <h2 class="hall-lendas-bordas-title">Molduras de avatar (a lenda escolhe)</h2>
-    <div class="hall-lendas-bordas-row">
-      {% for b in bordas %}
-      <div class="hall-lendas-borda-sample">
-        <div class="hall-lendas-avatar hall-lendas-avatar--{{ b.id }}" aria-hidden="true">
-          <span class="hall-lendas-avatar-fallback">{{ b.sample }}</span>
-        </div>
-        <span>{{ b.rotulo }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
+  {% else %}
+  <p class="hall-lendas-empty">Ainda não há lendas no mural. Em breve.</p>
+  {% endif %}
 </section>
 {% endblock %}
