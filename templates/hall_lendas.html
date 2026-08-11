@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/hall_rich.html" import hall_rich_toolbar %}
+{% from "macros/avatar.html" import avatar_block %}
 {% block title %}Hall das Lendas — THDFM{% endblock %}
 {% block og_title %}Hall das Lendas{% endblock %}
 {% block og_description %}Mural das lendas THDFM — doações que sustentam o projeto.{% endblock %}
@@ -60,13 +61,17 @@
     {% for l in lendas %}
     <article class="hall-lendas-card" role="listitem" data-borda="{{ l.borda }}">
       <div class="hall-lendas-card-rank" aria-hidden="true">#{{ ((pagina - 1) * 10) + loop.index }}</div>
-      <div class="hall-lendas-avatar lenda-frame lenda-frame--{{ l.borda }} lenda-frame--lg" aria-hidden="true">
-        {% if l.avatar_url %}
-        <img src="{{ l.avatar_url }}" alt="" width="88" height="88" />
-        {% else %}
-        <span class="hall-lendas-avatar-fallback">{{ l.iniciais }}</span>
-        {% endif %}
-      </div>
+      {{ avatar_block(
+        wrap_class="hall-lendas-avatar",
+        fallback_class="hall-lendas-avatar-fallback",
+        borda=l.borda,
+        lg=true,
+        url=l.avatar_url if l.avatar_url else "",
+        iniciais=l.iniciais,
+        width=88,
+        height=88,
+        wrap_attrs='aria-hidden="true"'
+      ) }}
       <div class="hall-lendas-card-body">
         <div class="hall-lendas-name-row">
           <svg class="hall-lendas-name-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">

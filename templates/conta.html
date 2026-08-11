@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/avatar.html" import avatar_edit %}
 {% block title %}Conta — {{ participante.nome }}{% endblock %}
 {% block content %}
 <div class="conta-page">
@@ -10,25 +11,18 @@
   <div class="card conta-card">
     <form method="post" action="/p/{{ participante.token }}/conta" enctype="multipart/form-data" class="conta-form" id="form-conta">
       <div class="conta-top">
-        <button
-          type="button"
-          class="avatar-edit-trigger avatar-preview{% if participante.hall_borda %} lenda-frame lenda-frame--{{ participante.hall_borda }}{% endif %}"
-          data-avatar-edit-page
-          aria-label="Alterar foto de perfil"
-        >
-          {% set conta_av = avatar_url(participante.avatar_path) %}
-          {% if conta_av %}
-          <img id="avatar-live" class="avatar-placeholder" src="{{ conta_av }}" alt="Sua foto" />
-          {% else %}
-          <span class="avatar-placeholder" id="avatar-live">{{ participante.nome[:2]|upper }}</span>
-          {% endif %}
-          <span class="avatar-edit-camera" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-          </span>
-        </button>
+        {{ avatar_edit(
+          path=participante.avatar_path,
+          nome=participante.nome,
+          wrap_class="avatar-preview",
+          img_class="avatar-placeholder",
+          fallback_class="avatar-placeholder",
+          borda=participante.hall_borda or "",
+          trigger="data-avatar-edit-page",
+          live_attrs='id="avatar-live"',
+          camera_size=22,
+          alt="Sua foto"
+        ) }}
         <input id="conta-avatar" type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden />
         <div class="conta-fields">
           <label class="conta-label" for="conta-nome">Nome na THDFM</label>

@@ -10,6 +10,7 @@
 {% set liberado_ok = participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
 {% set liberado_sem_senha = participante_nav and participante_nav.status == 'liberado' and not participante_nav.password_hash %}
 {% from "partials/nav_icons.html" import ico %}
+{% from "macros/avatar.html" import avatar_edit %}
 {% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
 
 <aside
@@ -29,25 +30,15 @@
     </div>
     {% if participante_nav %}
     <div class="site-brand-user-row {% if on_meu_perfil %}is-active{% endif %}">
-      <button
-        type="button"
-        class="avatar-edit-trigger site-brand-avatar-wrap{% if participante_nav.hall_borda %} lenda-frame lenda-frame--{{ participante_nav.hall_borda }}{% endif %}"
-        data-avatar-edit
-        aria-label="Alterar foto de perfil"
-      >
-        {% set brand_av = avatar_url(participante_nav.avatar_path) %}
-        {% if brand_av %}
-        <img class="site-brand-avatar" src="{{ brand_av }}" alt="" data-avatar-live />
-        {% else %}
-        <span class="site-brand-avatar site-brand-avatar-fallback" data-avatar-live>{{ (participante_nav.nome or '??')[:2]|upper }}</span>
-        {% endif %}
-        <span class="avatar-edit-camera" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-        </span>
-      </button>
+      {{ avatar_edit(
+        path=participante_nav.avatar_path,
+        nome=participante_nav.nome,
+        wrap_class="site-brand-avatar-wrap",
+        img_class="site-brand-avatar",
+        fallback_class="site-brand-avatar site-brand-avatar-fallback",
+        borda=participante_nav.hall_borda or "",
+        camera_size=14
+      ) }}
       {# TEXTOS PARA REESCREVER — começo #}
       <a href="/meu-perfil" class="site-brand-user {% if on_meu_perfil %}active{% endif %}">
         <span class="site-brand-user-text">
