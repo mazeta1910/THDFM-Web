@@ -1115,6 +1115,28 @@ def chute_nome_inexistente(
     }
 
 
+def clube_ja_usado_no_grid(
+    celulas: list[list[dict[str, Any] | None]],
+    clube_id: str,
+) -> bool:
+    """True se o clube já aparece em alguma célula (acerto ou erro).
+
+    Estilo HoopsGrid: cada time só pode ser usado uma vez no tabuleiro.
+    """
+    cid = str(clube_id or "").strip()
+    if not cid:
+        return False
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            cell = celulas[r][c] if r < len(celulas) and c < len(celulas[r]) else None
+            if not cell:
+                continue
+            clube = cell.get("clube") if isinstance(cell, dict) else None
+            if isinstance(clube, dict) and str(clube.get("id") or "").strip() == cid:
+                return True
+    return False
+
+
 def validar_chute(
     *,
     dia: str,

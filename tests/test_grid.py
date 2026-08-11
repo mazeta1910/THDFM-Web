@@ -456,6 +456,8 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "thdfm-grid-daltonismo" in js
     assert "aplicarDaltonismo" in js
     assert "data-daltonismo-mode" in js
+    assert "clubeJaUsado" in js
+    assert "já foi usado" in js
     assert "aplicarMiopia" not in js
     assert "data-miopia" not in js
     assert 'href="/grid"' in (
@@ -553,6 +555,53 @@ def test_chute_errado_marca_miss():
     outro = next(c for c in clubes_grid() if c["id"] not in pool_ids)
     res = validar_chute(dia="2026-08-15", linha=0, coluna=0, clube_id=outro["id"])
     assert res["ok"] is False
+
+
+def test_clube_ja_usado_no_grid():
+    from src.grid_game import clube_ja_usado_no_grid
+
+    celulas = [
+        [{"ok": True, "clube": {"id": "10", "nome": "A"}}, None, None],
+        [None, {"ok": False, "clube": {"id": "20", "nome": "B"}}, None],
+        [None, None, None],
+    ]
+    assert clube_ja_usado_no_grid(celulas, "10") is True
+    assert clube_ja_usado_no_grid(celulas, "20") is True
+    assert clube_ja_usado_no_grid(celulas, "99") is False
+    assert clube_ja_usado_no_grid(celulas, "") is False
+
+
+def test_chute_clube_repetido_nao_preenche_celula(client: TestClient):
+    """Estilo HoopsGrid: time já usado não entra no quadro (sem miss)."""
+    login_admin(client)
+    clube = next(c for c in clubes_grid())
+    r1 = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
+    )
+    assert r1.status_code == 200
+    assert r1.json()["celulas"][0][0]["clube"]["id"] == clube["id"]
+
+    # Mesmo time em outra célula: 400, quadro inalterado
+    r2 = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 1, "clube_id": clube["id"]},
+    )
+    assert r2.status_code == 400
+    assert "já foi usado" in r2.json()["erro"].casefold()
+
+    outro = next(c for c in clubes_grid() if c["id"] != clube["id"])
+    r3 = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 1, "clube_id": outro["id"]},
+    )
+    assert r3.status_code == 200
+    body = r3.json()
+    assert body["celulas"][0][0]["clube"]["id"] == clube["id"]
+    assert body["celulas"][0][1]["clube"]["id"] == outro["id"]
+    assert body["celulas"][0][1] is not None
+    # Célula repetida ficou vazia no rechazo; agora tem o outro time
+    assert body["celulas"][0][1]["clube"]["id"] != clube["id"]
 
 
 def test_texto_share_usa_verde_e_vermelho():
