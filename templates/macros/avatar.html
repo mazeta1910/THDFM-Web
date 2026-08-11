@@ -76,8 +76,7 @@
 <button
   type="button"
   class="avatar-edit-trigger {{ wrap_class }}{{ lenda_frame_mod(borda, lg) }}"
-  {{ trigger|safe }}
-  {% if id %}id="{{ id }}"{% endif %}
+  {{ trigger|safe }}{% if id %} id="{{ id }}"{% endif %}
   aria-label="{{ aria_label }}"
 >
   {{ avatar_face(
