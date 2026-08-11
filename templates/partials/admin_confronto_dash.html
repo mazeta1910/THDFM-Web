@@ -49,8 +49,21 @@
         {{ emblema(c.clube_b, class="match-emblema") }}
         <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
       </span>
-      <span class="admin-dash-chave-meta">
-        Decide em casa: <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
+      <span class="admin-dash-chave-actions">
+        <span class="admin-dash-chave-meta">
+          Decide em casa: <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
+        </span>
+        {% if not fase_encerrada and f.id != 'oitavas' %}
+        {% set pode_inverter = not ((c.ida and c.ida.confirmado) or (c.volta and c.volta.confirmado)) %}
+        <form method="post" action="/admin/confronto/{{ c.id }}/inverter-mando" class="admin-dash-invert-form">
+          <button
+            type="submit"
+            class="secondary admin-dash-invert-btn"
+            title="Inverte quem manda na ida e quem decide em casa na volta"
+            {% if not pode_inverter %}disabled{% endif %}
+          >Inverter mando</button>
+        </form>
+        {% endif %}
       </span>
     </header>
 

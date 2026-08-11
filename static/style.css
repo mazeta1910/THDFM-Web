@@ -3842,6 +3842,27 @@ html[data-theme="light"] .admin-main {
   font-size: 0.72rem;
   color: var(--muted, #6b7280);
 }
+.admin-dash-chave-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+.admin-dash-invert-form {
+  margin: 0;
+  display: inline;
+}
+.admin-dash-invert-btn {
+  font-size: 0.72rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.admin-arvore-existentes-nota,
+.admin-arvore-existentes .muted {
+  color: var(--muted, #9a9a9a);
+  font-size: 0.85em;
+}
 .admin-dash-legs {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

@@ -344,19 +344,19 @@
         <section class="admin-arvore-fase" data-arvore-fase="{{ bloco.fase.id }}">
           <h3>{{ bloco.fase.label }}</h3>
           {% if bloco.existentes %}
-          <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase.</p>
+          <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase (apaga placares/palpites da fase).</p>
           <ul class="admin-arvore-existentes">
             {% for c in bloco.existentes %}
-            <li>{{ c.clube_a }} × {{ c.clube_b }}</li>
+            <li>{{ c.clube_a }} × {{ c.clube_b }} <span class="muted">(volta em casa: {{ c.clube_b }})</span></li>
             {% endfor %}
           </ul>
           {% endif %}
-          {% if not bloco.pronto %}
+          {% if not bloco.pronto and not bloco.existentes %}
           <p class="locked-msg">
             Aguardando classificados de {{ bloco.origem }} —
             {{ bloco.classificados|length }}/{{ bloco.n_clubes }} definidos (placar oficial completo + pênaltis se houver).
           </p>
-          {% else %}
+          {% elif bloco.pronto %}
           <p class="admin-arvore-pool" data-arvore-pool>
             Classificados ({{ bloco.classificados|length }}):
             {% for c in bloco.classificados %}
@@ -373,6 +373,11 @@
             <div class="admin-arvore-chaves">
               {% for i in range(bloco.n_chaves) %}
               {% set classificados = bloco.classificados %}
+              {% set ex = bloco.existentes[i] if bloco.existentes and i < bloco.existentes|length else none %}
+              {% set chave_a = ex.clube_a if ex else '' %}
+              {% set chave_b = ex.clube_b if ex else '' %}
+              {% set ida_em = inicio_em_input_value(ex.ida.inicio_em) if ex and ex.ida else '' %}
+              {% set volta_em = inicio_em_input_value(ex.volta.inicio_em) if ex and ex.volta else '' %}
               {% include "partials/admin_arvore_chave.html" %}
               {% endfor %}
             </div>
@@ -383,6 +388,8 @@
               <span>{% if bloco.existentes %}Remontar {{ bloco.fase.label }}{% else %}Confirmar {{ bloco.fase.label }}{% endif %}</span>
             </button>
           </form>
+          {% else %}
+          <p class="locked-msg">Confrontos cadastrados, mas os classificados de {{ bloco.origem }} não estão completos — não dá para remontar agora.</p>
           {% endif %}
         </section>
         {% endfor %}

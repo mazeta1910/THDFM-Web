@@ -110,6 +110,71 @@ def test_salvar_ambas_pernas_no_dashboard(client):
     assert volta2["inicio_em"] == "2026-09-08 20:00"
 
 
+def test_remontar_quartas_com_palpites_existentes(client):
+    """Remontar não pode falhar por FK de palpites (bug reportado em produção)."""
+    login_admin(client)
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_resultado_jogo(ida["id"], 1, 0, None)
+        db.set_resultado_jogo(volta["id"], 0, 0, None)
+    clubs = [c["clube"] for c in db.classificados_da_fase("oitavas")]
+    assert len(clubs) == 8
+    data = {"fase": "quartas"}
+    for i in range(4):
+        data[f"chave_{i}_a"] = clubs[i * 2]
+        data[f"chave_{i}_b"] = clubs[i * 2 + 1]
+    r = client.post("/admin/arvore/montar", data=data, follow_redirects=False)
+    assert r.status_code == 303
+    assert "erro" not in (r.headers.get("location") or "")
+    quartas = db.list_confrontos_completos("quartas")
+    assert len(quartas) == 4
+    part = db.criar_participante("Remount User", status="liberado")
+    ida_q = next(j for j in quartas[0]["jogos"] if j["perna"] == "ida")
+    db.salvar_palpite_jogo(part["id"], ida_q["id"], 2, 1)
+
+    # Remonta invertendo o primeiro par
+    data2 = {"fase": "quartas"}
+    for i in range(4):
+        data2[f"chave_{i}_a"] = clubs[i * 2 + 1]
+        data2[f"chave_{i}_b"] = clubs[i * 2]
+    r2 = client.post("/admin/arvore/montar", data=data2, follow_redirects=False)
+    assert r2.status_code == 303
+    loc = r2.headers.get("location") or ""
+    assert "erro" not in loc
+    novas = db.list_confrontos_completos("quartas")
+    assert len(novas) == 4
+    assert novas[0]["clube_a"] == clubs[1]
+    assert novas[0]["clube_b"] == clubs[0]
+
+
+def test_inverter_mando_confronto(client):
+    login_admin(client)
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_resultado_jogo(ida["id"], 1, 0, None)
+        db.set_resultado_jogo(volta["id"], 0, 0, None)
+    clubs = [c["clube"] for c in db.classificados_da_fase("oitavas")]
+    data = {"fase": "quartas"}
+    for i in range(4):
+        data[f"chave_{i}_a"] = clubs[i * 2]
+        data[f"chave_{i}_b"] = clubs[i * 2 + 1]
+    client.post("/admin/arvore/montar", data=data, follow_redirects=False)
+    q = db.list_confrontos_completos("quartas")[0]
+    a0, b0 = q["clube_a"], q["clube_b"]
+    r = client.post(f"/admin/confronto/{q['id']}/inverter-mando?format=json")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert body["confronto"]["clube_a"] == b0
+    assert body["confronto"]["clube_b"] == a0
+    q2 = db.list_confrontos_completos("quartas")[0]
+    assert q2["clube_a"] == b0 and q2["clube_b"] == a0
+
+
 def test_confirmar_e_desfazer_jogo(client):
     login_admin(client)
     _, ida, _ = _primeiro_confronto_oitavas()
