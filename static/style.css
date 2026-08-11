@@ -12495,20 +12495,28 @@ button.grid-cell,
 }
 .grid-daltonismo {
   margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+  max-width: 100%;
 }
 .grid-daltonismo-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
+  white-space: nowrap;
 }
 .grid-daltonismo-toggles {
   display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: auto;
   border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
@@ -12518,14 +12526,16 @@ button.grid-cell,
   appearance: none;
   border: 0;
   margin: 0;
-  padding: 0.38rem 0.55rem;
+  padding: 0.28rem 0.5rem;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
-  line-height: 1.1;
+  line-height: 1.15;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .grid-daltonismo-btn + .grid-daltonismo-btn {
   border-left: 1px solid var(--border);
@@ -12583,21 +12593,26 @@ button.grid-cell,
 
 @media (max-width: 720px) {
   .grid-board-footer {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .grid-hint {
+    flex: 1 1 100%;
   }
   .grid-daltonismo {
-    margin-left: 0;
-    align-items: stretch;
+    margin-left: auto;
+    width: auto;
+    max-width: 100%;
   }
   .grid-daltonismo-toggles {
-    width: 100%;
+    width: auto;
   }
   .grid-daltonismo-btn {
-    flex: 1 1 0;
-    text-align: center;
-    padding: 0.4rem 0.35rem;
-    font-size: 0.68rem;
+    flex: 0 0 auto;
+    padding: 0.26rem 0.42rem;
+    font-size: 0.64rem;
   }
 }
 
