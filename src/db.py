@@ -2045,6 +2045,8 @@ def substituir_confrontos_fase(
     """Apaga confrontos da fase e recria a partir de pares.
 
     Cada item: {clube_a, clube_b, ida_em?, volta_em?}.
+    Remove palpites ligados aos jogos/confrontos antigos (senão o DELETE
+    estoura FK e o Remontar falha depois que alguém já palpitou).
     """
     from src.config import FASE_IDS
 
@@ -2058,8 +2060,24 @@ def substituir_confrontos_fase(
             "SELECT id FROM confrontos WHERE fase = ?", (fase,)
         ).fetchall()
         for r in rows:
-            conn.execute("DELETE FROM jogos WHERE confronto_id = ?", (r["id"],))
-            conn.execute("DELETE FROM confrontos WHERE id = ?", (r["id"],))
+            cid = int(r["id"])
+            jogo_ids = [
+                int(j["id"])
+                for j in conn.execute(
+                    "SELECT id FROM jogos WHERE confronto_id = ?", (cid,)
+                ).fetchall()
+            ]
+            if jogo_ids:
+                placeholders = ",".join("?" * len(jogo_ids))
+                conn.execute(
+                    f"DELETE FROM palpites_jogo WHERE jogo_id IN ({placeholders})",
+                    jogo_ids,
+                )
+            conn.execute(
+                "DELETE FROM palpites_penaltis WHERE confronto_id = ?", (cid,)
+            )
+            conn.execute("DELETE FROM jogos WHERE confronto_id = ?", (cid,))
+            conn.execute("DELETE FROM confrontos WHERE id = ?", (cid,))
         next_id = int(
             conn.execute("SELECT COALESCE(MAX(id), 0) AS m FROM confrontos").fetchone()[
                 "m"
@@ -2090,6 +2108,35 @@ def substituir_confrontos_fase(
         if fase == "quartas":
             _migrate_quartas_ordem_casa(conn)
     return ids
+
+
+def inverter_mandantes_confronto(confronto_id: int) -> dict[str, Any]:
+    """Troca clube_a ↔ clube_b (quem manda na ida / decide na volta).
+
+    Bloqueado se algum jogo já estiver confirmado.
+    """
+    with get_db() as conn:
+        c = conn.execute(
+            "SELECT * FROM confrontos WHERE id = ?", (confronto_id,)
+        ).fetchone()
+        if not c:
+            raise ValueError("confronto não encontrado")
+        if c["fase"] == "oitavas":
+            raise ValueError("oitavas não podem ser invertidas por aqui")
+        jogos = conn.execute(
+            "SELECT * FROM jogos WHERE confronto_id = ?", (confronto_id,)
+        ).fetchall()
+        for j in jogos:
+            if j["confirmado_em"]:
+                raise ValueError(
+                    "Desfaça a confirmação dos placares antes de inverter o mando"
+                )
+        a, b = c["clube_a"], c["clube_b"]
+        conn.execute(
+            "UPDATE confrontos SET clube_a = ?, clube_b = ? WHERE id = ?",
+            (b, a, confronto_id),
+        )
+        return {"id": confronto_id, "clube_a": b, "clube_b": a, "fase": c["fase"]}
 
 
 def classificados_da_fase(fase: str) -> list[dict[str, Any]]:

@@ -4660,8 +4660,39 @@ async def admin_arvore_montar(request: Request):
         from urllib.parse import quote
 
         return RedirectResponse(f"/admin?erro={quote(str(e))}", status_code=303)
+    except Exception as e:
+        from urllib.parse import quote
+
+        # IntegrityError etc. ao apagar jogos com palpites — agora tratado no db,
+        # mas mantém mensagem clara se algo escapar.
+        return RedirectResponse(
+            f"/admin?erro={quote(str(e) or 'Falha ao montar confrontos')}",
+            status_code=303,
+        )
     return RedirectResponse(
         f"/admin?msg={n_chaves}+confronto(s)+de+{fase}+montados",
+        status_code=303,
+    )
+
+
+@app.post("/admin/confronto/{confronto_id}/inverter-mando")
+def admin_inverter_mando_confronto(request: Request, confronto_id: int):
+    """Troca mandante da ida ↔ mandante da volta (clube_a ↔ clube_b)."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from fastapi.responses import JSONResponse
+    from urllib.parse import quote
+
+    try:
+        out = db.inverter_mandantes_confronto(confronto_id)
+    except ValueError as e:
+        if _admin_wants_json(request):
+            return JSONResponse({"ok": False, "erro": str(e)}, status_code=400)
+        return RedirectResponse(f"/admin?sec=resultados&erro={quote(str(e))}", status_code=303)
+    if _admin_wants_json(request):
+        return JSONResponse({"ok": True, "confronto": out})
+    return RedirectResponse(
+        f"/admin?sec=resultados&msg={quote('Mando invertido: agora ' + out['clube_b'] + ' decide em casa')}",
         status_code=303,
     )
 

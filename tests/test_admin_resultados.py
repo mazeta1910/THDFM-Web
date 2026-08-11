@@ -17,13 +17,29 @@ def test_admin_resultados_sem_janela_fase_cards(client):
     login_admin(client)
     r = client.get("/admin?sec=resultados")
     assert r.status_code == 200
-    assert "Placares oficiais" in r.text
+    assert "Confrontos e placares" in r.text
+    assert "admin-dash-chave" in r.text or "match-cell" in r.text
     assert "Janela de palpites" not in r.text
     assert "Fase liberada" not in r.text
     assert "Atualizar janela" not in r.text
     assert "match-cell" in r.text
     assert "admin-sticky-save" in r.text
     assert 'data-confirmar-jogo' in r.text or "Confirmado" in r.text
+
+
+def test_admin_resultados_dashboard_chaves(client):
+    """Com confrontos montados, mostra ida+volta na mesma chave."""
+    login_admin(client)
+    r = client.get("/admin?sec=resultados")
+    assert r.status_code == 200
+    assert 'data-admin-dash' in r.text
+    assert "admin-dash-chave" in r.text
+    assert "Decide em casa" in r.text
+    assert 'data-save-ambas="1"' in r.text
+    # Ida e volta presentes no mesmo form
+    body = r.text
+    assert 'data-dash-leg="ida"' in body
+    assert 'data-dash-leg="volta"' in body
 
 
 def test_perna_default_volta_quando_ida_completa(client):
@@ -34,16 +50,12 @@ def test_perna_default_volta_quando_ida_completa(client):
         db.set_resultado_jogo(ida["id"], 1, 0, None)
     r = client.get("/admin?sec=resultados")
     assert r.status_code == 200
-    # Painel Volta da fase ativa visível; Ida oculto
-    assert 'data-panel="volta"' in r.text
-    assert 'class="match-panel hidden" data-panel="ida"' in r.text or (
-        'data-panel="ida"' in r.text and 'match-panel hidden' in r.text
-    )
-    # Botão Volta marcado como ativo na fase ativa
+    # Dashboard mostra ida+volta; foco Volta marcado na nav
+    assert 'data-admin-dash' in r.text
     assert 'aria-current="true"' in r.text
-    assert "perna_default" not in r.text  # só no JS template se vazasse; sanity
     body = " ".join(r.text.split())
     assert 'data-tab="volta" class="active"' in body or 'data-tab="volta" class=" active"' in body
+    assert 'is-focus-volta' in body or 'data-tab="volta"' in body
 
 
 def test_salvar_apenas_perna_visivel(client):
@@ -69,6 +81,98 @@ def test_salvar_apenas_perna_visivel(client):
     assert ida2["gols_visitante"] == 1
     assert volta2["gols_mandante"] is None
     assert volta2["gols_visitante"] is None
+
+
+def test_salvar_ambas_pernas_no_dashboard(client):
+    login_admin(client)
+    _, ida, volta = _primeiro_confronto_oitavas()
+    r = client.post(
+        "/admin/resultados?format=json",
+        data={
+            "fase": "oitavas",
+            "perna": "",
+            f"jogo_{ida['id']}_m": "1",
+            f"jogo_{ida['id']}_v": "0",
+            f"jogo_{ida['id']}_inicio": "2026-09-01T20:00",
+            f"jogo_{volta['id']}_m": "2",
+            f"jogo_{volta['id']}_v": "2",
+            f"jogo_{volta['id']}_inicio": "2026-09-08T20:00",
+        },
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body.get("ok") is True
+    ida2 = db.get_jogo(ida["id"])
+    volta2 = db.get_jogo(volta["id"])
+    assert ida2["gols_mandante"] == 1
+    assert volta2["gols_mandante"] == 2
+    assert ida2["inicio_em"] == "2026-09-01 20:00"
+    assert volta2["inicio_em"] == "2026-09-08 20:00"
+
+
+def test_remontar_quartas_com_palpites_existentes(client):
+    """Remontar não pode falhar por FK de palpites (bug reportado em produção)."""
+    login_admin(client)
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_resultado_jogo(ida["id"], 1, 0, None)
+        db.set_resultado_jogo(volta["id"], 0, 0, None)
+    clubs = [c["clube"] for c in db.classificados_da_fase("oitavas")]
+    assert len(clubs) == 8
+    data = {"fase": "quartas"}
+    for i in range(4):
+        data[f"chave_{i}_a"] = clubs[i * 2]
+        data[f"chave_{i}_b"] = clubs[i * 2 + 1]
+    r = client.post("/admin/arvore/montar", data=data, follow_redirects=False)
+    assert r.status_code == 303
+    assert "erro" not in (r.headers.get("location") or "")
+    quartas = db.list_confrontos_completos("quartas")
+    assert len(quartas) == 4
+    part = db.criar_participante("Remount User", status="liberado")
+    ida_q = next(j for j in quartas[0]["jogos"] if j["perna"] == "ida")
+    db.salvar_palpite_jogo(part["id"], ida_q["id"], 2, 1)
+
+    # Remonta invertendo o primeiro par
+    data2 = {"fase": "quartas"}
+    for i in range(4):
+        data2[f"chave_{i}_a"] = clubs[i * 2 + 1]
+        data2[f"chave_{i}_b"] = clubs[i * 2]
+    r2 = client.post("/admin/arvore/montar", data=data2, follow_redirects=False)
+    assert r2.status_code == 303
+    loc = r2.headers.get("location") or ""
+    assert "erro" not in loc
+    novas = db.list_confrontos_completos("quartas")
+    assert len(novas) == 4
+    assert novas[0]["clube_a"] == clubs[1]
+    assert novas[0]["clube_b"] == clubs[0]
+
+
+def test_inverter_mando_confronto(client):
+    login_admin(client)
+    confrontos = db.list_confrontos_completos("oitavas")
+    for c in confrontos:
+        ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+        volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+        db.set_resultado_jogo(ida["id"], 1, 0, None)
+        db.set_resultado_jogo(volta["id"], 0, 0, None)
+    clubs = [c["clube"] for c in db.classificados_da_fase("oitavas")]
+    data = {"fase": "quartas"}
+    for i in range(4):
+        data[f"chave_{i}_a"] = clubs[i * 2]
+        data[f"chave_{i}_b"] = clubs[i * 2 + 1]
+    client.post("/admin/arvore/montar", data=data, follow_redirects=False)
+    q = db.list_confrontos_completos("quartas")[0]
+    a0, b0 = q["clube_a"], q["clube_b"]
+    r = client.post(f"/admin/confronto/{q['id']}/inverter-mando?format=json")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert body["confronto"]["clube_a"] == b0
+    assert body["confronto"]["clube_b"] == a0
+    q2 = db.list_confrontos_completos("quartas")[0]
+    assert q2["clube_a"] == b0 and q2["clube_b"] == a0
 
 
 def test_confirmar_e_desfazer_jogo(client):

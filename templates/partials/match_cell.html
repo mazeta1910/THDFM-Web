@@ -35,7 +35,7 @@
 >
   <div class="match-cell-head">
     <span class="planilha-jogo-tag match-jogo-tag">
-      JOGO ({{ jogo_num }}){% if inicio_lbl and mode != 'admin' %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _encerrada %} · <span class="match-travado-tag">Encerrado</span>{% elif _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
+      {% if jogo_tag_override|default('') %}{{ jogo_tag_override }}{% else %}JOGO ({{ jogo_num }}){% endif %}{% if inicio_lbl and mode != 'admin' %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _encerrada %} · <span class="match-travado-tag">Encerrado</span>{% elif _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
     </span>
     {% if mode == 'admin' and jogo_id and not _encerrada %}
     <div class="match-cell-actions">
@@ -71,7 +71,7 @@
   </div>
 
   {% if mode == 'admin' and inicio_input_name %}
-  <label class="match-inicio-label match-inicio-compact">
+  <label class="match-inicio-label match-inicio-compact{% if not inicio_input_value %} is-sem-horario{% endif %}">
     <span>{{ inicio_label|default('Início') }}</span>
     <input
       type="datetime-local"
