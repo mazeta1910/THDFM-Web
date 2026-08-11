@@ -159,7 +159,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=11" in r.text
+    assert "/static/grid.js?v=12" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert 'data-grid-daltonismo' in r.text
@@ -181,7 +181,11 @@ def test_grid_fluxo_logado(client: TestClient):
     assert ".grid-share-text" in css
     assert "text-align: center" in css.split(".grid-share-text", 1)[1].split("}", 1)[0]
     assert '.grid-page[data-daltonismo-mode="protanopia"]' in css
+    assert "button.grid-daltonismo-btn" in css
     assert ".grid-daltonismo-toggles" in css
+    # Não pode herdar width:100% do button global
+    dalton_btn_css = css.split("button.grid-daltonismo-btn", 1)[1].split("}", 1)[0]
+    assert "width: auto" in dalton_btn_css
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
     ).read_text(encoding="utf-8")

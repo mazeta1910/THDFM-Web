@@ -402,14 +402,13 @@
       saved = "off";
     }
     aplicarDaltonismo(saved);
-    // Delegação: sobrevive a re-render e evita conflito de atributos no root.
-    box.addEventListener("click", (ev) => {
-      const btn = ev.target && ev.target.closest
-        ? ev.target.closest(".grid-daltonismo-btn[data-daltonismo]")
-        : null;
-      if (!btn || !box.contains(btn)) return;
-      ev.preventDefault();
-      aplicarDaltonismo(btn.getAttribute("data-daltonismo") || "off");
+    // Clique direto nos botões (grid finalizado ou não — só remapeia cores).
+    box.querySelectorAll("button.grid-daltonismo-btn[data-daltonismo]").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        aplicarDaltonismo(btn.getAttribute("data-daltonismo") || "off");
+      });
     });
   }
 
