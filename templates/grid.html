@@ -148,7 +148,7 @@
     <div class="grid-admin-grid">
       <form class="grid-admin-panel" data-grid-admin-virada>
         <h3 class="grid-admin-h">Hora da virada</h3>
-        <p class="grid-admin-help">Horário de Brasília (HH:MM) em que o puzzle muda.</p>
+        <p class="grid-admin-help">Horário de Brasília (HH:MM). Na virada entra o puzzle do dia seguinte (00:00 = dia civil).</p>
         <label class="grid-admin-label" for="grid-admin-hora">Horário</label>
         <input
           id="grid-admin-hora"
@@ -294,6 +294,6 @@
 {% block scripts %}
 <script src="/static/grid.js?v=12" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=2" defer></script>
+<script src="/static/grid-admin.js?v=3" defer></script>
 {% endif %}
 {% endblock %}

@@ -170,11 +170,13 @@
       if (inp && data.virada_rotulo) inp.value = data.virada_rotulo;
       setStatus(
         status,
-        `Virada às ${data.virada_rotulo} (Brasília). Dia atual: ${rotuloDia(
+        `Virada às ${data.virada_rotulo} (Brasília). Dia do puzzle agora: ${rotuloDia(
           data.dia_atual
         )}.`,
         true
       );
+      // Recarrega para atualizar grade + countdown com a nova virada.
+      window.setTimeout(() => window.location.reload(), 600);
     } catch (err) {
       setStatus(status, err.message || "Erro", false);
     }
