@@ -9,6 +9,8 @@
 {% set on_admin_cobranca = path.startswith('/admin/cobranca') %}
 {% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
+{% set on_admin_hall_lendas = path.startswith('/admin/hall-lendas') %}
+{% set on_hall_lendas = path.startswith('/hall-lendas') %}
 {% set on_grid = path == '/grid' or path.startswith('/grid/api') %}
 {% set on_grid_ranking = path.startswith('/grid/ranking') %}
 {% set on_regras = path.startswith('/regras') %}
@@ -107,13 +109,16 @@
       </div>
 
       <div class="admin-menu-sortable" data-menu-sortable>
-      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
+      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas %}open{% endif %}>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
         </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
+          {% if is_mazeta %}
+          <a class="admin-side-link {% if on_hall_lendas or on_admin_hall_lendas %}active{% endif %}" href="/admin/hall-lendas">{{ ico('classificacao') }}<span>Hall das Lendas</span></a>
+          {% endif %}
         </div>
       </details>
 

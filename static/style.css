@@ -13229,7 +13229,7 @@ button.grid-admin-dia-btn,
 }
 
 
-/* —— Hall das Lendas (protótipo) —— */
+/* —— Hall das Lendas —— */
 .hall-lendas-page {
   max-width: 52rem;
   margin: 0 auto;
@@ -13469,4 +13469,179 @@ button.grid-admin-dia-btn,
     width: 76px;
     height: 76px;
   }
+}
+
+.hall-lendas-admin-link {
+  margin: 0.85rem 0 0;
+  font-size: 0.88rem;
+}
+.hall-lendas-admin-link a {
+  color: #e2b93d;
+  font-weight: 700;
+}
+.hall-lendas-empty {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  text-align: center;
+}
+.hall-lendas-pager {
+  margin: 0.75rem 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.hall-lendas-page-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #d4a017 45%, var(--border));
+  color: #e2b93d;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.hall-lendas-page-link:hover {
+  background: color-mix(in srgb, #d4a017 14%, var(--bg));
+}
+
+.hall-admin-h {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+.hall-admin-form,
+.hall-admin-edit {
+  display: grid;
+  gap: 0.45rem;
+}
+.hall-admin-label {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.hall-admin-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.hall-admin-actions {
+  margin-top: 0.55rem;
+}
+.hall-admin-list {
+  display: grid;
+  gap: 1rem;
+}
+.hall-admin-item {
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, var(--card));
+}
+.hall-admin-item header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+  margin-bottom: 0.45rem;
+}
+.hall-admin-item header span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.hall-admin-recado {
+  margin: 0 0 0.65rem;
+  font-style: italic;
+  color: var(--text);
+}
+
+.proto-times-lenda {
+  color: #1a1208;
+  background: linear-gradient(135deg, #f0d060, #d4a017);
+  border: 1px solid color-mix(in srgb, #d4a017 55%, #8a6a10);
+}
+.proto-steam-name-star {
+  color: #e2b93d;
+  flex: 0 0 auto;
+}
+.proto-steam-avatar.proto-steam-avatar--anel,
+.proto-steam-avatar.proto-steam-avatar--duplo,
+.proto-steam-avatar.proto-steam-avatar--brilho,
+.proto-steam-avatar.proto-steam-avatar--laurel,
+.proto-edit-avatar.proto-steam-avatar--anel,
+.proto-edit-avatar.proto-steam-avatar--duplo,
+.proto-edit-avatar.proto-steam-avatar--brilho,
+.proto-edit-avatar.proto-steam-avatar--laurel {
+  overflow: visible;
+  border-color: transparent;
+}
+.proto-steam-avatar--anel {
+  box-shadow:
+    0 0 0 3px #d4a017,
+    0 0 0 6px color-mix(in srgb, #d4a017 35%, var(--card));
+}
+.proto-steam-avatar--duplo {
+  box-shadow:
+    0 0 0 2px #f0d060,
+    0 0 0 5px #8a6a10,
+    0 0 0 7px #f0d060;
+}
+.proto-steam-avatar--brilho {
+  box-shadow:
+    0 0 0 3px #e2b93d,
+    0 0 14px 2px color-mix(in srgb, #e2b93d 55%, transparent);
+}
+.proto-steam-avatar--laurel {
+  box-shadow:
+    0 0 0 3px #c9a227,
+    0 0 0 7px color-mix(in srgb, #3a2a08 55%, var(--card)),
+    0 0 0 9px #e2b93d;
+}
+
+.hall-borda-form {
+  display: grid;
+  gap: 0.85rem;
+}
+.hall-borda-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.1rem;
+}
+.hall-borda-option {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.45rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+.hall-borda-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.hall-borda-option.is-selected,
+.hall-borda-option:has(input:checked) {
+  border-color: color-mix(in srgb, #d4a017 55%, var(--border));
+  background: color-mix(in srgb, #d4a017 10%, var(--bg));
+}
+.hall-borda-sample {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--text);
+}
+.hall-borda-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.hall-borda-actions {
+  display: flex;
+  gap: 0.5rem;
 }

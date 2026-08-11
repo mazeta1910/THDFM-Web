@@ -561,6 +561,27 @@ def _migrate_grid_puzzle_salt(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_hall_lendas(conn: sqlite3.Connection) -> None:
+    """Hall das Lendas — uma ficha por participante (total doado + recado + moldura)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS hall_lendas (
+          participante_id INTEGER PRIMARY KEY REFERENCES participantes(id) ON DELETE CASCADE,
+          valor_centavos INTEGER NOT NULL DEFAULT 0,
+          recado TEXT NOT NULL DEFAULT '',
+          borda TEXT NOT NULL DEFAULT 'anel',
+          doado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hall_lendas_valor "
+        "ON hall_lendas(valor_centavos DESC, doado_em DESC)"
+    )
+
+
 def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
     """Zera o progresso do Grid uma vez — lançamento público (ranking do zero)."""
     chave = "grid_progresso_reset_v1"
@@ -588,6 +609,7 @@ def init_db() -> None:
         _migrate_perfil_recado_reacoes(conn)
         _migrate_grid_progresso(conn)
         _migrate_grid_puzzle_salt(conn)
+        _migrate_hall_lendas(conn)
         _reset_grid_progresso_lancamento(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
@@ -4854,3 +4876,195 @@ def grid_stats_participante(participante_id: int) -> dict[str, Any]:
         "total_ranking": len(ranking),
         "jogou": bool(rows),
     }
+
+
+
+def _hall_lenda_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    from src.hall_lendas import borda_ok, borda_rotulo, format_quando, format_valor_brl
+
+    nome = (row["nome"] or "").strip() or "alguém"
+    valor = int(row["valor_centavos"] or 0)
+    borda = borda_ok(row["borda"])
+    return {
+        "participante_id": int(row["participante_id"]),
+        "nome": nome,
+        "username": row["username"],
+        "avatar_path": row["avatar_path"],
+        "status": row["status"],
+        "valor_centavos": valor,
+        "valor_rotulo": format_valor_brl(valor),
+        "recado": (row["recado"] or "").strip(),
+        "borda": borda,
+        "borda_rotulo": borda_rotulo(borda),
+        "doado_em": row["doado_em"],
+        "quando_rotulo": format_quando(row["doado_em"]),
+        "criado_em": row["criado_em"],
+        "atualizado_em": row["atualizado_em"],
+    }
+
+
+def get_hall_lenda(participante_id: int) -> dict[str, Any] | None:
+    pid = int(participante_id)
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT h.*, p.nome, p.username, p.avatar_path, p.status
+            FROM hall_lendas h
+            JOIN participantes p ON p.id = h.participante_id
+            WHERE h.participante_id = ?
+            """,
+            (pid,),
+        ).fetchone()
+    return _hall_lenda_row(row)
+
+
+def is_lenda(participante_id: int) -> bool:
+    return get_hall_lenda(int(participante_id)) is not None
+
+
+def contar_hall_lendas() -> int:
+    with get_db() as conn:
+        row = conn.execute("SELECT COUNT(*) AS n FROM hall_lendas").fetchone()
+    return int(row["n"] or 0) if row else 0
+
+
+def listar_hall_lendas(*, pagina: int = 1, por_pagina: int = 10) -> dict[str, Any]:
+    """Lista pública ordenada por total doado (desc)."""
+    from src.hall_lendas import HALL_POR_PAGINA
+
+    por = max(1, min(int(por_pagina or HALL_POR_PAGINA), 50))
+    pag = max(1, int(pagina or 1))
+    total = contar_hall_lendas()
+    offset = (pag - 1) * por
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT h.*, p.nome, p.username, p.avatar_path, p.status
+            FROM hall_lendas h
+            JOIN participantes p ON p.id = h.participante_id
+            ORDER BY h.valor_centavos DESC, h.doado_em DESC, p.nome COLLATE NOCASE ASC
+            LIMIT ? OFFSET ?
+            """,
+            (por, offset),
+        ).fetchall()
+    itens = [_hall_lenda_row(r) for r in rows]
+    itens = [x for x in itens if x]
+    pages = max(1, (total + por - 1) // por) if total else 1
+    return {
+        "itens": itens,
+        "total": total,
+        "pagina": pag,
+        "por_pagina": por,
+        "paginas": pages,
+        "tem_anterior": pag > 1,
+        "tem_proxima": pag < pages,
+    }
+
+
+def upsert_hall_lenda(
+    participante_id: int,
+    *,
+    valor_centavos_add: int = 0,
+    recado: str | None = None,
+    borda: str | None = None,
+    substituir_valor: int | None = None,
+) -> dict[str, Any]:
+    """Cria ou atualiza lenda. Soma valor_centavos_add ao total (ou substitui)."""
+    from src.hall_lendas import agora_local_iso, borda_ok
+
+    pid = int(participante_id)
+    part = get_participante(pid)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    if part.get("status") != "liberado":
+        raise ValueError("Só participantes liberados entram no Hall")
+
+    add = max(0, int(valor_centavos_add or 0))
+    agora = agora_local_iso()
+    atual = get_hall_lenda(pid)
+    if atual is None and add <= 0 and substituir_valor is None:
+        raise ValueError("informe um valor de doação para criar a lenda")
+
+    if atual is None:
+        total = int(substituir_valor) if substituir_valor is not None else add
+        b = borda_ok(borda)
+        texto = (recado or "").strip()
+        with get_db() as conn:
+            conn.execute(
+                """
+                INSERT INTO hall_lendas (
+                  participante_id, valor_centavos, recado, borda, doado_em, criado_em, atualizado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (pid, total, texto, b, agora, agora, agora),
+            )
+    else:
+        if substituir_valor is not None:
+            total = max(0, int(substituir_valor))
+        else:
+            total = int(atual["valor_centavos"]) + add
+        texto = atual["recado"] if recado is None else str(recado).strip()
+        b = borda_ok(borda) if borda is not None else atual["borda"]
+        # Atualiza doado_em só quando entra valor novo (soma); edição de total/recado mantém data.
+        doado_em = agora if add > 0 else atual["doado_em"]
+        with get_db() as conn:
+            conn.execute(
+                """
+                UPDATE hall_lendas SET
+                  valor_centavos = ?,
+                  recado = ?,
+                  borda = ?,
+                  doado_em = ?,
+                  atualizado_em = ?
+                WHERE participante_id = ?
+                """,
+                (total, texto, b, doado_em, agora, pid),
+            )
+    out = get_hall_lenda(pid)
+    assert out is not None
+    return out
+
+
+def set_hall_borda(participante_id: int, borda: str) -> dict[str, Any]:
+    from src.hall_lendas import agora_local_iso, borda_ok
+
+    pid = int(participante_id)
+    if not get_hall_lenda(pid):
+        raise ValueError("Participante não é lenda")
+    b = borda_ok(borda)
+    with get_db() as conn:
+        conn.execute(
+            """
+            UPDATE hall_lendas SET borda = ?, atualizado_em = ?
+            WHERE participante_id = ?
+            """,
+            (b, agora_local_iso(), pid),
+        )
+    out = get_hall_lenda(pid)
+    assert out is not None
+    return out
+
+
+def apagar_hall_lenda(participante_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM hall_lendas WHERE participante_id = ?",
+            (int(participante_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def list_participantes_liberados() -> list[dict[str, Any]]:
+    """Liberados para o seletor do admin do Hall."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, nome, username, avatar_path, status
+            FROM participantes
+            WHERE status = 'liberado'
+            ORDER BY nome COLLATE NOCASE ASC
+            """
+        ).fetchall()
+    return [dict(r) for r in rows]
