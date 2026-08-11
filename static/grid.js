@@ -145,6 +145,19 @@
     hintModal.classList.toggle("is-error", !!isError);
   }
 
+  function clubeJaUsado(clubeId) {
+    const cid = String(clubeId || "").trim();
+    if (!cid) return false;
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const cell = celulas[r][c];
+        const id = cell && cell.clube ? String(cell.clube.id || "").trim() : "";
+        if (id && id === cid) return true;
+      }
+    }
+    return false;
+  }
+
   function openModal(linha, coluna) {
     if (celulas[linha][coluna]) return;
     active = { linha, coluna };
@@ -193,7 +206,9 @@
     // Mantém a densidade da célula; filtrados = quantos bateram a busca
     if (countEl && data.total != null) countEl.textContent = String(data.total);
     if (!suggestions) return;
-    const itens = Array.isArray(data.itens) ? data.itens : [];
+    const itens = (Array.isArray(data.itens) ? data.itens : []).filter(
+      (c) => !clubeJaUsado(c && c.id)
+    );
     if (!itens.length) {
       suggestions.innerHTML = `<li class="grid-sug-empty">Nada ainda — continue digitando o nome.</li>`;
       return;
@@ -249,6 +264,7 @@
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
+      // Ex.: time já usado — não preenche o quadro; usuário tenta de novo
       setModalHint(data.erro || "Não foi possível registrar o chute.", true);
       return;
     }
@@ -257,6 +273,10 @@
 
   async function submitGuessById(clubeId) {
     if (!active || !clubeId) return;
+    if (clubeJaUsado(clubeId)) {
+      setModalHint("Esse time já foi usado neste grid. Escolha outro.", true);
+      return;
+    }
     const { linha, coluna } = active;
     const r = await fetch("/grid/api/chute", {
       method: "POST",

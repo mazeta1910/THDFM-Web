@@ -3033,6 +3033,7 @@ async def grid_api_chute(request: Request):
     from src.grid_game import (
         celulas_completas,
         chute_nome_inexistente,
+        clube_ja_usado_no_grid,
         dia_grid,
         parse_celulas_progresso,
         resolver_clube_por_nome,
@@ -3080,6 +3081,13 @@ async def grid_api_chute(request: Request):
             celulas = parse_celulas_progresso(prog.get("celulas"))
             if celulas[linha][coluna] is not None:
                 return JSONResponse({"erro": "Célula já jogada"}, status_code=409)
+
+    # Estilo HoopsGrid: time já usado não entra no quadro (sem miss); usuário tenta de novo.
+    if clube_id and clube_ja_usado_no_grid(celulas, clube_id):
+        return JSONResponse(
+            {"erro": "Esse time já foi usado neste grid. Escolha outro."},
+            status_code=400,
+        )
 
     if resultado is None:
         try:
