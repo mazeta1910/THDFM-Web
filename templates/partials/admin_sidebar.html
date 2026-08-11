@@ -28,6 +28,7 @@
 {% set pend_n = admin_pendentes_count|default(0) %}
 {% set cobranca_n = admin_cobranca_count|default(0) %}
 {% from "partials/nav_icons.html" import ico %}
+{% from "macros/avatar.html" import avatar_edit %}
 
 {% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
 <aside
@@ -44,25 +45,16 @@
     </div>
     {% if participante_nav %}
     <div class="admin-brand-user-row {% if on_conta %}is-active{% endif %}">
-      <button
-        type="button"
-        class="avatar-edit-trigger admin-brand-avatar-wrap{% if participante_nav.hall_borda %} lenda-frame lenda-frame--{{ participante_nav.hall_borda }}{% endif %}"
-        data-avatar-edit
-        aria-label="Alterar foto de perfil"
-      >
-        {% set brand_av = avatar_url(participante_nav.avatar_path) %}
-        {% if brand_av %}
-        <img class="admin-brand-avatar" src="{{ brand_av }}" alt="" data-avatar-live />
-        {% else %}
-        <span class="admin-brand-avatar admin-brand-avatar-fallback" data-avatar-live>{{ admin_nome[:2]|upper }}</span>
-        {% endif %}
-        <span class="avatar-edit-camera" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-        </span>
-      </button>
+      {{ avatar_edit(
+        path=participante_nav.avatar_path,
+        nome=participante_nav.nome,
+        wrap_class="admin-brand-avatar-wrap",
+        img_class="admin-brand-avatar",
+        fallback_class="admin-brand-avatar admin-brand-avatar-fallback",
+        borda=participante_nav.hall_borda or "",
+        iniciais=(admin_nome[:2]|upper),
+        camera_size=14
+      ) }}
       <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
         <span class="admin-brand-user-text">
           <span class="admin-brand-name">{{ admin_nome }}</span>

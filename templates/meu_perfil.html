@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/avatar.html" import avatar_block %}
 {% block title %}{% if perfil_fixado %}{{ perfil_fixado.nome }}{% else %}Meu perfil{% endif %} — THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block body_class %}proto-steam-body {% endblock %}
@@ -78,17 +79,32 @@
 
     <header class="proto-steam-hero">
       <div class="proto-steam-hero-top">
-        <div class="proto-steam-avatar{% if show_lenda %} lenda-frame lenda-frame--{{ borda_lenda }} lenda-frame--lg{% endif %}" aria-hidden="true">
-          {% if fixado and fixado.avatar_url %}
-          <img src="{{ fixado.avatar_url }}" alt="" width="112" height="112" data-public-avatar />
-          {% elif fixado %}
-          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ fixado.iniciais }}</span>
-          {% elif viewer_av %}
-          <img src="{{ viewer_av }}" alt="" width="112" height="112" data-public-avatar />
-          {% else %}
-          <span class="proto-steam-avatar-fallback" data-public-avatar-fallback>{{ viewer_ini }}</span>
-          {% endif %}
-        </div>
+        {% if fixado and fixado.avatar_url %}
+          {% set _hero_av = fixado.avatar_url %}
+          {% set _hero_ini = fixado.iniciais %}
+        {% elif fixado %}
+          {% set _hero_av = '' %}
+          {% set _hero_ini = fixado.iniciais %}
+        {% elif viewer_av %}
+          {% set _hero_av = viewer_av %}
+          {% set _hero_ini = viewer_ini %}
+        {% else %}
+          {% set _hero_av = '' %}
+          {% set _hero_ini = viewer_ini %}
+        {% endif %}
+        {{ avatar_block(
+          wrap_class="proto-steam-avatar",
+          fallback_class="proto-steam-avatar-fallback",
+          borda=borda_lenda if show_lenda else "",
+          lg=show_lenda,
+          url=_hero_av,
+          iniciais=_hero_ini,
+          width=112,
+          height=112,
+          wrap_attrs='aria-hidden="true"',
+          img_attrs="data-public-avatar",
+          fallback_attrs="data-public-avatar-fallback"
+        ) }}
 
         <div class="proto-steam-hero-main">
           <div class="proto-steam-name-row">

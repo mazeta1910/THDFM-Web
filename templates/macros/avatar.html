@@ -1,12 +1,133 @@
-{# Foto do participante com fallback de iniciais + moldura de Lenda #}
+{# Foto do participante com fallback de iniciais + moldura de Lenda.
+   Uso:
+   - avatar(...) — inline (planilha, classificação, etc.); moldura em <span> externo
+   - avatar_edit(...) — botão com câmera; moldura nas classes do próprio botão
+   - avatar_block(...) — bloco display (perfil, hall); moldura no container
+#}
+
+{% macro lenda_frame_mod(borda="", lg=false) -%}
+{%- set b = (borda or '')|trim|lower -%}
+{%- if b %} lenda-frame lenda-frame--{{ b }}{% if lg %} lenda-frame--lg{% endif %}{% endif -%}
+{%- endmacro %}
+
+{% macro avatar_camera(size=14) -%}
+<span class="avatar-edit-camera" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+    <circle cx="12" cy="13" r="4"/>
+  </svg>
+</span>
+{%- endmacro %}
+
+{% macro avatar_face(
+  path="",
+  nome="",
+  img_class="",
+  fallback_class="",
+  alt="",
+  url=none,
+  iniciais=none,
+  img_attrs="",
+  fallback_attrs="",
+  width=none,
+  height=none
+) -%}
+{%- set src = url if url is not none else avatar_url(path) -%}
+{%- set ini = iniciais if iniciais is not none else (nome or '??')[:2]|upper -%}
+{%- if src -%}
+<img{% if img_class %} class="{{ img_class }}"{% endif %} src="{{ src }}" alt="{{ alt }}"{% if width %} width="{{ width }}"{% endif %}{% if height %} height="{{ height }}"{% endif %}{% if img_attrs %} {{ img_attrs|safe }}{% endif %} />
+{%- else -%}
+<span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}{% if fallback_attrs %} {{ fallback_attrs|safe }}{% endif %}>{{ ini }}</span>
+{%- endif -%}
+{%- endmacro %}
+
 {% macro avatar(path, nome, class_prefix="planilha-avatar", alt="", borda="") -%}
-{% set url = avatar_url(path) -%}
 {% set b = (borda or '')|trim|lower -%}
 {% if b %}<span class="lenda-frame lenda-frame--{{ b }}">{% endif -%}
-{% if url -%}
-<img class="{{ class_prefix }}" src="{{ url }}" alt="{{ alt }}" />
-{%- else -%}
-<span class="{{ class_prefix }} {{ class_prefix }}-fallback">{{ (nome or '??')[:2]|upper }}</span>
-{%- endif -%}
+{{ avatar_face(
+  path=path,
+  nome=nome,
+  img_class=class_prefix,
+  fallback_class=class_prefix ~ " " ~ class_prefix ~ "-fallback",
+  alt=alt
+) }}
 {% if b %}</span>{% endif -%}
+{%- endmacro %}
+
+{% macro avatar_edit(
+  path="",
+  nome="",
+  wrap_class="",
+  img_class="",
+  fallback_class="",
+  borda="",
+  lg=false,
+  aria_label="Alterar foto de perfil",
+  trigger="data-avatar-edit",
+  id="",
+  live_attrs="data-avatar-live",
+  camera_size=14,
+  alt="",
+  url=none,
+  iniciais=none,
+  width=none,
+  height=none
+) -%}
+<button
+  type="button"
+  class="avatar-edit-trigger {{ wrap_class }}{{ lenda_frame_mod(borda, lg) }}"
+  {{ trigger|safe }}
+  {% if id %}id="{{ id }}"{% endif %}
+  aria-label="{{ aria_label }}"
+>
+  {{ avatar_face(
+    path=path,
+    nome=nome,
+    img_class=img_class,
+    fallback_class=fallback_class,
+    alt=alt,
+    url=url,
+    iniciais=iniciais,
+    img_attrs=live_attrs,
+    fallback_attrs=live_attrs,
+    width=width,
+    height=height
+  ) }}
+  {{ avatar_camera(camera_size) }}
+</button>
+{%- endmacro %}
+
+{% macro avatar_block(
+  path="",
+  nome="",
+  wrap_class="",
+  img_class="",
+  fallback_class="",
+  borda="",
+  lg=false,
+  tag="div",
+  alt="",
+  url=none,
+  iniciais=none,
+  width=none,
+  height=none,
+  wrap_attrs="",
+  img_attrs="",
+  fallback_attrs=""
+) -%}
+<{{ tag }} class="{{ wrap_class }}{{ lenda_frame_mod(borda, lg) }}"{% if wrap_attrs %} {{ wrap_attrs|safe }}{% endif %}>
+  {{ avatar_face(
+    path=path,
+    nome=nome,
+    img_class=img_class,
+    fallback_class=fallback_class,
+    alt=alt,
+    url=url,
+    iniciais=iniciais,
+    img_attrs=img_attrs,
+    fallback_attrs=fallback_attrs,
+    width=width,
+    height=height
+  ) }}
+</{{ tag }}>
 {%- endmacro %}
