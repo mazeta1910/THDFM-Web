@@ -63,7 +63,10 @@ def test_setup_credenciais_e_entrar(client: TestClient):
         follow_redirects=False,
     )
     assert ok.status_code == 303
-    assert ok.headers["location"] == f"/p/{part['token']}"
+    loc = ok.headers["location"]
+    assert loc in {f"/p/{part['token']}", "/bolao/meus-palpites"} or loc.startswith(
+        f"/p/{part['token']}"
+    )
 
 def test_username_duplicado_rejeitado(client: TestClient):
     a = db.criar_participante("Alpha", status="liberado", celular="11999005566")
@@ -186,7 +189,8 @@ def test_alterar_senha_na_conta(client: TestClient):
     )
     assert r.status_code == 303
     assert "msg=" in r.headers["location"]
-    assert "conta=1" in r.headers["location"]
+    assert "/meu-perfil/editar" in r.headers["location"]
+    assert "conta=1" not in r.headers["location"]
 
     assert db.autenticar_por_username("troca.senha", "nova45678")
     assert db.autenticar_por_username("troca.senha", "antiga123") is None

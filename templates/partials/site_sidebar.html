@@ -10,7 +10,7 @@
 {% set liberado_ok = participante_nav and participante_nav.status == 'liberado' and participante_nav.password_hash %}
 {% set liberado_sem_senha = participante_nav and participante_nav.status == 'liberado' and not participante_nav.password_hash %}
 {% from "partials/nav_icons.html" import ico %}
-{% from "macros/avatar.html" import avatar_edit %}
+{% from "macros/avatar.html" import avatar_face, avatar_camera, lenda_frame_mod %}
 {% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
 
 <aside
@@ -30,15 +30,21 @@
     </div>
     {% if participante_nav %}
     <div class="site-brand-user-row {% if on_meu_perfil %}is-active{% endif %}">
-      {{ avatar_edit(
-        path=participante_nav.avatar_path,
-        nome=participante_nav.nome,
-        wrap_class="site-brand-avatar-wrap",
-        img_class="site-brand-avatar",
-        fallback_class="site-brand-avatar site-brand-avatar-fallback",
-        borda=participante_nav.hall_borda or "",
-        camera_size=14
-      ) }}
+      <a
+        href="/meu-perfil/editar"
+        class="avatar-edit-trigger site-brand-avatar-wrap{{ lenda_frame_mod(participante_nav.hall_borda or '') }}"
+        aria-label="Alterar foto de perfil"
+      >
+        {{ avatar_face(
+          path=participante_nav.avatar_path,
+          nome=participante_nav.nome,
+          img_class="site-brand-avatar",
+          fallback_class="site-brand-avatar site-brand-avatar-fallback",
+          img_attrs="data-avatar-live",
+          fallback_attrs="data-avatar-live"
+        ) }}
+        {{ avatar_camera(14) }}
+      </a>
       {# TEXTOS PARA REESCREVER — começo #}
       <a href="/meu-perfil" class="site-brand-user {% if on_meu_perfil %}active{% endif %}">
         <span class="site-brand-user-text">

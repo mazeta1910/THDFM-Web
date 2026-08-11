@@ -49,15 +49,14 @@ def test_forms_tem_maxlength_30(client: TestClient):
     db.definir_credenciais(part["id"], "com.nome", "senha1234")
     client.get(f"/p/{part['token']}")
 
-    # Conta full page (?page=1) e drawer (?conta=1)
-    r = client.get(f"/p/{part['token']}/conta?page=1")
+    r = client.get("/meu-perfil/editar")
     assert r.status_code == 200
     assert 'maxlength="30"' in r.text
 
-    r_drawer = client.get(f"/p/{part['token']}?conta=1")
-    assert r_drawer.status_code == 200
-    assert 'id="conta-drawer-nome"' in r_drawer.text
-    assert 'maxlength="30"' in r_drawer.text
+    # Deep link legado /conta → editar
+    r_conta = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
+    assert r_conta.status_code == 303
+    assert "/meu-perfil/editar" in r_conta.headers["location"]
 
     r2 = client.get("/inscricao")
     assert r2.status_code == 200

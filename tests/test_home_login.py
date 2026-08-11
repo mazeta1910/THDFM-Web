@@ -82,9 +82,10 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     assert "/bolao/meus-palpites" in r2.text  # link Meus Palpites no menu
     assert 'action="/conta/sair"' in r2.text
     assert "site-side-sair" in r2.text
-    assert 'id="conta-drawer-root"' in r2.text
-    assert "data-conta-open" in r2.text
-    assert "Minha conta" in r2.text
+    assert 'id="conta-drawer-root"' not in r2.text
+    assert "data-conta-open" not in r2.text
+    assert 'href="/meu-perfil"' in r2.text
+    assert "Meu perfil" in r2.text
 
 def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
     """Usuário logado vê a mesma estrutura de menu na home e em Meus Palpites."""
@@ -118,36 +119,35 @@ def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
         assert "site-side-admin-login" not in html
         assert 'href="/admin/login"' not in html
 
-def test_conta_drawer_abre_por_query_e_atalho(client: TestClient):
+def test_conta_redireciona_para_editar_perfil(client: TestClient):
     part = db.criar_participante("ContaBox", status="liberado", celular="11990005566")
     db.definir_credenciais(part["id"], "conta.box", "senha1234")
     client.get(f"/p/{part['token']}")
 
     r = client.get(f"/p/{part['token']}/conta", follow_redirects=False)
     assert r.status_code == 303
-    loc = r.headers["location"]
-    assert f"/p/{part['token']}" in loc
-    assert "conta=1" in loc
+    assert r.headers["location"].startswith("/meu-perfil/editar")
 
-    r2 = client.get(f"/p/{part['token']}?conta=1&msg=Dados+atualizados")
-    assert r2.status_code == 200
-    assert 'id="conta-drawer-root"' in r2.text
-    assert "Dados atualizados" in r2.text
-    assert 'action="/p/' + part["token"] + '/conta"' in r2.text
-    assert "data-avatar-edit" in r2.text
-    assert "avatar-edit-camera" in r2.text
-    assert "site-brand-avatar" in r2.text
-    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
-    assert ".avatar-edit-trigger {" in css
-    assert "width: 88px;" in css
-    assert "max-width: 88px;" in css
-    assert ".site-brand-avatar-wrap.avatar-edit-trigger" in css
-    assert "width: 48px;" in css
-    assert 'id="conta-drawer-file-name"' not in r2.text
-    assert "conta-file-pick" not in r2.text
-    assert "Quero mudar o meu username" not in r2.text
-    assert 'id="modal-mudar-username"' not in r2.text
-    assert "Vai ficar querendo." not in r2.text
+    r2 = client.get(f"/p/{part['token']}?conta=1&msg=Dados+atualizados", follow_redirects=False)
+    assert r2.status_code == 303
+    loc = r2.headers["location"]
+    assert loc.startswith("/meu-perfil/editar")
+    assert "msg=" in loc
+
+    r3 = client.get("/?conta=1", follow_redirects=False)
+    assert r3.status_code == 303
+    assert r3.headers["location"].startswith("/meu-perfil/editar")
+
+    edit = client.get("/meu-perfil/editar")
+    assert edit.status_code == 200
+    assert 'id="proto-avatar-edit"' in edit.text or 'id="proto-avatar-form"' in edit.text
+    assert 'action="/p/' + part["token"] + '/conta"' in edit.text
+    assert "avatar-edit-camera" in edit.text
+    assert "site-brand-avatar" in edit.text
+    assert 'id="conta-drawer-root"' not in edit.text
+    assert "data-conta-open" not in edit.text
+    assert "Quero mudar o meu username" not in edit.text
+    assert 'id="modal-mudar-username"' not in edit.text
 
 def test_conta_sair_limpa_sessao(client: TestClient):
     part = db.criar_participante("SaiFora", status="liberado", celular="11991234567")

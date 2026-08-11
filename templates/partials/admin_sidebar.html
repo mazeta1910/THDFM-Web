@@ -2,7 +2,7 @@
 {% set on_admin = path.startswith('/admin') and path != '/admin/login' %}
 {% set on_admin_home = path.rstrip('/') == '/admin' %}
 {% set on_palpites = participante_nav and path == '/p/' ~ participante_nav.token %}
-{% set on_conta = participante_nav and path == '/p/' ~ participante_nav.token ~ '/conta' %}
+{% set on_meu_perfil = path.startswith('/meu-perfil') %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
@@ -28,7 +28,7 @@
 {% set pend_n = admin_pendentes_count|default(0) %}
 {% set cobranca_n = admin_cobranca_count|default(0) %}
 {% from "partials/nav_icons.html" import ico %}
-{% from "macros/avatar.html" import avatar_edit %}
+{% from "macros/avatar.html" import avatar_face, avatar_camera, lenda_frame_mod %}
 
 {% set sidebar_ordem_raw = (participante_nav.sidebar_ordem_json if participante_nav else '') or '' %}
 <aside
@@ -44,18 +44,24 @@
       <button type="button" class="admin-sidebar-close" id="admin-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
-    <div class="admin-brand-user-row {% if on_conta %}is-active{% endif %}">
-      {{ avatar_edit(
-        path=participante_nav.avatar_path,
-        nome=participante_nav.nome,
-        wrap_class="admin-brand-avatar-wrap",
-        img_class="admin-brand-avatar",
-        fallback_class="admin-brand-avatar admin-brand-avatar-fallback",
-        borda=participante_nav.hall_borda or "",
-        iniciais=(admin_nome[:2]|upper),
-        camera_size=14
-      ) }}
-      <a href="/p/{{ participante_nav.token }}/conta" class="admin-brand-user {% if on_conta %}active{% endif %}" data-conta-open>
+    <div class="admin-brand-user-row {% if on_meu_perfil %}is-active{% endif %}">
+      <a
+        href="/meu-perfil/editar"
+        class="avatar-edit-trigger admin-brand-avatar-wrap{{ lenda_frame_mod(participante_nav.hall_borda or '') }}"
+        aria-label="Alterar foto de perfil"
+      >
+        {{ avatar_face(
+          path=participante_nav.avatar_path,
+          nome=participante_nav.nome,
+          img_class="admin-brand-avatar",
+          fallback_class="admin-brand-avatar admin-brand-avatar-fallback",
+          iniciais=(admin_nome[:2]|upper),
+          img_attrs="data-avatar-live",
+          fallback_attrs="data-avatar-live"
+        ) }}
+        {{ avatar_camera(14) }}
+      </a>
+      <a href="/meu-perfil" class="admin-brand-user {% if on_meu_perfil %}active{% endif %}">
         <span class="admin-brand-user-text">
           <span class="admin-brand-name">{{ admin_nome }}</span>
           <span class="admin-brand-hint">{% if is_dono %}Dono · acesso total{% else %}Moderador{% endif %}</span>

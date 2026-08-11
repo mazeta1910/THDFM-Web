@@ -609,6 +609,11 @@ def _render_home(request: Request):
 
 @app.get("/")
 def raiz(request: Request):
+    if request.query_params.get("conta") == "1" and request.session.get("participante_token"):
+        return _redirect_conta_editar(
+            msg=request.query_params.get("msg"),
+            erro=request.query_params.get("erro"),
+        )
     dest = _destino_sessao(request)
     if dest:
         return RedirectResponse(dest, status_code=303)
@@ -617,6 +622,11 @@ def raiz(request: Request):
 
 @app.get("/home")
 def home(request: Request):
+    if request.query_params.get("conta") == "1" and request.session.get("participante_token"):
+        return _redirect_conta_editar(
+            msg=request.query_params.get("msg"),
+            erro=request.query_params.get("erro"),
+        )
     dest = _destino_sessao(request)
     if dest:
         return RedirectResponse(dest, status_code=303)
@@ -3349,6 +3359,12 @@ def pagina_palpites(request: Request, token: str):
         raise HTTPException(404, "Link inválido")
     _remember_participante(request, token)
 
+    if request.query_params.get("conta") == "1":
+        return _redirect_conta_editar(
+            msg=request.query_params.get("msg"),
+            erro=request.query_params.get("erro"),
+        )
+
     if part.get("status") != "liberado":
         return render(
             request,
@@ -3495,14 +3511,19 @@ async def credenciais_post(
     )
 
 
-def _redirect_conta_drawer(token: str, *, msg: str | None = None, erro: str | None = None) -> RedirectResponse:
-    """Após salvar conta, reabre o drawer Minha conta sobre a área do participante."""
-    parts = ["conta=1"]
+def _redirect_conta_editar(
+    *,
+    msg: str | None = None,
+    erro: str | None = None,
+) -> RedirectResponse:
+    """Conta legada → Editar perfil (drawer Minha conta removido)."""
+    parts: list[str] = []
     if msg:
         parts.append(f"msg={quote(msg)}")
     if erro:
         parts.append(f"erro={quote(erro)}")
-    return RedirectResponse(f"/p/{token}?{'&'.join(parts)}", status_code=303)
+    suffix = f"?{'&'.join(parts)}" if parts else ""
+    return RedirectResponse("/meu-perfil/editar" + suffix, status_code=303)
 
 
 def _safe_conta_next(next_url: str | None) -> str | None:
@@ -3524,16 +3545,14 @@ def _redirect_after_conta(
     msg: str | None = None,
     erro: str | None = None,
 ) -> RedirectResponse:
-    dest = _safe_conta_next(next_url)
-    if dest:
-        parts: list[str] = []
-        if msg:
-            parts.append(f"msg={quote(msg)}")
-        if erro:
-            parts.append(f"erro={quote(erro)}")
-        suffix = f"?{'&'.join(parts)}" if parts else ""
-        return RedirectResponse(dest + suffix, status_code=303)
-    return _redirect_conta_drawer(token, msg=msg, erro=erro)
+    dest = _safe_conta_next(next_url) or "/meu-perfil/editar"
+    parts: list[str] = []
+    if msg:
+        parts.append(f"msg={quote(msg)}")
+    if erro:
+        parts.append(f"erro={quote(erro)}")
+    suffix = f"?{'&'.join(parts)}" if parts else ""
+    return RedirectResponse(dest + suffix, status_code=303)
 
 
 @app.get("/p/{token}/conta", response_class=HTMLResponse)
@@ -3545,15 +3564,7 @@ def conta_participante(request: Request, token: str):
     gate = _gate_credenciais(part)
     if gate:
         return gate
-    # Preferência: drawer (mesmo padrão do Entrar / LOGUIN)
-    if request.query_params.get("page") != "1":
-        msg = request.query_params.get("msg")
-        erro = request.query_params.get("erro")
-        return _redirect_conta_drawer(token, msg=msg, erro=erro)
-    return render(
-        request,
-        "conta.html",
-        participante=_participante_com_hall(part),
+    return _redirect_conta_editar(
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
     )

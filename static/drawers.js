@@ -1,4 +1,4 @@
-/** Drawers laterais: Entrar, LOGUIN, Minha conta. */
+/** Drawers laterais: Entrar e LOGUIN. */
 (function () {
     const root = document.getElementById("acesso-drawer-root");
     if (!root) return;
@@ -17,7 +17,7 @@
 
     const abrir = (modo) => {
       // Fecha LOGUIN / Minha conta se estiverem abertos
-      ["loguin-drawer-root", "conta-drawer-root"].forEach((id) => {
+      ["loguin-drawer-root"].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
         el.classList.remove("is-open");
@@ -100,7 +100,7 @@
     const okBtn = document.getElementById("loguin-drawer-ok");
 
     const fecharAcesso = () => {
-      ["acesso-drawer-root", "conta-drawer-root"].forEach((id) => {
+      ["acesso-drawer-root"].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
         el.classList.remove("is-open");
@@ -158,89 +158,4 @@
     if (new URLSearchParams(location.search).get("acesso") === "loguin") {
       abrir();
     }
-  })();
-
-(function () {
-    const root = document.getElementById("conta-drawer-root");
-    if (!root) return;
-    const backdrop = document.getElementById("conta-drawer-backdrop");
-    const closeBtn = document.getElementById("conta-drawer-close");
-
-    const fecharOutros = () => {
-      ["acesso-drawer-root", "loguin-drawer-root"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.classList.remove("is-open");
-        el.hidden = true;
-      });
-    };
-
-    const fecharMenus = () => {
-      document.body.classList.remove("site-sidebar-open", "admin-sidebar-open");
-      const siteSb = document.getElementById("site-sidebar-backdrop");
-      const adminSb = document.getElementById("admin-sidebar-backdrop");
-      if (siteSb) siteSb.hidden = true;
-      if (adminSb) adminSb.hidden = true;
-    };
-
-    const abrir = () => {
-      fecharOutros();
-      fecharMenus();
-      root.hidden = false;
-      root.classList.add("is-open");
-      document.body.classList.add("acesso-drawer-open");
-      window.setTimeout(() => document.getElementById("conta-drawer-nome")?.focus(), 50);
-    };
-
-    const fechar = () => {
-      root.classList.remove("is-open");
-      root.hidden = true;
-      document.body.classList.remove("acesso-drawer-open");
-      const url = new URL(location.href);
-      if (url.searchParams.get("conta") === "1") {
-        url.searchParams.delete("conta");
-        url.searchParams.delete("msg");
-        url.searchParams.delete("erro");
-        history.replaceState({}, "", url.pathname + url.search + url.hash);
-      }
-    };
-
-    document.querySelectorAll("[data-conta-open]").forEach((el) => {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        abrir();
-      });
-    });
-    document.querySelectorAll("[data-conta-close]").forEach((el) => {
-      el.addEventListener("click", () => fechar());
-    });
-    closeBtn?.addEventListener("click", fechar);
-    backdrop?.addEventListener("click", fechar);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && root.classList.contains("is-open")) fechar();
-    });
-
-    if (new URLSearchParams(location.search).get("conta") === "1") {
-      abrir();
-    }
-
-    const input = document.getElementById("conta-drawer-avatar");
-    const preview = document.getElementById("conta-drawer-avatar-preview");
-    const form = document.getElementById("form-conta-drawer");
-    if (input && window.thdfmBindAvatarCrop) {
-      window.thdfmBindAvatarCrop(input, {
-        preview,
-        previewImgId: "conta-drawer-avatar-live",
-        previewImgClass: "avatar-placeholder",
-        autoSubmitForm: form,
-      });
-    }
-    document.querySelectorAll("[data-avatar-edit]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!input) return;
-        input.click();
-      });
-    });
   })();

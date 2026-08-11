@@ -191,10 +191,12 @@ def test_sidebar_logado_brand_leva_ao_perfil(client: TestClient):
     assert 'href="/prototipo/perfil/publico"' not in r.text
     assert 'href="/meu-perfil"' in r.text
     assert 'class="site-brand-hint">Meu perfil</span>' in r.text
-    brand = r.text.split('class="site-brand-user', 1)[1].split("</a>", 1)[0]
+    brand = r.text.split('href="/meu-perfil" class="site-brand-user', 1)[1].split("</a>", 1)[0]
     assert "data-conta-open" not in brand
     assert "Meu perfil" in brand
     assert "Minha conta" not in brand
+    assert 'href="/meu-perfil/editar"' in r.text
+    assert "avatar-edit-trigger" in r.text
 
 
 def test_meu_perfil_visitante(client: TestClient):
