@@ -4296,22 +4296,62 @@ def limpar_grid_progresso_dia(dia: str) -> int:
         return int(cur.rowcount or 0)
 
 
-def get_grid_virada_hora() -> int:
-    """Hora local (0–23) em que o puzzle diário vira. Padrão: 0 (meia-noite)."""
+def parse_grid_virada(valor: str | int | None) -> tuple[int, int]:
+    """Aceita 'HH:MM', 'H:MM', 'HH' ou int → (hora, minuto)."""
+    if valor is None:
+        return (0, 0)
+    if isinstance(valor, bool):
+        raise ValueError("hora da virada inválida")
+    if isinstance(valor, int):
+        if not 0 <= valor <= 23:
+            raise ValueError("hora da virada deve ser entre 0 e 23")
+        return (valor, 0)
+    raw = str(valor).strip()
+    if not raw:
+        return (0, 0)
+    if re.fullmatch(r"\d{1,2}", raw):
+        h = int(raw)
+        if not 0 <= h <= 23:
+            raise ValueError("hora da virada deve ser entre 0 e 23")
+        return (h, 0)
+    m = re.fullmatch(r"(\d{1,2})\s*[:hH]\s*(\d{1,2})", raw)
+    if not m:
+        raise ValueError("use o formato HH:MM (ex.: 18:30)")
+    h, mi = int(m.group(1)), int(m.group(2))
+    if not 0 <= h <= 23 or not 0 <= mi <= 59:
+        raise ValueError("hora inválida (0–23, minutos 0–59)")
+    return (h, mi)
+
+
+def format_grid_virada(hora: int, minuto: int = 0) -> str:
+    return f"{int(hora):02d}:{int(minuto):02d}"
+
+
+def get_grid_virada_hm() -> tuple[int, int]:
+    """(hora, minuto) local da virada. Aceita meta legada só com hora."""
     raw = (get_meta("grid_virada_hora", "0") or "0").strip()
     try:
-        h = int(raw)
+        return parse_grid_virada(raw)
     except ValueError:
-        return 0
-    return h if 0 <= h <= 23 else 0
+        return (0, 0)
 
 
-def set_grid_virada_hora(hora: int) -> int:
-    h = int(hora)
-    if not 0 <= h <= 23:
-        raise ValueError("hora da virada deve ser entre 0 e 23")
-    set_meta("grid_virada_hora", str(h))
-    return h
+def get_grid_virada_hora() -> int:
+    """Compat: só a hora (0–23)."""
+    return get_grid_virada_hm()[0]
+
+
+def set_grid_virada_hora(hora: int | str, minuto: int | None = None) -> str:
+    """Grava virada como HH:MM. Retorna o rótulo salvo."""
+    if minuto is not None:
+        h, mi = int(hora), int(minuto)
+        if not 0 <= h <= 23 or not 0 <= mi <= 59:
+            raise ValueError("hora inválida (0–23, minutos 0–59)")
+    else:
+        h, mi = parse_grid_virada(hora)
+    rotulo = format_grid_virada(h, mi)
+    set_meta("grid_virada_hora", rotulo)
+    return rotulo
 
 
 def get_grid_salt(dia: str) -> str | None:
