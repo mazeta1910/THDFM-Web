@@ -7,6 +7,7 @@ import json
 import math
 import random
 import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
@@ -24,6 +25,13 @@ BUSCA_MIN_CHARS = 3
 # Só sugere clube depois de digitar ~70% do nome (sem sufixo de UF).
 SUGESTAO_FRACAO = 0.70
 _UF_SUFFIX_RE = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
+
+
+def fold_txt(s: str) -> str:
+    """Minúsculas sem acento — busca/chute (Galícia ≈ galicia)."""
+    base = unicodedata.normalize("NFKD", (s or "").strip())
+    return "".join(c for c in base if not unicodedata.combining(c)).casefold()
+
 
 # Categorias históricas (Brasileirão) só entram no puzzle a partir desta data
 # (00:00 America/Sao_Paulo). Dias anteriores mantêm o pool antigo.
@@ -214,7 +222,7 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
         "serie": normalizar_serie(c.get("divisao")),
         "regiao": UF_PARA_REGIAO.get(c.get("uf") or ""),
         "letra": letra,
-        "nome_norm": nome.casefold(),
+        "nome_norm": fold_txt(nome),
     }
 
 
@@ -552,7 +560,7 @@ def buscar_celula(
         raise ValueError("categoria inválida")
     pool = pool_celula(row, col)
     total = len(pool)
-    query = (q or "").strip().casefold()
+    query = fold_txt(q or "")
     pronto = len(query) >= BUSCA_MIN_CHARS
     itens: list[dict[str, Any]] = []
     if pronto:
@@ -590,7 +598,7 @@ def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
 
     Prefere match exato; senão, único candidato elegível pela regra dos ~70%.
     """
-    query = (nome or "").strip().casefold()
+    query = fold_txt(nome or "").strip()
     if len(query) < BUSCA_MIN_CHARS:
         raise ValueError(f"Digite pelo menos {BUSCA_MIN_CHARS} letras do nome")
     exatos = [c for c in clubes_grid() if c["nome_norm"] == query]

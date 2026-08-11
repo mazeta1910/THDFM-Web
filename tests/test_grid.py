@@ -508,6 +508,34 @@ def test_resolver_clube_por_nome_sem_sugestoes():
         assert "não encontrado" in str(exc).casefold() or "lista" in str(exc).casefold()
 
 
+def test_busca_e_chute_ignoram_acentos():
+    """Galícia deve aparecer/resolver com 'Galicia' (sem acento)."""
+    from src.grid_game import (
+        buscar_celula,
+        dia_grid,
+        fold_txt,
+        min_chars_sugestao,
+        resolver_clube_por_nome,
+    )
+
+    clubes_grid.cache_clear()
+    clubes_por_id.cache_clear()
+
+    assert fold_txt("Galícia") == "galicia"
+    galicia = next(c for c in clubes_grid() if c["nome"] == "Galícia")
+    assert galicia["nome_norm"] == "galicia"
+
+    precisa = min_chars_sugestao(galicia["nome_norm"])
+    q = "galicia"[:precisa]
+    dia = dia_grid()
+    sug = buscar_celula(dia=dia, linha=0, coluna=0, q=q)
+    ids = {x["id"] for x in sug["itens"]}
+    assert galicia["id"] in ids
+
+    assert resolver_clube_por_nome("Galicia")["id"] == galicia["id"]
+    assert resolver_clube_por_nome("GALÍCIA")["id"] == galicia["id"]
+
+
 def test_ranking_e_stats_grid(client: TestClient):
     from src import db as dbmod
 
