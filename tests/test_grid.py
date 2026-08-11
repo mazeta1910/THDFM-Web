@@ -101,20 +101,34 @@ def test_virada_meia_noite_sao_paulo():
         dia_grid(datetime(2026, 8, 11, 3, 0, tzinfo=utc), hora_virada=0) == "2026-08-11"
     )
 
-    # Virada às 18:00: ainda é o dia anterior às 17:59
+    # Virada às 18:00: antes = dia civil; na virada abre o puzzle do dia seguinte
     tarde = datetime(2026, 8, 11, 17, 59, tzinfo=TZ_SP)
     noite = datetime(2026, 8, 11, 18, 0, tzinfo=TZ_SP)
-    assert dia_grid(tarde, hora_virada=18) == "2026-08-10"
-    assert dia_grid(noite, hora_virada=18) == "2026-08-11"
+    assert dia_grid(tarde, hora_virada=18) == "2026-08-11"
+    assert dia_grid(noite, hora_virada=18) == "2026-08-12"
     ms18 = ms_ate_proxima_virada(tarde, hora_virada=18)
     assert 0 < ms18 <= 60_000 + 50
 
     # HH:MM livre — 18:30
     quase = datetime(2026, 8, 11, 18, 29, tzinfo=TZ_SP)
     pos = datetime(2026, 8, 11, 18, 30, tzinfo=TZ_SP)
-    assert dia_grid(quase, hora_virada="18:30") == "2026-08-10"
-    assert dia_grid(pos, hora_virada="18:30") == "2026-08-11"
+    assert dia_grid(quase, hora_virada="18:30") == "2026-08-11"
+    assert dia_grid(pos, hora_virada="18:30") == "2026-08-12"
     assert 0 < ms_ate_proxima_virada(quase, hora_virada=(18, 30)) <= 60_000 + 50
+
+    # Caso do bug: 22:20 no dia 10 deve abrir o puzzle 11/08
+    assert (
+        dia_grid(datetime(2026, 8, 10, 22, 19, tzinfo=TZ_SP), hora_virada="22:20")
+        == "2026-08-10"
+    )
+    assert (
+        dia_grid(datetime(2026, 8, 10, 22, 20, tzinfo=TZ_SP), hora_virada="22:20")
+        == "2026-08-11"
+    )
+    assert (
+        dia_grid(datetime(2026, 8, 10, 22, 22, tzinfo=TZ_SP), hora_virada="22:20")
+        == "2026-08-11"
+    )
 
 
 def test_vancouver_whitecaps_no_catalogo_fora_do_puzzle():
@@ -264,7 +278,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "vira às 00:00 (Brasília)" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=2" in r.text
+    assert "/static/grid-admin.js?v=3" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text

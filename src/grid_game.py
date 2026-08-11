@@ -106,8 +106,11 @@ def dia_grid(
 ) -> str:
     """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD).
 
-    Vira no horário configurado (padrão 00:00 SP). Antes da virada, ainda conta
-    como o dia civil anterior.
+    Meia-noite (00:00): o dia civil em SP.
+
+    Outros horários: a virada abre o puzzle do *próximo* dia civil.
+    Ex.: virada 22:20 — às 22:20 do dia 10 entra o puzzle 11/08;
+    antes das 22:20 do dia 11 ainda é o puzzle 11/08.
     """
     from datetime import timedelta
 
@@ -117,9 +120,14 @@ def dia_grid(
     else:
         now = now.astimezone(TZ_SP)
     h, mi = _resolver_virada(hora_virada, minuto_virada)
+    # 00:00 = dia civil simples (comportamento clássico).
+    if h == 0 and mi == 0:
+        return now.date().isoformat()
+    # Antes da virada: puzzle do dia civil corrente.
+    # Na virada e depois: puzzle do dia seguinte (troca de fato).
     if (now.hour, now.minute) < (h, mi):
-        return (now.date() - timedelta(days=1)).isoformat()
-    return now.date().isoformat()
+        return now.date().isoformat()
+    return (now.date() + timedelta(days=1)).isoformat()
 
 
 def rotulo_dia(dia: str) -> str:
