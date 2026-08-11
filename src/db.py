@@ -13,7 +13,7 @@ from typing import Any, Iterator
 import bcrypt
 
 from src.config import COMPROVANTES_DIR, DATA_DIR, DB_PATH, NOME_MAX_LEN
-from src.seed_data import OITAVAS
+from src.seed_data import OITAVAS, QUARTAS
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{3,24}$")
 SENHA_MIN_LEN = 8
@@ -258,6 +258,33 @@ def _seed_oitavas(conn: sqlite3.Connection) -> None:
             "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
             "VALUES (?, 'volta', 'b', ?)",
             (item["id"], item.get("volta_em")),
+        )
+
+
+def _migrate_quartas_ordem_casa(conn: sqlite3.Connection) -> None:
+    """Corrige clube_a/clube_b das quartas para o mandante da volta canônico.
+
+    Ida: clube_a em casa. Volta: clube_b em casa (Grêmio, Galo, Vitória, Santos).
+    Idempotente: só altera pares já cadastrados que estejam invertidos.
+    """
+    canon = {
+        frozenset({p["clube_a"], p["clube_b"]}): (p["clube_a"], p["clube_b"])
+        for p in QUARTAS
+    }
+    rows = conn.execute(
+        "SELECT id, clube_a, clube_b FROM confrontos WHERE fase = 'quartas' ORDER BY id"
+    ).fetchall()
+    for r in rows:
+        chave = frozenset({r["clube_a"], r["clube_b"]})
+        alvo = canon.get(chave)
+        if not alvo:
+            continue
+        want_a, want_b = alvo
+        if r["clube_a"] == want_a and r["clube_b"] == want_b:
+            continue
+        conn.execute(
+            "UPDATE confrontos SET clube_a = ?, clube_b = ? WHERE id = ?",
+            (want_a, want_b, r["id"]),
         )
 
 
@@ -610,6 +637,7 @@ def init_db() -> None:
         _migrate_grid_progresso(conn)
         _migrate_grid_puzzle_salt(conn)
         _migrate_hall_lendas(conn)
+        _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
@@ -2059,6 +2087,8 @@ def substituir_confrontos_fase(
                 (next_id, par.get("volta_em")),
             )
             ids.append(next_id)
+        if fase == "quartas":
+            _migrate_quartas_ordem_casa(conn)
     return ids
 
 
