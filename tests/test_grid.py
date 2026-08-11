@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -11,6 +12,7 @@ from src.config import ROOT_DIR
 from src.grid_game import (
     DENSIDADE_MIN,
     GRID_HISTORICO_DESDE,
+    GRID_VARIEDADE_DESDE,
     TZ_SP,
     categoria_por_id,
     categorias_disponiveis,
@@ -23,6 +25,7 @@ from src.grid_game import (
     pool_celula,
     texto_share,
     validar_chute,
+    variedade_ativa,
 )
 from src.grid_historico import historico_serie_a
 from tests.conftest import login_admin
@@ -81,6 +84,71 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
     for row in p["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
 
+
+def test_variedade_cutover_e_eixos_mistos():
+    assert GRID_VARIEDADE_DESDE == "2026-08-12"
+    assert variedade_ativa("2026-08-11") is False
+    assert variedade_ativa("2026-08-12") is True
+
+    legado = gerar_puzzle("2026-08-11")
+    assert legado["dia"] == "2026-08-11"
+
+    tipos_vistos: set[str] = set()
+    familias_por_dia: list[int] = []
+    ids_vistos: set[str] = set()
+    for i in range(36):
+        dia = f"2026-09-{i + 1:02d}" if i < 30 else f"2026-10-{i - 29:02d}"
+        p = gerar_puzzle(dia)
+        assert p["tamanho"] == 3
+        for row in p["densidades"]:
+            assert all(n >= DENSIDADE_MIN for n in row)
+
+        for eixo in (p["linhas"], p["colunas"]):
+            tipos = [c["tipo"] for c in eixo]
+            cont = Counter(tipos)
+            assert len(cont) >= 2, (dia, eixo)
+            assert cont.get("termina", 0) <= 1, (dia, eixo)
+            assert cont.get("regiao", 0) <= 1, (dia, eixo)
+
+        board = p["linhas"] + p["colunas"]
+        tipos_all = {c["tipo"] for c in board}
+        assert len(tipos_all) >= 3, (dia, tipos_all)
+
+        def _fam(t: str) -> str:
+            if t in ("letra", "termina"):
+                return "nome"
+            if t in ("uf", "regiao", "serie"):
+                return "geo"
+            if t in {
+                "titulo",
+                "premio",
+                "participacao",
+                "longevidade",
+                "paridade",
+            }:
+                return "hist"
+            return t
+
+        familias = {_fam(t) for t in tipos_all}
+        assert len(familias) >= 2, (dia, familias)
+        familias_por_dia.append(len(familias))
+        tipos_vistos |= tipos_all
+        ids_vistos |= {c["id"] for c in board}
+        assert gerar_puzzle(dia) == p
+
+    # Cobertura ampla: nomes, geo e histórico aparecem ao longo dos dias
+    assert tipos_vistos & {"letra", "termina"}
+    assert tipos_vistos & {"uf", "regiao", "serie"}
+    assert tipos_vistos & {
+        "titulo",
+        "premio",
+        "participacao",
+        "longevidade",
+        "paridade",
+    }
+    assert len(tipos_vistos) >= 7
+    assert len(ids_vistos) >= 35
+    assert max(familias_por_dia) >= 3
 
 def test_categoria_termina_com_letra_e_silaba():
     from src.grid_game import Categoria, categorias_compativeis, clube_bate_categoria
