@@ -60,7 +60,22 @@
       {% endfor %}
       {% endfor %}
     </div>
-    <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
+    <div class="grid-board-footer">
+      <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
+      <div class="grid-miopia" data-grid-miopia>
+        <span class="grid-miopia-label" id="grid-miopia-label">Miopia</span>
+        <div
+          class="grid-miopia-toggles"
+          role="radiogroup"
+          aria-labelledby="grid-miopia-label"
+        >
+          <button type="button" class="grid-miopia-btn" data-miopia="off" aria-pressed="true" title="Miopia desligada">Off</button>
+          <button type="button" class="grid-miopia-btn" data-miopia="leve" aria-pressed="false" title="Miopia leve">Leve</button>
+          <button type="button" class="grid-miopia-btn" data-miopia="moderada" aria-pressed="false" title="Miopia moderada">Moderada</button>
+          <button type="button" class="grid-miopia-btn" data-miopia="alta" aria-pressed="false" title="Miopia alta">Alta</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="grid-result card" data-grid-result hidden>
@@ -152,5 +167,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=8" defer></script>
+<script src="/static/grid.js?v=9" defer></script>
 {% endblock %}

@@ -14,6 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.clubes_catalogo import carregar_clubes
+from src.grid_historico import HISTORICO_META, historico_serie_a
 
 TZ_SP = ZoneInfo("America/Sao_Paulo")
 GRID_SIZE = 3
@@ -23,6 +24,13 @@ BUSCA_MIN_CHARS = 3
 # Só sugere clube depois de digitar ~70% do nome (sem sufixo de UF).
 SUGESTAO_FRACAO = 0.70
 _UF_SUFFIX_RE = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
+
+# Categorias históricas (Brasileirão) só entram no puzzle a partir desta data
+# (00:00 America/Sao_Paulo). Dias anteriores mantêm o pool antigo.
+GRID_HISTORICO_DESDE = "2026-08-11"
+_TIPOS_HISTORICOS = frozenset(
+    {"titulo", "premio", "participacao", "longevidade", "paridade"}
+)
 
 REGIOES: dict[str, set[str]] = {
     "Norte": {"AC", "AP", "AM", "PA", "RO", "RR", "TO"},
@@ -126,6 +134,12 @@ def clubes_por_id() -> dict[str, dict[str, Any]]:
     return {c["id"]: c for c in clubes_grid()}
 
 
+def historico_ativo(dia: str | None = None) -> bool:
+    """True a partir de GRID_HISTORICO_DESDE (virada 00:00 SP)."""
+    dia_s = dia or dia_grid()
+    return dia_s >= GRID_HISTORICO_DESDE
+
+
 def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
     if cat.tipo == "uf":
         return clube.get("uf") == cat.valor
@@ -135,6 +149,9 @@ def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
         return clube.get("serie") == cat.valor
     if cat.tipo == "letra":
         return clube.get("letra") == cat.valor
+    if cat.tipo in _TIPOS_HISTORICOS:
+        ids = historico_serie_a().get(cat.id)
+        return bool(ids) and clube.get("id") in ids
     return False
 
 
@@ -149,6 +166,19 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         return a.valor in REGIOES.get(b.valor, set())
     if a.tipo == "regiao" and b.tipo == "uf":
         return b.valor in REGIOES.get(a.valor, set())
+    # Subconjuntos históricos: longevidade 20 ⊂ 10 ⊂ participação
+    if {a.id, b.id} == {"longevidade:serie_a_10", "longevidade:serie_a_20"}:
+        return True
+    if {a.id, b.id} == {"participacao:serie_a", "longevidade:serie_a_10"}:
+        return True
+    if {a.id, b.id} == {"participacao:serie_a", "longevidade:serie_a_20"}:
+        return True
+    # Campeão ⊂ G4; vice não necessariamente ⊂ campeão
+    if a.id == "titulo:campeao_br" and b.id == "premio:g4":
+        return True
+    if b.id == "titulo:campeao_br" and a.id == "premio:g4":
+        return True
+    # Paridade de campeão ∩ campeão = a própria paridade (ok, denso o bastante via outras)
     return True
 
 
@@ -162,7 +192,7 @@ def pool_celula(row: Categoria, col: Categoria) -> list[dict[str, Any]]:
     ]
 
 
-def _montar_categorias() -> list[Categoria]:
+def _montar_categorias(dia: str) -> list[Categoria]:
     clubes = clubes_grid()
     cats: list[Categoria] = []
 
@@ -196,23 +226,35 @@ def _montar_categorias() -> list[Categoria]:
                 Categoria(f"letra:{letra}", "letra", letra, f"Nome começa com {letra}")
             )
 
+    if historico_ativo(dia):
+        hist = historico_serie_a()
+        ids_grid = {c["id"] for c in clubes}
+        for cat_id, tipo, valor, rotulo in HISTORICO_META:
+            membros = hist.get(cat_id) or frozenset()
+            n = sum(1 for cid in membros if cid in ids_grid)
+            if n >= DENSIDADE_MIN:
+                cats.append(Categoria(cat_id, tipo, valor, rotulo))
+
     return cats
 
 
-@lru_cache(maxsize=1)
-def categorias_disponiveis() -> tuple[Categoria, ...]:
-    return tuple(_montar_categorias())
+@lru_cache(maxsize=16)
+def categorias_disponiveis(dia: str | None = None) -> tuple[Categoria, ...]:
+    dia_s = dia or dia_grid()
+    return tuple(_montar_categorias(dia_s))
 
 
 def _rng_dia(dia: str) -> random.Random:
-    digest = hashlib.sha256(f"thdfm-grid-v1|{dia}".encode("utf-8")).hexdigest()
+    # v1: pool clássico; v2: com categorias históricas (após GRID_HISTORICO_DESDE)
+    ver = "v2" if historico_ativo(dia) else "v1"
+    digest = hashlib.sha256(f"thdfm-grid-{ver}|{dia}".encode("utf-8")).hexdigest()
     return random.Random(int(digest[:16], 16))
 
 
 def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
     """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes."""
     dia_s = dia or dia_grid()
-    cats = list(categorias_disponiveis())
+    cats = list(categorias_disponiveis(dia_s))
     if len(cats) < GRID_SIZE * 2:
         raise RuntimeError("catálogo insuficiente para o grid")
 
@@ -222,9 +264,16 @@ def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
         by_tipo.setdefault(c.tipo, []).append(c)
         rng.shuffle(by_tipo[c.tipo])
 
-    # Estratégia estável: um eixo "atributo geográfico/série", outro "letra"
-    geo = list(by_tipo.get("uf") or []) + list(by_tipo.get("regiao") or []) + list(
-        by_tipo.get("serie") or []
+    # Estratégia estável: um eixo "atributo/história", outro "letra"
+    geo = (
+        list(by_tipo.get("uf") or [])
+        + list(by_tipo.get("regiao") or [])
+        + list(by_tipo.get("serie") or [])
+        + list(by_tipo.get("titulo") or [])
+        + list(by_tipo.get("premio") or [])
+        + list(by_tipo.get("participacao") or [])
+        + list(by_tipo.get("longevidade") or [])
+        + list(by_tipo.get("paridade") or [])
     )
     letras = list(by_tipo.get("letra") or [])
     rng.shuffle(geo)
@@ -343,8 +392,13 @@ def _sortear_eixo(
     return escolhidas[:GRID_SIZE]
 
 
-def categoria_por_id(cat_id: str) -> Categoria | None:
-    for c in categorias_disponiveis():
+def categoria_por_id(cat_id: str, dia: str | None = None) -> Categoria | None:
+    for c in categorias_disponiveis(dia):
+        if c.id == cat_id:
+            return c
+    # Fallback: categorias históricas podem ser resolvidas mesmo se o dia
+    # corrente ainda estiver no pool clássico (útil em testes pontuais).
+    for c in categorias_disponiveis(GRID_HISTORICO_DESDE):
         if c.id == cat_id:
             return c
     return None
@@ -395,8 +449,8 @@ def buscar_celula(
     puzzle = gerar_puzzle(dia)
     if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
         raise ValueError("célula inválida")
-    row = categoria_por_id(puzzle["linhas"][linha]["id"])
-    col = categoria_por_id(puzzle["colunas"][coluna]["id"])
+    row = categoria_por_id(puzzle["linhas"][linha]["id"], dia)
+    col = categoria_por_id(puzzle["colunas"][coluna]["id"], dia)
     if not row or not col:
         raise ValueError("categoria inválida")
     pool = pool_celula(row, col)
@@ -498,8 +552,8 @@ def validar_chute(
     puzzle = gerar_puzzle(dia)
     if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
         raise ValueError("célula inválida")
-    row = categoria_por_id(puzzle["linhas"][linha]["id"])
-    col = categoria_por_id(puzzle["colunas"][coluna]["id"])
+    row = categoria_por_id(puzzle["linhas"][linha]["id"], dia)
+    col = categoria_por_id(puzzle["colunas"][coluna]["id"], dia)
     if not row or not col:
         raise ValueError("categoria inválida")
     clube = clubes_por_id().get(clube_id)
