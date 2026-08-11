@@ -113,8 +113,6 @@ def _path_publico(path: str) -> bool:
     # Inscrição: página só mostra “encerrada”; POST também precisa chegar no handler
     if path == "/inscricao":
         return True
-    if path == "/hall-lendas" or path.startswith("/hall-lendas/"):
-        return True
     return False
 
 
@@ -1752,7 +1750,10 @@ _HALL_LENDAS_BORDAS = (
 
 @app.get("/hall-lendas", response_class=HTMLResponse)
 def hall_lendas_page(request: Request):
-    """Hall das Lendas — protótipo público (sem login)."""
+    """Hall das Lendas — protótipo só Mazeta até o lançamento público."""
+    neg = require_mazeta(request)
+    if neg:
+        return neg
     lendas = sorted(
         _HALL_LENDAS_PROTO,
         key=lambda x: (-int(x["valor_centavos"]), x["nome"].casefold()),

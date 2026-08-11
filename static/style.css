@@ -935,6 +935,11 @@ html[data-theme="light"] .theme-icon-moon {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #d4a017 18%, transparent);
   box-sizing: border-box;
 }
+button.site-hall-lendas:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  color: color-mix(in srgb, #f0d060 70%, var(--text));
+}
 a.site-hall-lendas:hover {
   color: #f5d76e;
   border-color: color-mix(in srgb, #e2b93d 70%, var(--border));
