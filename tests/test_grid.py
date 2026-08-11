@@ -40,9 +40,9 @@ _PUZZLE_2026_08_10 = {
         {"id": "serie:D", "tipo": "serie", "valor": "D", "rotulo": "Brasileirão Série D"},
     ],
     "colunas": [
+        {"id": "letra:A", "tipo": "letra", "valor": "A", "rotulo": "Nome começa com A"},
         {"id": "letra:C", "tipo": "letra", "valor": "C", "rotulo": "Nome começa com C"},
-        {"id": "letra:R", "tipo": "letra", "valor": "R", "rotulo": "Nome começa com R"},
-        {"id": "letra:P", "tipo": "letra", "valor": "P", "rotulo": "Nome começa com P"},
+        {"id": "letra:I", "tipo": "letra", "valor": "I", "rotulo": "Nome começa com I"},
     ],
 }
 
