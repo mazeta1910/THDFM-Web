@@ -13,7 +13,6 @@ Unique ID;Name;Division;UF
 2.000.136.192;ABD FC;Sem divisão nacional;GO
 19.337.749;ABECAT;Brasileirão Série D;GO
 19.342.404;Academia (MT);Sem divisão nacional;MT
-19.056.649;Ação;Sem divisão nacional;MT
 301.240;AD Vitória (PE);Sem divisão nacional;PE
 318.875;ADAP;Sem divisão nacional;PR
 313.242;ADESG;Sem divisão nacional;AC
@@ -21,11 +20,6 @@ Unique ID;Name;Division;UF
 19.253.694;Afogados;Sem divisão nacional;PE
 309.616;AGA;Sem divisão nacional;PE
 19.334.270;Agrimaq;Sem divisão nacional;AL
-19.200.887;Água Santa;Brasileirão Série D;SP
-309.778;Água Verde;Sem divisão nacional;PR
-2.000.320.598;Águia de Cumaru;Sem divisão nacional;PE
-308.939;Águia de Marabá;Brasileirão Série D;PA
-314.963;Águia Negra;Sem divisão nacional;MS
 19.009.976;Aimoré;Sem divisão nacional;RS
 2.000.135.794;Albion (SP);Sem divisão nacional;SP
 301.257;Alecrim;Sem divisão nacional;RN
@@ -43,6 +37,14 @@ Unique ID;Name;Division;UF
 313.253;Amapá;Sem divisão nacional;AP
 19.398.655;Amazonas;Brasileirão Série C;AM
 2.000.122.197;Amazônia IFC;Sem divisão nacional;PA
+900.996;America (RJ);Brasileirão Série D;RJ
+104.887;Americano;Sem divisão nacional;RJ
+314.319;Americano (ES);Sem divisão nacional;ES
+309.656;Americano (MA);Sem divisão nacional;MA
+313.904;Americano (MT);Sem divisão nacional;MT
+309.737;Americano (RS);Sem divisão nacional;RS
+302.146;Americano (SP);Sem divisão nacional;SP
+19.027.339;Amparo;Sem divisão nacional;SP
 313.380;América (AC);Sem divisão nacional;AC
 308.384;América (AM);Sem divisão nacional;AM
 313.263;América (CE);Sem divisão nacional;CE
@@ -51,7 +53,6 @@ Unique ID;Name;Division;UF
 107.201;América (MG);Brasileirão Série B Betano;MG
 314.312;América (PB);Sem divisão nacional;PB
 303.013;América (PE);Sem divisão nacional;PE
-900.996;America (RJ);Brasileirão Série D;RJ
 107.203;América (RN);Brasileirão Série D;RN
 309.757;América (SC);Sem divisão nacional;SC
 301.333;América (SP);Sem divisão nacional;SP
@@ -61,16 +62,8 @@ Unique ID;Name;Division;UF
 309.782;América Paranaense;Sem divisão nacional;PR
 19.113.685;América TO (MG);Sem divisão nacional;MG
 311.108;América TR (RJ);Sem divisão nacional;RJ
-104.887;Americano;Sem divisão nacional;RJ
-314.319;Americano (ES);Sem divisão nacional;ES
-309.656;Americano (MA);Sem divisão nacional;MA
-313.904;Americano (MT);Sem divisão nacional;MT
-309.737;Americano (RS);Sem divisão nacional;RS
-302.146;Americano (SP);Sem divisão nacional;SP
-19.027.339;Amparo;Sem divisão nacional;SP
 314.744;Ananindeua;Sem divisão nacional;PA
 301.146;Anapolina;Sem divisão nacional;GO
-301.148;Anápolis;Brasileirão Série C;GO
 2.000.004.148;Anchieta (RJ);Sem divisão nacional;RJ
 314.783;Andarahy;Sem divisão nacional;RJ
 309.637;Andirá;Sem divisão nacional;AC
@@ -78,19 +71,19 @@ Unique ID;Name;Division;UF
 19.069.555;Andraus;Sem divisão nacional;PR
 319.620;Angra dos Reis;Sem divisão nacional;RJ
 2.000.210.044;Anjos do Céu;Sem divisão nacional;CE
+301.148;Anápolis;Brasileirão Série C;GO
 301.149;Aparecida (GO);Sem divisão nacional;GO
 319.141;Aparecidense;Brasileirão Série D;GO
 19.053.110;Aperibeense;Sem divisão nacional;RJ
 19.253.215;Apucarana Sports;Sem divisão nacional;PR
 19.139.649;Aquidauanense;Sem divisão nacional;MS
 19.342.407;Aracaju;Sem divisão nacional;SE
-308.938;Araçatuba;Sem divisão nacional;SP
 313.275;Aracruz;Sem divisão nacional;ES
 19.401.165;Araguacema;Sem divisão nacional;TO
 19.289.425;Araguaia;Sem divisão nacional;MT
 19.056.642;Araguaia AC;Sem divisão nacional;MT
-313.341;Araguaína;Brasileirão Série D;TO
 19.170.070;Araguari;Sem divisão nacional;MG
+313.341;Araguaína;Brasileirão Série D;TO
 19.218.393;Araioses;Sem divisão nacional;MA
 314.944;Arapongas;Sem divisão nacional;PR
 19.157.320;Araranguá;Sem divisão nacional;SC
@@ -98,12 +91,13 @@ Unique ID;Name;Division;UF
 19.344.102;Araruama;Sem divisão nacional;RJ
 19.392.506;Araucária;Sem divisão nacional;PR
 19.005.168;Araxá;Sem divisão nacional;MG
+308.938;Araçatuba;Sem divisão nacional;SP
 313.310;Ariquemes;Sem divisão nacional;RO
 19.295.792;Arsenal (PB);Sem divisão nacional;PB
 19.373.866;Arsenal (TO);Sem divisão nacional;TO
 19.108.524;Arsenal de Caridade;Sem divisão nacional;CE
-314.097;Artístico FC (PI);Sem divisão nacional;PI
 2.100.850;Artsul;Sem divisão nacional;RJ
+314.097;Artístico FC (PI);Sem divisão nacional;PI
 313.264;ARUC;Sem divisão nacional;DF
 301.100;ASA;Brasileirão Série D;AL
 19.071.614;ASEEV;Sem divisão nacional;GO
@@ -154,6 +148,7 @@ Unique ID;Name;Division;UF
 301.262;Avenida;Sem divisão nacional;RS
 2.000.066.145;Aymorés (MG);Sem divisão nacional;MG
 19.392.509;Azuriz;Brasileirão Série D;PR
+19.056.649;Ação;Sem divisão nacional;MT
 309.654;Bacabal;Sem divisão nacional;MA
 309.735;Bagé;Sem divisão nacional;RS
 315;Bahia;Brasileirão Assaí;BA
@@ -168,7 +163,6 @@ Unique ID;Name;Division;UF
 19.318.744;Barcelona (RO);Sem divisão nacional;RO
 19.023.759;Barcelona (SP);Sem divisão nacional;SP
 2.000.053.639;Barcelona de Ilhéus;Sem divisão nacional;BA
-301.296;Baré;Sem divisão nacional;RR
 19.213.392;Barra (SC);Brasileirão Série C;SC
 19.367.845;Barra (SE);Sem divisão nacional;SE
 19.156.764;Barra da Tijuca;Sem divisão nacional;RJ
@@ -180,6 +174,7 @@ Unique ID;Name;Division;UF
 316.785;Barretos;Sem divisão nacional;SP
 313.439;Barroso (AL);Sem divisão nacional;AL
 19.041.305;Baruch Imbituba;Sem divisão nacional;SC
+301.296;Baré;Sem divisão nacional;RR
 2.000.318.090;Batalhão (TO);Sem divisão nacional;TO
 318.889;Batatais;Sem divisão nacional;SP
 301.214;Batel;Sem divisão nacional;PR
@@ -217,9 +212,9 @@ Unique ID;Name;Division;UF
 301.264;Brasil de Pelotas;Brasileirão Série D;RS
 2.000.004.150;Brasil Suburbano;Sem divisão nacional;RJ
 19.339.780;Brasileirinho;Sem divisão nacional;RJ
-301.135;Brasília;Sem divisão nacional;DF
 309.670;Brasiliense;Brasileirão Série D;DF
 19.040.411;Brasilis;Sem divisão nacional;SP
+301.135;Brasília;Sem divisão nacional;DF
 301.136;Brazlândia;Sem divisão nacional;DF
 309.781;Britânia (PR);Sem divisão nacional;PR
 301.302;Brusque;Brasileirão Série C;SC
@@ -232,9 +227,7 @@ Unique ID;Name;Division;UF
 303.014;Cabense;Sem divisão nacional;PE
 314.309;Cabo Branco (PB);Sem divisão nacional;PB
 301.247;Cabofriense;Sem divisão nacional;RJ
-19.052.629;Caçadorense;Sem divisão nacional;SC
 19.019.939;Cacerense;Sem divisão nacional;MT
-313.222;Cáceres;Sem divisão nacional;MT
 311.957;Cachoeiro;Sem divisão nacional;ES
 2.000.012.133;Caeté;Sem divisão nacional;PA
 313.299;Caiçara;Sem divisão nacional;PI
@@ -244,8 +237,8 @@ Unique ID;Name;Division;UF
 301.115;Camaçari;Sem divisão nacional;BA
 8.832.329;Camaçariense;Sem divisão nacional;BA
 19.066.402;Cambará;Sem divisão nacional;PR
-19.023.901;Cambé;Sem divisão nacional;PR
 8.832.366;Camboriú;Sem divisão nacional;SC
+19.023.901;Cambé;Sem divisão nacional;PR
 19.112.044;Cametá;Sem divisão nacional;PA
 19.152.077;Campineira;Sem divisão nacional;SP
 301.210;Campinense;Sem divisão nacional;PB
@@ -292,12 +285,12 @@ Unique ID;Name;Division;UF
 314.320;Caxias (ES);Sem divisão nacional;ES
 309.744;Caxias (SC);Sem divisão nacional;SC
 311.949;Caxiense;Sem divisão nacional;MA
+19.052.629;Caçadorense;Sem divisão nacional;SC
 19.048.283;CDC;Sem divisão nacional;AM
 313.515;CEA (AP);Sem divisão nacional;AP
 311.103;CEAC/Araruama;Sem divisão nacional;RJ
-104.749;Ceará;Brasileirão Série B Betano;CE
 2.000.235.287;Ceart;Sem divisão nacional;MS
-2.000.029.691;CEFAT;Sem divisão nacional;CE
+104.749;Ceará;Brasileirão Série B Betano;CE
 313.351;Ceilandense;Sem divisão nacional;DF
 311.000;Ceilândia;Brasileirão Série D;DF
 311.955;CENE;Sem divisão nacional;MS
@@ -307,21 +300,21 @@ Unique ID;Name;Division;UF
 309.614;Centro Limoeirense;Sem divisão nacional;PE
 2.000.154.412;Centro Oeste;Sem divisão nacional;GO
 19.019.936;CEO;Sem divisão nacional;AL
-19.045.623;Cerâmica;Sem divisão nacional;RS
 311.964;Ceres (RJ);Sem divisão nacional;RJ
 2.000.138.605;Cerrado (GO);Sem divisão nacional;GO
+19.045.623;Cerâmica;Sem divisão nacional;RS
 314.614;CEUB (DF);Sem divisão nacional;DF
 314.735;CFA;Sem divisão nacional;RO
 313.352;CFZ (DF);Sem divisão nacional;DF
 107.228;CFZ (RJ);Sem divisão nacional;RJ
-8.832.346;Chã Grande;Sem divisão nacional;PE
 318.918;Chapadinha;Sem divisão nacional;MA
 301.304;Chapecoense;Brasileirão Assaí;SC
+8.832.346;Chã Grande;Sem divisão nacional;PE
 314.600;Cianorte;Brasileirão Série D;PR
 309.767;CIP (SC);Sem divisão nacional;SC
 19.152.072;Civilsan;Sem divisão nacional;DF
-309.650;Clíper;Sem divisão nacional;AM
 314.313;Clube Astréa;Sem divisão nacional;PB
+309.650;Clíper;Sem divisão nacional;AM
 19.152.071;Coenge;Sem divisão nacional;DF
 19.143.263;Coimbra;Sem divisão nacional;MG
 314.328;Colatina (ES);Sem divisão nacional;ES
@@ -384,6 +377,7 @@ Unique ID;Name;Division;UF
 19.152.078;CSU;Sem divisão nacional;AM
 19.174.915;CTE Colatina;Sem divisão nacional;ES
 318.915;Cuiabá;Brasileirão Série B Betano;MT
+313.222;Cáceres;Sem divisão nacional;MT
 19.341.592;Decisão;Brasileirão Série D;PE
 19.152.081;Defelê;Sem divisão nacional;DF
 19.014.100;Democrata (BA);Sem divisão nacional;BA
@@ -397,9 +391,6 @@ Unique ID;Name;Division;UF
 19.255.066;Desportivo Aliança;Sem divisão nacional;AL
 19.046.641;Desportivo Brasil;Sem divisão nacional;SP
 319.121;Dimensão Saúde;Sem divisão nacional;AL
-313.348;Dínamo (AL);Sem divisão nacional;AL
-19.152.067;Dínamo (DF);Sem divisão nacional;DF
-2.000.063.304;Dínamo Araxá (MG);Sem divisão nacional;MG
 19.075.749;Doce Mel;Sem divisão nacional;BA
 313.224;Dom Bosco;Sem divisão nacional;MT
 313.317;Dorense;Sem divisão nacional;SE
@@ -408,6 +399,9 @@ Unique ID;Name;Division;UF
 19.258.282;Doze;Sem divisão nacional;ES
 19.007.826;Duque de Caxias;Sem divisão nacional;RJ
 311.097;Duquecaxiense;Sem divisão nacional;RJ
+313.348;Dínamo (AL);Sem divisão nacional;AL
+19.152.067;Dínamo (DF);Sem divisão nacional;DF
+2.000.063.304;Dínamo Araxá (MG);Sem divisão nacional;MG
 312.303;EC Paraná de Londrina (PR);Sem divisão nacional;PR
 19.339.799;EC Resende;Sem divisão nacional;RJ
 19.179.979;EC São Bernardo;Sem divisão nacional;SP
@@ -421,14 +415,14 @@ Unique ID;Name;Division;UF
 311.113;Entrerriense;Sem divisão nacional;RJ
 2.000.152.152;ESMAC;Sem divisão nacional;PA
 19.088.042;Espigão;Sem divisão nacional;RO
-19.088.838;Espírito Santo FC;Sem divisão nacional;ES
-318.868;Espírito Santo SE;Sem divisão nacional;ES
 314.962;Esporte;Sem divisão nacional;PB
 19.341.236;Esporte Limoeiro;Sem divisão nacional;CE
 19.000.203;Esportiva Guaratinguetá;Sem divisão nacional;SP
 19.027.434;Esportiva Itapirense;Sem divisão nacional;SP
 301.268;Esportivo;Sem divisão nacional;RS
 19.219.019;Esportivo (MG);Sem divisão nacional;MG
+19.088.838;Espírito Santo FC;Sem divisão nacional;ES
+318.868;Espírito Santo SE;Sem divisão nacional;ES
 313.327;Estanciano;Sem divisão nacional;SE
 314.316;Estrela do Mar;Sem divisão nacional;PB
 302.108;Estrela do Norte;Sem divisão nacional;ES
@@ -444,7 +438,6 @@ Unique ID;Name;Division;UF
 2.000.029.587;FC Pará;Sem divisão nacional;PA
 314.314;Felipéia (PB);Sem divisão nacional;PB
 19.294.426;Femar;Sem divisão nacional;PB
-313.780;Fênix (MA);Sem divisão nacional;MA
 318.895;Fernandópolis;Sem divisão nacional;SP
 19.005.348;Ferrocarril (RS);Sem divisão nacional;RS
 302.144;Ferroviária (SP);Brasileirão Série C;SP
@@ -481,10 +474,10 @@ Unique ID;Name;Division;UF
 320.389;Fonseca (RJ);Sem divisão nacional;RJ
 19.005.336;Football & Athletic;Sem divisão nacional;RJ
 313.782;Football AC (MA);Sem divisão nacional;MA
-19.274.801;Força e Luz;Sem divisão nacional;RN
-19.105.650;Força Jovem Aquidabã;Sem divisão nacional;SE
 318.866;Formosa;Sem divisão nacional;GO
 104.750;Fortaleza;Brasileirão Série B Betano;CE
+19.274.801;Força e Luz;Sem divisão nacional;RN
+19.105.650;Força Jovem Aquidabã;Sem divisão nacional;SE
 19.066.538;Foz do Iguaçu;Sem divisão nacional;PR
 19.215.308;Fragata FC;Sem divisão nacional;RS
 301.340;Francana;Sem divisão nacional;SP
@@ -492,14 +485,15 @@ Unique ID;Name;Division;UF
 107.212;Friburguense;Sem divisão nacional;RJ
 19.106.492;Funorte;Sem divisão nacional;MG
 2.000.297.236;Futebol com Vida;Sem divisão nacional;RS
-301.363;Galícia;Sem divisão nacional;BA
+313.780;Fênix (MA);Sem divisão nacional;MA
 2.000.095.603;Galo Maringá;Sem divisão nacional;PR
 19.164.456;Galvez (AC);Brasileirão Série D;AC
+301.363;Galícia;Sem divisão nacional;BA
 121.262;Gama;Brasileirão Série D;DF
 19.005.850;Garibaldi;Sem divisão nacional;RS
 301.298;GAS;Brasileirão Série D;RR
-314.938;Gaúcho;Sem divisão nacional;RS
 19.105.956;Gavião Kyikatejê;Sem divisão nacional;PA
+314.938;Gaúcho;Sem divisão nacional;RS
 19.019.868;GE Catanduvense (SP);Sem divisão nacional;SP
 313.674;Gentilândia (CE);Sem divisão nacional;CE
 301.290;Genus;Sem divisão nacional;RO
@@ -507,13 +501,14 @@ Unique ID;Name;Division;UF
 19.222.407;Globo;Sem divisão nacional;RN
 314.936;Glória;Sem divisão nacional;RS
 301.155;Goianésia;Sem divisão nacional;GO
-301.157;Goiânia;Sem divisão nacional;GO
-102.555;Goiás;Brasileirão Série B Betano;GO
 301.159;Goiatuba;Brasileirão Série D;GO
+102.555;Goiás;Brasileirão Série B Betano;GO
+301.157;Goiânia;Sem divisão nacional;GO
 19.248.712;Gonçalense;Sem divisão nacional;RJ
 302.143;Goytacaz;Sem divisão nacional;RJ
 19.147.284;Gramadense;Sem divisão nacional;RS
 314.204;Grapiúna;Sem divisão nacional;BA
+2.000.192.526;Gre^mio Valparaíso;Sem divisão nacional;GO
 324;Grêmio;Brasileirão Assaí;RS
 19.343.094;Grêmio (PE);Sem divisão nacional;PE
 309.139;Grêmio Anápolis;Sem divisão nacional;GO
@@ -529,13 +524,10 @@ Unique ID;Name;Division;UF
 19.042.909;Grêmio Prudente;Sem divisão nacional;SP
 314.082;Grêmio Rondoniense;Sem divisão nacional;RO
 309.739;Grêmio Santanense;Sem divisão nacional;RS
-2.000.192.526;Gre^mio Valparaíso;Sem divisão nacional;GO
-19.026.809;Guaçuano;Sem divisão nacional;SP
 309.618;Guajará;Sem divisão nacional;RO
 19.152.085;Guanabara (DF);Sem divisão nacional;DF
 2.000.138.749;Guanabara City;Sem divisão nacional;GO
 19.373.913;Guaporé;Brasileirão Série D;RO
-19.140.899;Guaraí;Sem divisão nacional;TO
 325;Guarani;Brasileirão Série C;SP
 301.188;Guarani (MG);Sem divisão nacional;MG
 312.302;Guarani (PR);Sem divisão nacional;PR
@@ -553,8 +545,10 @@ Unique ID;Name;Division;UF
 311.868;Guarany de Cachoeira;Sem divisão nacional;RS
 310.642;Guarany de Sobral;Sem divisão nacional;CE
 314.336;Guarapari;Sem divisão nacional;ES
+19.140.899;Guaraí;Sem divisão nacional;TO
 2.110.399;Guarujá;Sem divisão nacional;SP
 19.026.810;Guarulhos;Sem divisão nacional;SP
+19.026.809;Guaçuano;Sem divisão nacional;SP
 309.624;Gurupi;Sem divisão nacional;TO
 314.789;Helênico (RJ);Sem divisão nacional;RJ
 309.743;Hercílio Luz;Sem divisão nacional;SC
@@ -565,23 +559,21 @@ Unique ID;Name;Division;UF
 19.300.082;Humaitá (AC);Brasileirão Série D;AC
 19.080.172;IAPE FC;Brasileirão Série D;MA
 314.334;Ibiraçu;Sem divisão nacional;ES
-301.234;Íbis;Sem divisão nacional;PE
-19.295.790;Íbis (PB);Sem divisão nacional;PB
 2.000.114.158;Ibrachina;Sem divisão nacional;SP
 313.749;Icasa;Sem divisão nacional;CE
 19.296.880;Igrejinha;Sem divisão nacional;RS
-19.384.176;Iguaçu;Sem divisão nacional;PR
 19.189.354;Iguatu;Brasileirão Série D;CE
+19.384.176;Iguaçu;Sem divisão nacional;PR
 301.169;Imperatriz;Brasileirão Série D;MA
 2.000.090.692;Império Serrano;Sem divisão nacional;RJ
-104.874;Independência;Brasileirão Série D;AC
-320.679;Independência (SP);Sem divisão nacional;SP
 313.255;Independente (AP);Sem divisão nacional;AP
 318.922;Independente (PA);Sem divisão nacional;PA
 19.375.489;Independente (RJ);Sem divisão nacional;RJ
 19.309.399;Independente (SE);Sem divisão nacional;SE
 311.024;Independente (SP);Sem divisão nacional;SP
 19.250.470;Independente de Rio Verde;Sem divisão nacional;GO
+104.874;Independência;Brasileirão Série D;AC
+320.679;Independência (SP);Sem divisão nacional;SP
 314.299;Industrial FC (SE);Sem divisão nacional;SE
 19.223.517;Inhumas;Brasileirão Série D;GO
 311.042;Inter de Bebedouro;Sem divisão nacional;SP
@@ -608,7 +600,6 @@ Unique ID;Name;Division;UF
 19.168.663;Iranduba;Sem divisão nacional;AM
 303.022;Iraty;Sem divisão nacional;PR
 19.019.865;Iris (PE);Sem divisão nacional;PE
-309.774;Íris (SC);Sem divisão nacional;SC
 301.325;Itabaiana;Brasileirão Série C;SE
 19.113.194;Itaberaí;Sem divisão nacional;GO
 2.000.193.910;Itabirito;Sem divisão nacional;MG
@@ -638,8 +629,8 @@ Unique ID;Name;Division;UF
 19.370.233;Jacyobá;Sem divisão nacional;AL
 19.244.654;Jaguar;Sem divisão nacional;PE
 19.152.076;Jaguar (DF);Sem divisão nacional;DF
-319.135;Jaguaré;Sem divisão nacional;ES
 19.335.065;Jaguariúna;Sem divisão nacional;SP
+319.135;Jaguaré;Sem divisão nacional;ES
 19.137.714;Jaraguá (GO);Sem divisão nacional;GO
 19.165.192;Jaraguá (SC);Sem divisão nacional;SC
 19.014.083;Jaruense;Sem divisão nacional;RO
@@ -649,8 +640,8 @@ Unique ID;Name;Division;UF
 314.206;Jequié;Sem divisão nacional;BA
 301.292;Ji-Paraná;Sem divisão nacional;RO
 301.310;Joinville;Brasileirão Série D;SC
-19.106.016;José Bonifácio;Sem divisão nacional;SP
 319.623;Joseense;Sem divisão nacional;SP
+19.106.016;José Bonifácio;Sem divisão nacional;SP
 19.079.916;Juazeirense;Brasileirão Série D;BA
 301.125;Juazeiro (BA);Sem divisão nacional;BA
 301.133;Juazeiro (CE);Sem divisão nacional;CE
@@ -689,16 +680,16 @@ Unique ID;Name;Division;UF
 8.832.317;Luverdense;Brasileirão Série D;MT
 313.267;Luziânia;Sem divisão nacional;DF
 19.152.070;Luziânia EC;Sem divisão nacional;DF
-311.971;Macaé;Sem divisão nacional;RJ
 313.258;Macapá;Sem divisão nacional;AP
+311.971;Macaé;Sem divisão nacional;RJ
 19.339.654;Maceió;Sem divisão nacional;AL
 19.045.385;Mackenzie (RJ);Sem divisão nacional;RJ
 312.293;Mackenzie (SP);Sem divisão nacional;SP
 107.220;Madureira;Brasileirão Série D;RJ
-19.045.495;Magé Brescia;Sem divisão nacional;RJ
 19.364.905;Mageense;Sem divisão nacional;RJ
 313.578;Maguari (CE);Sem divisão nacional;CE
 2.000.099.931;Maguary (PE);Brasileirão Série D;PE
+19.045.495;Magé Brescia;Sem divisão nacional;RJ
 301.194;Mamoré;Sem divisão nacional;MG
 2.000.112.366;Manauara;Brasileirão Série D;AM
 19.220.160;Manaus;Brasileirão Série D;AM
@@ -715,12 +706,12 @@ Unique ID;Name;Division;UF
 301.171;Maranhão;Brasileirão Série C;MA
 301.316;Marcílio Dias;Brasileirão Série D;SC
 19.344.101;Maricá;Brasileirão Série D;RJ
-311.026;Marília;Sem divisão nacional;SP
 19.145.268;Maringá;Brasileirão Série C;PR
 313.321;Maruinense;Sem divisão nacional;SE
+311.026;Marília;Sem divisão nacional;SP
 301.342;Matonense;Sem divisão nacional;SP
-19.354.612;Mauá;Sem divisão nacional;SP
 318.901;Mauaense;Sem divisão nacional;SP
+19.354.612;Mauá;Sem divisão nacional;SP
 309.639;Mazagão;Sem divisão nacional;AP
 311.105;Mesquita;Sem divisão nacional;RJ
 309.769;Metropol (SC);Sem divisão nacional;SC
@@ -752,7 +743,6 @@ Unique ID;Name;Division;UF
 314.618;Moto Clube (RO);Sem divisão nacional;RO
 314.330;Muniz Freire;Sem divisão nacional;ES
 309.358;Murici;Sem divisão nacional;AL
-19.391.070;Nação Araquari;Sem divisão nacional;SC
 301.108;Nacional (AM);Brasileirão Série D;AM
 314.691;Nacional (PA);Sem divisão nacional;PA
 314.602;Nacional (PR);Sem divisão nacional;PR
@@ -764,11 +754,9 @@ Unique ID;Name;Division;UF
 310.899;Nacional de Uberaba;Sem divisão nacional;MG
 19.140.788;Nacional Esporte;Sem divisão nacional;MG
 19.058.116;Nauás;Sem divisão nacional;AC
-328;Náutico;Brasileirão Série B Betano;PE
-2.000.199.992;Náutico (MS);Sem divisão nacional;MS
-309.143;Náutico (RR);Sem divisão nacional;RR
 19.020.252;Navegantes;Sem divisão nacional;SC
 314.718;Naviraiense;Sem divisão nacional;MS
+19.391.070;Nação Araquari;Sem divisão nacional;SC
 19.342.416;NC/Paraíso;Sem divisão nacional;TO
 303.612;Noroeste;Brasileirão Série D;SP
 314.690;Norte Clube (PA);Sem divisão nacional;PA
@@ -787,18 +775,21 @@ Unique ID;Name;Division;UF
 309.140;Novo Horizonte (GO);Sem divisão nacional;GO
 19.339.795;Novo Horizonte (RS);Sem divisão nacional;RS
 302.141;Novorizontino;Sem divisão nacional;SP
+328;Náutico;Brasileirão Série B Betano;PE
+2.000.199.992;Náutico (MS);Sem divisão nacional;MS
+309.143;Náutico (RR);Sem divisão nacional;RR
 313.303;Oeiras;Sem divisão nacional;PI
 19.390.921;Oeirense;Sem divisão nacional;PI
 311.028;Oeste Barueri;Sem divisão nacional;SP
 104.870;Olaria;Sem divisão nacional;RJ
+19.136.483;Olinda;Sem divisão nacional;PE
+19.066.400;Olinda (PR);Sem divisão nacional;PR
+309.761;Olympic (MG);Sem divisão nacional;MG
 19.342.606;Olímpia (BA);Sem divisão nacional;BA
 301.346;Olímpia (SP);Sem divisão nacional;SP
 314.305;Olímpico;Sem divisão nacional;SE
 310.299;Olímpico (SC);Sem divisão nacional;SC
 313.577;Olímpico Clube;Sem divisão nacional;AM
-19.136.483;Olinda;Sem divisão nacional;PE
-19.066.400;Olinda (PR);Sem divisão nacional;PR
-309.761;Olympic (MG);Sem divisão nacional;MG
 107.242;Operário (MS);Brasileirão Série D;MS
 311.086;Operário (PR);Brasileirão Série B Betano;PR
 309.745;Operário (SC);Sem divisão nacional;SC
@@ -834,16 +825,16 @@ Unique ID;Name;Division;UF
 19.295.779;Parahyba;Sem divisão nacional;PB
 19.295.782;Parahyba Sport;Sem divisão nacional;PB
 19.295.780;Parahyba United;Sem divisão nacional;PB
-19.046.205;Paraíba do Sul;Sem divisão nacional;RJ
 314.946;Paraisense;Sem divisão nacional;MG
-309.626;Paraíso (TO);Sem divisão nacional;TO
-330;Paraná;Sem divisão nacional;PR
-19.008.147;Paraná B;Sem divisão nacional;PR
 19.339.645;Paranaense;Sem divisão nacional;PR
 314.604;Paranavaí;Sem divisão nacional;PR
 8.832.334;Paranoá;Sem divisão nacional;DF
+330;Paraná;Sem divisão nacional;PR
+19.008.147;Paraná B;Sem divisão nacional;PR
 2.000.239.360;Paraty;Sem divisão nacional;RJ
 19.112.766;Parauapebas;Sem divisão nacional;PA
+19.046.205;Paraíba do Sul;Sem divisão nacional;RJ
+309.626;Paraíso (TO);Sem divisão nacional;TO
 2.000.188.892;Parintins;Sem divisão nacional;AM
 313.305;Parnahyba;Brasileirão Série D;PI
 314.302;Passagem;Sem divisão nacional;RN
@@ -851,12 +842,12 @@ Unique ID;Name;Division;UF
 19.363.423;Passos;Sem divisão nacional;MG
 2.000.132.216;Patriotas (PR);Sem divisão nacional;PR
 309.756;Paula Ramos (SC);Sem divisão nacional;SC
-2.000.307.695;Paulínia Universitário;Sem divisão nacional;SP
 301.338;Paulista;Sem divisão nacional;SP
 104.873;Paulistano;Sem divisão nacional;SP
 2.000.170.932;Paulistano (MT);Sem divisão nacional;MT
 19.295.788;Paulistano (PB);Sem divisão nacional;PB
 19.059.143;Paulistano de São Roque;Sem divisão nacional;SP
+2.000.307.695;Paulínia Universitário;Sem divisão nacional;SP
 331;Paysandu;Brasileirão Série C;PA
 314.102;Paysandu (PI);Sem divisão nacional;PI
 312.329;Paysandu (SC);Sem divisão nacional;SC
@@ -869,7 +860,6 @@ Unique ID;Name;Division;UF
 309.361;Penedense;Sem divisão nacional;AL
 309.754;Perdigão (SC);Sem divisão nacional;SC
 313.365;Perilima;Sem divisão nacional;PB
-19.307.338;Pérolas Negras;Sem divisão nacional;RJ
 312.332;Pery Ferroviário EC (SC);Sem divisão nacional;SC
 19.023.853;Pesqueira;Sem divisão nacional;PE
 314.594;Petrolina;Sem divisão nacional;PE
@@ -888,17 +878,16 @@ Unique ID;Name;Division;UF
 313.331;Pirambu;Sem divisão nacional;SE
 19.388.286;Pirapora;Sem divisão nacional;MG
 19.047.391;Pires do Rio;Sem divisão nacional;GO
-19.058.115;Plácido de Castro;Sem divisão nacional;AC
 19.100.646;Planaltina EC;Sem divisão nacional;DF
 19.152.065;Planalto;Sem divisão nacional;MA
-301.127;Poções;Sem divisão nacional;BA
+19.058.115;Plácido de Castro;Sem divisão nacional;AC
 19.223.667;Poconé;Sem divisão nacional;MT
-19.048.341;Poços de Caldas;Sem divisão nacional;MG
 2.000.208.042;Pombal (PB);Sem divisão nacional;PB
 313.232;Ponta Porã;Sem divisão nacional;MS
 19.401.029;Pontaporanense;Sem divisão nacional;MS
 332;Ponte Preta;Brasileirão Série B Betano;SP
 19.388.619;Ponte Preta (AL);Sem divisão nacional;AL
+2.000.365.961;Porto (BA);Brasileirão Série D;BA
 301.235;Porto (PE);Sem divisão nacional;PE
 19.072.298;Porto (SC);Sem divisão nacional;SC
 19.366.445;Porto Velho;Brasileirão Série D;RO
@@ -912,26 +901,29 @@ Unique ID;Name;Division;UF
 301.258;Potiguar de Mossoró;Sem divisão nacional;RN
 314.755;Potyguar Seridoense;Sem divisão nacional;RN
 19.363.420;Pouso Alegre;Brasileirão Série D;MG
+19.048.341;Poços de Caldas;Sem divisão nacional;MG
+301.127;Poções;Sem divisão nacional;BA
 318.907;Primavera;Sem divisão nacional;SP
 2.000.174.048;Primavera (MT);Brasileirão Série D;MT
 313.259;Princesa;Sem divisão nacional;AM
 19.044.048;Progresso (RJ);Sem divisão nacional;RJ
 309.144;Progresso (RR);Sem divisão nacional;RR
 313.329;Propriá;Sem divisão nacional;SE
-301.314;Próspera;Sem divisão nacional;SC
 19.300.813;PRS;Sem divisão nacional;RS
 314.775;Prudentina (SP);Sem divisão nacional;SP
 19.105.495;Prudentópolis;Sem divisão nacional;PR
+301.314;Próspera;Sem divisão nacional;SC
 19.026.929;PSTC;Sem divisão nacional;PR
 314.311;Pytaguares (PB);Sem divisão nacional;PB
+19.307.338;Pérolas Negras;Sem divisão nacional;RJ
 19.052.513;Queimadense;Sem divisão nacional;PB
 19.158.917;Queimados;Sem divisão nacional;RJ
 2.108.856;Quissamã;Sem divisão nacional;RJ
 313.261;Quixadá;Sem divisão nacional;CE
 19.152.083;Rabello;Sem divisão nacional;DF
-19.302.209;Raça;Sem divisão nacional;GO
 314.771;Radium;Sem divisão nacional;SP
 319.156;Ramalat;Sem divisão nacional;PI
+19.302.209;Raça;Sem divisão nacional;GO
 317;RB Bragantino;Brasileirão Assaí;SP
 2.000.178.064;RB do Norte;Sem divisão nacional;AM
 19.154.386;Real (RR);Sem divisão nacional;RR
@@ -947,11 +939,11 @@ Unique ID;Name;Division;UF
 19.023.455;Resende;Sem divisão nacional;RJ
 311.870;Retiro (MG);Sem divisão nacional;MG
 19.382.040;Retrô;Brasileirão Série D;PE
-2.000.141.975;Riachão (SE);Sem divisão nacional;SE
 319.128;Riacho City;Sem divisão nacional;DF
 314.780;Riachuelo (RJ);Sem divisão nacional;RJ
 2.000.124.782;Riachuelo (RN);Sem divisão nacional;RN
 314.294;Riachuelo (SE);Sem divisão nacional;SE
+2.000.141.975;Riachão (SE);Sem divisão nacional;SE
 19.157.135;Ribeirão Pires;Sem divisão nacional;SP
 19.039.687;Rio Bananal;Sem divisão nacional;ES
 104.868;Rio Branco (AC);Sem divisão nacional;AC
@@ -1018,8 +1010,8 @@ Unique ID;Name;Division;UF
 19.023.591;Santarritense;Sem divisão nacional;MG
 19.289.565;Santo Amaro;Sem divisão nacional;PE
 301.352;Santo André;Sem divisão nacional;SP
-301.282;Santo Ângelo;Sem divisão nacional;RS
 314.318;Santo Antônio (ES);Sem divisão nacional;ES
+301.282;Santo Ângelo;Sem divisão nacional;RS
 335;Santos;Brasileirão Assaí;SP
 313.579;Santos (AM);Sem divisão nacional;AM
 301.107;Santos (AP);Sem divisão nacional;AP
@@ -1027,48 +1019,6 @@ Unique ID;Name;Division;UF
 314.198;Santos de Tereré;Sem divisão nacional;PB
 309.747;Santos Dumont (BA);Sem divisão nacional;BA
 19.339.651;Santos Dumont (MA);Sem divisão nacional;MA
-313.286;São Bento (MA);Sem divisão nacional;MA
-302.142;São Bento (SP);Sem divisão nacional;SP
-2.106.553;São Bernardo;Brasileirão Série B Betano;SP
-19.354.776;São Borja;Sem divisão nacional;RS
-301.354;São Caetano;Sem divisão nacional;SP
-2.108.186;São Carlos;Sem divisão nacional;SP
-19.005.307;São Cristóvão (BA);Sem divisão nacional;BA
-301.253;São Cristóvão (RJ);Sem divisão nacional;RJ
-19.026.904;São Cristóvão (SE);Sem divisão nacional;SE
-313.669;São Domingos (AL);Sem divisão nacional;AL
-314.619;São Domingos (RO);Sem divisão nacional;RO
-19.052.148;São Domingos (SE);Sem divisão nacional;SE
-19.013.859;São Francisco (AC);Sem divisão nacional;AC
-308.942;São Francisco (PA);Sem divisão nacional;PA
-314.695;São Francisco (RR);Sem divisão nacional;RR
-19.055.047;São Gabriel (MS);Sem divisão nacional;MS
-19.224.752;São Gabriel (RS);Sem divisão nacional;RS
-309.635;São Gonçalo (RN);Sem divisão nacional;RN
-19.189.823;São Gonçalo EC (RJ);Sem divisão nacional;RJ
-19.142.673;São João da Barra;Sem divisão nacional;RJ
-303.012;São José (AP);Sem divisão nacional;AP
-19.048.344;São José (MA);Sem divisão nacional;MA
-19.170.018;São José (RJ);Sem divisão nacional;RJ
-301.284;São José (RS);Brasileirão Série D;RS
-301.356;São José (SP);Sem divisão nacional;SP
-19.051.820;São José (TO);Sem divisão nacional;TO
-2.000.154.433;São Luís (MA);Sem divisão nacional;MA
-301.286;São Luiz;Brasileirão Série D;RS
-310.384;São Mateus;Sem divisão nacional;ES
-337;São Paulo;Brasileirão Assaí;SP
-313.257;São Paulo (AP);Sem divisão nacional;AP
-312.305;São Paulo (BA);Sem divisão nacional;BA
-308.944;São Paulo (RS);Sem divisão nacional;RS
-104.872;São Paulo Athletic;Sem divisão nacional;SP
-19.334.181;São Paulo Crystal;Sem divisão nacional;PB
-19.295.784;São Paulo FC (PB);Sem divisão nacional;PB
-301.111;São Raimundo (AM);Sem divisão nacional;AM
-308.943;São Raimundo (PA);Sem divisão nacional;PA
-309.146;São Raimundo (RR);Brasileirão Série D;RR
-309.746;São Salvador (BA);Sem divisão nacional;BA
-301.357;São-Carlense;Sem divisão nacional;SP
-19.300.025;São-Joseense;Brasileirão Série D;PR
 320.392;Sapucaia (RJ);Sem divisão nacional;RJ
 19.007.279;Sapucaiense;Sem divisão nacional;RS
 314.765;Saquarema;Sem divisão nacional;RJ
@@ -1104,7 +1054,6 @@ Unique ID;Name;Division;UF
 309.762;Siderúrgica;Sem divisão nacional;MG
 314.694;Sino-Brasileiro (PI);Sem divisão nacional;PI
 19.019.859;Sinop (MT);Sem divisão nacional;MT
-2.000.059.899;Sírio Libanês (GO);Sem divisão nacional;GO
 313.374;SKA Brasil;Sem divisão nacional;SP
 311.004;Sobradinho;Sem divisão nacional;DF
 310.900;Social;Sem divisão nacional;MG
@@ -1125,6 +1074,49 @@ Unique ID;Name;Division;UF
 309.653;Sul América;Sem divisão nacional;AM
 2.000.135.691;Sulbrasil;Sem divisão nacional;RS
 301.374;Surubim;Sem divisão nacional;PE
+313.286;São Bento (MA);Sem divisão nacional;MA
+302.142;São Bento (SP);Sem divisão nacional;SP
+2.106.553;São Bernardo;Brasileirão Série B Betano;SP
+19.354.776;São Borja;Sem divisão nacional;RS
+301.354;São Caetano;Sem divisão nacional;SP
+2.108.186;São Carlos;Sem divisão nacional;SP
+19.005.307;São Cristóvão (BA);Sem divisão nacional;BA
+301.253;São Cristóvão (RJ);Sem divisão nacional;RJ
+19.026.904;São Cristóvão (SE);Sem divisão nacional;SE
+313.669;São Domingos (AL);Sem divisão nacional;AL
+314.619;São Domingos (RO);Sem divisão nacional;RO
+19.052.148;São Domingos (SE);Sem divisão nacional;SE
+19.013.859;São Francisco (AC);Sem divisão nacional;AC
+308.942;São Francisco (PA);Sem divisão nacional;PA
+314.695;São Francisco (RR);Sem divisão nacional;RR
+19.055.047;São Gabriel (MS);Sem divisão nacional;MS
+19.224.752;São Gabriel (RS);Sem divisão nacional;RS
+309.635;São Gonçalo (RN);Sem divisão nacional;RN
+19.189.823;São Gonçalo EC (RJ);Sem divisão nacional;RJ
+303.012;São José (AP);Sem divisão nacional;AP
+19.048.344;São José (MA);Sem divisão nacional;MA
+19.170.018;São José (RJ);Sem divisão nacional;RJ
+301.284;São José (RS);Brasileirão Série D;RS
+301.356;São José (SP);Sem divisão nacional;SP
+19.051.820;São José (TO);Sem divisão nacional;TO
+19.142.673;São João da Barra;Sem divisão nacional;RJ
+301.286;São Luiz;Brasileirão Série D;RS
+2.000.154.433;São Luís (MA);Sem divisão nacional;MA
+310.384;São Mateus;Sem divisão nacional;ES
+337;São Paulo;Brasileirão Assaí;SP
+313.257;São Paulo (AP);Sem divisão nacional;AP
+312.305;São Paulo (BA);Sem divisão nacional;BA
+308.944;São Paulo (RS);Sem divisão nacional;RS
+104.872;São Paulo Athletic;Sem divisão nacional;SP
+19.334.181;São Paulo Crystal;Sem divisão nacional;PB
+19.295.784;São Paulo FC (PB);Sem divisão nacional;PB
+301.111;São Raimundo (AM);Sem divisão nacional;AM
+308.943;São Raimundo (PA);Sem divisão nacional;PA
+309.146;São Raimundo (RR);Brasileirão Série D;RR
+309.746;São Salvador (BA);Sem divisão nacional;BA
+301.357;São-Carlense;Sem divisão nacional;SP
+19.300.025;São-Joseense;Brasileirão Série D;PR
+2.000.059.899;Sírio Libanês (GO);Sem divisão nacional;GO
 2.106.555;Taboão da Serra;Sem divisão nacional;SP
 313.788;Taguatinga;Sem divisão nacional;DF
 2.109.247;Tanabi;Sem divisão nacional;SP
@@ -1144,9 +1136,10 @@ Unique ID;Name;Division;UF
 313.789;Tiradentes (DF);Sem divisão nacional;DF
 308.946;Tiradentes (PA);Sem divisão nacional;PA
 314.101;Tiradentes (PI);Sem divisão nacional;PI
-301.331;Tocantinópolis;Brasileirão Série D;TO
+2.000.029.691;Tirol (CE);Brasileirão Série D;CE
 19.028.177;Tocantins;Sem divisão nacional;TO
 313.339;Tocantins de Miracema;Sem divisão nacional;TO
+301.331;Tocantinópolis;Brasileirão Série D;TO
 19.005.116;Toledo (PR);Sem divisão nacional;PR
 318.860;Tombense;Brasileirão Série D;MG
 309.772;Torre;Sem divisão nacional;PE
@@ -1154,16 +1147,15 @@ Unique ID;Name;Division;UF
 309.773;Tramways (CE);Sem divisão nacional;CE
 19.019.866;Transways SC (PE);Sem divisão nacional;PE
 313.350;Trem;Brasileirão Série D;AP
-2.000.077.883;Três Lagoas;Sem divisão nacional;MS
-19.009.495;Três Passos;Sem divisão nacional;RS
 301.212;Treze;Brasileirão Série D;PB
 19.139.754;Tricordiano;Sem divisão nacional;MG
 19.108.553;Trieste (PR);Sem divisão nacional;PR
 19.023.700;Trindade;Sem divisão nacional;GO
+2.000.077.883;Três Lagoas;Sem divisão nacional;MS
+19.009.495;Três Passos;Sem divisão nacional;RS
 301.318;Tubarão;Sem divisão nacional;SC
 107.234;Tuna Luso;Brasileirão Série D;PA
 2.000.125.473;Tuntum;Sem divisão nacional;MA
-318.911;Tupã;Sem divisão nacional;SP
 2.000.057.909;Tupan;Sem divisão nacional;MA
 313.785;Tupan SC (MA);Sem divisão nacional;MA
 301.198;Tupi;Sem divisão nacional;MG
@@ -1171,12 +1163,16 @@ Unique ID;Name;Division;UF
 8.825.473;Tupy (ES);Sem divisão nacional;ES
 19.035.623;Tupy de Jussara;Sem divisão nacional;GO
 19.040.477;Tupynambás;Sem divisão nacional;MG
+318.911;Tupã;Sem divisão nacional;SP
 310.898;Uberaba;Sem divisão nacional;MG
 301.200;Uberlândia;Brasileirão Série D;MG
 301.177;Ubiratan;Sem divisão nacional;MS
 19.005.435;Ulbra (RO);Sem divisão nacional;RO
 19.223.523;Unaí;Sem divisão nacional;MG
 2.000.096.694;Uni Souza;Sem divisão nacional;RJ
+301.239;Unibol;Sem divisão nacional;PE
+2.000.182.369;Unidos do Alvorada;Sem divisão nacional;AM
+19.382.030;UNIRB;Sem divisão nacional;BA
 19.171.304;União (CE);Sem divisão nacional;CE
 19.295.786;União (PB);Sem divisão nacional;PB
 2.000.099.933;União (PE);Sem divisão nacional;PE
@@ -1199,16 +1195,14 @@ Unique ID;Name;Division;UF
 311.032;União Mogi;Sem divisão nacional;SP
 19.397.708;União Paraense;Sem divisão nacional;PA
 301.179;União Rondonópolis;Brasileirão Série D;MT
-336;União São João;Sem divisão nacional;SP
 2.114.007;União Suzano;Sem divisão nacional;SP
-301.239;Unibol;Sem divisão nacional;PE
-2.000.182.369;Unidos do Alvorada;Sem divisão nacional;AM
-19.382.030;UNIRB;Sem divisão nacional;BA
+336;União São João;Sem divisão nacional;SP
 301.202;URT;Sem divisão nacional;MG
 2.000.204.861;Uruaçu;Sem divisão nacional;GO
 314.611;Usina Ceará;Sem divisão nacional;CE
-314.321;Valério (ES);Sem divisão nacional;ES
 301.204;Valeriodoce;Sem divisão nacional;MG
+314.321;Valério (ES);Sem divisão nacional;ES
+4.400.014;Vancouver Whitecaps;MLS;EX
 19.007.113;Varginha;Sem divisão nacional;MG
 309.775;Varzeano FC (PE);Sem divisão nacional;PE
 339;Vasco;Brasileirão Assaí;RJ
@@ -1216,7 +1210,6 @@ Unique ID;Name;Division;UF
 313.783;Vasco (MA);Sem divisão nacional;MA
 314.293;Vasco (SE);Sem divisão nacional;SE
 318.913;Velo Clube;Brasileirão Série D;SP
-308.947;Vênus (PA);Sem divisão nacional;PA
 19.023.752;Vera Cruz (PE);Sem divisão nacional;PE
 2.000.239.359;Vera Cruz (RJ);Sem divisão nacional;RJ
 301.288;Veranópolis;Sem divisão nacional;RS
@@ -1244,6 +1237,7 @@ Unique ID;Name;Division;UF
 107.240;Volta Redonda;Brasileirão Série C;RJ
 19.009.948;Votoraty;Sem divisão nacional;SP
 19.189.179;Votuporanguense;Sem divisão nacional;SP
+308.947;Vênus (PA);Sem divisão nacional;PA
 310.357;XV de Jaú;Sem divisão nacional;SP
 104.978;XV de Piracicaba;Brasileirão Série D;SP
 104.988;Ypiranga (AP);Sem divisão nacional;AP
@@ -1255,4 +1249,11 @@ Unique ID;Name;Division;UF
 312.292;Ypiranga (SP);Sem divisão nacional;SP
 2.000.255.426;Zinza;Sem divisão nacional;RJ
 313.670;Zumbi;Sem divisão nacional;AL
-4.400.014;Vancouver Whitecaps;MLS;EX
+19.200.887;Água Santa;Brasileirão Série D;SP
+309.778;Água Verde;Sem divisão nacional;PR
+2.000.320.598;Águia de Cumaru;Sem divisão nacional;PE
+308.939;Águia de Marabá;Brasileirão Série D;PA
+314.963;Águia Negra;Sem divisão nacional;MS
+301.234;Íbis;Sem divisão nacional;PE
+19.295.790;Íbis (PB);Sem divisão nacional;PB
+309.774;Íris (SC);Sem divisão nacional;SC
