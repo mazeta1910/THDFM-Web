@@ -1863,7 +1863,7 @@ async def admin_hall_lendas_salvar(request: Request):
     neg = require_mazeta(request)
     if neg:
         return neg
-    from src.hall_lendas import parse_valor_centavos
+    from src.hall_lendas import parse_valor_centavos, sanitize_hall_recado_html
 
     form = await request.form()
     try:
@@ -1873,7 +1873,7 @@ async def admin_hall_lendas_salvar(request: Request):
             "/admin/hall-lendas?erro=" + quote("Escolha o participante"),
             status_code=303,
         )
-    recado = str(form.get("recado") or "").strip()
+    recado = sanitize_hall_recado_html(str(form.get("recado") or ""))
     modo = str(form.get("modo") or "doar").strip()
     try:
         if modo == "editar":
