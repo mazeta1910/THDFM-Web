@@ -2651,7 +2651,7 @@ def grid_page(request: Request):
             return neg
     from src.grid_game import (
         dia_grid,
-        get_hora_virada,
+        get_virada_hm,
         parse_celulas_progresso,
         puzzle_publico,
         rotulo_hora_virada,
@@ -2660,8 +2660,10 @@ def grid_page(request: Request):
 
     dia = dia_grid()
     puzzle = puzzle_publico(dia)
-    virada_hora = get_hora_virada()
-    virada_rotulo = rotulo_hora_virada(virada_hora)
+    virada_hm = get_virada_hm()
+    virada_hora = virada_hm[0]
+    virada_minuto = virada_hm[1]
+    virada_rotulo = rotulo_hora_virada(virada_hora, virada_minuto)
     voter = _grid_voter(request)
     progresso = None
     streak = 0
@@ -2683,6 +2685,7 @@ def grid_page(request: Request):
         linhas=db.ranking_grid(limite=100),
         grid_privado=False,
         virada_hora=virada_hora,
+        virada_minuto=virada_minuto,
         virada_rotulo=virada_rotulo,
     )
 
@@ -2847,7 +2850,7 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
 
     from src.grid_game import (
         dia_grid,
-        get_hora_virada,
+        get_virada_hm,
         puzzle_publico,
         rotulo_dia,
         rotulo_hora_virada,
@@ -2862,13 +2865,14 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
         puzzle = puzzle_publico(dia_s)
     except RuntimeError as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
-    hora = get_hora_virada()
+    h, mi = get_virada_hm()
     return JSONResponse(
         {
             "dia": dia_s,
             "rotulo": rotulo_dia(dia_s),
-            "virada_hora": hora,
-            "virada_rotulo": rotulo_hora_virada(hora),
+            "virada_hora": h,
+            "virada_minuto": mi,
+            "virada_rotulo": rotulo_hora_virada(h, mi),
             "puzzle": puzzle,
             "dias": db.listar_grid_dias(limite=90),
             "respostas": db.listar_grid_progresso_dia(dia_s),
@@ -2881,25 +2885,35 @@ async def grid_api_admin_virada(request: Request):
     neg = _grid_mazeta_neg_json(request)
     if neg:
         return neg
-    from src.grid_game import dia_grid, ms_ate_proxima_virada, rotulo_hora_virada
+    from src.grid_game import dia_grid, ms_ate_proxima_virada
 
     try:
         body = await request.json()
     except Exception:
         return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    raw = body.get("hora", body.get("horario"))
     try:
-        hora = int((body or {}).get("hora"))
-    except (TypeError, ValueError):
-        return JSONResponse({"erro": "Hora inválida"}, status_code=400)
-    try:
-        salva = db.set_grid_virada_hora(hora)
-    except ValueError as exc:
+        if raw is None and body.get("minuto") is not None:
+            salva = db.set_grid_virada_hora(
+                int(body.get("hora_num", body.get("h", 0))),
+                int(body.get("minuto")),
+            )
+        elif isinstance(raw, (list, tuple)) and len(raw) == 2:
+            salva = db.set_grid_virada_hora(int(raw[0]), int(raw[1]))
+        elif isinstance(raw, (int, float)) and body.get("minuto") is not None:
+            salva = db.set_grid_virada_hora(int(raw), int(body.get("minuto")))
+        else:
+            salva = db.set_grid_virada_hora(raw if raw is not None else "00:00")
+    except (TypeError, ValueError) as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
+    h, mi = db.get_grid_virada_hm()
     return JSONResponse(
         {
             "ok": True,
-            "virada_hora": salva,
-            "virada_rotulo": rotulo_hora_virada(salva),
+            "virada_hora": h,
+            "virada_minuto": mi,
+            "virada_rotulo": salva,
             "dia_atual": dia_grid(),
             "virada_em_ms": ms_ate_proxima_virada(),
         }

@@ -141,29 +141,45 @@
       <div>
         <p class="grid-kicker">Só Mazeta</p>
         <h2 class="grid-admin-title">Painel do Grid</h2>
-        <p class="grid-sub">Virada, regeneração, histórico e respostas dos jogadores</p>
+        <p class="grid-sub">Virada, regeneração, histórico e respostas</p>
       </div>
     </header>
 
     <div class="grid-admin-grid">
       <form class="grid-admin-panel" data-grid-admin-virada>
         <h3 class="grid-admin-h">Hora da virada</h3>
-        <p class="grid-admin-help">Horário de Brasília em que o puzzle do dia muda.</p>
-        <label class="grid-admin-label" for="grid-admin-hora">Hora</label>
-        <div class="grid-admin-row">
-          <select id="grid-admin-hora" name="hora" class="grid-admin-select" data-grid-admin-hora>
-            {% for h in range(24) %}
-            <option value="{{ h }}" {% if h == virada_hora %}selected{% endif %}>{% if h < 10 %}0{% endif %}{{ h }}:00</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn grid-admin-btn">Salvar hora</button>
-        </div>
+        <p class="grid-admin-help">Horário de Brasília (HH:MM) em que o puzzle muda.</p>
+        <label class="grid-admin-label" for="grid-admin-hora">Horário</label>
+        <input
+          id="grid-admin-hora"
+          class="grid-admin-input"
+          type="text"
+          name="hora"
+          inputmode="numeric"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="HH:MM"
+          pattern="^\d{1,2}([:hH]\d{1,2})?$"
+          maxlength="5"
+          value="{{ virada_rotulo|default('00:00') }}"
+          data-grid-admin-hora
+          required
+        />
         <p class="grid-admin-status" data-grid-admin-virada-status hidden></p>
+        <div class="grid-admin-actions">
+          <button type="submit" class="grid-admin-ico" title="Salvar hora" aria-label="Salvar hora">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+          </button>
+        </div>
       </form>
 
       <form class="grid-admin-panel" data-grid-admin-regen>
         <h3 class="grid-admin-h">Atualizar puzzle</h3>
-        <p class="grid-admin-help">Gera novos eixos para um dia (ou restaura o seed original).</p>
+        <p class="grid-admin-help">Novos eixos para um dia, ou seed original.</p>
         <label class="grid-admin-label" for="grid-admin-regen-dia">Dia</label>
         <input
           id="grid-admin-regen-dia"
@@ -178,42 +194,69 @@
           <input type="checkbox" name="limpar_progresso" data-grid-admin-regen-limpar checked />
           Apagar respostas desse dia
         </label>
-        <div class="grid-admin-row">
-          <button type="submit" class="btn grid-admin-btn" name="acao" value="regen">Regenerar</button>
-          <button type="submit" class="btn grid-admin-btn grid-admin-btn--ghost" name="acao" value="restaurar">Restaurar original</button>
-        </div>
         <p class="grid-admin-status" data-grid-admin-regen-status hidden></p>
+        <div class="grid-admin-actions">
+          <button type="submit" class="grid-admin-ico" name="acao" value="restaurar" title="Restaurar original" aria-label="Restaurar original">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+          </button>
+          <button type="submit" class="grid-admin-ico grid-admin-ico--accent" name="acao" value="regen" title="Regenerar" aria-label="Regenerar">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+        </div>
       </form>
     </div>
 
-    <div class="grid-admin-panel grid-admin-panel--wide">
-      <h3 class="grid-admin-h">Histórico e respostas</h3>
-      <p class="grid-admin-help">Escolha um dia para ver eixos, densidades e chutes dos usuários.</p>
-      <div class="grid-admin-row">
-        <label class="grid-admin-label" for="grid-admin-hist-dia">Dia</label>
-        <input
-          id="grid-admin-hist-dia"
-          class="grid-admin-input"
-          type="date"
-          value="{{ puzzle.dia }}"
-          data-grid-admin-hist-dia
-        />
-        <button type="button" class="btn grid-admin-btn" data-grid-admin-hist-load>Carregar</button>
-      </div>
-      <p class="grid-admin-status" data-grid-admin-hist-status hidden></p>
-      <div class="grid-admin-hist-layout">
-        <div>
-          <h4 class="grid-admin-h4">Dias com atividade</h4>
-          <ul class="grid-admin-dias" data-grid-admin-dias></ul>
+    <details class="grid-admin-panel grid-admin-panel--wide grid-admin-hist" data-grid-admin-hist>
+      <summary class="grid-admin-hist-summary">
+        <span>
+          <strong class="grid-admin-h">Histórico e respostas</strong>
+          <span class="grid-admin-help grid-admin-help--inline">Eixos, densidades e chutes por dia</span>
+        </span>
+        <svg class="grid-admin-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </summary>
+      <div class="grid-admin-hist-body">
+        <div class="grid-admin-row grid-admin-row--hist">
+          <label class="grid-admin-label" for="grid-admin-hist-dia">Dia</label>
+          <input
+            id="grid-admin-hist-dia"
+            class="grid-admin-input"
+            type="date"
+            value="{{ puzzle.dia }}"
+            data-grid-admin-hist-dia
+          />
         </div>
-        <div>
-          <h4 class="grid-admin-h4">Eixos do puzzle</h4>
-          <div class="grid-admin-axes" data-grid-admin-axes></div>
-          <h4 class="grid-admin-h4">Respostas</h4>
-          <div class="grid-admin-respostas" data-grid-admin-respostas></div>
+        <p class="grid-admin-status" data-grid-admin-hist-status hidden></p>
+        <div class="grid-admin-hist-layout">
+          <div>
+            <h4 class="grid-admin-h4">Dias com atividade</h4>
+            <ul class="grid-admin-dias" data-grid-admin-dias></ul>
+          </div>
+          <div>
+            <h4 class="grid-admin-h4">Eixos do puzzle</h4>
+            <div class="grid-admin-axes" data-grid-admin-axes></div>
+            <h4 class="grid-admin-h4">Respostas</h4>
+            <div class="grid-admin-respostas" data-grid-admin-respostas></div>
+          </div>
+        </div>
+        <div class="grid-admin-actions">
+          <button type="button" class="grid-admin-ico grid-admin-ico--accent" data-grid-admin-hist-load title="Carregar dia" aria-label="Carregar dia">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
         </div>
       </div>
-    </div>
+    </details>
   </section>
   {% endif %}
 </section>
@@ -251,6 +294,6 @@
 {% block scripts %}
 <script src="/static/grid.js?v=12" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=1" defer></script>
+<script src="/static/grid-admin.js?v=2" defer></script>
 {% endif %}
 {% endblock %}

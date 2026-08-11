@@ -48,25 +48,65 @@ _SERIE_D_MARKERS = ("série d", "serie d")
 _SEM_MARKERS = ("sem divisão", "sem divisao")
 
 
-def get_hora_virada() -> int:
-    """Hora (0–23) da virada do puzzle em America/Sao_Paulo. Padrão 0."""
+def get_virada_hm() -> tuple[int, int]:
+    """(hora, minuto) da virada em America/Sao_Paulo. Padrão (0, 0)."""
     try:
         from src import db as dbmod
 
-        return int(dbmod.get_grid_virada_hora())
+        return tuple(dbmod.get_grid_virada_hm())  # type: ignore[return-value]
     except Exception:
-        return 0
+        return (0, 0)
 
 
-def rotulo_hora_virada(hora: int | None = None) -> str:
-    h = get_hora_virada() if hora is None else int(hora)
-    return f"{h:02d}:00"
+def get_hora_virada() -> int:
+    """Compat: só a hora (0–23) da virada."""
+    return get_virada_hm()[0]
 
 
-def dia_grid(agora: datetime | None = None, *, hora_virada: int | None = None) -> str:
+def _resolver_virada(
+    hora_virada: int | tuple[int, int] | str | None = None,
+    minuto_virada: int | None = None,
+) -> tuple[int, int]:
+    if hora_virada is None and minuto_virada is None:
+        return get_virada_hm()
+    if isinstance(hora_virada, tuple) and len(hora_virada) == 2:
+        h, mi = int(hora_virada[0]), int(hora_virada[1])
+    elif isinstance(hora_virada, str):
+        from src import db as dbmod
+
+        h, mi = dbmod.parse_grid_virada(hora_virada)
+    elif hora_virada is None:
+        h, mi = 0, int(minuto_virada or 0)
+    else:
+        h = int(hora_virada)
+        mi = 0 if minuto_virada is None else int(minuto_virada)
+    if not 0 <= h <= 23:
+        h = 0
+    if not 0 <= mi <= 59:
+        mi = 0
+    return (h, mi)
+
+
+def rotulo_hora_virada(
+    hora: int | tuple[int, int] | str | None = None,
+    minuto: int | None = None,
+) -> str:
+    if hora is None and minuto is None:
+        h, mi = get_virada_hm()
+    else:
+        h, mi = _resolver_virada(hora, minuto)
+    return f"{h:02d}:{mi:02d}"
+
+
+def dia_grid(
+    agora: datetime | None = None,
+    *,
+    hora_virada: int | tuple[int, int] | str | None = None,
+    minuto_virada: int | None = None,
+) -> str:
     """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD).
 
-    Vira na hora configurada (padrão 00:00 SP). Antes da hora, ainda conta
+    Vira no horário configurado (padrão 00:00 SP). Antes da virada, ainda conta
     como o dia civil anterior.
     """
     from datetime import timedelta
@@ -76,10 +116,8 @@ def dia_grid(agora: datetime | None = None, *, hora_virada: int | None = None) -
         now = now.replace(tzinfo=TZ_SP)
     else:
         now = now.astimezone(TZ_SP)
-    h = get_hora_virada() if hora_virada is None else int(hora_virada)
-    if not 0 <= h <= 23:
-        h = 0
-    if now.hour < h:
+    h, mi = _resolver_virada(hora_virada, minuto_virada)
+    if (now.hour, now.minute) < (h, mi):
         return (now.date() - timedelta(days=1)).isoformat()
     return now.date().isoformat()
 
@@ -92,7 +130,10 @@ def rotulo_dia(dia: str) -> str:
 
 
 def ms_ate_proxima_virada(
-    agora: datetime | None = None, *, hora_virada: int | None = None
+    agora: datetime | None = None,
+    *,
+    hora_virada: int | tuple[int, int] | str | None = None,
+    minuto_virada: int | None = None,
 ) -> int:
     """Milissegundos até a próxima virada em America/Sao_Paulo."""
     from datetime import time, timedelta
@@ -102,10 +143,8 @@ def ms_ate_proxima_virada(
         now = now.replace(tzinfo=TZ_SP)
     else:
         now = now.astimezone(TZ_SP)
-    h = get_hora_virada() if hora_virada is None else int(hora_virada)
-    if not 0 <= h <= 23:
-        h = 0
-    alvo = datetime.combine(now.date(), time(hour=h, minute=0), tzinfo=TZ_SP)
+    h, mi = _resolver_virada(hora_virada, minuto_virada)
+    alvo = datetime.combine(now.date(), time(hour=h, minute=mi), tzinfo=TZ_SP)
     if now >= alvo:
         alvo = alvo + timedelta(days=1)
     return max(0, int((alvo - now).total_seconds() * 1000))
@@ -452,13 +491,14 @@ def categoria_por_id(cat_id: str, dia: str | None = None) -> Categoria | None:
 def puzzle_publico(dia: str | None = None) -> dict[str, Any]:
     p = gerar_puzzle(dia)
     dia_s = p["dia"]
-    hora = get_hora_virada()
+    h, mi = get_virada_hm()
     return {
         **p,
         "rotulo": rotulo_dia(dia_s),
         "virada_em_ms": ms_ate_proxima_virada(),
-        "virada_hora": hora,
-        "virada_rotulo": rotulo_hora_virada(hora),
+        "virada_hora": h,
+        "virada_minuto": mi,
+        "virada_rotulo": rotulo_hora_virada(h, mi),
         "tz": "America/Sao_Paulo",
         "regenerado": bool(_salt_dia(dia_s)),
     }

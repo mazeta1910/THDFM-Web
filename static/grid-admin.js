@@ -2,11 +2,14 @@
   const root = document.querySelector("[data-grid-admin]");
   if (!root) return;
 
+  const HIST_KEY = "thdfm-grid-admin-hist-open";
   const statusEl = (sel) => root.querySelector(sel);
   const diasEl = root.querySelector("[data-grid-admin-dias]");
   const axesEl = root.querySelector("[data-grid-admin-axes]");
   const respEl = root.querySelector("[data-grid-admin-respostas]");
   const histDia = root.querySelector("[data-grid-admin-hist-dia]");
+  const histBox = root.querySelector("[data-grid-admin-hist]");
+  let histLoaded = false;
 
   function setStatus(el, msg, ok) {
     if (!el) return;
@@ -89,11 +92,7 @@
             const line = [0, 1, 2]
               .map((ci) => {
                 const cell = rows[ri] && rows[ri][ci];
-                const cls = !cell
-                  ? ""
-                  : cell.ok
-                    ? " is-ok"
-                    : " is-miss";
+                const cls = !cell ? "" : cell.ok ? " is-ok" : " is-miss";
                 return `<span class="grid-admin-mini-cell${cls}">${esc(
                   cellLabel(cell)
                 )}</span>`;
@@ -129,17 +128,36 @@
       renderDias(data.dias || [], data.dia);
       renderAxes(data.puzzle);
       renderRespostas(data.respostas || []);
+      histLoaded = true;
       setStatus(status, `Dia ${rotuloDia(data.dia)}`, true);
     } catch (err) {
       setStatus(status, err.message || "Erro", false);
     }
   }
 
+  // Histórico começa minimizado; lembra se o Mazeta deixou aberto.
+  if (histBox) {
+    try {
+      if (localStorage.getItem(HIST_KEY) === "1") histBox.open = true;
+    } catch (_) {
+      /* ignore */
+    }
+    histBox.addEventListener("toggle", () => {
+      try {
+        localStorage.setItem(HIST_KEY, histBox.open ? "1" : "0");
+      } catch (_) {
+        /* ignore */
+      }
+      if (histBox.open && !histLoaded) carregar(histDia && histDia.value);
+    });
+    if (histBox.open) carregar(histDia && histDia.value);
+  }
+
   root.querySelector("[data-grid-admin-virada]")?.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const status = statusEl("[data-grid-admin-virada-status]");
-    const sel = root.querySelector("[data-grid-admin-hora]");
-    const hora = Number(sel && sel.value);
+    const inp = root.querySelector("[data-grid-admin-hora]");
+    const hora = ((inp && inp.value) || "").trim();
     setStatus(status, "Salvando…", true);
     try {
       const r = await fetch("/grid/api/admin/virada", {
@@ -149,6 +167,7 @@
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.erro || "Falha ao salvar");
+      if (inp && data.virada_rotulo) inp.value = data.virada_rotulo;
       setStatus(
         status,
         `Virada às ${data.virada_rotulo} (Brasília). Dia atual: ${rotuloDia(
@@ -197,7 +216,7 @@
         )}${extra}.`,
         true
       );
-      await carregar(data.dia);
+      if (histBox && histBox.open) await carregar(data.dia);
       if (data.dia === (document.getElementById("thdfm-grid") || {}).dataset?.dia) {
         window.location.reload();
       }
@@ -217,6 +236,4 @@
     if (histDia) histDia.value = dia;
     carregar(dia);
   });
-
-  carregar(histDia && histDia.value);
 })();

@@ -109,6 +109,13 @@ def test_virada_meia_noite_sao_paulo():
     ms18 = ms_ate_proxima_virada(tarde, hora_virada=18)
     assert 0 < ms18 <= 60_000 + 50
 
+    # HH:MM livre — 18:30
+    quase = datetime(2026, 8, 11, 18, 29, tzinfo=TZ_SP)
+    pos = datetime(2026, 8, 11, 18, 30, tzinfo=TZ_SP)
+    assert dia_grid(quase, hora_virada="18:30") == "2026-08-10"
+    assert dia_grid(pos, hora_virada="18:30") == "2026-08-11"
+    assert 0 < ms_ate_proxima_virada(quase, hora_virada=(18, 30)) <= 60_000 + 50
+
 
 def test_vancouver_whitecaps_no_catalogo_fora_do_puzzle():
     from src.clubes_catalogo import carregar_clubes
@@ -187,14 +194,26 @@ def test_grid_admin_so_mazeta(client: TestClient):
     assert isinstance(data["dias"], list)
     assert isinstance(data["respostas"], list)
 
-    virada = client.post("/grid/api/admin/virada", json={"hora": 18})
+    virada = client.post("/grid/api/admin/virada", json={"hora": "18:30"})
     assert virada.status_code == 200
     assert virada.json()["virada_hora"] == 18
-    assert virada.json()["virada_rotulo"] == "18:00"
+    assert virada.json()["virada_minuto"] == 30
+    assert virada.json()["virada_rotulo"] == "18:30"
+    assert dbmod.get_grid_virada_hm() == (18, 30)
     assert dbmod.get_grid_virada_hora() == 18
 
-    bad = client.post("/grid/api/admin/virada", json={"hora": 99})
+    # Compat: int ainda funciona (= :00)
+    virada_int = client.post("/grid/api/admin/virada", json={"hora": 19})
+    assert virada_int.status_code == 200
+    assert virada_int.json()["virada_rotulo"] == "19:00"
+
+    bad = client.post("/grid/api/admin/virada", json={"hora": "25:00"})
     assert bad.status_code == 400
+    bad2 = client.post("/grid/api/admin/virada", json={"hora": "abc"})
+    assert bad2.status_code == 400
+
+    client.post("/grid/api/admin/virada", json={"hora": "18:30"})
+    assert dbmod.get_grid_virada_hm() == (18, 30)
 
     dia = data["dia"]
     antes = gerar_puzzle(dia)
@@ -229,8 +248,8 @@ def test_grid_admin_so_mazeta(client: TestClient):
     assert rest.status_code == 200
     assert rest.json()["restaurado"] is True
     assert gerar_puzzle(dia) == antes
-    assert dbmod.get_grid_virada_hora() == 18
-    client.post("/grid/api/admin/virada", json={"hora": 0})
+    assert dbmod.get_grid_virada_hm() == (18, 30)
+    client.post("/grid/api/admin/virada", json={"hora": "00:00"})
 
 
 def test_grid_fluxo_logado(client: TestClient):
@@ -245,8 +264,13 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "vira às 00:00 (Brasília)" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=1" in r.text
+    assert "/static/grid-admin.js?v=2" in r.text
     assert "Painel do Grid" in r.text
+    assert 'data-grid-admin-hist' in r.text
+    assert "grid-admin-ico" in r.text
+    assert 'type="text"' in r.text
+    assert 'placeholder="HH:MM"' in r.text
+    assert "Salvar hora" not in r.text or 'aria-label="Salvar hora"' in r.text
     assert 'data-grid-daltonismo' in r.text
     assert 'data-daltonismo="protanopia"' in r.text
     assert 'data-daltonismo="deuteranopia"' in r.text
