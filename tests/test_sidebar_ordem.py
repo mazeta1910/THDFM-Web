@@ -17,8 +17,7 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     html = r.text
     assert "site-hall-lendas" in html
     assert "Hall das Lendas" in html
-    assert 'disabled' in html.split("site-hall-lendas", 1)[1].split(">", 1)[0]
-    assert 'aria-disabled="true"' in html
+    assert 'href="/hall-lendas"' in html
     assert "site-hall-star" in html
     assert 'data-menu-pinned' in html
     assert 'data-group="portal"' in html
@@ -33,6 +32,7 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".site-hall-lendas" in css
     assert ".site-menu-drag" in css
+    assert ".hall-lendas-page" in css
 
 
 def test_sidebar_ordem_api_e_persistencia(client: TestClient):
