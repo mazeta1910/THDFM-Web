@@ -372,34 +372,35 @@
     window.setInterval(checarViradaDia, 60 * 1000);
   }
 
-  const MIOPIA_KEY = "thdfm-grid-miopia";
-  const MIOPIA_OK = new Set(["off", "leve", "moderada", "alta"]);
+  const DALTONISMO_KEY = "thdfm-grid-daltonismo";
+  const DALTONISMO_OK = new Set(["off", "protanopia", "deuteranopia", "tritanopia"]);
 
-  function aplicarMiopia(modo) {
-    const m = MIOPIA_OK.has(modo) ? modo : "off";
-    root.setAttribute("data-miopia", m);
+  function aplicarDaltonismo(modo) {
+    const m = DALTONISMO_OK.has(modo) ? modo : "off";
+    root.setAttribute("data-daltonismo", m);
     try {
-      localStorage.setItem(MIOPIA_KEY, m);
+      localStorage.setItem(DALTONISMO_KEY, m);
+      localStorage.removeItem("thdfm-grid-miopia");
     } catch (_) {
       /* ignore */
     }
-    root.querySelectorAll("[data-miopia]").forEach((btn) => {
-      const on = btn.getAttribute("data-miopia") === m;
+    root.querySelectorAll("[data-daltonismo]").forEach((btn) => {
+      const on = btn.getAttribute("data-daltonismo") === m;
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
   }
 
-  function initMiopia() {
+  function initDaltonismo() {
     let saved = "off";
     try {
-      saved = localStorage.getItem(MIOPIA_KEY) || "off";
+      saved = localStorage.getItem(DALTONISMO_KEY) || "off";
     } catch (_) {
       saved = "off";
     }
-    aplicarMiopia(saved);
-    root.querySelectorAll("[data-miopia]").forEach((btn) => {
+    aplicarDaltonismo(saved);
+    root.querySelectorAll("[data-daltonismo]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        aplicarMiopia(btn.getAttribute("data-miopia") || "off");
+        aplicarDaltonismo(btn.getAttribute("data-daltonismo") || "off");
       });
     });
   }
@@ -408,6 +409,6 @@
   if (boot.progresso) applyProgresso(boot.progresso);
   const filled = countScore().filled;
   if (filled >= size * size) showResult(boot.share || null);
-  initMiopia();
+  initDaltonismo();
   agendarVirada();
 })();
