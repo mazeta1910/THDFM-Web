@@ -3248,6 +3248,28 @@ def conta_sair(request: Request):
     return _redirect_acesso("entrar")
 
 
+@app.put("/conta/sidebar-ordem")
+async def conta_sidebar_ordem_put(request: Request):
+    """Salva a ordem dos submenus arrastáveis do menu lateral."""
+    part = _voter_sessao(request)
+    if not part:
+        return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    try:
+        salvo = db.salvar_sidebar_ordem(
+            part["id"],
+            scope=str(body.get("scope") or ""),
+            ordem=list(body.get("ordem") or []),
+        )
+    except (TypeError, ValueError) as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse({"ok": True, "ordem": salvo})
+
+
 @app.post("/p/{token}/comprovante")
 async def reenviar_comprovante(
     request: Request,
