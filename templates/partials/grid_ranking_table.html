@@ -20,7 +20,7 @@
           <td class="col-pos">{{ r.posicao }}º</td>
           <td>
             <a class="grid-rank-player" href="/perfil/{{ r.participante_id }}">
-              {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar") }}
+              {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar", borda=r.hall_borda) }}
               <span>{{ r.nome }}</span>
             </a>
           </td>

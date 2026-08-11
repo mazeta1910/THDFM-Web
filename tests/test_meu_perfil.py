@@ -76,10 +76,10 @@ def test_meu_perfil_editar_pagina(client: TestClient):
     assert 'name="senha_nova"' in r.text
     assert 'action="/p/' in r.text and "/conta/senha" in r.text
     assert 'href="/meu-perfil"' in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
     assert "/static/prototipo-times.js?v=19" in r.text
     assert 'id="proto-perfil-soft"' in r.text
-    assert "/static/style.css?v=301" in r.text
+    assert "/static/style.css?v=310" in r.text
     assert 'id="proto-ufs-toggle"' in r.text
     assert 'class="proto-times-ufs is-collapsed"' in r.text
     assert 'id="proto-uf-grid" hidden' in r.text
@@ -144,7 +144,7 @@ def test_meu_perfil_publico(client: TestClient):
     assert 'id="recados"' in r.text
     assert 'data-viewer-id="' in r.text
     assert f'data-viewer-id="{dono["id"]}"' in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
     js = (ROOT_DIR / "static" / "prototipo-perfil.js").read_text(encoding="utf-8")
     assert "proto-steam-post-nome" in js
     assert "proto-steam-post-av-link" in js
@@ -213,7 +213,7 @@ def test_meu_perfil_visitante(client: TestClient):
     assert "data-karma-cycle" not in r.text
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
 
 
 def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
@@ -226,17 +226,23 @@ def test_meu_perfil_dono_nao_vota_karma(client: TestClient):
     assert "proto-steam-karma--votavel" not in r.text
     assert "proto-steam-karma--line" in r.text
     assert 'id="proto-karma-resumo"' in r.text
-    assert "/static/prototipo-perfil.js?v=33" in r.text
+    assert "/static/prototipo-perfil.js?v=34" in r.text
 
 
 def test_perfil_outro_usuario(client: TestClient):
+    from pathlib import Path
+
     from src import db as dbmod
+    from src.config import AVATARES_DIR
 
     part = dbmod.criar_participante("Comum Bene", status="liberado", celular="11990009903")
     dbmod.definir_credenciais(part["id"], "comum.bene", "senha12345")
     client.get(f"/p/{part['token']}")
 
     alvo = dbmod.criar_participante("Benevides", status="liberado", celular="11990001122")
+    av = Path(AVATARES_DIR) / "benevides-teste.jpg"
+    av.parent.mkdir(parents=True, exist_ok=True)
+    av.write_bytes(b"\xff\xd8\xff\xd9")
     dbmod.salvar_avatar(alvo["id"], "benevides-teste.jpg")
 
     r = client.get(f"/perfil/{alvo['id']}")

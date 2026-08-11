@@ -76,7 +76,7 @@
     {% if participante_nav %}
     <button
       type="button"
-      class="proto-edit-avatar avatar-edit-trigger{% if show_lenda %} proto-steam-avatar--{{ borda_lenda }}{% endif %}"
+      class="proto-edit-avatar avatar-edit-trigger{% if show_lenda %} lenda-frame lenda-frame--{{ borda_lenda }} lenda-frame--lg{% endif %}"
       id="proto-avatar-edit"
       aria-label="Alterar foto de perfil"
     >
@@ -93,7 +93,7 @@
       </span>
     </button>
     {% else %}
-    <div class="proto-edit-avatar{% if show_lenda %} proto-steam-avatar--{{ borda_lenda }}{% endif %}" aria-hidden="true">
+    <div class="proto-edit-avatar{% if show_lenda %} lenda-frame lenda-frame--{{ borda_lenda }} lenda-frame--lg{% endif %}" aria-hidden="true">
       <span class="proto-steam-avatar-fallback">{{ viewer_ini }}</span>
     </div>
     {% endif %}
@@ -205,7 +205,7 @@
           {% for b in hall_bordas %}
           <label class="hall-borda-option {% if b.id == borda_lenda %}is-selected{% endif %}">
             <input type="radio" name="borda" value="{{ b.id }}" {% if b.id == borda_lenda %}checked{% endif %} />
-            <span class="hall-borda-sample proto-steam-avatar--{{ b.id }}" aria-hidden="true">{{ b.sample }}</span>
+            <span class="hall-borda-sample lenda-frame lenda-frame--{{ b.id }}" aria-hidden="true">{{ b.sample }}</span>
             <span class="hall-borda-label">{{ b.rotulo }}</span>
           </label>
           {% endfor %}
@@ -319,5 +319,5 @@
 
 {% block scripts %}
 <script src="/static/prototipo-times.js?v=19" defer></script>
-<script src="/static/prototipo-perfil.js?v=33" defer></script>
+<script src="/static/prototipo-perfil.js?v=34" defer></script>
 {% endblock %}

@@ -13564,39 +13564,75 @@ button.grid-admin-dia-btn,
   color: #e2b93d;
   flex: 0 0 auto;
 }
-.proto-steam-avatar.proto-steam-avatar--anel,
-.proto-steam-avatar.proto-steam-avatar--duplo,
-.proto-steam-avatar.proto-steam-avatar--brilho,
-.proto-steam-avatar.proto-steam-avatar--laurel,
-.proto-edit-avatar.proto-steam-avatar--anel,
-.proto-edit-avatar.proto-steam-avatar--duplo,
-.proto-edit-avatar.proto-steam-avatar--brilho,
-.proto-edit-avatar.proto-steam-avatar--laurel {
+/* Moldura de Lenda — em qualquer avatar do site */
+.lenda-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  box-sizing: border-box;
+  line-height: 0;
+}
+.lenda-frame.site-brand-avatar-wrap,
+.lenda-frame.admin-brand-avatar-wrap,
+.lenda-frame.proto-steam-avatar,
+.lenda-frame.proto-edit-avatar,
+.lenda-frame.hall-lendas-avatar,
+.lenda-frame.avatar-preview {
   overflow: visible;
   border-color: transparent;
 }
-.proto-steam-avatar--anel {
+.lenda-frame--anel {
+  box-shadow:
+    0 0 0 2px #d4a017,
+    0 0 0 3px color-mix(in srgb, #d4a017 35%, var(--card));
+}
+.lenda-frame--duplo {
+  box-shadow:
+    0 0 0 1px #f0d060,
+    0 0 0 3px #8a6a10,
+    0 0 0 4px #f0d060;
+}
+.lenda-frame--brilho {
+  box-shadow:
+    0 0 0 2px #e2b93d,
+    0 0 10px 1px color-mix(in srgb, #e2b93d 55%, transparent);
+}
+.lenda-frame--laurel {
+  box-shadow:
+    0 0 0 2px #c9a227,
+    0 0 0 4px color-mix(in srgb, #3a2a08 55%, var(--card)),
+    0 0 0 5px #e2b93d;
+}
+.lenda-frame--lg.lenda-frame--anel {
   box-shadow:
     0 0 0 3px #d4a017,
     0 0 0 6px color-mix(in srgb, #d4a017 35%, var(--card));
 }
-.proto-steam-avatar--duplo {
+.lenda-frame--lg.lenda-frame--duplo {
   box-shadow:
     0 0 0 2px #f0d060,
     0 0 0 5px #8a6a10,
     0 0 0 7px #f0d060;
 }
-.proto-steam-avatar--brilho {
+.lenda-frame--lg.lenda-frame--brilho {
   box-shadow:
     0 0 0 3px #e2b93d,
     0 0 14px 2px color-mix(in srgb, #e2b93d 55%, transparent);
 }
-.proto-steam-avatar--laurel {
+.lenda-frame--lg.lenda-frame--laurel {
   box-shadow:
     0 0 0 3px #c9a227,
     0 0 0 7px color-mix(in srgb, #3a2a08 55%, var(--card)),
     0 0 0 9px #e2b93d;
 }
+/* legado hall page (mantém se ainda houver class antiga) */
+.hall-lendas-avatar--anel { box-shadow: 0 0 0 3px #d4a017, 0 0 0 5px color-mix(in srgb, #d4a017 35%, var(--bg)); }
+.hall-lendas-avatar--duplo { box-shadow: 0 0 0 2px #c9a227, 0 0 0 5px var(--card), 0 0 0 7px #e2b93d; }
+.hall-lendas-avatar--brilho { box-shadow: 0 0 0 3px #e2b93d, 0 0 14px 2px color-mix(in srgb, #f0d060 45%, transparent); }
+.hall-lendas-avatar--laurel { box-shadow: 0 0 0 3px #c9a227, 0 0 0 6px #3a2a08, 0 0 0 8px #e2b93d; }
 
 .hall-borda-form {
   display: grid;
