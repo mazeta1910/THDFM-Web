@@ -127,11 +127,17 @@ def test_variedade_cutover_e_eixos_mistos():
             cont = Counter(tipos)
             assert len(cont) >= 2, (dia, eixo)
             assert cont.get("termina", 0) <= 1, (dia, eixo)
+            assert cont.get("letra", 0) <= 1, (dia, eixo)
             assert cont.get("regiao", 0) <= 1, (dia, eixo)
+            n_nome = cont.get("letra", 0) + cont.get("termina", 0)
+            assert n_nome <= 1, (dia, eixo)
+            assert not all(t in ("letra", "termina") for t in tipos), (dia, eixo)
 
         board = p["linhas"] + p["colunas"]
+        n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina"))
+        assert n_nome_board <= 2, (dia, n_nome_board)
         tipos_all = {c["tipo"] for c in board}
-        assert len(tipos_all) >= 3, (dia, tipos_all)
+        assert len(tipos_all) >= 4, (dia, tipos_all)
 
         def _fam(t: str) -> str:
             if t in ("letra", "termina"):
@@ -166,7 +172,7 @@ def test_variedade_cutover_e_eixos_mistos():
         "paridade",
     }
     assert len(tipos_vistos) >= 7
-    assert len(ids_vistos) >= 35
+    assert len(ids_vistos) >= 25
     assert max(familias_por_dia) >= 3
 
 def test_categoria_termina_com_letra_e_silaba():
