@@ -377,20 +377,24 @@
 
   function aplicarDaltonismo(modo) {
     const m = DALTONISMO_OK.has(modo) ? modo : "off";
-    root.setAttribute("data-daltonismo", m);
+    // Atributo separado do dos botões (data-daltonismo) para não misturar seleção.
+    root.setAttribute("data-daltonismo-mode", m);
     try {
       localStorage.setItem(DALTONISMO_KEY, m);
       localStorage.removeItem("thdfm-grid-miopia");
     } catch (_) {
       /* ignore */
     }
-    root.querySelectorAll("[data-daltonismo]").forEach((btn) => {
+    root.querySelectorAll(".grid-daltonismo-btn[data-daltonismo]").forEach((btn) => {
       const on = btn.getAttribute("data-daltonismo") === m;
       btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.classList.toggle("is-active", on);
     });
   }
 
   function initDaltonismo() {
+    const box = root.querySelector("[data-grid-daltonismo]");
+    if (!box) return;
     let saved = "off";
     try {
       saved = localStorage.getItem(DALTONISMO_KEY) || "off";
@@ -398,10 +402,14 @@
       saved = "off";
     }
     aplicarDaltonismo(saved);
-    root.querySelectorAll("[data-daltonismo]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        aplicarDaltonismo(btn.getAttribute("data-daltonismo") || "off");
-      });
+    // Delegação: sobrevive a re-render e evita conflito de atributos no root.
+    box.addEventListener("click", (ev) => {
+      const btn = ev.target && ev.target.closest
+        ? ev.target.closest(".grid-daltonismo-btn[data-daltonismo]")
+        : null;
+      if (!btn || !box.contains(btn)) return;
+      ev.preventDefault();
+      aplicarDaltonismo(btn.getAttribute("data-daltonismo") || "off");
     });
   }
 

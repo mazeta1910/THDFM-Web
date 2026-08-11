@@ -12540,9 +12540,10 @@ button.grid-cell,
 .grid-daltonismo-btn + .grid-daltonismo-btn {
   border-left: 1px solid var(--border);
 }
-.grid-daltonismo-btn[aria-pressed="true"] {
+.grid-daltonismo-btn[aria-pressed="true"],
+.grid-daltonismo-btn.is-active {
   color: var(--text);
-  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  background: color-mix(in srgb, var(--accent) 28%, var(--bg));
 }
 .grid-daltonismo-btn:hover {
   color: var(--text);
@@ -12552,41 +12553,41 @@ button.grid-cell,
   Daltonismo: remapeia acerto/erro para paletas distinguíveis
   (protanopia/deuteranopia ≈ vermelho–verde; tritanopia ≈ azul–amarelo).
 */
-.grid-page[data-daltonismo="protanopia"] .grid-cell.is-ok {
+.grid-page[data-daltonismo-mode="protanopia"] .grid-cell.is-ok {
   border-color: color-mix(in srgb, #2b6cb0 60%, var(--border));
   background: color-mix(in srgb, #2b6cb0 18%, var(--bg));
 }
-.grid-page[data-daltonismo="protanopia"] .grid-cell.is-miss {
+.grid-page[data-daltonismo-mode="protanopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #dd6b20 55%, var(--border));
   background: color-mix(in srgb, #dd6b20 16%, var(--bg));
 }
-.grid-page[data-daltonismo="protanopia"] .grid-cell-embl--miss {
+.grid-page[data-daltonismo-mode="protanopia"] .grid-cell-embl--miss {
   background: color-mix(in srgb, #dd6b20 28%, transparent);
   color: #dd6b20;
 }
 
-.grid-page[data-daltonismo="deuteranopia"] .grid-cell.is-ok {
+.grid-page[data-daltonismo-mode="deuteranopia"] .grid-cell.is-ok {
   border-color: color-mix(in srgb, #3182ce 60%, var(--border));
   background: color-mix(in srgb, #3182ce 18%, var(--bg));
 }
-.grid-page[data-daltonismo="deuteranopia"] .grid-cell.is-miss {
+.grid-page[data-daltonismo-mode="deuteranopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #d69e2e 55%, var(--border));
   background: color-mix(in srgb, #d69e2e 16%, var(--bg));
 }
-.grid-page[data-daltonismo="deuteranopia"] .grid-cell-embl--miss {
+.grid-page[data-daltonismo-mode="deuteranopia"] .grid-cell-embl--miss {
   background: color-mix(in srgb, #d69e2e 28%, transparent);
   color: #d69e2e;
 }
 
-.grid-page[data-daltonismo="tritanopia"] .grid-cell.is-ok {
+.grid-page[data-daltonismo-mode="tritanopia"] .grid-cell.is-ok {
   border-color: color-mix(in srgb, #38a169 60%, var(--border));
   background: color-mix(in srgb, #38a169 18%, var(--bg));
 }
-.grid-page[data-daltonismo="tritanopia"] .grid-cell.is-miss {
+.grid-page[data-daltonismo-mode="tritanopia"] .grid-cell.is-miss {
   border-color: color-mix(in srgb, #c53030 55%, var(--border));
   background: color-mix(in srgb, #c53030 16%, var(--bg));
 }
-.grid-page[data-daltonismo="tritanopia"] .grid-cell-embl--miss {
+.grid-page[data-daltonismo-mode="tritanopia"] .grid-cell-embl--miss {
   background: color-mix(in srgb, #c53030 28%, transparent);
   color: #c53030;
 }

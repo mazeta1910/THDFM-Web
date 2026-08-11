@@ -159,7 +159,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=10" in r.text
+    assert "/static/grid.js?v=11" in r.text
     assert "data-virada-ms=" in r.text
     assert "00:00 (Brasília)" in r.text
     assert 'data-grid-daltonismo' in r.text
@@ -180,7 +180,7 @@ def test_grid_fluxo_logado(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".grid-share-text" in css
     assert "text-align: center" in css.split(".grid-share-text", 1)[1].split("}", 1)[0]
-    assert '.grid-page[data-daltonismo="protanopia"]' in css
+    assert '.grid-page[data-daltonismo-mode="protanopia"]' in css
     assert ".grid-daltonismo-toggles" in css
     assert "Jogos e Passatempos" in (
         ROOT_DIR / "templates" / "partials" / "site_sidebar.html"
@@ -204,6 +204,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "c.uf" not in js
     assert "thdfm-grid-daltonismo" in js
     assert "aplicarDaltonismo" in js
+    assert "data-daltonismo-mode" in js
     assert "aplicarMiopia" not in js
     assert "data-miopia" not in js
     assert 'href="/grid"' in (
