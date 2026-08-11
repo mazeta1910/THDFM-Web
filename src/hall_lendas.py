@@ -98,3 +98,120 @@ def format_quando(iso_local: str | None) -> str:
 
 def agora_local_iso() -> str:
     return datetime.now(TZ_SP).strftime("%Y-%m-%d %H:%M:%S")
+
+
+HALL_HERO_META = "hall_hero_html"
+HALL_HERO_DEFAULT = (
+    "<p>Quem apoia o projeto com doação entra aqui — para sempre.<br>"
+    "Ordenado pelo total doado.</p>"
+)
+
+_HALL_HERO_TAGS = frozenset(
+    {
+        "p",
+        "br",
+        "strong",
+        "b",
+        "em",
+        "i",
+        "u",
+        "a",
+        "img",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "h2",
+        "h3",
+        "div",
+        "span",
+        "hr",
+    }
+)
+_HALL_HERO_ATTRS = {
+    "a": frozenset({"href", "title", "target", "rel"}),
+    "img": frozenset({"src", "alt", "width", "height", "loading"}),
+}
+
+
+def _hall_hero_url_ok(attr: str, value: str) -> bool:
+    v = (value or "").strip()
+    if not v:
+        return False
+    low = v.lower()
+    if attr == "href":
+        if low.startswith(("javascript:", "data:", "vbscript:")):
+            return False
+        return low.startswith(("http://", "https://", "/", "#", "mailto:"))
+    if attr == "src":
+        if low.startswith(("javascript:", "data:", "vbscript:")):
+            return False
+        return low.startswith(("/hall-hero/", "/static/", "https://", "http://"))
+    return True
+
+
+def sanitize_hall_hero_html(raw: str | None) -> str:
+    """HTML permitido no header do Hall (texto + imagens)."""
+    from html import escape
+    from html.parser import HTMLParser
+
+    class _San(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__(convert_charrefs=True)
+            self.out: list[str] = []
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            t = tag.lower()
+            if t not in _HALL_HERO_TAGS:
+                return
+            if t == "br":
+                self.out.append("<br>")
+                return
+            if t == "hr":
+                self.out.append("<hr>")
+                return
+            allowed = _HALL_HERO_ATTRS.get(t, frozenset())
+            parts = [f"<{t}"]
+            for name, val in attrs:
+                n = (name or "").lower()
+                if n not in allowed or val is None:
+                    continue
+                if n in ("href", "src") and not _hall_hero_url_ok(n, val):
+                    continue
+                if n == "target" and val not in ("_blank", "_self"):
+                    continue
+                parts.append(f' {n}="{escape(val, quote=True)}"')
+                if t == "a" and n == "href" and 'rel="' not in "".join(parts):
+                    parts.append(' rel="noopener noreferrer"')
+            if t == "img" and 'loading="' not in "".join(parts):
+                parts.append(' loading="lazy"')
+            parts.append(">")
+            self.out.append("".join(parts))
+
+        def handle_endtag(self, tag: str) -> None:
+            t = tag.lower()
+            if t in _HALL_HERO_TAGS and t not in ("br", "hr", "img"):
+                self.out.append(f"</{t}>")
+
+        def handle_data(self, data: str) -> None:
+            self.out.append(escape(data))
+
+        def handle_entityref(self, name: str) -> None:
+            self.out.append(f"&{name};")
+
+        def handle_charref(self, name: str) -> None:
+            self.out.append(f"&#{name};")
+
+    html = (raw or "").strip()
+    if not html:
+        return HALL_HERO_DEFAULT
+    parser = _San()
+    try:
+        parser.feed(html)
+        parser.close()
+    except Exception:
+        return HALL_HERO_DEFAULT
+    cleaned = "".join(parser.out).strip()
+    # Remove tags vazias inúteis
+    cleaned = re.sub(r"(?i)<(p|div|span)>\s*</\1>", "", cleaned).strip()
+    return cleaned or HALL_HERO_DEFAULT

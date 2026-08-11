@@ -5096,6 +5096,23 @@ def anexar_hall_borda(
     return itens
 
 
+def get_hall_hero_html() -> str:
+    from src.hall_lendas import HALL_HERO_DEFAULT, HALL_HERO_META, sanitize_hall_hero_html
+
+    raw = get_meta(HALL_HERO_META)
+    if raw is None or not str(raw).strip():
+        return HALL_HERO_DEFAULT
+    return sanitize_hall_hero_html(raw)
+
+
+def set_hall_hero_html(html: str) -> str:
+    from src.hall_lendas import HALL_HERO_META, sanitize_hall_hero_html
+
+    limpo = sanitize_hall_hero_html(html)
+    set_meta(HALL_HERO_META, limpo)
+    return limpo
+
+
 def list_participantes_liberados() -> list[dict[str, Any]]:
     """Liberados para o seletor do admin do Hall."""
     with get_db() as conn:

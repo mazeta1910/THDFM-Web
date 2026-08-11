@@ -13276,6 +13276,90 @@ button.grid-admin-dia-btn,
   font-size: 0.98rem;
   line-height: 1.45;
 }
+.hall-lendas-hero-edit {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #d4a017 55%, var(--border));
+  background: color-mix(in srgb, var(--card) 88%, #3a2a08);
+  color: #e2b93d;
+  cursor: pointer;
+}
+.hall-lendas-hero-edit:hover,
+.hall-lendas-hero-edit:focus-visible {
+  background: color-mix(in srgb, #d4a017 18%, var(--card));
+  outline: none;
+}
+.hall-lendas-hero-body {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.hall-lendas-hero-body p {
+  margin: 0 0 0.65rem;
+}
+.hall-lendas-hero-body p:last-child {
+  margin-bottom: 0;
+}
+.hall-lendas-hero-body img {
+  display: block;
+  max-width: min(100%, 28rem);
+  width: auto;
+  height: auto;
+  margin: 0.75rem 0;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #d4a017 30%, var(--border));
+}
+.hall-lendas-hero.is-editing .hall-lendas-hero-body {
+  margin-top: 0.35rem;
+  padding: 0.7rem 0.8rem;
+  min-height: 4.5rem;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, #d4a017 55%, var(--border));
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  color: var(--text);
+  outline: none;
+}
+.hall-lendas-hero-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0;
+}
+.hall-lendas-hero-tool {
+  width: auto;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #d4a017 45%, var(--border));
+  background: color-mix(in srgb, var(--bg) 80%, var(--card));
+  color: #e2b93d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hall-lendas-hero-tool--accent {
+  background: color-mix(in srgb, #d4a017 22%, var(--bg));
+  color: #f0d060;
+}
+.hall-lendas-hero-tool-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.hall-lendas-hero-tool-status.is-erro {
+  color: #e57373;
+}
 .hall-lendas-proto-tag {
   margin: 0.75rem 0 0;
   display: inline-block;

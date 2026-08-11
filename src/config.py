@@ -38,6 +38,7 @@ COMPROVANTES_DIR = DATA_DIR / "comprovantes"
 AVATARES_DIR = DATA_DIR / "avatars"
 BANNERS_DIR = DATA_DIR / "banners"
 RECADOS_DIR = DATA_DIR / "recados"
+HALL_HERO_DIR = DATA_DIR / "hall-hero"
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "troque-esta-senha")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")

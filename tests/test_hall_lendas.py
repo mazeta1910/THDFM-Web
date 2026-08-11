@@ -222,3 +222,69 @@ def test_paginacao_hall(client: TestClient):
     assert r2.status_code == 200
     assert "Anterior" in r2.text
     assert "lenda-frame--" in r.text
+
+
+def test_hall_hero_padrao_e_lapis_so_mazeta(client: TestClient):
+    r = client.get("/hall-lendas")
+    assert r.status_code == 200
+    assert "hall-lendas-hero-body" in r.text
+    assert "Quem apoia o projeto com doação" in r.text
+    assert "data-hall-hero-edit" not in r.text
+    assert "hall-hero-edit.js" not in r.text
+
+    login_admin(client)
+    r2 = client.get("/hall-lendas")
+    assert r2.status_code == 200
+    assert 'data-hall-hero-editavel="1"' in r2.text
+    assert "data-hall-hero-edit" in r2.text
+    assert "hall-hero-edit.js" in r2.text
+
+
+def test_hall_hero_salvar_e_upload(client: TestClient, tmp_path, monkeypatch):
+    from src import app as app_mod
+    from src.config import HALL_HERO_DIR
+
+    midia = tmp_path / "hall-hero"
+    midia.mkdir()
+    monkeypatch.setattr(app_mod, "HALL_HERO_DIR", midia)
+    monkeypatch.setattr("src.config.HALL_HERO_DIR", midia)
+
+    # Sem login: bloqueado
+    r = client.post(
+        "/admin/hall-lendas/hero",
+        json={"html": "<p>Hack</p>"},
+        follow_redirects=False,
+    )
+    assert r.status_code in (302, 303, 401, 403)
+
+    login_admin(client)
+    r = client.post(
+        "/admin/hall-lendas/hero",
+        json={
+            "html": '<p>Texto <strong>livre</strong></p><script>alert(1)</script><img src="/hall-hero/x.jpg" alt="foto">'
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ok"] is True
+    assert "<script>" not in data["html"]
+    assert "<strong>livre</strong>" in data["html"]
+    assert 'src="/hall-hero/x.jpg"' in data["html"]
+    assert dbmod.get_hall_hero_html() == data["html"]
+
+    page = client.get("/hall-lendas")
+    assert "Texto" in page.text
+    assert "<strong>livre</strong>" in page.text
+
+    up = client.post(
+        "/admin/hall-lendas/hero/midia",
+        files={"midia": ("capa.png", b"\x89PNG\r\n\x1a\n-fake", "image/png")},
+    )
+    assert up.status_code == 200
+    upj = up.json()
+    assert upj["ok"] is True
+    assert upj["url"].startswith("/hall-hero/")
+    rel = upj["url"].rsplit("/", 1)[-1]
+    assert (midia / rel).is_file()
+    # pasta default do projeto não precisa existir neste teste
+    assert HALL_HERO_DIR or True
