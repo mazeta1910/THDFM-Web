@@ -99,7 +99,7 @@
 
     <section class="admin-panel{% if admin_sec != 'inscricoes' %} active{% endif %}" data-panel="resultados">
       <div class="placares-head">
-        <h2>Placares oficiais</h2>
+        <h2>Confrontos e placares</h2>
         <div class="placares-actions" id="placares-sticky-actions">
           <form
             method="post"
@@ -254,16 +254,20 @@
         </div>
 
         {% else %}
-        <form method="post" action="/admin/resultados" class="admin-resultados-form{% if fase_encerrada %} is-fase-encerrada{% endif %}" data-fase="{{ f.id }}" {% if fase_encerrada %}data-fase-encerrada="1"{% endif %}>
+        <form method="post" action="/admin/resultados" class="admin-resultados-form{% if fase_encerrada %} is-fase-encerrada{% endif %}{% if confrontos %} is-dash-confrontos{% endif %}" data-fase="{{ f.id }}" {% if confrontos %}data-save-ambas="1"{% endif %} {% if fase_encerrada %}data-fase-encerrada="1"{% endif %}>
           <input type="hidden" name="fase" value="{{ f.id }}" />
           <input type="hidden" name="perna" value="{{ perna_f }}" class="admin-perna-field" />
           {% if fase_encerrada %}
           <p class="locked-msg admin-fase-encerrada-msg">Fase encerrada — placares somente leitura.</p>
           {% endif %}
 
+          {% if confrontos %}
+          <div class="admin-dash-wrap" data-admin-dash-wrap>
+            {% include "partials/admin_confronto_dash.html" %}
+          </div>
+          {% else %}
           <div class="match-panel {% if perna_f != 'ida' %}hidden{% endif %}" data-panel="ida">
-            {% if not confrontos %}
-            <p class="locked-msg">Confrontos ainda não montados — use a Árvore. Esqueleto da Ida:</p>
+            <p class="locked-msg">Confrontos ainda não montados — use a Árvore abaixo. Esqueleto da Ida:</p>
             <div class="match-grid admin-match-grid locked-grid">
               {% for i in range(f.slots) %}
               <div class="match-cell locked">
@@ -283,47 +287,10 @@
               </div>
               {% endfor %}
             </div>
-            {% else %}
-            <div class="match-grid admin-match-grid">
-              {% for c in confrontos %}
-              {% if c.ida %}
-              {% set mode = 'admin' %}
-              {% set jogo_num = loop.index %}
-              {% set confronto_id = c.id %}
-              {% set clube_m = c.clube_a %}
-              {% set clube_v = c.clube_b %}
-              {% set clube_a = c.clube_a %}
-              {% set clube_b = c.clube_b %}
-              {% set name_m = 'jogo_' ~ c.ida.id ~ '_m' %}
-              {% set name_v = 'jogo_' ~ c.ida.id ~ '_v' %}
-              {% set val_m = c.ida.gols_mandante if c.ida.gols_mandante is not none else '' %}
-              {% set val_v = c.ida.gols_visitante if c.ida.gols_visitante is not none else '' %}
-              {% set readonly = fase_encerrada %}
-              {% set inicio_lbl = formatar_inicio_jogo(c.ida.inicio_em) %}
-              {% set travado_tag = none %}
-              {% set confirmado = c.ida.confirmado|default(false) %}
-              {% set jogo_id = c.ida.id %}
-              {% set inicio_input_name = 'jogo_' ~ c.ida.id ~ '_inicio' %}
-              {% set inicio_input_value = inicio_em_input_value(c.ida.inicio_em) %}
-              {% set inicio_label = 'Início' %}
-              {% set volta_classes_m = '' %}
-              {% set volta_classes_v = '' %}
-              {% set data_ida_a = none %}
-              {% set data_ida_b = none %}
-              {% set ref_lines = none %}
-              {% set pen = none %}
-              {% set admin_attrs = '' %}
-              {% set classificado_preview = false %}
-              {% include "partials/match_cell.html" %}
-              {% endif %}
-              {% endfor %}
-            </div>
-            {% endif %}
           </div>
 
           <div class="match-panel {% if perna_f != 'volta' %}hidden{% endif %}" data-panel="volta">
-            {% if not confrontos %}
-            <p class="locked-msg">Confrontos ainda não montados — use a Árvore. Esqueleto da Volta:</p>
+            <p class="locked-msg">Confrontos ainda não montados — use a Árvore abaixo. Esqueleto da Volta:</p>
             <div class="match-grid admin-match-grid locked-grid">
               {% for i in range(f.slots) %}
               <div class="match-cell locked">
@@ -343,63 +310,13 @@
               </div>
               {% endfor %}
             </div>
-            {% else %}
-            <div class="match-grid admin-match-grid">
-              {% for c in confrontos %}
-              {% if c.volta %}
-              {% set mode = 'admin' %}
-              {% set jogo_num = loop.index %}
-              {% set confronto_id = c.id %}
-              {% set clube_m = c.clube_b %}
-              {% set clube_v = c.clube_a %}
-              {% set clube_a = c.clube_a %}
-              {% set clube_b = c.clube_b %}
-              {% set name_m = 'jogo_' ~ c.volta.id ~ '_m' %}
-              {% set name_v = 'jogo_' ~ c.volta.id ~ '_v' %}
-              {% set val_m = c.volta.gols_mandante if c.volta.gols_mandante is not none else '' %}
-              {% set val_v = c.volta.gols_visitante if c.volta.gols_visitante is not none else '' %}
-              {% set readonly = fase_encerrada %}
-              {% set inicio_lbl = formatar_inicio_jogo(c.volta.inicio_em) %}
-              {% set travado_tag = none %}
-              {% set confirmado = c.volta.confirmado|default(false) %}
-              {% set jogo_id = c.volta.id %}
-              {% set inicio_input_name = 'jogo_' ~ c.volta.id ~ '_inicio' %}
-              {% set inicio_input_value = inicio_em_input_value(c.volta.inicio_em) %}
-              {% set inicio_label = 'Início' %}
-              {% set volta_classes_m = 'volta-m' %}
-              {% set volta_classes_v = 'volta-v' %}
-              {% set data_ida_a = c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' %}
-              {% set data_ida_b = c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' %}
-              {% set ref_lines = [{
-                'label': 'Ida:',
-                'oficial': true,
-                'gols_m': c.ida.gols_mandante if c.ida else none,
-                'gols_v': c.ida.gols_visitante if c.ida else none,
-                'clube_a': c.clube_a,
-                'clube_b': c.clube_b,
-              }] %}
-              {% set pen = {
-                'name': 'jogo_' ~ c.volta.id ~ '_pen',
-                'checked': c.volta.penaltis_clube_id,
-                'title': 'Empate no agregado. Quem passa nos pênaltis?',
-                'hidden': true,
-                'clube_a': c.clube_a,
-                'clube_b': c.clube_b,
-                'disabled': fase_encerrada,
-              } %}
-              {% set admin_attrs = 'data-confronto-admin="' ~ c.id ~ '" data-ida-jogo="' ~ (c.ida.id if c.ida else '') ~ '"' %}
-              {% set classificado_preview = true %}
-              {% include "partials/match_cell.html" %}
-              {% endif %}
-              {% endfor %}
-            </div>
-            {% endif %}
           </div>
+          {% endif %}
 
           {% if not fase_encerrada and confrontos %}
           <div class="sticky-save admin-sticky-save" id="admin-sticky-save-{{ f.id }}">
             <span class="admin-sticky-dirty" data-sticky-dirty hidden>Alterações não salvas</span>
-            <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" data-sticky-salvar title="Salvar placares da perna">
+            <button type="button" class="placares-action-btn placares-btn-icon placares-btn-save" data-sticky-salvar title="Salvar placares e horários">
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                 <polyline points="17 21 17 13 7 13 7 21" />
@@ -1324,8 +1241,12 @@ const salvarPlacaresAtivos = async () => {
   const form = activeForm();
   if (!form) return;
   const pernaField = form.querySelector(".admin-perna-field");
+  const saveAmbas = form.dataset.saveAmbas === "1";
   if (pernaField) {
-    pernaField.value = document.getElementById("zerar-perna")?.value || pernaField.value;
+    // Dashboard mostra ida+volta: salva os dois de uma vez (perna vazia = todas).
+    pernaField.value = saveAmbas
+      ? ""
+      : document.getElementById("zerar-perna")?.value || pernaField.value;
   }
   const fd = new FormData(form);
   try {
@@ -1401,9 +1322,19 @@ if (placaresNav) {
       const on = panel.dataset.fasePanel === fase;
       panel.classList.toggle("hidden", !on);
       if (!on) return;
-      panel.querySelectorAll(".match-panel").forEach((mp) => {
-        mp.classList.toggle("hidden", mp.dataset.panel !== perna);
-      });
+      const form = panel.querySelector("form.admin-resultados-form");
+      const isDash = form?.dataset.saveAmbas === "1";
+      if (isDash) {
+        form.classList.toggle("is-focus-ida", perna === "ida");
+        form.classList.toggle("is-focus-volta", perna === "volta");
+        panel.querySelectorAll(".match-panel").forEach((mp) => {
+          mp.classList.remove("hidden");
+        });
+      } else {
+        panel.querySelectorAll(".match-panel").forEach((mp) => {
+          mp.classList.toggle("hidden", mp.dataset.panel !== perna);
+        });
+      }
     });
     syncZerarForm(fase, perna);
   };

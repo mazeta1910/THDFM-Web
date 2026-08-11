@@ -1,0 +1,140 @@
+{# Dashboard de confrontos (ida | chave | volta) — admin Resultados.
+   Vars: confrontos, f (fase meta), fase_encerrada
+#}
+{% set fase_label = f.label|default(f.id) %}
+{% set ns = namespace(sem_hora=0, sem_placar=0, confirmados=0) %}
+{% for c in confrontos %}
+  {% for j in [c.ida, c.volta] %}
+    {% if j %}
+      {% if not j.inicio_em %}{% set ns.sem_hora = ns.sem_hora + 1 %}{% endif %}
+      {% if j.gols_mandante is none or j.gols_visitante is none %}
+        {% set ns.sem_placar = ns.sem_placar + 1 %}
+      {% elif j.confirmado|default(false) %}
+        {% set ns.confirmados = ns.confirmados + 1 %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+<div class="admin-dash-status" role="status">
+  <span class="admin-dash-pill">{{ confrontos|length }} chave{{ 's' if confrontos|length != 1 else '' }}</span>
+  {% if ns.sem_hora %}
+  <span class="admin-dash-pill is-warn">{{ ns.sem_hora }} sem horário</span>
+  {% else %}
+  <span class="admin-dash-pill is-ok">Horários ok</span>
+  {% endif %}
+  {% if ns.sem_placar %}
+  <span class="admin-dash-pill">{{ ns.sem_placar }} placar{{ 'es' if ns.sem_placar != 1 else '' }} aberto{{ 's' if ns.sem_placar != 1 else '' }}</span>
+  {% endif %}
+  {% if ns.confirmados %}
+  <span class="admin-dash-pill is-ok">{{ ns.confirmados }} confirmado{{ 's' if ns.confirmados != 1 else '' }}</span>
+  {% endif %}
+</div>
+
+<div class="admin-dash-list" data-admin-dash>
+  {% for c in confrontos %}
+  {% set chave_n = loop.index %}
+  {% set chave_rotulo = fase_label|lower ~ ' ' ~ chave_n %}
+  <article
+    class="admin-dash-chave"
+    data-confronto-dash="{{ c.id }}"
+    data-clube-a="{{ c.clube_a }}"
+    data-clube-b="{{ c.clube_b }}"
+  >
+    <header class="admin-dash-chave-head">
+      <span class="admin-dash-chave-title">
+        {{ emblema(c.clube_a, class="match-emblema") }}
+        <strong>{{ nome_clube_curto(c.clube_a) }}</strong>
+        <span class="admin-dash-x">×</span>
+        {{ emblema(c.clube_b, class="match-emblema") }}
+        <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
+      </span>
+      <span class="admin-dash-chave-meta">
+        Decide em casa: <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
+      </span>
+    </header>
+
+    <div class="admin-dash-legs">
+      <div class="admin-dash-leg" data-dash-leg="ida">
+        {% if c.ida %}
+        {% set mode = 'admin' %}
+        {% set jogo_num = chave_n %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_a %}
+        {% set clube_v = c.clube_b %}
+        {% set clube_a = c.clube_a %}
+        {% set clube_b = c.clube_b %}
+        {% set name_m = 'jogo_' ~ c.ida.id ~ '_m' %}
+        {% set name_v = 'jogo_' ~ c.ida.id ~ '_v' %}
+        {% set val_m = c.ida.gols_mandante if c.ida.gols_mandante is not none else '' %}
+        {% set val_v = c.ida.gols_visitante if c.ida.gols_visitante is not none else '' %}
+        {% set readonly = fase_encerrada %}
+        {% set inicio_lbl = formatar_inicio_jogo(c.ida.inicio_em) %}
+        {% set travado_tag = none %}
+        {% set confirmado = c.ida.confirmado|default(false) %}
+        {% set jogo_id = c.ida.id %}
+        {% set inicio_input_name = 'jogo_' ~ c.ida.id ~ '_inicio' %}
+        {% set inicio_input_value = inicio_em_input_value(c.ida.inicio_em) %}
+        {% set inicio_label = 'Ida · início' %}
+        {% set volta_classes_m = '' %}
+        {% set volta_classes_v = '' %}
+        {% set data_ida_a = none %}
+        {% set data_ida_b = none %}
+        {% set ref_lines = none %}
+        {% set pen = none %}
+        {% set admin_attrs = 'data-dash-perna="ida"' %}
+        {% set classificado_preview = false %}
+        {% set jogo_tag_override = 'Ida' %}
+        {% include "partials/match_cell.html" %}
+        {% endif %}
+      </div>
+
+      <div class="admin-dash-badge" aria-hidden="true">
+        <span>{{ chave_rotulo }}</span>
+      </div>
+
+      <div class="admin-dash-leg" data-dash-leg="volta">
+        {% if c.volta %}
+        {% set mode = 'admin' %}
+        {% set jogo_num = chave_n %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_b %}
+        {% set clube_v = c.clube_a %}
+        {% set clube_a = c.clube_a %}
+        {% set clube_b = c.clube_b %}
+        {% set name_m = 'jogo_' ~ c.volta.id ~ '_m' %}
+        {% set name_v = 'jogo_' ~ c.volta.id ~ '_v' %}
+        {% set val_m = c.volta.gols_mandante if c.volta.gols_mandante is not none else '' %}
+        {% set val_v = c.volta.gols_visitante if c.volta.gols_visitante is not none else '' %}
+        {% set readonly = fase_encerrada %}
+        {% set inicio_lbl = formatar_inicio_jogo(c.volta.inicio_em) %}
+        {% set travado_tag = none %}
+        {% set confirmado = c.volta.confirmado|default(false) %}
+        {% set jogo_id = c.volta.id %}
+        {% set inicio_input_name = 'jogo_' ~ c.volta.id ~ '_inicio' %}
+        {% set inicio_input_value = inicio_em_input_value(c.volta.inicio_em) %}
+        {% set inicio_label = 'Volta · início' %}
+        {% set volta_classes_m = 'volta-m' %}
+        {% set volta_classes_v = 'volta-v' %}
+        {% set data_ida_a = c.ida.gols_mandante if c.ida and c.ida.gols_mandante is not none else '' %}
+        {% set data_ida_b = c.ida.gols_visitante if c.ida and c.ida.gols_visitante is not none else '' %}
+        {% set ref_lines = none %}
+        {% set pen = {
+          'name': 'jogo_' ~ c.volta.id ~ '_pen',
+          'checked': c.volta.penaltis_clube_id,
+          'title': 'Empate no agregado. Quem passa nos pênaltis?',
+          'hidden': true,
+          'clube_a': c.clube_a,
+          'clube_b': c.clube_b,
+          'disabled': fase_encerrada,
+        } %}
+        {% set admin_attrs = 'data-dash-perna="volta" data-confronto-admin="' ~ c.id ~ '" data-ida-jogo="' ~ (c.ida.id if c.ida else '') ~ '"' %}
+        {% set classificado_preview = true %}
+        {% set jogo_tag_override = 'Volta' %}
+        {% include "partials/match_cell.html" %}
+        {% endif %}
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
