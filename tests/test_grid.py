@@ -31,17 +31,18 @@ from src.grid_historico import historico_serie_a
 from tests.conftest import login_admin
 
 # Puzzle clássico congelado: categorias históricas não podem alterar o dia anterior ao cutover.
+# Após strip de prefixos FC/SC/EC o pool de letras muda e o seed v1 produz este board.
 _PUZZLE_2026_08_10 = {
     "dia": "2026-08-10",
     "linhas": [
-        {"id": "termina:L", "tipo": "termina", "valor": "L", "rotulo": "Nome termina com L"},
-        {"id": "termina:iro", "tipo": "termina", "valor": "iro", "rotulo": "Nome termina com iro"},
-        {"id": "termina:ano", "tipo": "termina", "valor": "ano", "rotulo": "Nome termina com ano"},
+        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
+        {"id": "regiao:Norte", "tipo": "regiao", "valor": "Norte", "rotulo": "Região Norte"},
+        {"id": "serie:D", "tipo": "serie", "valor": "D", "rotulo": "Brasileirão Série D"},
     ],
     "colunas": [
-        {"id": "regiao:Nordeste", "tipo": "regiao", "valor": "Nordeste", "rotulo": "Região Nordeste"},
-        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
-        {"id": "regiao:Sudeste", "tipo": "regiao", "valor": "Sudeste", "rotulo": "Região Sudeste"},
+        {"id": "letra:A", "tipo": "letra", "valor": "A", "rotulo": "Nome começa com A"},
+        {"id": "letra:C", "tipo": "letra", "valor": "C", "rotulo": "Nome começa com C"},
+        {"id": "letra:I", "tipo": "letra", "valor": "I", "rotulo": "Nome começa com I"},
     ],
 }
 
@@ -58,6 +59,24 @@ def test_gerar_puzzle_deterministico_e_denso():
     # Eixos do dia pré-cutover permanecem idênticos ao pool clássico
     assert a["linhas"] == _PUZZLE_2026_08_10["linhas"]
     assert a["colunas"] == _PUZZLE_2026_08_10["colunas"]
+
+
+def test_gerar_puzzle_nunca_quebra_dias_dificeis():
+    """Dias em que o legado sozinho falhava ainda precisam devolver grade."""
+    from datetime import date, timedelta
+
+    # Amostra inclui datas que antes estouravam RuntimeError no legado
+    dias = ["2026-08-11", "2026-08-17", "2026-08-18", "2026-08-27", "2026-09-03"]
+    base = date(2026, 8, 11)
+    for i in range(25):
+        dias.append((base + timedelta(days=i)).isoformat())
+    for dia in dias:
+        p = gerar_puzzle(dia)
+        assert p["dia"] == dia
+        assert len(p["linhas"]) == 3 and len(p["colunas"]) == 3
+        for row in p["densidades"]:
+            assert all(n >= DENSIDADE_MIN for n in row)
+        assert gerar_puzzle(dia) == p
 
 
 def test_categorias_historicas_so_apos_cutover_meia_noite():

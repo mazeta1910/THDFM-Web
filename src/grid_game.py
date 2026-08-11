@@ -479,11 +479,25 @@ def categorias_disponiveis(dia: str | None = None) -> tuple[Categoria, ...]:
 
 
 def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
-    """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes."""
+    """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes.
+
+    Nunca deixa o /grid quebrar: se o gerador principal falhar, tenta o outro
+    e por fim uma busca ampla garantida.
+    """
     dia_s = dia or dia_grid()
     if variedade_ativa(dia_s):
-        return _gerar_puzzle_variado(dia_s)
-    return _gerar_puzzle_legado(dia_s)
+        primary, secondary = _gerar_puzzle_variado, _gerar_puzzle_legado
+    else:
+        primary, secondary = _gerar_puzzle_legado, _gerar_puzzle_variado
+    try:
+        return primary(dia_s)
+    except RuntimeError:
+        pass
+    try:
+        return secondary(dia_s)
+    except RuntimeError:
+        pass
+    return _gerar_puzzle_garantido(dia_s)
 
 
 def _gerar_puzzle_legado(dia_s: str) -> dict[str, Any]:
@@ -523,12 +537,12 @@ def _gerar_puzzle_legado(dia_s: str) -> dict[str, Any]:
 
     def montar_eixo(kind: str) -> list[list[Categoria]]:
         if kind == "letra":
-            return [list(x) for x in _combinacoes(nome_eixo, GRID_SIZE, rng, limite=40)]
+            return [list(x) for x in _combinacoes(nome_eixo, GRID_SIZE, rng, limite=100)]
         if kind == "geo":
-            return [list(x) for x in _combinacoes(geo, GRID_SIZE, rng, limite=60)]
+            return [list(x) for x in _combinacoes(geo, GRID_SIZE, rng, limite=120)]
         pool = list(cats)
         rng.shuffle(pool)
-        return [list(x) for x in _combinacoes(pool, GRID_SIZE, rng, limite=80)]
+        return [list(x) for x in _combinacoes(pool, GRID_SIZE, rng, limite=160)]
 
     for left_kind, right_kind in templates:
         left_opts = montar_eixo(left_kind)
@@ -547,6 +561,34 @@ def _gerar_puzzle_legado(dia_s: str) -> dict[str, Any]:
                         "tamanho": GRID_SIZE,
                     }
 
+    raise RuntimeError(f"não foi possível gerar grid jogável para {dia_s}")
+
+
+def _gerar_puzzle_garantido(dia_s: str) -> dict[str, Any]:
+    """Último recurso: amostras amplas até achar grade densa (evita HTTP 500)."""
+    cats = list(categorias_disponiveis(dia_s))
+    if len(cats) < GRID_SIZE * 2:
+        raise RuntimeError("catálogo insuficiente para o grid")
+    rng = _rng_dia(dia_s)
+    memo: dict[tuple[str, str], int] = {}
+    n = len(cats)
+    for _ in range(max(2500, n * 8)):
+        rows = list(rng.sample(cats, GRID_SIZE))
+        ids = {c.id for c in rows}
+        resto = [c for c in cats if c.id not in ids]
+        if len(resto) < GRID_SIZE:
+            continue
+        cols = list(rng.sample(resto, GRID_SIZE))
+        board = _tentar_board(rows, cols, memo)
+        if board:
+            r, c, dens = board
+            return {
+                "dia": dia_s,
+                "linhas": [x.to_public() for x in r],
+                "colunas": [x.to_public() for x in c],
+                "densidades": dens,
+                "tamanho": GRID_SIZE,
+            }
     raise RuntimeError(f"não foi possível gerar grid jogável para {dia_s}")
 
 
