@@ -29,6 +29,7 @@ def test_hall_lendas_so_mazeta(client: TestClient):
     assert "Visão Mazeta" in r.text
     assert "hall-lendas-badge" in r.text
     assert "hall-lendas-avatar--anel" in r.text
+    assert "prévia só Mazeta" in r.text
 
 
 def test_sidebar_hall_lendas_link_so_mazeta(client: TestClient):
@@ -37,19 +38,17 @@ def test_sidebar_hall_lendas_link_so_mazeta(client: TestClient):
     assert r.status_code == 200
     assert "Hall das Lendas" in r.text
     assert 'disabled' in r.text.split("site-hall-lendas", 1)[1].split(">", 1)[0]
-    assert 'href="/hall-lendas"' not in r.text.split("site-menu-fixed", 1)[1].split(
-        "data-menu-sortable", 1
-    )[0]
-
-    login_admin(client)
-    r2 = client.get("/")
-    assert r2.status_code == 200
-    fixed = r2.text.split("site-menu-fixed", 1)[1].split("data-menu-sortable", 1)[0]
-    assert 'href="/hall-lendas"' in fixed
-    assert "disabled" not in fixed.split("site-hall-lendas", 1)[1].split(">", 1)[0]
 
     side = (ROOT_DIR / "templates" / "partials" / "site_sidebar.html").read_text(
         encoding="utf-8"
     )
-    assert "is_mazeta" in side
+    assert "{% if is_mazeta %}" in side
     assert 'href="/hall-lendas"' in side
+    assert "disabled" in side
+    assert "Em breve" in side
+
+    # Mazeta: rota da prévia abre
+    login_admin(client)
+    r2 = client.get("/hall-lendas")
+    assert r2.status_code == 200
+    assert "prévia só Mazeta" in r2.text
