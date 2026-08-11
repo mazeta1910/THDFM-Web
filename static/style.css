@@ -929,13 +929,25 @@ html[data-theme="light"] .theme-icon-moon {
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  cursor: not-allowed;
+  text-decoration: none;
+  cursor: pointer;
   opacity: 1;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #d4a017 18%, transparent);
+  box-sizing: border-box;
 }
-.site-hall-lendas:disabled {
+button.site-hall-lendas:disabled {
+  cursor: not-allowed;
   opacity: 1;
   color: color-mix(in srgb, #f0d060 70%, var(--text));
+}
+a.site-hall-lendas:hover {
+  color: #f5d76e;
+  border-color: color-mix(in srgb, #e2b93d 70%, var(--border));
+}
+a.site-hall-lendas.active {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #d4a017 28%, transparent),
+    0 0 0 1px color-mix(in srgb, #d4a017 35%, transparent);
 }
 .site-hall-lendas-text {
   white-space: nowrap;
@@ -13213,5 +13225,248 @@ button.grid-admin-dia-btn,
   .grid-admin-grid,
   .grid-admin-hist-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* —— Hall das Lendas (protótipo) —— */
+.hall-lendas-page {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0.5rem 0 2.5rem;
+}
+.hall-lendas-hero {
+  position: relative;
+  margin: 0 0 1.35rem;
+  padding: 1.35rem 1.2rem 1.25rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, #d4a017 40%, var(--border));
+  background:
+    radial-gradient(120% 80% at 10% -20%, color-mix(in srgb, #d4a017 22%, transparent), transparent 55%),
+    linear-gradient(165deg, color-mix(in srgb, var(--card) 92%, #3a2a08), var(--card));
+  overflow: hidden;
+}
+.hall-lendas-kicker {
+  margin: 0 0 0.35rem;
+  color: #e2b93d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hall-lendas-title {
+  margin: 0 0 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  font-size: clamp(1.55rem, 4vw, 2.1rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hall-lendas-title-star {
+  color: #e2b93d;
+  flex: 0 0 auto;
+}
+.hall-lendas-lead {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+.hall-lendas-proto-tag {
+  margin: 0.75rem 0 0;
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, #d4a017 45%, var(--border));
+  color: #c9a227;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.hall-lendas-admin-note {
+  margin: 0 0 1rem;
+}
+.hall-lendas-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.hall-lendas-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem 1rem;
+  align-items: start;
+  padding: 1rem 1rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, #d4a017 28%, var(--border));
+  background: color-mix(in srgb, var(--card) 94%, #2a220c);
+}
+.hall-lendas-card-rank {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.75rem;
+  color: color-mix(in srgb, #d4a017 55%, var(--muted));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.hall-lendas-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--bg);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.hall-lendas-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+.hall-lendas-avatar-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #f0d060;
+  background: color-mix(in srgb, #d4a017 16%, var(--bg));
+}
+.hall-lendas-avatar--anel {
+  box-shadow:
+    0 0 0 3px #d4a017,
+    0 0 0 5px color-mix(in srgb, #d4a017 35%, var(--bg));
+}
+.hall-lendas-avatar--duplo {
+  box-shadow:
+    0 0 0 2px #c9a227,
+    0 0 0 5px var(--card),
+    0 0 0 7px #e2b93d;
+}
+.hall-lendas-avatar--brilho {
+  box-shadow:
+    0 0 0 3px #e2b93d,
+    0 0 14px 2px color-mix(in srgb, #f0d060 45%, transparent);
+}
+.hall-lendas-avatar--laurel {
+  box-shadow:
+    0 0 0 2px #8a7020,
+    0 0 0 4px #f0d060,
+    0 0 0 7px #8a7020;
+}
+.hall-lendas-card-body {
+  min-width: 0;
+  padding-right: 1.6rem;
+}
+.hall-lendas-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  margin: 0 0 0.25rem;
+}
+.hall-lendas-name-star {
+  color: #e2b93d;
+  flex: 0 0 auto;
+}
+.hall-lendas-nome {
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+.hall-lendas-nome:hover {
+  color: #f0d060;
+  text-decoration: underline;
+}
+.hall-lendas-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #d4a017 55%, var(--border));
+  background: color-mix(in srgb, #d4a017 22%, var(--bg));
+  color: #f0d060;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hall-lendas-quando {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.hall-lendas-recado {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #d4a017;
+  border-radius: 0 10px 10px 0;
+  background: color-mix(in srgb, #d4a017 8%, var(--bg));
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+.hall-lendas-valor {
+  margin: 0.55rem 0 0;
+  color: #e2b93d;
+  font-size: 0.82rem;
+}
+.hall-lendas-borda-label {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.hall-lendas-foot {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.hall-lendas-bordas-demo {
+  margin: 2rem 0 0;
+  padding: 1rem 1.05rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.hall-lendas-bordas-title {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+.hall-lendas-bordas-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.35rem;
+}
+.hall-lendas-borda-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.hall-lendas-borda-sample .hall-lendas-avatar {
+  width: 72px;
+  height: 72px;
+}
+@media (max-width: 560px) {
+  .hall-lendas-card {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+  .hall-lendas-avatar {
+    width: 76px;
+    height: 76px;
   }
 }

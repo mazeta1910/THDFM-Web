@@ -1700,6 +1700,73 @@ def legado_prototipo_perfil(request: Request):
     return RedirectResponse(f"/meu-perfil/editar{suffix}", status_code=301)
 
 
+# Protótipo visual — Hall das Lendas (dados fictícios; valores só p/ Mazeta).
+_HALL_LENDAS_PROTO = (
+    {
+        "nome": "Ramos",
+        "iniciais": "R",
+        "avatar_url": None,
+        "perfil_url": "#",
+        "recado": "Pelo grupo, pelo bolão e por mais uma temporada de caos organizado.",
+        "quando_rotulo": "08/08/2026 · 21:14",
+        "valor_centavos": 50000,
+        "valor_rotulo": "R$ 500,00",
+        "borda": "anel",
+        "borda_rotulo": "Anel ouro",
+    },
+    {
+        "nome": "João JEC",
+        "iniciais": "JJ",
+        "avatar_url": None,
+        "perfil_url": "#",
+        "recado": "Aqui é THDFM. Quero ver minha cara no mural com estrela.",
+        "quando_rotulo": "09/08/2026 · 19:02",
+        "valor_centavos": 25000,
+        "valor_rotulo": "R$ 250,00",
+        "borda": "duplo",
+        "borda_rotulo": "Traço duplo",
+    },
+    {
+        "nome": "Benevides",
+        "iniciais": "B",
+        "avatar_url": None,
+        "perfil_url": "#",
+        "recado": "Doação simbólica. Long live the hall.",
+        "quando_rotulo": "10/08/2026 · 12:40",
+        "valor_centavos": 12000,
+        "valor_rotulo": "R$ 120,00",
+        "borda": "brilho",
+        "borda_rotulo": "Brilho",
+    },
+)
+
+_HALL_LENDAS_BORDAS = (
+    {"id": "anel", "rotulo": "Anel ouro", "sample": "A"},
+    {"id": "duplo", "rotulo": "Traço duplo", "sample": "D"},
+    {"id": "brilho", "rotulo": "Brilho", "sample": "B"},
+    {"id": "laurel", "rotulo": "Laureado", "sample": "L"},
+)
+
+
+@app.get("/hall-lendas", response_class=HTMLResponse)
+def hall_lendas_page(request: Request):
+    """Hall das Lendas — protótipo só Mazeta até o lançamento público."""
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    lendas = sorted(
+        _HALL_LENDAS_PROTO,
+        key=lambda x: (-int(x["valor_centavos"]), x["nome"].casefold()),
+    )
+    return render(
+        request,
+        "hall_lendas.html",
+        lendas=lendas,
+        bordas=_HALL_LENDAS_BORDAS,
+        ui_mode="user",
+    )
+
+
 def _pagina_em_breve(request: Request, *, titulo: str, secao: str, lead: str | None = None):
     return render(
         request,

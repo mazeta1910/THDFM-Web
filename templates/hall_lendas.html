@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Hall das Lendas — THDFM{% endblock %}
+{% block og_title %}Hall das Lendas{% endblock %}
+{% block og_description %}Mural das lendas THDFM — doações que sustentam o projeto.{% endblock %}
+{% block og_url %}{{ public_base_url }}/hall-lendas{% endblock %}
+
+{% block content %}
+<section class="hall-lendas-page" aria-label="Hall das Lendas">
+  <header class="hall-lendas-hero">
+    <p class="hall-lendas-kicker">THDFM</p>
+    <h1 class="hall-lendas-title">
+      <svg class="hall-lendas-title-star" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+      </svg>
+      Hall das Lendas
+      <svg class="hall-lendas-title-star" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+      </svg>
+    </h1>
+    <p class="hall-lendas-lead">
+      Quem apoia o projeto com doação entra aqui — para sempre.
+      Ordenado pelo total doado · valores só o Mazeta vê.
+    </p>
+    <p class="hall-lendas-proto-tag">Protótipo visual · prévia só Mazeta · dados fictícios</p>
+  </header>
+
+  {% if is_mazeta %}
+  <p class="hall-lendas-admin-note msg">
+    Visão Mazeta: totais de doação visíveis nos cards abaixo (ocultos para o público).
+  </p>
+  {% endif %}
+
+  <div class="hall-lendas-grid" role="list">
+    {% for l in lendas %}
+    <article class="hall-lendas-card" role="listitem" data-borda="{{ l.borda }}">
+      <div class="hall-lendas-card-rank" aria-hidden="true">#{{ loop.index }}</div>
+      <div class="hall-lendas-avatar hall-lendas-avatar--{{ l.borda }}" aria-hidden="true">
+        {% if l.avatar_url %}
+        <img src="{{ l.avatar_url }}" alt="" width="88" height="88" />
+        {% else %}
+        <span class="hall-lendas-avatar-fallback">{{ l.iniciais }}</span>
+        {% endif %}
+      </div>
+      <div class="hall-lendas-card-body">
+        <div class="hall-lendas-name-row">
+          <svg class="hall-lendas-name-star" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M12 2.6l2.7 6.2 6.7.6-5.1 4.4 1.5 6.6L12 16.9 6.2 20.4l1.5-6.6L2.6 9.4l6.7-.6L12 2.6z"/>
+          </svg>
+          <a class="hall-lendas-nome" href="{{ l.perfil_url }}">{{ l.nome }}</a>
+          <span class="hall-lendas-badge">Lenda</span>
+        </div>
+        <p class="hall-lendas-quando">{{ l.quando_rotulo }}</p>
+        <blockquote class="hall-lendas-recado">“{{ l.recado }}”</blockquote>
+        {% if is_mazeta %}
+        <p class="hall-lendas-valor">Total doado: <strong>{{ l.valor_rotulo }}</strong></p>
+        {% endif %}
+        <p class="hall-lendas-borda-label">Moldura: {{ l.borda_rotulo }}</p>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <footer class="hall-lendas-foot">
+    <p>Mostrando {{ lendas|length }} de {{ lendas|length }} · no lançamento: 10 por página.</p>
+  </footer>
+
+  <section class="hall-lendas-bordas-demo" aria-label="Modelos de moldura (protótipo)">
+    <h2 class="hall-lendas-bordas-title">Molduras de avatar (a lenda escolhe)</h2>
+    <div class="hall-lendas-bordas-row">
+      {% for b in bordas %}
+      <div class="hall-lendas-borda-sample">
+        <div class="hall-lendas-avatar hall-lendas-avatar--{{ b.id }}" aria-hidden="true">
+          <span class="hall-lendas-avatar-fallback">{{ b.sample }}</span>
+        </div>
+        <span>{{ b.rotulo }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}
