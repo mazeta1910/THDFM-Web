@@ -547,7 +547,16 @@
         {% endif %}
 
         <div class="inscricoes-cols" id="inscricoes-cols">
-          <section class="inscricoes-col" id="liberados-col" data-inscricoes-col="liberados">
+          <section
+            class="inscricoes-col"
+            id="liberados-col"
+            data-inscricoes-col="liberados"
+            data-collapse
+            data-collapse-toggle="#btn-toggle-liberados"
+            data-collapse-storage="admin-liberados-collapsed"
+            data-collapse-label-expanded="Minimizar liberados"
+            data-collapse-label-collapsed="Expandir liberados"
+          >
             <h3 class="inscricoes-col-title">
               Liberado
               <span class="inscricoes-stat-pill liberados">{{ liberados|length }}</span>
@@ -1098,11 +1107,7 @@ document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
 
 (() => {
   const KEY_SORT = "admin-inscricoes-sort";
-  const KEY_LIB = "admin-liberados-collapsed";
   const sortSelect = document.getElementById("inscricoes-sort");
-  const btnLib = document.getElementById("btn-toggle-liberados");
-  const liberadosCol = document.getElementById("liberados-col");
-  const labelEl = btnLib?.querySelector(".btn-toggle-liberados-label");
 
   const sortList = (listEl, mode) => {
     if (!listEl) return;
@@ -1141,21 +1146,6 @@ document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
     sortSelect.addEventListener("change", () => {
       localStorage.setItem(KEY_SORT, sortSelect.value);
       applySort(sortSelect.value);
-    });
-  }
-
-  const setLiberadosCollapsed = (collapsed) => {
-    if (!liberadosCol || !btnLib) return;
-    liberadosCol.classList.toggle("is-collapsed", collapsed);
-    btnLib.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    if (labelEl) labelEl.textContent = collapsed ? "Expandir liberados" : "Minimizar liberados";
-    localStorage.setItem(KEY_LIB, collapsed ? "1" : "0");
-  };
-
-  if (btnLib && liberadosCol) {
-    setLiberadosCollapsed(localStorage.getItem(KEY_LIB) === "1");
-    btnLib.addEventListener("click", () => {
-      setLiberadosCollapsed(!liberadosCol.classList.contains("is-collapsed"));
     });
   }
 
