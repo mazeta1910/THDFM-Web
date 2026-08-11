@@ -2616,6 +2616,13 @@ def _grid_neg_json(request: Request) -> JSONResponse | None:
     return JSONResponse({"erro": "Não autorizado"}, status_code=401)
 
 
+def _grid_mazeta_neg_json(request: Request) -> JSONResponse | None:
+    """Endpoints do painel admin do Grid — só Mazeta."""
+    if is_mazeta(request):
+        return None
+    return JSONResponse({"erro": "Só o Mazeta pode fazer isso"}, status_code=403)
+
+
 def _grid_voter(request: Request) -> dict | None:
     return _voter_sessao(request)
 
@@ -2642,10 +2649,19 @@ def grid_page(request: Request):
         neg = _require_perfil(request)
         if neg:
             return neg
-    from src.grid_game import dia_grid, parse_celulas_progresso, puzzle_publico, texto_share
+    from src.grid_game import (
+        dia_grid,
+        get_hora_virada,
+        parse_celulas_progresso,
+        puzzle_publico,
+        rotulo_hora_virada,
+        texto_share,
+    )
 
     dia = dia_grid()
     puzzle = puzzle_publico(dia)
+    virada_hora = get_hora_virada()
+    virada_rotulo = rotulo_hora_virada(virada_hora)
     voter = _grid_voter(request)
     progresso = None
     streak = 0
@@ -2666,6 +2682,8 @@ def grid_page(request: Request):
         share=share,
         linhas=db.ranking_grid(limite=100),
         grid_privado=False,
+        virada_hora=virada_hora,
+        virada_rotulo=virada_rotulo,
     )
 
 
@@ -2816,6 +2834,120 @@ async def grid_api_chute(request: Request):
             "progresso": progresso,
             "streak": streak,
             "share": share,
+        }
+    )
+
+
+@app.get("/grid/api/admin/resumo")
+def grid_api_admin_resumo(request: Request, dia: str = ""):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from datetime import date
+
+    from src.grid_game import (
+        dia_grid,
+        get_hora_virada,
+        puzzle_publico,
+        rotulo_dia,
+        rotulo_hora_virada,
+    )
+
+    dia_s = (dia or "").strip() or dia_grid()
+    try:
+        date.fromisoformat(dia_s)
+    except ValueError:
+        return JSONResponse({"erro": "Dia inválido"}, status_code=400)
+    try:
+        puzzle = puzzle_publico(dia_s)
+    except RuntimeError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    hora = get_hora_virada()
+    return JSONResponse(
+        {
+            "dia": dia_s,
+            "rotulo": rotulo_dia(dia_s),
+            "virada_hora": hora,
+            "virada_rotulo": rotulo_hora_virada(hora),
+            "puzzle": puzzle,
+            "dias": db.listar_grid_dias(limite=90),
+            "respostas": db.listar_grid_progresso_dia(dia_s),
+        }
+    )
+
+
+@app.post("/grid/api/admin/virada")
+async def grid_api_admin_virada(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid, ms_ate_proxima_virada, rotulo_hora_virada
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        hora = int((body or {}).get("hora"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "Hora inválida"}, status_code=400)
+    try:
+        salva = db.set_grid_virada_hora(hora)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "ok": True,
+            "virada_hora": salva,
+            "virada_rotulo": rotulo_hora_virada(salva),
+            "dia_atual": dia_grid(),
+            "virada_em_ms": ms_ate_proxima_virada(),
+        }
+    )
+
+
+@app.post("/grid/api/admin/regenerar")
+async def grid_api_admin_regenerar(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    import secrets
+    from datetime import date
+
+    from src.grid_game import dia_grid, puzzle_publico, rotulo_dia
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    dia_s = str(body.get("dia") or "").strip() or dia_grid()
+    try:
+        date.fromisoformat(dia_s)
+    except ValueError:
+        return JSONResponse({"erro": "Dia inválido"}, status_code=400)
+    limpar = bool(body.get("limpar_progresso"))
+    restaurar = bool(body.get("restaurar"))
+    if restaurar:
+        db.clear_grid_salt(dia_s)
+        salt = None
+    else:
+        salt = secrets.token_hex(8)
+        db.set_grid_salt(dia_s, salt)
+    apagados = db.limpar_grid_progresso_dia(dia_s) if limpar else 0
+    try:
+        puzzle = puzzle_publico(dia_s)
+    except RuntimeError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "ok": True,
+            "dia": dia_s,
+            "rotulo": rotulo_dia(dia_s),
+            "salt": salt,
+            "restaurado": restaurar,
+            "progresso_apagado": apagados,
+            "puzzle": puzzle,
         }
     )
 

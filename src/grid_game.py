@@ -48,13 +48,39 @@ _SERIE_D_MARKERS = ("série d", "serie d")
 _SEM_MARKERS = ("sem divisão", "sem divisao")
 
 
-def dia_grid(agora: datetime | None = None) -> str:
-    """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD). Vira à 00:00 SP."""
+def get_hora_virada() -> int:
+    """Hora (0–23) da virada do puzzle em America/Sao_Paulo. Padrão 0."""
+    try:
+        from src import db as dbmod
+
+        return int(dbmod.get_grid_virada_hora())
+    except Exception:
+        return 0
+
+
+def rotulo_hora_virada(hora: int | None = None) -> str:
+    h = get_hora_virada() if hora is None else int(hora)
+    return f"{h:02d}:00"
+
+
+def dia_grid(agora: datetime | None = None, *, hora_virada: int | None = None) -> str:
+    """Dia do puzzle em America/Sao_Paulo (YYYY-MM-DD).
+
+    Vira na hora configurada (padrão 00:00 SP). Antes da hora, ainda conta
+    como o dia civil anterior.
+    """
+    from datetime import timedelta
+
     now = agora or datetime.now(TZ_SP)
     if now.tzinfo is None:
         now = now.replace(tzinfo=TZ_SP)
     else:
         now = now.astimezone(TZ_SP)
+    h = get_hora_virada() if hora_virada is None else int(hora_virada)
+    if not 0 <= h <= 23:
+        h = 0
+    if now.hour < h:
+        return (now.date() - timedelta(days=1)).isoformat()
     return now.date().isoformat()
 
 
@@ -65,8 +91,10 @@ def rotulo_dia(dia: str) -> str:
         return dia
 
 
-def ms_ate_proxima_virada(agora: datetime | None = None) -> int:
-    """Milissegundos até a próxima 00:00 em America/Sao_Paulo."""
+def ms_ate_proxima_virada(
+    agora: datetime | None = None, *, hora_virada: int | None = None
+) -> int:
+    """Milissegundos até a próxima virada em America/Sao_Paulo."""
     from datetime import time, timedelta
 
     now = agora or datetime.now(TZ_SP)
@@ -74,9 +102,33 @@ def ms_ate_proxima_virada(agora: datetime | None = None) -> int:
         now = now.replace(tzinfo=TZ_SP)
     else:
         now = now.astimezone(TZ_SP)
-    amanha = now.date() + timedelta(days=1)
-    virada = datetime.combine(amanha, time.min, tzinfo=TZ_SP)
-    return max(0, int((virada - now).total_seconds() * 1000))
+    h = get_hora_virada() if hora_virada is None else int(hora_virada)
+    if not 0 <= h <= 23:
+        h = 0
+    alvo = datetime.combine(now.date(), time(hour=h, minute=0), tzinfo=TZ_SP)
+    if now >= alvo:
+        alvo = alvo + timedelta(days=1)
+    return max(0, int((alvo - now).total_seconds() * 1000))
+
+
+def _salt_dia(dia: str) -> str:
+    try:
+        from src import db as dbmod
+
+        return dbmod.get_grid_salt(dia) or ""
+    except Exception:
+        return ""
+
+
+def _rng_dia(dia: str) -> random.Random:
+    # v1: pool clássico; v2: com categorias históricas (após GRID_HISTORICO_DESDE)
+    # salt opcional: regeneração admin de um dia sem afetar os demais
+    ver = "v2" if historico_ativo(dia) else "v1"
+    salt = _salt_dia(dia)
+    base = f"thdfm-grid-{ver}|{dia}"
+    payload = f"{base}|{salt}" if salt else base
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return random.Random(int(digest[:16], 16))
 
 
 def normalizar_serie(divisao: str | None) -> str | None:
@@ -244,13 +296,6 @@ def categorias_disponiveis(dia: str | None = None) -> tuple[Categoria, ...]:
     return tuple(_montar_categorias(dia_s))
 
 
-def _rng_dia(dia: str) -> random.Random:
-    # v1: pool clássico; v2: com categorias históricas (após GRID_HISTORICO_DESDE)
-    ver = "v2" if historico_ativo(dia) else "v1"
-    digest = hashlib.sha256(f"thdfm-grid-{ver}|{dia}".encode("utf-8")).hexdigest()
-    return random.Random(int(digest[:16], 16))
-
-
 def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
     """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes."""
     dia_s = dia or dia_grid()
@@ -407,11 +452,15 @@ def categoria_por_id(cat_id: str, dia: str | None = None) -> Categoria | None:
 def puzzle_publico(dia: str | None = None) -> dict[str, Any]:
     p = gerar_puzzle(dia)
     dia_s = p["dia"]
+    hora = get_hora_virada()
     return {
         **p,
         "rotulo": rotulo_dia(dia_s),
         "virada_em_ms": ms_ate_proxima_virada(),
+        "virada_hora": hora,
+        "virada_rotulo": rotulo_hora_virada(hora),
         "tz": "America/Sao_Paulo",
+        "regenerado": bool(_salt_dia(dia_s)),
     }
 
 
