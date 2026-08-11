@@ -82,18 +82,32 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
 def test_virada_meia_noite_sao_paulo():
     antes = datetime(2026, 8, 10, 23, 59, 30, tzinfo=TZ_SP)
     depois = datetime(2026, 8, 11, 0, 0, 0, tzinfo=TZ_SP)
-    assert dia_grid(antes) == "2026-08-10"
-    assert dia_grid(depois) == "2026-08-11"
-    assert gerar_puzzle(dia_grid(antes)) != gerar_puzzle(dia_grid(depois))
+    assert dia_grid(antes, hora_virada=0) == "2026-08-10"
+    assert dia_grid(depois, hora_virada=0) == "2026-08-11"
+    assert gerar_puzzle(dia_grid(antes, hora_virada=0)) != gerar_puzzle(
+        dia_grid(depois, hora_virada=0)
+    )
 
-    ms = ms_ate_proxima_virada(antes)
+    ms = ms_ate_proxima_virada(antes, hora_virada=0)
     assert 0 < ms <= 30_000 + 50
-    assert ms_ate_proxima_virada(depois) > 23 * 60 * 60 * 1000
+    assert ms_ate_proxima_virada(depois, hora_virada=0) > 23 * 60 * 60 * 1000
 
     # UTC 03:00 == 00:00 SP (sem horário de verão)
     utc = ZoneInfo("UTC")
-    assert dia_grid(datetime(2026, 8, 11, 2, 59, tzinfo=utc)) == "2026-08-10"
-    assert dia_grid(datetime(2026, 8, 11, 3, 0, tzinfo=utc)) == "2026-08-11"
+    assert (
+        dia_grid(datetime(2026, 8, 11, 2, 59, tzinfo=utc), hora_virada=0) == "2026-08-10"
+    )
+    assert (
+        dia_grid(datetime(2026, 8, 11, 3, 0, tzinfo=utc), hora_virada=0) == "2026-08-11"
+    )
+
+    # Virada às 18:00: ainda é o dia anterior às 17:59
+    tarde = datetime(2026, 8, 11, 17, 59, tzinfo=TZ_SP)
+    noite = datetime(2026, 8, 11, 18, 0, tzinfo=TZ_SP)
+    assert dia_grid(tarde, hora_virada=18) == "2026-08-10"
+    assert dia_grid(noite, hora_virada=18) == "2026-08-11"
+    ms18 = ms_ate_proxima_virada(tarde, hora_virada=18)
+    assert 0 < ms18 <= 60_000 + 50
 
 
 def test_vancouver_whitecaps_no_catalogo_fora_do_puzzle():
@@ -147,9 +161,76 @@ def test_grid_liberado_para_participante(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Prévia privada" not in r.text
     assert "Puzzle diário" in r.text
+    assert 'id="grid-admin"' not in r.text
+    assert "Painel do Grid" not in r.text
     api = client.get("/grid/api/hoje")
     assert api.status_code == 200
     assert api.json()["pode_salvar"] is True
+
+
+def test_grid_admin_so_mazeta(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Admin Grid", status="liberado", celular="11991112299")
+    dbmod.definir_credenciais(part["id"], "grid.admin.user", "senha12345")
+    client.get(f"/p/{part['token']}")
+
+    r = client.get("/grid/api/admin/resumo")
+    assert r.status_code == 403
+
+    login_admin(client)
+    ok = client.get("/grid/api/admin/resumo")
+    assert ok.status_code == 200
+    data = ok.json()
+    assert data["puzzle"]["tamanho"] == 3
+    assert "virada_hora" in data
+    assert isinstance(data["dias"], list)
+    assert isinstance(data["respostas"], list)
+
+    virada = client.post("/grid/api/admin/virada", json={"hora": 18})
+    assert virada.status_code == 200
+    assert virada.json()["virada_hora"] == 18
+    assert virada.json()["virada_rotulo"] == "18:00"
+    assert dbmod.get_grid_virada_hora() == 18
+
+    bad = client.post("/grid/api/admin/virada", json={"hora": 99})
+    assert bad.status_code == 400
+
+    dia = data["dia"]
+    antes = gerar_puzzle(dia)
+    regen = client.post(
+        "/grid/api/admin/regenerar",
+        json={"dia": dia, "limpar_progresso": True},
+    )
+    assert regen.status_code == 200
+    body = regen.json()
+    assert body["ok"] is True
+    assert body["salt"]
+    depois = gerar_puzzle(dia)
+    assert depois["linhas"] != antes["linhas"] or depois["colunas"] != antes["colunas"]
+
+    full = [
+        [{"ok": True, "clube": {"id": "1", "nome": "A", "uf": "SP", "emblema": None}}]
+        * 3
+        for _ in range(3)
+    ]
+    # estrutura 3x3 correta
+    full = [[full[0][0] for _ in range(3)] for _ in range(3)]
+    dbmod.salvar_grid_progresso(part["id"], dia, full, finalizado=True)
+    resumo = client.get(f"/grid/api/admin/resumo?dia={dia}")
+    assert resumo.status_code == 200
+    nomes = [x["nome"] for x in resumo.json()["respostas"]]
+    assert "Admin Grid" in nomes
+
+    rest = client.post(
+        "/grid/api/admin/regenerar",
+        json={"dia": dia, "restaurar": True, "limpar_progresso": True},
+    )
+    assert rest.status_code == 200
+    assert rest.json()["restaurado"] is True
+    assert gerar_puzzle(dia) == antes
+    assert dbmod.get_grid_virada_hora() == 18
+    client.post("/grid/api/admin/virada", json={"hora": 0})
 
 
 def test_grid_fluxo_logado(client: TestClient):
@@ -161,7 +242,11 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'id="thdfm-grid"' in r.text
     assert "/static/grid.js?v=12" in r.text
     assert "data-virada-ms=" in r.text
-    assert "00:00 (Brasília)" in r.text
+    assert "vira às 00:00 (Brasília)" in r.text
+    assert 'id="grid-admin"' in r.text
+    assert 'data-grid-admin' in r.text
+    assert "/static/grid-admin.js?v=1" in r.text
+    assert "Painel do Grid" in r.text
     assert 'data-grid-daltonismo' in r.text
     assert 'data-daltonismo="protanopia"' in r.text
     assert 'data-daltonismo="deuteranopia"' in r.text

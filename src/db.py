@@ -548,6 +548,19 @@ def _migrate_grid_progresso(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_grid_puzzle_salt(conn: sqlite3.Connection) -> None:
+    """Salt por dia para regenerar eixos do puzzle sem mudar o algoritmo global."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_puzzle_salt (
+          dia TEXT PRIMARY KEY,
+          salt TEXT NOT NULL,
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+
+
 def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
     """Zera o progresso do Grid uma vez — lançamento público (ranking do zero)."""
     chave = "grid_progresso_reset_v1"
@@ -574,6 +587,7 @@ def init_db() -> None:
         _migrate_perfil_recados(conn)
         _migrate_perfil_recado_reacoes(conn)
         _migrate_grid_progresso(conn)
+        _migrate_grid_puzzle_salt(conn)
         _reset_grid_progresso_lancamento(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
@@ -4270,6 +4284,155 @@ def limpar_grid_progresso() -> int:
     with get_db() as conn:
         cur = conn.execute("DELETE FROM grid_progresso")
         return int(cur.rowcount or 0)
+
+
+def limpar_grid_progresso_dia(dia: str) -> int:
+    """Apaga o progresso do Grid de um dia específico."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_progresso WHERE dia = ?",
+            (str(dia),),
+        )
+        return int(cur.rowcount or 0)
+
+
+def get_grid_virada_hora() -> int:
+    """Hora local (0–23) em que o puzzle diário vira. Padrão: 0 (meia-noite)."""
+    raw = (get_meta("grid_virada_hora", "0") or "0").strip()
+    try:
+        h = int(raw)
+    except ValueError:
+        return 0
+    return h if 0 <= h <= 23 else 0
+
+
+def set_grid_virada_hora(hora: int) -> int:
+    h = int(hora)
+    if not 0 <= h <= 23:
+        raise ValueError("hora da virada deve ser entre 0 e 23")
+    set_meta("grid_virada_hora", str(h))
+    return h
+
+
+def get_grid_salt(dia: str) -> str | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT salt FROM grid_puzzle_salt WHERE dia = ?",
+            (str(dia),),
+        ).fetchone()
+        return str(row["salt"]) if row and row["salt"] else None
+
+
+def set_grid_salt(dia: str, salt: str) -> str:
+    dia_s = str(dia)
+    salt_s = str(salt).strip()
+    if not salt_s:
+        raise ValueError("salt vazio")
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO grid_puzzle_salt (dia, salt, atualizado_em)
+            VALUES (?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(dia) DO UPDATE SET
+              salt = excluded.salt,
+              atualizado_em = datetime('now', 'localtime')
+            """,
+            (dia_s, salt_s),
+        )
+    return salt_s
+
+
+def clear_grid_salt(dia: str) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_puzzle_salt WHERE dia = ?",
+            (str(dia),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
+    """Dias com progresso e/ou salt, mais recentes primeiro."""
+    lim = max(1, min(int(limite), 366))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia,
+                   COUNT(*) AS jogadores,
+                   SUM(CASE WHEN finalizado = 1 THEN 1 ELSE 0 END) AS finalizados
+            FROM grid_progresso
+            GROUP BY dia
+            ORDER BY dia DESC
+            LIMIT ?
+            """,
+            (lim,),
+        ).fetchall()
+        salts = {
+            str(r["dia"]): str(r["salt"])
+            for r in conn.execute(
+                "SELECT dia, salt FROM grid_puzzle_salt ORDER BY dia DESC LIMIT ?",
+                (lim,),
+            ).fetchall()
+        }
+    by_dia: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        dia = str(row["dia"])
+        by_dia[dia] = {
+            "dia": dia,
+            "jogadores": int(row["jogadores"] or 0),
+            "finalizados": int(row["finalizados"] or 0),
+            "salt": salts.get(dia),
+            "regenerado": dia in salts,
+        }
+    for dia, salt in salts.items():
+        if dia not in by_dia:
+            by_dia[dia] = {
+                "dia": dia,
+                "jogadores": 0,
+                "finalizados": 0,
+                "salt": salt,
+                "regenerado": True,
+            }
+    out = sorted(by_dia.values(), key=lambda x: x["dia"], reverse=True)
+    return out[:lim]
+
+
+def listar_grid_progresso_dia(dia: str) -> list[dict[str, Any]]:
+    """Respostas de todos os participantes em um dia (painel Mazeta)."""
+    dia_s = str(dia)
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT g.participante_id, p.nome, p.avatar_path, p.username,
+                   g.celulas_json, g.finalizado, g.atualizado_em
+            FROM grid_progresso g
+            JOIN participantes p ON p.id = g.participante_id
+            WHERE g.dia = ?
+            ORDER BY g.finalizado DESC, g.atualizado_em DESC, p.nome COLLATE NOCASE ASC
+            """,
+            (dia_s,),
+        ).fetchall()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        ok, filled = _contar_celulas_ok(celulas)
+        out.append(
+            {
+                "participante_id": int(row["participante_id"]),
+                "nome": (row["nome"] or "").strip() or "alguém",
+                "username": row["username"],
+                "avatar_path": row["avatar_path"],
+                "celulas": celulas,
+                "finalizado": bool(row["finalizado"]),
+                "atualizado_em": row["atualizado_em"],
+                "celulas_ok": ok,
+                "celulas_preenchidas": filled,
+            }
+        )
+    return out
 
 
 def _apagar_recados_e_midias(
