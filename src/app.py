@@ -39,6 +39,7 @@ from src.config import (
     RECADO_EXTS,
     RECADO_MAX_BYTES,
     RECADOS_DIR,
+    HALL_HERO_DIR,
     CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
@@ -92,7 +93,7 @@ def _path_publico(path: str) -> bool:
     # o handler ainda exige login para humanos (API /grid/api/* segue protegida).
     if path == "/grid":
         return True
-    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/"):
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/") or path.startswith("/hall-hero/"):
         return True
     # Perfil (handler ainda exige liberado/admin)
     if path.startswith("/meu-perfil") or path.startswith("/perfil/") or path.startswith("/prototipo/"):
@@ -149,6 +150,7 @@ COMPROVANTES_DIR.mkdir(parents=True, exist_ok=True)
 AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_DIR.mkdir(parents=True, exist_ok=True)
 RECADOS_DIR.mkdir(parents=True, exist_ok=True)
+HALL_HERO_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
@@ -157,6 +159,7 @@ app.mount("/bandeiras-uf", StaticFiles(directory=str(BANDEIRAS_UF_DIR)), name="b
 app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 app.mount("/banners", StaticFiles(directory=str(BANNERS_DIR)), name="banners")
 app.mount("/recados-midia", StaticFiles(directory=str(RECADOS_DIR)), name="recados_midia")
+app.mount("/hall-hero", StaticFiles(directory=str(HALL_HERO_DIR)), name="hall_hero")
 
 # Rate limit em memória: chave → timestamps de tentativas
 _AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
@@ -1784,6 +1787,7 @@ def hall_lendas_page(request: Request, pagina: int = 1):
         request,
         "hall_lendas.html",
         lendas=lendas,
+        hero_html=db.get_hall_hero_html(),
         pagina=data["pagina"],
         paginas=data["paginas"],
         total=data["total"],
@@ -1791,6 +1795,50 @@ def hall_lendas_page(request: Request, pagina: int = 1):
         tem_proxima=data["tem_proxima"],
         ui_mode="user",
     )
+
+
+@app.post("/admin/hall-lendas/hero")
+async def admin_hall_hero_salvar(request: Request):
+    """Salva o HTML do header do Hall (só Mazeta)."""
+    neg = require_mazeta(request)
+    if neg:
+        return JSONResponse({"ok": False, "erro": "Não autorizado"}, status_code=403)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    html = str((body or {}).get("html") or "")
+    limpo = db.set_hall_hero_html(html)
+    return JSONResponse({"ok": True, "html": limpo})
+
+
+@app.post("/admin/hall-lendas/hero/midia")
+async def admin_hall_hero_midia(request: Request):
+    """Upload de imagem para o header do Hall (só Mazeta)."""
+    neg = require_mazeta(request)
+    if neg:
+        return JSONResponse({"ok": False, "erro": "Não autorizado"}, status_code=403)
+    form = await request.form()
+    upload = form.get("midia")
+    if upload is None or not hasattr(upload, "read"):
+        return JSONResponse({"ok": False, "erro": "Envie uma imagem"}, status_code=400)
+    ext = Path(getattr(upload, "filename", "") or "").suffix.lower()
+    if ext not in RECADO_EXTS:
+        return JSONResponse(
+            {"ok": False, "erro": "Imagem deve ser jpg/png/webp/gif"},
+            status_code=400,
+        )
+    data = await upload.read()
+    if not data or len(data) > RECADO_MAX_BYTES:
+        return JSONResponse(
+            {"ok": False, "erro": "Imagem inválida ou maior que 4MB"},
+            status_code=400,
+        )
+    import secrets
+
+    nome = f"{int(time.time())}_{secrets.token_hex(4)}{ext}"
+    (HALL_HERO_DIR / nome).write_bytes(data)
+    return JSONResponse({"ok": True, "url": f"/hall-hero/{nome}"})
 
 
 @app.get("/admin/hall-lendas", response_class=HTMLResponse)
