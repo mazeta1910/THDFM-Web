@@ -372,7 +372,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=12" in r.text
+    assert "/static/grid.js?v=13" in r.text
     assert "data-virada-ms=" in r.text
     assert "vira às 00:00 (Brasília)" in r.text
     assert 'id="grid-admin"' in r.text
@@ -651,10 +651,11 @@ def test_ranking_e_stats_grid(client: TestClient):
     assert ranking[0]["participante_id"] == a["id"]
     assert ranking[0]["dias_finalizados"] == 2
     assert ranking[0]["celulas_ok"] == 18
+    assert ranking[0]["zona"] == "campeao"
     assert ranking[1]["participante_id"] == b["id"]
     assert ranking[1]["dias_finalizados"] == 0
     assert ranking[1]["celulas_ok"] == 1
-
+    assert "zona" in ranking[1]
     stats_a = dbmod.grid_stats_participante(a["id"])
     assert stats_a["jogou"] is True
     assert stats_a["dias_finalizados"] == 2
@@ -712,3 +713,70 @@ def test_grid_ranking_inline_e_redirect(client: TestClient):
     assert 'href="#ranking"' not in r.text
     assert "data-grid-streak" in r.text
     assert "grid-share-actions" in r.text
+    assert "grid-rank-crown" in r.text
+    assert "zona-campeao" in r.text
+
+
+def test_letra_ignora_prefixo_juridico_fc_sc_ec():
+    from src.grid_game import (
+        Categoria,
+        clube_bate_categoria,
+        clubes_grid,
+        clubes_por_id,
+        fold_txt,
+        nome_sem_prefixo_juridico,
+    )
+    from src.clubes_catalogo import carregar_clubes
+
+    carregar_clubes.cache_clear()
+    clubes_grid.cache_clear()
+    clubes_por_id.cache_clear()
+
+    assert nome_sem_prefixo_juridico(fold_txt("FC Cascavel")) == "cascavel"
+    assert nome_sem_prefixo_juridico(fold_txt("RB Bragantino")) == "rb bragantino"
+    assert nome_sem_prefixo_juridico(fold_txt("XV de Piracicaba")) == "xv de piracicaba"
+
+    cascavel = next(c for c in clubes_grid() if c["nome"] == "FC Cascavel")
+    assert cascavel["letra"] == "C"
+    assert cascavel["serie"] == "D"
+
+    cat_c = Categoria("letra:C", "letra", "C", "Nome começa com C")
+    cat_f = Categoria("letra:F", "letra", "F", "Nome começa com F")
+    assert clube_bate_categoria(cascavel, cat_c) is True
+    assert clube_bate_categoria(cascavel, cat_f) is False
+
+    rb = next(c for c in clubes_grid() if c["nome"] == "RB Bragantino")
+    assert rb["letra"] == "R"
+    xv = next(c for c in clubes_grid() if "XV de Piracicaba" in c["nome"])
+    assert xv["letra"] == "X"
+
+    # Interseção letra C × Série D inclui FC Cascavel
+    from src.grid_game import pool_celula
+
+    serie_d = Categoria("serie:D", "serie", "D", "Brasileirão Série D")
+    pool = pool_celula(cat_c, serie_d)
+    assert any(c["id"] == cascavel["id"] for c in pool)
+
+
+def test_grid_ranking_top5_ver_mais(client: TestClient):
+    from src import db as dbmod
+
+    login_admin(client)
+    full = [[_celula_ok("1") for _ in range(3)] for _ in range(3)]
+    for i in range(7):
+        p = dbmod.criar_participante(
+            f"Rank Top {i}", status="liberado", celular=f"1199222000{i}"
+        )
+        # Dias diferentes para ordenar estável
+        for d in range(i + 1):
+            dbmod.salvar_grid_progresso(
+                p["id"], f"2026-07-{d + 1:02d}", full, finalizado=True
+            )
+
+    r = client.get("/grid")
+    assert r.status_code == 200
+    assert "data-grid-rank-mais" in r.text
+    assert "Ver mais" in r.text
+    assert "grid-rank-extra" in r.text
+    assert r.text.count("grid-rank-extra") >= 2
+    assert "grid-rank-crown" in r.text

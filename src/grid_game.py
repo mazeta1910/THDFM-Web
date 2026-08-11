@@ -283,9 +283,16 @@ class Categoria:
 
 def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
     nome = c["nome"]
-    letra = nome[:1].upper() if nome and nome[0].isalpha() else ""
     nome_norm = fold_txt(nome)
     core = nome_core_norm(nome_norm)
+    sig = nome_sem_prefixo_juridico(nome_norm)
+    letra = ""
+    for ch in sig:
+        if ch.isalpha():
+            letra = ch.upper()
+            break
+    if not letra:
+        letra = nome[:1].upper() if nome and nome[0].isalpha() else ""
     termina_letra = ""
     for ch in reversed(core):
         if ch.isalpha():
@@ -298,6 +305,7 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
         "letra": letra,
         "nome_norm": nome_norm,
         "nome_core": core,
+        "nome_sig": sig,
         "termina_letra": termina_letra,
     }
 
@@ -864,6 +872,48 @@ def nome_core_norm(nome_norm: str) -> str:
     return _UF_SUFFIX_RE.sub("", (nome_norm or "").strip()).strip()
 
 
+# Prefixos jurídicos no início (token + espaço). RB/XV são parte do nome.
+_PREFIXOS_JURIDICOS = frozenset(
+    {
+        "fc",
+        "sc",
+        "ec",
+        "ac",
+        "aa",
+        "ca",
+        "ce",
+        "se",
+        "ad",
+        "ae",
+        "af",
+        "ag",
+        "ge",
+        "cr",
+        "cs",
+        "cd",
+        "ff",
+        "oc",
+        "ua",
+    }
+)
+_PREFIXOS_IDENTIDADE = frozenset({"rb", "xv"})
+
+
+def nome_sem_prefixo_juridico(nome_norm: str) -> str:
+    """Remove FC/SC/EC/… do início; mantém RB, XV e nomes sem prefixo."""
+    core = nome_core_norm(nome_norm)
+    parts = core.split()
+    if len(parts) < 2:
+        return core
+    head = parts[0]
+    if head in _PREFIXOS_IDENTIDADE:
+        return core
+    if head in _PREFIXOS_JURIDICOS:
+        rest = " ".join(parts[1:]).strip()
+        return rest or core
+    return core
+
+
 def min_chars_sugestao(nome_norm: str) -> int:
     core = nome_core_norm(nome_norm)
     n = max(len(core), 1)
@@ -876,8 +926,16 @@ def _clube_elegivel_sugestao(clube: dict[str, Any], query: str) -> bool:
         return False
     nome = clube.get("nome_norm") or ""
     core = nome_core_norm(nome)
-    if not (core.startswith(query) or nome.startswith(query) or query in core):
+    sig = clube.get("nome_sig") or nome_sem_prefixo_juridico(nome)
+    if not (
+        core.startswith(query)
+        or sig.startswith(query)
+        or nome.startswith(query)
+        or query in core
+        or query in sig
+    ):
         return False
+    # Limiar pelo nome completo (com FC/SC); o match pode ser pelo nome significativo.
     return len(query) >= min_chars_sugestao(nome)
 
 

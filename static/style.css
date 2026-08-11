@@ -12912,7 +12912,7 @@ button.grid-daltonismo-btn:hover,
   font-weight: 700;
   min-width: 0;
 }
-.grid-rank-player:hover span {
+.grid-rank-player:hover .grid-rank-nome {
   text-decoration: underline;
 }
 .grid-rank-player .planilha-avatar,
@@ -12920,6 +12920,94 @@ button.grid-daltonismo-btn:hover,
   width: 1.85rem;
   height: 1.85rem;
   flex: 0 0 auto;
+}
+.grid-rank-crown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--zona-campeao-bar, #e6c200);
+  line-height: 0;
+}
+.grid-rank-mais-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.55rem 0 0.15rem;
+}
+.grid-rank-ver-mais {
+  width: auto;
+  min-width: 8rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+/* Zonas como na classificação do bolão */
+.grid-rank-table tbody tr.zona-meio:nth-child(odd) td {
+  background: #0d0d0d;
+}
+.grid-rank-table tbody tr.zona-meio:nth-child(even) td {
+  background: #1a1a1a;
+}
+.grid-rank-table tbody tr.zona-campeao:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 20%, #0d0d0d);
+}
+.grid-rank-table tbody tr.zona-campeao:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 30%, #1a1a1a);
+}
+.grid-rank-table tbody tr.zona-podio:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 16%, #0d0d0d);
+}
+.grid-rank-table tbody tr.zona-podio:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 26%, #1a1a1a);
+}
+.grid-rank-table tbody tr.zona-risco:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 18%, #0d0d0d);
+}
+.grid-rank-table tbody tr.zona-risco:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 28%, #1a1a1a);
+}
+.grid-rank-table tbody tr.zona-campeao td.col-pos {
+  border-left: 3px solid var(--zona-campeao-bar);
+}
+.grid-rank-table tbody tr.zona-podio td.col-pos {
+  border-left: 3px solid var(--zona-podio-bar);
+}
+.grid-rank-table tbody tr.zona-risco td.col-pos {
+  border-left: 3px solid var(--zona-risco-bar);
+}
+.grid-rank-table tbody tr.zona-meio td.col-pos {
+  border-left: 3px solid var(--zona-meio-bar);
+}
+html.theme-light .grid-rank-table tbody tr.zona-meio:nth-child(odd) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-meio:nth-child(odd) td {
+  background: #ffffff;
+}
+html.theme-light .grid-rank-table tbody tr.zona-meio:nth-child(even) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-meio:nth-child(even) td {
+  background: #ececec;
+}
+html.theme-light .grid-rank-table tbody tr.zona-campeao:nth-child(odd) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-campeao:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 28%, #ffffff);
+}
+html.theme-light .grid-rank-table tbody tr.zona-campeao:nth-child(even) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-campeao:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-campeao-bar) 38%, #ececec);
+}
+html.theme-light .grid-rank-table tbody tr.zona-podio:nth-child(odd) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-podio:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 14%, #ffffff);
+}
+html.theme-light .grid-rank-table tbody tr.zona-podio:nth-child(even) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-podio:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-podio-bar) 22%, #ececec);
+}
+html.theme-light .grid-rank-table tbody tr.zona-risco:nth-child(odd) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-risco:nth-child(odd) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 14%, #ffffff);
+}
+html.theme-light .grid-rank-table tbody tr.zona-risco:nth-child(even) td,
+html[data-theme="light"] .grid-rank-table tbody tr.zona-risco:nth-child(even) td {
+  background: color-mix(in srgb, var(--zona-risco-bar) 22%, #ececec);
 }
 @media (max-width: 640px) {
   .grid-board {
