@@ -543,6 +543,10 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         return True
     if {a.id, b.id} == {"participacao:serie_a", "longevidade:serie_a_20"}:
         return True
+    # ≥N e ≤M da mesma competição: vazios se N > M
+    ge_le = _longevidade_ge_le_incompativel(a.id, b.id)
+    if ge_le is False:
+        return False
     # Campeão ⊂ G4; vice não necessariamente ⊂ campeão
     if a.id == "titulo:campeao_br" and b.id == "premio:g4":
         return True
@@ -550,6 +554,21 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         return True
     # Paridade de campeão ∩ campeão = a própria paridade (ok, denso o bastante via outras)
     return True
+
+
+_LONG_GE_RE = re.compile(r"^longevidade:(serie_[abc]|cdb)_(\d+)$")
+_LONG_LE_RE = re.compile(r"^longevidade:(serie_[abc]|cdb)_le_(\d+)$")
+
+
+def _longevidade_ge_le_incompativel(id_a: str, id_b: str) -> bool | None:
+    """False se ≥N e ≤M da mesma liga com N > M (interseção vazia). None = não se aplica."""
+    ga, gb = _LONG_GE_RE.match(id_a), _LONG_GE_RE.match(id_b)
+    la, lb = _LONG_LE_RE.match(id_a), _LONG_LE_RE.match(id_b)
+    if ga and lb and ga.group(1) == lb.group(1):
+        return not (int(ga.group(2)) > int(lb.group(2)))
+    if gb and la and gb.group(1) == la.group(1):
+        return not (int(gb.group(2)) > int(la.group(2)))
+    return None
 
 def pool_celula(row: Categoria, col: Categoria) -> list[dict[str, Any]]:
     if not categorias_compativeis(row, col):

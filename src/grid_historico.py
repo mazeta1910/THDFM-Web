@@ -220,6 +220,7 @@ def _agregar_classificacao(
     com_rebaixamento: bool = True,
     com_paridade: bool = False,
     long_anos: tuple[int, ...] = (),
+    long_anos_le: tuple[int, ...] = (),
 ) -> dict[str, set[str]]:
     """Lê CSV de classificação e devolve sets sem prefixo de categoria."""
     out: dict[str, set[str]] = {
@@ -309,6 +310,11 @@ def _agregar_classificacao(
 
     for n in long_anos:
         out[f"long_{n}"] = {fid for fid, ys in anos_por.items() if len(ys) >= n}
+    for n in long_anos_le:
+        # Quem disputou e tem no máximo N edições (exclui quem nunca entrou).
+        out[f"long_le_{n}"] = {
+            fid for fid, ys in anos_por.items() if 1 <= len(ys) <= n
+        }
     # Metadados internos para variantes (yo-yo, décadas, eras).
     out["_anos_por"] = anos_por  # type: ignore[assignment]
     out["_reb_counts"] = reb_counts  # type: ignore[assignment]
@@ -316,7 +322,7 @@ def _agregar_classificacao(
 
 
 def _mapear_serie_a(agg: dict[str, set[str]]) -> dict[str, frozenset[str]]:
-    return {
+    out: dict[str, frozenset[str]] = {
         "titulo:campeao_br": frozenset(agg["campeao"]),
         "titulo:vice_br": frozenset(agg["vice"]),
         "premio:g4": frozenset(agg["g4"]),
@@ -329,11 +335,17 @@ def _mapear_serie_a(agg: dict[str, set[str]]) -> dict[str, frozenset[str]]:
         "premio:mais_derrotas": frozenset(agg["mais_derrotas"]),
         "premio:rebaixado": frozenset(agg["rebaixado"]),
         "participacao:serie_a": frozenset(agg["particip"]),
-        "longevidade:serie_a_10": frozenset(agg.get("long_10") or ()),
-        "longevidade:serie_a_20": frozenset(agg.get("long_20") or ()),
         "paridade:campeao_impar": frozenset(agg["camp_impar"]),
         "paridade:campeao_par": frozenset(agg["camp_par"]),
     }
+    for key, val in list(agg.items()):
+        if key.startswith("long_le_"):
+            n = key.split("_", 2)[2]
+            out[f"longevidade:serie_a_le_{n}"] = frozenset(val)
+        elif key.startswith("long_"):
+            n = key.split("_", 1)[1]
+            out[f"longevidade:serie_a_{n}"] = frozenset(val)
+    return out
 
 
 def _mapear_serie(
@@ -364,7 +376,10 @@ def _mapear_serie(
     if com_rebaixamento:
         out[f"premio:rebaixado_{tag}"] = frozenset(agg["rebaixado"])
     for key, val in list(agg.items()):
-        if key.startswith("long_"):
+        if key.startswith("long_le_"):
+            n = key.split("_", 2)[2]
+            out[f"longevidade:{tag}_le_{n}"] = frozenset(val)
+        elif key.startswith("long_"):
             n = key.split("_", 1)[1]
             out[f"longevidade:{tag}_{n}"] = frozenset(val)
     return out
@@ -409,7 +424,8 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             com_stats=True,
             com_rebaixamento=True,
             com_paridade=True,
-            long_anos=(10, 20),
+            long_anos=(5, 10, 15, 20, 30),
+            long_anos_le=(3, 5, 10),
         )
         anos_a = dict(agg_a.pop("_anos_por", {}) or {})  # type: ignore[arg-type]
         reb_a = dict(agg_a.pop("_reb_counts", {}) or {})  # type: ignore[arg-type]
@@ -436,6 +452,7 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             com_stats=True,
             com_rebaixamento=True,
             long_anos=(3, 4, 5, 6, 8, 10),
+            long_anos_le=(2, 3, 5),
         )
         anos_b = dict(agg_b.pop("_anos_por", {}) or {})  # type: ignore[arg-type]
         agg_b.pop("_reb_counts", None)
@@ -457,7 +474,8 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             competicao="serie_c",
             com_stats=True,
             com_rebaixamento=True,
-            long_anos=(5,),
+            long_anos=(3, 5, 8),
+            long_anos_le=(2, 3, 5),
         )
         agg_c.pop("_anos_por", None)
         agg_c.pop("_reb_counts", None)
@@ -548,7 +566,13 @@ def _ids_clubes_grid() -> set[str]:
 
 
 def _meta_serie(
-    tag: str, rotulo: str, *, com_stats: bool, com_rebaixamento: bool, longs: tuple[int, ...]
+    tag: str,
+    rotulo: str,
+    *,
+    com_stats: bool,
+    com_rebaixamento: bool,
+    longs: tuple[int, ...] = (),
+    longs_le: tuple[int, ...] = (),
 ) -> list[tuple[str, str, str, str]]:
     rows: list[tuple[str, str, str, str]] = [
         (f"titulo:campeao_{tag}", "titulo", f"campeao_{tag}", f"Já foi campeão da {rotulo}"),
@@ -576,6 +600,15 @@ def _meta_serie(
         rows.append(
             (f"longevidade:{tag}_{n}", "longevidade", f"{tag}_{n}", f"≥{n} participações na {rotulo}")
         )
+    for n in longs_le:
+        rows.append(
+            (
+                f"longevidade:{tag}_le_{n}",
+                "longevidade",
+                f"{tag}_le_{n}",
+                f"≤{n} participações na {rotulo}",
+            )
+        )
     return rows
 
 
@@ -602,15 +635,35 @@ HISTORICO_META_BASE: list[tuple[str, str, str, str]] = [
     ("goleada:aplicou", "goleada", "aplicou", "Já aplicou a maior goleada de uma edição da Série A"),
     ("goleada:sofreu", "goleada", "sofreu", "Já sofreu a maior goleada de uma edição da Série A"),
     ("participacao:serie_a", "participacao", "serie_a", "Já disputou a Série A"),
+    ("longevidade:serie_a_5", "longevidade", "serie_a_5", "≥5 participações na Série A"),
     ("longevidade:serie_a_10", "longevidade", "serie_a_10", "≥10 participações na Série A"),
+    ("longevidade:serie_a_15", "longevidade", "serie_a_15", "≥15 participações na Série A"),
     ("longevidade:serie_a_20", "longevidade", "serie_a_20", "≥20 participações na Série A"),
+    ("longevidade:serie_a_30", "longevidade", "serie_a_30", "≥30 participações na Série A"),
+    ("longevidade:serie_a_le_3", "longevidade", "serie_a_le_3", "≤3 participações na Série A"),
+    ("longevidade:serie_a_le_5", "longevidade", "serie_a_le_5", "≤5 participações na Série A"),
+    ("longevidade:serie_a_le_10", "longevidade", "serie_a_le_10", "≤10 participações na Série A"),
     ("paridade:campeao_impar", "paridade", "campeao_impar", "Campeão do Brasileirão em ano ímpar"),
     ("paridade:campeao_par", "paridade", "campeao_par", "Campeão do Brasileirão em ano par"),
-    *_meta_serie("serie_b", "Série B", com_stats=True, com_rebaixamento=True, longs=(3, 4, 5, 6, 8, 10)),
+    *_meta_serie(
+        "serie_b",
+        "Série B",
+        com_stats=True,
+        com_rebaixamento=True,
+        longs=(3, 4, 5, 6, 8, 10),
+        longs_le=(2, 3, 5),
+    ),
     ("goleada:presente_serie_b", "goleada", "presente_serie_b", "Já esteve na maior goleada de uma edição da Série B"),
     ("goleada:aplicou_serie_b", "goleada", "aplicou_serie_b", "Já aplicou a maior goleada de uma edição da Série B"),
     ("goleada:sofreu_serie_b", "goleada", "sofreu_serie_b", "Já sofreu a maior goleada de uma edição da Série B"),
-    *_meta_serie("serie_c", "Série C", com_stats=True, com_rebaixamento=True, longs=(5,)),
+    *_meta_serie(
+        "serie_c",
+        "Série C",
+        com_stats=True,
+        com_rebaixamento=True,
+        longs=(3, 5, 8),
+        longs_le=(2, 3, 5),
+    ),
     ("titulo:campeao_cdb", "titulo", "campeao_cdb", "Já foi campeão da Copa do Brasil"),
     ("titulo:vice_cdb", "titulo", "vice_cdb", "Já foi vice da Copa do Brasil"),
     ("titulo:vice_cdb_sem_campeao", "titulo", "vice_cdb_sem_campeao", "Já foi vice e nunca campeão da Copa do Brasil"),
@@ -656,15 +709,17 @@ def _meta_dinamico(hist: dict[str, frozenset[str]]) -> list[tuple[str, str, str,
         if len(membros) < 4:
             continue
         _, resto = cid.split(":", 1)
-        # serie_a_seq_2024_2025
+        # serie_a_seq_2020_2022 → anos nos dois últimos tokens (não em parts[2]="seq")
         parts = resto.split("_")
         if len(parts) < 4:
             continue
-        inicio, fim = parts[2], parts[3]
+        inicio, fim = parts[-2], parts[-1]
+        if not (inicio.isdigit() and fim.isdigit()):
+            continue
         if inicio == fim:
-            rotulo = f"Disputou a Série A em {inicio}"
+            rotulo = f"Jogou a Série A em {inicio}"
         else:
-            rotulo = f"Disputou a Série A de {inicio} a {fim}"
+            rotulo = f"Jogou a Série A em todos os anos de {inicio} a {fim}"
         rows.append((cid, "participacao", resto, rotulo))
     return rows
 

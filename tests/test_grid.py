@@ -193,11 +193,21 @@ def test_filtros_nome_e_compostos_historicos():
         "titulo:nunca_final_cdb",
         "premio:rebaixado_2x",
         "longevidade:serie_b_3",
+        "longevidade:serie_a_le_5",
+        "longevidade:serie_b_le_3",
+        "longevidade:serie_c_le_3",
         "participacao:serie_a_dec_1990",
         "participacao:serie_a_antes_2003",
         "participacao:serie_a_seq_2024_2025",
     ):
         assert key in cats, key
+
+    assert cats["participacao:serie_a_seq_2024_2025"].rotulo == (
+        "Jogou a Série A em todos os anos de 2024 a 2025"
+    )
+    assert "seq" not in cats["participacao:serie_a_seq_2024_2025"].rotulo.casefold()
+    assert cats["longevidade:serie_a_le_5"].rotulo == "≤5 participações na Série A"
+    assert cats["longevidade:serie_c_le_2"].rotulo == "≤2 participações na Série C"
 
     hist = historico_serie_a()
     assert hist["premio:g4_sem_titulo"].isdisjoint(hist["titulo:campeao_br"])
