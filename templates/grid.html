@@ -46,9 +46,9 @@
         </a>
       </div>
       <p class="grid-sub">
-        Acerte um clube em cada célula · 1 tentativa por casa
-        · puzzle de <strong>{{ puzzle.rotulo }}</strong>
-        · vira às {{ virada_rotulo|default(puzzle.virada_rotulo|default('00:00')) }} (Brasília)
+        Acerte um clube em cada célula · 1 tentativa por casa ·
+        <strong class="grid-sub-emphasis">Não vale repetir!</strong><br />
+        Puzzle de <strong>{{ puzzle.rotulo }}</strong> - Vira às {{ virada_rotulo|default(puzzle.virada_rotulo|default('00:00')) }} (Brasília)
       </p>
     </div>
   </header>

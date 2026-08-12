@@ -719,7 +719,10 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'id="thdfm-grid"' in r.text
     assert "/static/grid.js?v=14" in r.text
     assert "data-virada-ms=" in r.text
-    assert "vira às 00:00 (Brasília)" in r.text
+    assert "Não vale repetir!" in r.text
+    assert "grid-sub-emphasis" in r.text
+    assert "Vira às 00:00 (Brasília)" in r.text
+    assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
     assert "/static/grid-admin.js?v=4" in r.text
