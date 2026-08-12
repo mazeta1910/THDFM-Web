@@ -21,6 +21,7 @@ GOLEADAS_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_serie_a.csv"
 GOLEADAS_LIGAS_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_ligas.csv"
 GOLEADAS_COPA_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_copa_do_brasil.csv"
 CAMPEOES_COPA_CSV = ROOT_DIR / "data" / "torneios" / "campeoes_copa_do_brasil.csv"
+PARTICIP_COPA_CSV = ROOT_DIR / "data" / "torneios" / "participacoes_copa_do_brasil.csv"
 
 # Aliases Wikipedia → nome canônico no catálogo FM (sem UF).
 _ALIAS_NOME: dict[str, str] = {
@@ -385,6 +386,51 @@ def _mapear_serie(
     return out
 
 
+def _carregar_participacoes_copa(
+    long_anos: tuple[int, ...] = (5, 10, 15, 20, 25),
+    long_anos_le: tuple[int, ...] = (3, 5, 10),
+) -> dict[str, frozenset[str]]:
+    """Participação / longevidade na Copa do Brasil a partir do CSV limpo."""
+    out: dict[str, frozenset[str]] = {}
+    if not PARTICIP_COPA_CSV.is_file():
+        return out
+    anos_por: dict[str, set[int]] = {}
+    with PARTICIP_COPA_CSV.open(encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            clube = resolver_clube_fm(row.get("nome") or "")
+            ano = _to_int(row.get("ano"))
+            if not clube or ano is None:
+                continue
+            anos_por.setdefault(clube["id"], set()).add(ano)
+    if not anos_por:
+        return out
+    particip = frozenset(anos_por)
+    out["participacao:cdb"] = particip
+    for n in long_anos:
+        out[f"longevidade:cdb_{n}"] = frozenset(
+            fid for fid, ys in anos_por.items() if len(ys) >= n
+        )
+    for n in long_anos_le:
+        out[f"longevidade:cdb_le_{n}"] = frozenset(
+            fid for fid, ys in anos_por.items() if 1 <= len(ys) <= n
+        )
+    for dec in range(1990, 2030, 10):
+        out[f"participacao:cdb_dec_{dec}"] = frozenset(
+            fid for fid, ys in anos_por.items() if any(dec <= y < dec + 10 for y in ys)
+        )
+    for corte in (1995, 2000, 2010, 2016, 2020):
+        out[f"participacao:cdb_antes_{corte}"] = frozenset(
+            fid for fid, ys in anos_por.items() if any(y < corte for y in ys)
+        )
+        out[f"participacao:cdb_desde_{corte}"] = frozenset(
+            fid for fid, ys in anos_por.items() if any(y >= corte for y in ys)
+        )
+        out[f"participacao:cdb_so_desde_{corte}"] = frozenset(
+            fid for fid, ys in anos_por.items() if ys and all(y >= corte for y in ys)
+        )
+    return out
+
+
 def _carregar_copa() -> dict[str, frozenset[str]]:
     campeoes: set[str] = set()
     vices: set[str] = set()
@@ -400,13 +446,15 @@ def _carregar_copa() -> dict[str, frozenset[str]]:
     presente, aplicou, sofreu = _carregar_goleadas_por_competicao(
         GOLEADAS_COPA_CSV, por_edicao=False
     )
-    return {
+    out: dict[str, frozenset[str]] = {
         "titulo:campeao_cdb": frozenset(campeoes),
         "titulo:vice_cdb": frozenset(vices),
         "goleada:presente_cdb": frozenset(presente),
         "goleada:aplicou_cdb": frozenset(aplicou),
         "goleada:sofreu_cdb": frozenset(sofreu),
     }
+    out.update(_carregar_participacoes_copa())
+    return out
 
 
 @lru_cache(maxsize=1)
@@ -546,6 +594,7 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
         ("participacao:serie_a", "participacao:nunca_serie_a"),
         ("participacao:serie_b", "participacao:nunca_serie_b"),
         ("participacao:serie_c", "participacao:nunca_serie_c"),
+        ("participacao:cdb", "participacao:nunca_cdb"),
     )
     for pos_id, neg_id in pares:
         pos = out.get(pos_id) or frozenset()
@@ -690,6 +739,16 @@ HISTORICO_META_BASE: list[tuple[str, str, str, str]] = [
     ("goleada:presente_cdb", "goleada", "presente_cdb", "Já esteve em uma das maiores goleadas da Copa do Brasil"),
     ("goleada:aplicou_cdb", "goleada", "aplicou_cdb", "Já aplicou uma das maiores goleadas da Copa do Brasil"),
     ("goleada:sofreu_cdb", "goleada", "sofreu_cdb", "Já sofreu uma das maiores goleadas da Copa do Brasil"),
+    ("participacao:cdb", "participacao", "cdb", "Já disputou a Copa do Brasil"),
+    ("participacao:nunca_cdb", "participacao", "nunca_cdb", "Nunca jogou a Copa do Brasil"),
+    ("longevidade:cdb_5", "longevidade", "cdb_5", "≥5 participações na Copa do Brasil"),
+    ("longevidade:cdb_10", "longevidade", "cdb_10", "≥10 participações na Copa do Brasil"),
+    ("longevidade:cdb_15", "longevidade", "cdb_15", "≥15 participações na Copa do Brasil"),
+    ("longevidade:cdb_20", "longevidade", "cdb_20", "≥20 participações na Copa do Brasil"),
+    ("longevidade:cdb_25", "longevidade", "cdb_25", "≥25 participações na Copa do Brasil"),
+    ("longevidade:cdb_le_3", "longevidade", "cdb_le_3", "≤3 participações na Copa do Brasil"),
+    ("longevidade:cdb_le_5", "longevidade", "cdb_le_5", "≤5 participações na Copa do Brasil"),
+    ("longevidade:cdb_le_10", "longevidade", "cdb_le_10", "≤10 participações na Copa do Brasil"),
 ]
 
 
@@ -701,7 +760,7 @@ def _meta_dinamico(hist: dict[str, frozenset[str]]) -> list[tuple[str, str, str,
         if len(hist.get(cid) or ()) >= 4:
             rows.append((cid, "premio", f"rebaixado_{n}x", f"≥{n} rebaixamentos da Série A"))
     for dec in range(1970, 2030, 10):
-        for tag, rot in (("serie_a", "Série A"), ("serie_b", "Série B")):
+        for tag, rot in (("serie_a", "Série A"), ("serie_b", "Série B"), ("cdb", "Copa do Brasil")):
             cid = f"participacao:{tag}_dec_{dec}"
             if len(hist.get(cid) or ()) >= 4:
                 # 1990 → "anos 90"; 2000 → "anos 2000"
@@ -714,6 +773,15 @@ def _meta_dinamico(hist: dict[str, frozenset[str]]) -> list[tuple[str, str, str,
             (f"participacao:serie_a_antes_{corte}", f"Jogou a Série A antes de {corte}"),
             (f"participacao:serie_a_desde_{corte}", f"Jogou a Série A em {corte} ou depois"),
             (f"participacao:serie_a_so_desde_{corte}", f"Só jogou a Série A a partir de {corte}"),
+        )
+        for cid, rotulo in specs:
+            if len(hist.get(cid) or ()) >= 4:
+                rows.append((cid, "participacao", cid.split(":", 1)[1], rotulo))
+    for corte in (1995, 2000, 2010, 2016, 2020):
+        specs = (
+            (f"participacao:cdb_antes_{corte}", f"Jogou a Copa do Brasil antes de {corte}"),
+            (f"participacao:cdb_desde_{corte}", f"Jogou a Copa do Brasil em {corte} ou depois"),
+            (f"participacao:cdb_so_desde_{corte}", f"Só jogou a Copa do Brasil a partir de {corte}"),
         )
         for cid, rotulo in specs:
             if len(hist.get(cid) or ()) >= 4:

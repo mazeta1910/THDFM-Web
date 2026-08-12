@@ -481,6 +481,7 @@ _PARES_COMPLEMENTO_HIST = frozenset(
         frozenset({"participacao:serie_a", "participacao:nunca_serie_a"}),
         frozenset({"participacao:serie_b", "participacao:nunca_serie_b"}),
         frozenset({"participacao:serie_c", "participacao:nunca_serie_c"}),
+        frozenset({"participacao:cdb", "participacao:nunca_cdb"}),
         frozenset({"titulo:campeao_br", "premio:g4_sem_titulo"}),
         frozenset({"titulo:campeao_br", "titulo:vice_sem_campeao"}),
         frozenset({"titulo:campeao_cdb", "titulo:vice_cdb_sem_campeao"}),
@@ -489,17 +490,25 @@ _PARES_COMPLEMENTO_HIST = frozenset(
     }
 )
 
-_NUNCA_SERIE_RE = re.compile(r"^participacao:nunca_(serie_[abc])$")
+_NUNCA_SERIE_RE = re.compile(r"^participacao:nunca_(serie_[abc]|cdb)$")
 
 
 def _implica_participacao_serie(cat_id: str, tag: str) -> bool:
-    """True se a categoria só faz sentido para quem já jogou aquela série."""
+    """True se a categoria só faz sentido para quem já jogou aquela série/copa."""
     if cat_id.startswith(f"participacao:nunca_{tag}"):
         return False
     if cat_id.startswith(f"participacao:{tag}"):
         return True
     if cat_id.startswith(f"longevidade:{tag}"):
         return True
+    if tag == "cdb":
+        if cat_id.startswith(("participacao:cdb", "longevidade:cdb")):
+            return True
+        if "cdb" not in cat_id:
+            return False
+        if "nunca" in cat_id or cat_id.endswith("sem_cdb"):
+            return False
+        return cat_id.startswith(("titulo:", "goleada:", "premio:"))
     # título/prêmio/goleada específicos da série (…_serie_b) ou Série A “solta”
     if tag == "serie_a":
         if cat_id.startswith(
