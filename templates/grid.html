@@ -23,32 +23,34 @@
   <header class="grid-head">
     <div class="grid-head-main">
       <p class="grid-kicker">Puzzle diário</p>
-      <h1 class="grid-title">
-        THDFM Grid
-        <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
-      </h1>
+      <div class="grid-head-title-row">
+        <h1 class="grid-title">
+          THDFM Grid
+          <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
+        </h1>
+        <a class="grid-report-btn" href="/grid/bugs" title="Reportar bugs do Grid">
+          <svg class="grid-report-ico" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 7.5V6a4 4 0 0 1 8 0v1.5"/>
+            <rect x="6.5" y="7.5" width="11" height="10" rx="4"/>
+            <path d="M9.5 12h5"/>
+            <path d="M9.5 15h5"/>
+            <path d="M4.5 10.5 6.5 12"/>
+            <path d="M19.5 10.5 17.5 12"/>
+            <path d="M4.5 16 6.5 14.5"/>
+            <path d="M19.5 16 17.5 14.5"/>
+          </svg>
+          <span>Reportar Bugs</span>
+          {% if bug_reports_novos_count|default(0) %}
+          <span class="grid-report-badge">{{ bug_reports_novos_count }}</span>
+          {% endif %}
+        </a>
+      </div>
       <p class="grid-sub">
         Acerte um clube em cada célula · 1 tentativa por casa
         · puzzle de <strong>{{ puzzle.rotulo }}</strong>
         · vira às {{ virada_rotulo|default(puzzle.virada_rotulo|default('00:00')) }} (Brasília)
       </p>
     </div>
-    <a class="grid-report-btn" href="/grid/bugs" title="Reportar bugs do Grid">
-      <svg class="grid-report-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 7.5V6a4 4 0 0 1 8 0v1.5"/>
-        <rect x="6.5" y="7.5" width="11" height="10" rx="4"/>
-        <path d="M9.5 12h5"/>
-        <path d="M9.5 15h5"/>
-        <path d="M4.5 10.5 6.5 12"/>
-        <path d="M19.5 10.5 17.5 12"/>
-        <path d="M4.5 16 6.5 14.5"/>
-        <path d="M19.5 16 17.5 14.5"/>
-      </svg>
-      <span>Reportar Bugs</span>
-      {% if bug_reports_novos_count|default(0) %}
-      <span class="grid-report-badge">{{ bug_reports_novos_count }}</span>
-      {% endif %}
-    </a>
   </header>
 
   <div class="grid-board-wrap card">
