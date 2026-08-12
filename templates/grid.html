@@ -299,12 +299,12 @@
 
 <dialog class="grid-modal" id="grid-modal" data-grid-modal>
   <form method="dialog" class="grid-modal-card" data-grid-form>
+    <button type="submit" class="grid-modal-x" value="cancel" aria-label="Fechar">×</button>
     <header class="grid-modal-head">
       <div>
         <strong data-grid-modal-title>Chutar clube</strong>
         <p class="grid-modal-count"><span data-grid-count>0</span> possíveis nesta célula</p>
       </div>
-      <button type="submit" class="grid-modal-x" value="cancel" aria-label="Fechar">×</button>
     </header>
     <input
       class="grid-search"
@@ -312,15 +312,11 @@
       name="q"
       autocomplete="off"
       spellcheck="false"
-      placeholder="Digite cerca de 70% do nome…"
+      placeholder="Digite cerca de 50% do nome…"
       data-grid-search
     />
     <p class="grid-modal-hint" data-grid-modal-hint hidden></p>
     <ul class="grid-suggestions" data-grid-suggestions></ul>
-    <div class="grid-modal-actions">
-      <button type="submit" class="btn" value="chute" data-grid-chute>Chutar</button>
-    </div>
-    <p class="grid-modal-note">Uma tentativa por célula · sugestões após ~70% do nome (catálogo completo).</p>
   </form>
 </dialog>
 
@@ -328,7 +324,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=13" defer></script>
+<script src="/static/grid.js?v=14" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=4" defer></script>
 {% endif %}

@@ -30,6 +30,7 @@
   let active = null; // {linha, coluna}
   let shareText = "";
   let searchTimer = 0;
+  let searchAbort = null;
   const MIN_CHARS = 3;
 
   // Escapes ASCII-safe: evita charset errado no .js quebrar o WhatsApp
@@ -165,7 +166,7 @@
     if (countEl) countEl.textContent = n;
     setModalHint("");
     if (suggestions) {
-      suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~70% do nome para ver sugestões.</li>`;
+      suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~50% do nome para ver sugestões.</li>`;
     }
     if (searchInput) {
       searchInput.value = "";
@@ -189,7 +190,7 @@
         countEl.textContent = n;
       }
       if (suggestions) {
-        suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~70% do nome para ver sugestões.</li>`;
+        suggestions.innerHTML = `<li class="grid-sug-empty">Digite ~50% do nome para ver sugestões.</li>`;
       }
       return;
     }
@@ -198,8 +199,11 @@
       coluna: String(active.coluna),
       q: query,
     });
+    if (searchAbort) searchAbort.abort();
+    searchAbort = new AbortController();
     const r = await fetch(`/grid/api/buscar?${params}`, {
       headers: { Accept: "application/json" },
+      signal: searchAbort.signal,
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return;
@@ -305,8 +309,10 @@
       setModalHint("");
       window.clearTimeout(searchTimer);
       searchTimer = window.setTimeout(() => {
-        runSearch(q).catch(() => {});
-      }, 160);
+        runSearch(q).catch((err) => {
+          if (err && err.name === "AbortError") return;
+        });
+      }, 90);
     });
   }
 
@@ -322,9 +328,9 @@
     form.addEventListener("submit", (e) => {
       const submitter = e.submitter;
       const val = submitter && submitter.value ? submitter.value : "";
+      // Só o × fecha o modal; Enter não chuta — confirme clicando no emblema.
       if (val === "cancel") return;
       e.preventDefault();
-      submitGuessByName(searchInput ? searchInput.value : "").catch(() => {});
     });
   }
 

@@ -23,8 +23,8 @@ GRID_SIZE = 3
 DENSIDADE_MIN = 4
 BUSCA_LIMITE = 12
 BUSCA_MIN_CHARS = 3
-# Só sugere clube depois de digitar ~70% do nome (sem sufixo de UF).
-SUGESTAO_FRACAO = 0.70
+# Só sugere clube depois de digitar ~50% do nome (sem sufixo de UF).
+SUGESTAO_FRACAO = 0.50
 _UF_SUFFIX_RE = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
 
 
@@ -778,9 +778,16 @@ def gerar_puzzle(dia: str | None = None) -> dict[str, Any]:
     """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes.
 
     Nunca deixa o /grid quebrar: se o gerador principal falhar, tenta o outro
-    e por fim uma busca ampla garantida.
+    e por fim uma busca ampla garantida. Cacheia por (dia, salt) — regeneração
+    admin muda o salt e invalida o cache automaticamente.
     """
     dia_s = dia or dia_grid()
+    return _gerar_puzzle_cached(dia_s, _salt_dia(dia_s))
+
+
+@lru_cache(maxsize=64)
+def _gerar_puzzle_cached(dia_s: str, salt: str) -> dict[str, Any]:
+    del salt  # participa só da chave do cache (via _salt_dia)
     if variedade_ativa(dia_s):
         primary, secondary = _gerar_puzzle_variado, _gerar_puzzle_legado
     else:
@@ -1573,7 +1580,7 @@ def min_chars_sugestao(nome_norm: str) -> int:
 
 
 def _clube_elegivel_sugestao(clube: dict[str, Any], query: str) -> bool:
-    """True se a query já cobre ~70% do nome e casa com o clube."""
+    """True se a query já cobre ~50% do nome e casa com o clube."""
     if len(query) < BUSCA_MIN_CHARS:
         return False
     nome = clube.get("nome_norm") or ""
@@ -1599,16 +1606,15 @@ def buscar_celula(
     q: str,
     limite: int = BUSCA_LIMITE,
 ) -> dict[str, Any]:
-    """Sugestões do catálogo completo após ~70% do nome (não só o pool certo)."""
+    """Sugestões do catálogo completo após ~50% do nome (não só o pool certo)."""
     puzzle = gerar_puzzle(dia)
     if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
         raise ValueError("célula inválida")
-    row = categoria_por_id(puzzle["linhas"][linha]["id"], dia)
-    col = categoria_por_id(puzzle["colunas"][coluna]["id"], dia)
-    if not row or not col:
-        raise ValueError("categoria inválida")
-    pool = pool_celula(row, col)
-    total = len(pool)
+    dens = puzzle.get("densidades") or []
+    try:
+        total = int(dens[linha][coluna])
+    except (IndexError, TypeError, ValueError):
+        total = 0
     query = fold_txt(q or "")
     pronto = len(query) >= BUSCA_MIN_CHARS
     itens: list[dict[str, Any]] = []
@@ -1645,7 +1651,7 @@ def buscar_celula(
 def resolver_clube_por_nome(nome: str) -> dict[str, Any]:
     """Resolve chute digitado → clube do catálogo.
 
-    Prefere match exato; senão, único candidato elegível pela regra dos ~70%.
+    Prefere match exato; senão, único candidato elegível pela regra dos ~50%.
     """
     query = fold_txt(nome or "").strip()
     if len(query) < BUSCA_MIN_CHARS:
