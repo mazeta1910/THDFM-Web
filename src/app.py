@@ -3202,6 +3202,16 @@ async def grid_api_admin_virada(request: Request):
     )
 
 
+@app.post("/grid/api/admin/zerar-ranking")
+async def grid_api_admin_zerar_ranking(request: Request):
+    """Apaga todo o progresso do Grid (ranking/streak) — só Mazeta."""
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    apagados = db.limpar_grid_progresso()
+    return JSONResponse({"ok": True, "apagados": apagados})
+
+
 @app.post("/grid/api/admin/regenerar")
 async def grid_api_admin_regenerar(request: Request):
     neg = _grid_mazeta_neg_json(request)

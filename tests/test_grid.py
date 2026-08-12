@@ -707,6 +707,38 @@ def test_grid_reset_lancamento_zera_progresso(client: TestClient):
     assert dbmod.grid_stats_participante(part["id"])["jogou"] is False
 
 
+def test_grid_zerar_ranking_botao_so_mazeta(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Rank Zerar", status="liberado", celular="11991112203")
+    full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    assert dbmod.ranking_grid()
+
+    # Participante comum: sem botão e API 401/403
+    dbmod.definir_credenciais(part["id"], "rank.zerar.user", "senha12345")
+    client.get(f"/p/{part['token']}")
+    r_user = client.get("/grid")
+    assert r_user.status_code == 200
+    assert "data-grid-rank-zerar" not in r_user.text
+    neg = client.post("/grid/api/admin/zerar-ranking")
+    assert neg.status_code in (401, 403)
+    assert dbmod.ranking_grid()
+
+    # Mazeta: vê o vetor e zera
+    login_admin(client)
+    r_maz = client.get("/grid")
+    assert r_maz.status_code == 200
+    assert "data-grid-rank-zerar" in r_maz.text
+    assert "Zerar ranking do Grid" in r_maz.text
+    ok = client.post("/grid/api/admin/zerar-ranking")
+    assert ok.status_code == 200
+    body = ok.json()
+    assert body["ok"] is True
+    assert body["apagados"] >= 1
+    assert dbmod.ranking_grid() == []
+
+
 def test_chute_errado_marca_miss():
     puzzle = gerar_puzzle("2026-08-15")
     row = categoria_por_id(puzzle["linhas"][0]["id"])
