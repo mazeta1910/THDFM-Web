@@ -12501,6 +12501,10 @@ button.proto-text-btn:disabled {
   margin: 0 auto;
   display: grid;
   gap: 1.15rem;
+  min-width: 0;
+  max-width: min(58rem, 100%);
+  overflow-x: clip;
+  box-sizing: border-box;
 }
 .grid-head {
   display: block;
@@ -12907,7 +12911,9 @@ button.proto-text-btn:disabled {
 .grid-board-wrap {
   padding: 1rem 1.05rem 1.1rem;
   max-width: 100%;
+  min-width: 0;
   overflow-x: clip;
+  box-sizing: border-box;
 }
 .grid-board {
   display: grid;
@@ -12917,6 +12923,7 @@ button.proto-text-btn:disabled {
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
 }
 .grid-corner { min-height: 3.4rem; min-width: 0; }
 .grid-axis {
@@ -13636,16 +13643,23 @@ html[data-theme="light"] .grid-rank-table tbody tr.zona-risco:nth-child(even) td
   background: color-mix(in srgb, var(--zona-risco-bar) 22%, #ececec);
 }
 @media (max-width: 720px) {
+  /* Contém bleed do board e evita faixa direita fora da tela */
+  .site-body .site-main > .wrap:has(.grid-page) {
+    overflow-x: clip;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
   /* Cancela padding lateral do .wrap: board usa a largura útil da tela */
   .grid-board-wrap.card,
   .grid-board-wrap {
     margin-inline: -1rem;
-    width: auto;
-    max-width: none;
+    width: calc(100% + 2rem);
+    max-width: calc(100% + 2rem);
     padding: 0.4rem 0.2rem 0.65rem;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+    box-sizing: border-box;
   }
   .grid-board {
     grid-template-columns: minmax(3.9rem, 0.82fr) repeat(3, minmax(0, 1fr));
@@ -13685,6 +13699,13 @@ html[data-theme="light"] .grid-rank-table tbody tr.zona-risco:nth-child(even) td
   .grid-sug img {
     width: 36px;
     height: 36px;
+  }
+  .grid-rank-inline,
+  .grid-admin,
+  .grid-rank-card {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
   }
   .grid-rank-table th[data-sort-key="taxa"],
   .grid-rank-table td:nth-child(5) {

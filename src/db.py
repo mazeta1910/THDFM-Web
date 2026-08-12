@@ -650,6 +650,20 @@ def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
     )
 
 
+def _purge_grid_progresso_pre_ranking(conn: sqlite3.Connection) -> None:
+    """Remove progresso de dias antes do ranking oficial (ex.: 11/08 sem jogo)."""
+    chave = "grid_progresso_ranking_desde_v1"
+    if conn.execute("SELECT 1 FROM meta WHERE chave = ?", (chave,)).fetchone():
+        return
+    # Espelha GRID_RANKING_DESDE em grid_game (evita import circular no boot).
+    desde = "2026-08-12"
+    conn.execute("DELETE FROM grid_progresso WHERE dia < ?", (desde,))
+    conn.execute(
+        "INSERT INTO meta (chave, valor) VALUES (?, ?)",
+        (chave, desde),
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -669,6 +683,7 @@ def init_db() -> None:
         _migrate_bug_reports(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
+        _purge_grid_progresso_pre_ranking(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -4521,7 +4536,12 @@ def clear_grid_salt(dia: str) -> bool:
 
 
 def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
-    """Dias com progresso e/ou salt, mais recentes primeiro."""
+    """Dias com pelo menos um jogo (progresso), no período do ranking; mais recentes primeiro.
+
+    Dias só com salt/regen e sem jogadores não entram em “Dias com atividade”.
+    """
+    from src.grid_game import GRID_RANKING_DESDE
+
     lim = max(1, min(int(limite), 366))
     with get_db() as conn:
         rows = conn.execute(
@@ -4530,39 +4550,36 @@ def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
                    COUNT(*) AS jogadores,
                    SUM(CASE WHEN finalizado = 1 THEN 1 ELSE 0 END) AS finalizados
             FROM grid_progresso
+            WHERE dia >= ?
             GROUP BY dia
+            HAVING COUNT(*) > 0
             ORDER BY dia DESC
             LIMIT ?
             """,
-            (lim,),
+            (GRID_RANKING_DESDE, lim),
         ).fetchall()
         salts = {
             str(r["dia"]): str(r["salt"])
             for r in conn.execute(
-                "SELECT dia, salt FROM grid_puzzle_salt ORDER BY dia DESC LIMIT ?",
-                (lim,),
+                "SELECT dia, salt FROM grid_puzzle_salt WHERE dia >= ? ORDER BY dia DESC LIMIT ?",
+                (GRID_RANKING_DESDE, lim),
             ).fetchall()
         }
-    by_dia: dict[str, dict[str, Any]] = {}
+    out: list[dict[str, Any]] = []
     for row in rows:
         dia = str(row["dia"])
-        by_dia[dia] = {
-            "dia": dia,
-            "jogadores": int(row["jogadores"] or 0),
-            "finalizados": int(row["finalizados"] or 0),
-            "salt": salts.get(dia),
-            "regenerado": dia in salts,
-        }
-    for dia, salt in salts.items():
-        if dia not in by_dia:
-            by_dia[dia] = {
+        jogadores = int(row["jogadores"] or 0)
+        if jogadores <= 0:
+            continue
+        out.append(
+            {
                 "dia": dia,
-                "jogadores": 0,
-                "finalizados": 0,
-                "salt": salt,
-                "regenerado": True,
+                "jogadores": jogadores,
+                "finalizados": int(row["finalizados"] or 0),
+                "salt": salts.get(dia),
+                "regenerado": dia in salts,
             }
-    out = sorted(by_dia.values(), key=lambda x: x["dia"], reverse=True)
+        )
     return out[:lim]
 
 
@@ -4836,23 +4853,24 @@ def grid_streak(participante_id: int, *, ate_dia: str | None = None) -> int:
     """Dias consecutivos finalizados até ate_dia (inclusive), contando para trás."""
     from datetime import date, timedelta
 
-    from src.grid_game import dia_grid
+    from src.grid_game import GRID_RANKING_DESDE, dia_grid
 
     pid = int(participante_id)
     fim = date.fromisoformat(ate_dia or dia_grid())
+    ini = date.fromisoformat(GRID_RANKING_DESDE)
     with get_db() as conn:
         rows = conn.execute(
             """
             SELECT dia FROM grid_progresso
-            WHERE participante_id = ? AND finalizado = 1 AND dia <= ?
+            WHERE participante_id = ? AND finalizado = 1 AND dia <= ? AND dia >= ?
             ORDER BY dia DESC
             """,
-            (pid, fim.isoformat()),
+            (pid, fim.isoformat(), GRID_RANKING_DESDE),
         ).fetchall()
     feitos = {r["dia"] for r in rows}
     streak = 0
     cursor = fim
-    while cursor.isoformat() in feitos:
+    while cursor >= ini and cursor.isoformat() in feitos:
         streak += 1
         cursor = cursor - timedelta(days=1)
     return streak
@@ -4919,6 +4937,8 @@ def _somar_pontos_rep(celulas: Any) -> int:
 
 def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
     """Ranking: dias finalizados → acertos → streak → pontos Rep (obscuro vale mais)."""
+    from src.grid_game import GRID_RANKING_DESDE
+
     lim = max(1, min(int(limite), 200))
     with get_db() as conn:
         rows = conn.execute(
@@ -4927,9 +4947,10 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
                    g.dia, g.celulas_json, g.finalizado
             FROM grid_progresso g
             JOIN participantes p ON p.id = g.participante_id
-            WHERE p.status = 'liberado'
+            WHERE p.status = 'liberado' AND g.dia >= ?
             ORDER BY p.id ASC, g.dia DESC
-            """
+            """,
+            (GRID_RANKING_DESDE,),
         ).fetchall()
     agg: dict[int, dict[str, Any]] = {}
     for row in rows:
@@ -4987,16 +5008,18 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
 
 def grid_stats_participante(participante_id: int) -> dict[str, Any]:
     """Agregados do Grid para o bloco do perfil."""
+    from src.grid_game import GRID_RANKING_DESDE
+
     pid = int(participante_id)
     with get_db() as conn:
         rows = conn.execute(
             """
             SELECT dia, celulas_json, finalizado
             FROM grid_progresso
-            WHERE participante_id = ?
+            WHERE participante_id = ? AND dia >= ?
             ORDER BY dia DESC
             """,
-            (pid,),
+            (pid, GRID_RANKING_DESDE),
         ).fetchall()
     dias_finalizados = 0
     celulas_ok = 0
