@@ -97,11 +97,44 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
     hist = historico_serie_a()
     assert len(hist.get("titulo:campeao_br") or []) >= DENSIDADE_MIN
     assert len(hist.get("premio:melhor_ataque") or []) >= DENSIDADE_MIN
+    # Novas categorias (classificação + goleadas)
+    for key in (
+        "premio:pior_defesa",
+        "premio:mais_vitorias",
+        "premio:mais_empates",
+        "premio:mais_derrotas",
+        "premio:rebaixado",
+        "premio:g4",
+        "premio:melhor_defesa",
+        "goleada:presente",
+        "goleada:aplicou",
+        "goleada:sofreu",
+    ):
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+        assert key in cats_depois
+
+    # Subconjuntos de goleada (ao longo das edições; um clube pode aplicar e sofrer em anos distintos)
+    assert hist["goleada:aplicou"] <= hist["goleada:presente"]
+    assert hist["goleada:sofreu"] <= hist["goleada:presente"]
+    assert hist["goleada:aplicou"] | hist["goleada:sofreu"] == hist["goleada:presente"]
 
     p = gerar_puzzle("2026-08-11")
     assert p["dia"] == "2026-08-11"
     for row in p["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
+
+
+def test_novas_categorias_historicas_aparecem_no_pool():
+    from src.grid_historico import HISTORICO_META, limpar_caches_historico
+
+    limpar_caches_historico()
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    ids_meta = {m[0] for m in HISTORICO_META}
+    assert "goleada:aplicou" in ids_meta
+    assert "premio:rebaixado" in ids_meta
+    assert cats["goleada:aplicou"].rotulo.startswith("Já aplicou")
+    assert cats["premio:mais_empates"].tipo == "premio"
+    assert cats["premio:g4"].rotulo  # já existia; segue no pool
 
 
 def test_variedade_cutover_e_eixos_mistos():

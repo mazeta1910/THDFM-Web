@@ -41,7 +41,7 @@ GRID_HISTORICO_DESDE = "2026-08-11"
 # Regeneração admin (salt) em dia histórico também usa v3.
 GRID_VARIEDADE_DESDE = "2026-08-12"
 _TIPOS_HISTORICOS = frozenset(
-    {"titulo", "premio", "participacao", "longevidade", "paridade"}
+    {"titulo", "premio", "participacao", "longevidade", "paridade", "goleada"}
 )
 _TIPOS_NOME = ("letra", "termina")
 _TIPOS_GEO = (
@@ -66,6 +66,7 @@ _MAX_POR_TIPO_EIXO: dict[str, int] = {
     "participacao": 1,
     "longevidade": 1,
     "paridade": 1,
+    "goleada": 1,
 }
 
 # Sufixos/sílabas comuns em nomes de clubes BR (pool do eixo "termina com").
@@ -523,6 +524,7 @@ def _gerar_puzzle_legado(dia_s: str) -> dict[str, Any]:
         + list(by_tipo.get("participacao") or [])
         + list(by_tipo.get("longevidade") or [])
         + list(by_tipo.get("paridade") or [])
+        + list(by_tipo.get("goleada") or [])
     )
     nome_eixo = list(by_tipo.get("letra") or []) + list(by_tipo.get("termina") or [])
     rng.shuffle(geo)
