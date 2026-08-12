@@ -8,6 +8,7 @@ data/comprovantes/
 data/avatars/
 data/banners/
 data/recados/
+data/bug-reports/
 *.pyc
 .pytest_cache/
 .DS_Store
