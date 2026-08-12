@@ -460,7 +460,58 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
     # Série D: sem CSV local em data/torneios — omitido de propósito
 
     out.update(_carregar_copa())
+
+    # Complementos ("nunca…") — densos e aumentam aleatoriedade do pool.
+    todos = _ids_clubes_grid()
+    pares = (
+        ("titulo:campeao_br", "titulo:nunca_campeao_br"),
+        ("premio:artilheiro", "premio:nunca_artilheiro"),
+        ("premio:melhor_defesa", "premio:nunca_melhor_defesa"),
+        ("premio:rebaixado", "premio:nunca_rebaixado"),
+    )
+    for pos_id, neg_id in pares:
+        pos = out.get(pos_id) or frozenset()
+        out[neg_id] = frozenset(cid for cid in todos if cid not in pos)
+
     return out
+
+
+def _ids_clubes_grid() -> set[str]:
+    """IDs FM com emblema e UF brasileira (mesmo critério do Grid)."""
+    ufs_br = {
+        "AC",
+        "AL",
+        "AP",
+        "AM",
+        "BA",
+        "CE",
+        "DF",
+        "ES",
+        "GO",
+        "MA",
+        "MT",
+        "MS",
+        "MG",
+        "PA",
+        "PB",
+        "PR",
+        "PE",
+        "PI",
+        "RJ",
+        "RN",
+        "RS",
+        "RO",
+        "RR",
+        "SC",
+        "SP",
+        "SE",
+        "TO",
+    }
+    return {
+        c["id"]
+        for c in carregar_clubes()
+        if c.get("tem_emblema") and (c.get("uf") or "") in ufs_br
+    }
 
 
 def _meta_serie(tag: str, rotulo: str, *, com_stats: bool, com_rebaixamento: bool, longs: tuple[int, ...]) -> list[tuple[str, str, str, str]]:
@@ -507,6 +558,10 @@ HISTORICO_META: list[tuple[str, str, str, str]] = [
     ("premio:mais_empates", "premio", "mais_empates", "Já foi o time com mais empates numa edição da Série A"),
     ("premio:mais_derrotas", "premio", "mais_derrotas", "Já foi o time com mais derrotas numa edição da Série A"),
     ("premio:rebaixado", "premio", "rebaixado", "Já foi rebaixado da Série A"),
+    ("premio:nunca_rebaixado", "premio", "nunca_rebaixado", "Nunca foi rebaixado da Série A"),
+    ("titulo:nunca_campeao_br", "titulo", "nunca_campeao_br", "Nunca foi campeão do Brasileirão"),
+    ("premio:nunca_artilheiro", "premio", "nunca_artilheiro", "Nunca teve artilheiro do Brasileirão"),
+    ("premio:nunca_melhor_defesa", "premio", "nunca_melhor_defesa", "Nunca foi melhor defesa do Brasileirão"),
     ("goleada:presente", "goleada", "presente", "Já esteve na maior goleada de uma edição da Série A"),
     ("goleada:aplicou", "goleada", "aplicou", "Já aplicou a maior goleada de uma edição da Série A"),
     ("goleada:sofreu", "goleada", "sofreu", "Já sofreu a maior goleada de uma edição da Série A"),

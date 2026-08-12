@@ -148,6 +148,59 @@ def test_novas_categorias_historicas_aparecem_no_pool():
         assert len(hist.get(cid) or []) >= DENSIDADE_MIN, (cid, len(hist.get(cid) or []))
 
 
+def test_filtros_negacao_uf_regiao_e_nunca_historico():
+    """Subset inicial: gentílico UF, não-UF, não-região e 'nunca…' históricos."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    categorias_disponiveis.cache_clear()
+    clubes_grid.cache_clear()
+
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    assert cats["uf:PR"].rotulo == "Time paranaense"
+    assert cats["uf:RO"].rotulo == "Time rondoniano"
+    assert cats["nao_uf:PR"].rotulo == "Não é paranaense"
+    assert cats["nao_regiao:Sul"].rotulo == "Não é da região Sul"
+    assert "nao_uf:SP" in cats
+    assert "nao_regiao:Sudeste" in cats
+
+    hist = historico_serie_a()
+    for key in (
+        "titulo:nunca_campeao_br",
+        "premio:nunca_artilheiro",
+        "premio:nunca_melhor_defesa",
+        "premio:nunca_rebaixado",
+        "premio:rebaixado",
+    ):
+        assert key in cats, key
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+
+    # Complementos disjuntos do positivo
+    assert not (hist["titulo:campeao_br"] & hist["titulo:nunca_campeao_br"])
+    assert not (hist["premio:rebaixado"] & hist["premio:nunca_rebaixado"])
+
+    from src.grid_game import categorias_compativeis, clube_bate_categoria
+
+    pr = cats["uf:PR"]
+    nao_pr = cats["nao_uf:PR"]
+    sul = cats["regiao:Sul"]
+    nao_sul = cats["nao_regiao:Sul"]
+    assert categorias_compativeis(pr, nao_pr) is False
+    assert categorias_compativeis(pr, sul) is True
+    assert categorias_compativeis(pr, nao_sul) is False
+    assert categorias_compativeis(nao_pr, sul) is True
+
+    ath = next(
+        c
+        for c in clubes_grid()
+        if "athletico" in (c.get("nome") or "").casefold() and c.get("uf") == "PR"
+    )
+    assert clube_bate_categoria(ath, pr)
+    assert not clube_bate_categoria(ath, nao_pr)
+    assert clube_bate_categoria(ath, sul)
+    assert not clube_bate_categoria(ath, nao_sul)
+
+
 def test_categorias_serie_b_c_e_copa_densas():
     """Categorias B/C/Copa vêm dos CSV/XLSX locais em data/torneios (sem scrape)."""
     from src.grid_historico import limpar_caches_historico
@@ -172,7 +225,6 @@ def test_categorias_serie_b_c_e_copa_densas():
     ):
         assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
     assert "titulo:campeao_serie_d" not in hist
-
 
 
 def test_variedade_cutover_e_eixos_mistos():
@@ -213,7 +265,7 @@ def test_variedade_cutover_e_eixos_mistos():
         def _fam(t: str) -> str:
             if t in ("letra", "termina"):
                 return "nome"
-            if t in ("uf", "regiao", "serie"):
+            if t in ("uf", "nao_uf", "regiao", "nao_regiao", "serie"):
                 return "geo"
             if t in {
                 "titulo",

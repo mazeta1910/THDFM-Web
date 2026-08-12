@@ -46,7 +46,9 @@ _TIPOS_HISTORICOS = frozenset(
 _TIPOS_NOME = ("letra", "termina")
 _TIPOS_GEO = (
     "uf",
+    "nao_uf",
     "regiao",
+    "nao_regiao",
     "serie",
     "titulo",
     "premio",
@@ -58,9 +60,11 @@ _TIPOS_GEO = (
 _MAX_POR_TIPO_EIXO: dict[str, int] = {
     "termina": 1,
     "regiao": 1,
+    "nao_regiao": 1,
     "serie": 1,
     "letra": 1,
     "uf": 2,
+    "nao_uf": 1,
     "titulo": 1,
     "premio": 1,
     "participacao": 1,
@@ -103,6 +107,47 @@ REGIOES: dict[str, set[str]] = {
     "Sul": {"PR", "RS", "SC"},
 }
 UF_PARA_REGIAO = {uf: reg for reg, ufs in REGIOES.items() for uf in ufs}
+
+# Gentílicos para rótulos do Grid (Time X / Não é X).
+UF_GENTILICO: dict[str, str] = {
+    "AC": "acreano",
+    "AL": "alagoano",
+    "AP": "amapaense",
+    "AM": "amazonense",
+    "BA": "baiano",
+    "CE": "cearense",
+    "DF": "brasiliense",
+    "ES": "capixaba",
+    "GO": "goiano",
+    "MA": "maranhense",
+    "MT": "mato-grossense",
+    "MS": "sul-mato-grossense",
+    "MG": "mineiro",
+    "PA": "paraense",
+    "PB": "paraibano",
+    "PR": "paranaense",
+    "PE": "pernambucano",
+    "PI": "piauiense",
+    "RJ": "carioca",
+    "RN": "potiguar",
+    "RS": "gaúcho",
+    "RO": "rondoniano",
+    "RR": "roraimense",
+    "SC": "catarinense",
+    "SP": "paulista",
+    "SE": "sergipano",
+    "TO": "tocantinense",
+}
+
+
+def rotulo_uf(uf: str) -> str:
+    g = UF_GENTILICO.get(uf)
+    return f"Time {g}" if g else f"Clube de {uf}"
+
+
+def rotulo_nao_uf(uf: str) -> str:
+    g = UF_GENTILICO.get(uf)
+    return f"Não é {g}" if g else f"Não é de {uf}"
 
 _SERIE_A_MARKERS = ("assaí", "assai", "série a", "serie a")
 _SERIE_B_MARKERS = ("série b", "serie b")
@@ -336,8 +381,12 @@ def historico_ativo(dia: str | None = None) -> bool:
 def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
     if cat.tipo == "uf":
         return clube.get("uf") == cat.valor
+    if cat.tipo == "nao_uf":
+        return bool(clube.get("uf")) and clube.get("uf") != cat.valor
     if cat.tipo == "regiao":
         return clube.get("regiao") == cat.valor
+    if cat.tipo == "nao_regiao":
+        return bool(clube.get("regiao")) and clube.get("regiao") != cat.valor
     if cat.tipo == "serie":
         return clube.get("serie") == cat.valor
     if cat.tipo == "letra":
@@ -356,9 +405,21 @@ def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
     return False
 
 
+_PARES_COMPLEMENTO_HIST = frozenset(
+    {
+        frozenset({"titulo:campeao_br", "titulo:nunca_campeao_br"}),
+        frozenset({"premio:artilheiro", "premio:nunca_artilheiro"}),
+        frozenset({"premio:melhor_defesa", "premio:nunca_melhor_defesa"}),
+        frozenset({"premio:rebaixado", "premio:nunca_rebaixado"}),
+    }
+)
+
+
 def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     """False quando a interseção é logicamente impossível."""
     if a.id == b.id:
+        return False
+    if frozenset({a.id, b.id}) in _PARES_COMPLEMENTO_HIST:
         return False
     # Terminações: letras/sílabas distintas só cruzam se uma for sufixo da outra
     # (ex.: ense ∩ e; eiro ∩ iro). Caso contrário, vazio.
@@ -368,6 +429,34 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         if not va or not vb or va == vb:
             return False
         return va.endswith(vb) or vb.endswith(va)
+    # Negacoes UF/regiao: valores distintos AINDA intersectam (nao-SP ∩ nao-RJ).
+    if a.tipo == "nao_uf" and b.tipo == "nao_uf":
+        return a.valor != b.valor
+    if a.tipo == "nao_regiao" and b.tipo == "nao_regiao":
+        return a.valor != b.valor
+    if a.tipo == "uf" and b.tipo == "nao_uf":
+        return a.valor != b.valor
+    if a.tipo == "nao_uf" and b.tipo == "uf":
+        return a.valor != b.valor
+    if a.tipo == "regiao" and b.tipo == "nao_regiao":
+        return a.valor != b.valor
+    if a.tipo == "nao_regiao" and b.tipo == "regiao":
+        return a.valor != b.valor
+    if a.tipo == "nao_uf" and b.tipo == "regiao":
+        # Ex.: nao-SP ∩ Sudeste ainda tem RJ/MG/ES.
+        return True
+    if a.tipo == "regiao" and b.tipo == "nao_uf":
+        return True
+    if a.tipo == "nao_regiao" and b.tipo == "uf":
+        return b.valor not in REGIOES.get(a.valor, set())
+    if a.tipo == "uf" and b.tipo == "nao_regiao":
+        return a.valor not in REGIOES.get(b.valor, set())
+    if a.tipo == "nao_uf" and b.tipo == "nao_regiao":
+        # nao-PR ∩ nao-Sul: OK (PR esta no Sul; outros estados fora do Sul bastam)
+        # nao-SP ∩ nao-Sul: OK
+        return True
+    if a.tipo == "nao_regiao" and b.tipo == "nao_uf":
+        return True
     if a.tipo == b.tipo and a.valor != b.valor:
         # dois UFs / duas séries / duas letras distintas nunca intersectam
         return False
@@ -390,7 +479,6 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     # Paridade de campeão ∩ campeão = a própria paridade (ok, denso o bastante via outras)
     return True
 
-
 def pool_celula(row: Categoria, col: Categoria) -> list[dict[str, Any]]:
     if not categorias_compativeis(row, col):
         return []
@@ -409,12 +497,30 @@ def _montar_categorias(dia: str) -> list[Categoria]:
     for uf in ufs:
         n = sum(1 for c in clubes if c["uf"] == uf)
         if n >= DENSIDADE_MIN:
-            cats.append(Categoria(f"uf:{uf}", "uf", uf, f"Clube de {uf}"))
+            cats.append(Categoria(f"uf:{uf}", "uf", uf, rotulo_uf(uf)))
+        # Negacoes entram com o cutover historico para nao alterar puzzles antigos.
+        if historico_ativo(dia):
+            n_nao = sum(1 for c in clubes if c.get("uf") and c["uf"] != uf)
+            if n_nao >= DENSIDADE_MIN:
+                cats.append(
+                    Categoria(f"nao_uf:{uf}", "nao_uf", uf, rotulo_nao_uf(uf))
+                )
 
     for reg in REGIOES:
         n = sum(1 for c in clubes if c.get("regiao") == reg)
         if n >= DENSIDADE_MIN:
             cats.append(Categoria(f"regiao:{reg}", "regiao", reg, f"Região {reg}"))
+        if historico_ativo(dia):
+            n_nao = sum(1 for c in clubes if c.get("regiao") and c.get("regiao") != reg)
+            if n_nao >= DENSIDADE_MIN:
+                cats.append(
+                    Categoria(
+                        f"nao_regiao:{reg}",
+                        "nao_regiao",
+                        reg,
+                        f"Não é da região {reg}",
+                    )
+                )
 
     serie_labels = {
         "A": "Brasileirão Série A",
@@ -745,7 +851,7 @@ def _tentar_board(
 def _familia_categoria(tipo: str) -> str:
     if tipo in _TIPOS_NOME:
         return "nome"
-    if tipo in ("uf", "regiao", "serie"):
+    if tipo in ("uf", "nao_uf", "regiao", "nao_regiao", "serie"):
         return "geo"
     if tipo in _TIPOS_HISTORICOS:
         return "hist"
