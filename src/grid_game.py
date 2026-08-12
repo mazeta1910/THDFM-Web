@@ -16,7 +16,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.clubes_catalogo import carregar_clubes
-from src.grid_historico import HISTORICO_META, historico_meta, historico_serie_a
+from src.grid_historico import historico_meta, historico_serie_a
 
 TZ_SP = ZoneInfo("America/Sao_Paulo")
 GRID_SIZE = 3
@@ -1362,6 +1362,7 @@ def validar_chute(
     if not clube:
         raise ValueError("clube inválido")
     ok = clube_bate_categoria(clube, row) and clube_bate_categoria(clube, col)
+    rep = int(clube.get("rep") or 0)
     return {
         "ok": ok,
         "clube": {
@@ -1369,6 +1370,7 @@ def validar_chute(
             "nome": clube["nome"],
             "uf": clube["uf"],
             "emblema": clube["emblema"],
+            "rep": rep,
         },
         "linha": linha,
         "coluna": coluna,

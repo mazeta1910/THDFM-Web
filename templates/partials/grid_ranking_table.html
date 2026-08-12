@@ -12,6 +12,7 @@
           <th class="num" data-sort-key="acertos">Acertos</th>
           <th class="num" data-sort-key="taxa">%</th>
           <th class="num" data-sort-key="streak">Streak</th>
+          <th class="num" data-sort-key="rep" title="Desempate: menos reputação FM = mais pontos">Rep+</th>
         </tr>
       </thead>
       <tbody>
@@ -39,6 +40,7 @@
           <td class="num" data-sort-value="{{ r.celulas_ok }}">{{ r.celulas_ok }}</td>
           <td class="num" data-sort-value="{{ r.taxa }}">{{ r.taxa }}%</td>
           <td class="num" data-sort-value="{{ r.streak }}">{{ r.streak }}</td>
+          <td class="num" data-sort-value="{{ r.pontos_rep or 0 }}">{{ r.pontos_rep or 0 }}</td>
         </tr>
         {% endfor %}
       </tbody>

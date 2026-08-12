@@ -665,8 +665,34 @@ def test_grid_fluxo_logado(client: TestClient):
     assert chute2.status_code == 409
 
 
-def _celula_ok(clube_id: str = "1") -> dict:
-    return {"ok": True, "clube": {"id": clube_id, "nome": "Clube X"}}
+def _celula_ok(clube_id: str = "1", *, rep: int | None = None) -> dict:
+    clube: dict = {"id": clube_id, "nome": "Clube X"}
+    if rep is not None:
+        clube["rep"] = rep
+    return {"ok": True, "clube": clube}
+
+
+def test_ranking_desempate_por_rep_baixa():
+    """Com mesmos dias/acertos/streak, quem acertou times com menor Rep FM fica na frente."""
+    from src import db as dbmod
+    from src.clubes_catalogo import pontos_rep_desempate
+
+    assert pontos_rep_desempate(400) > pontos_rep_desempate(7750)
+
+    a = dbmod.criar_participante("Grid Obscuro", status="liberado", celular="11991110011")
+    b = dbmod.criar_participante("Grid Famoso", status="liberado", celular="11991110012")
+    # Mesmo dia finalizado, 9 acertos cada; A usou times fracos, B usou elite.
+    full_a = [[_celula_ok(f"a{i}{j}", rep=200) for j in range(3)] for i in range(3)]
+    full_b = [[_celula_ok(f"b{i}{j}", rep=7500) for j in range(3)] for i in range(3)]
+    dbmod.salvar_grid_progresso(a["id"], "2026-08-09", full_a, finalizado=True)
+    dbmod.salvar_grid_progresso(b["id"], "2026-08-09", full_b, finalizado=True)
+
+    ranking = dbmod.ranking_grid(limite=10)
+    assert ranking[0]["participante_id"] == a["id"]
+    assert ranking[1]["participante_id"] == b["id"]
+    assert ranking[0]["pontos_rep"] > ranking[1]["pontos_rep"]
+    assert ranking[0]["dias_finalizados"] == ranking[1]["dias_finalizados"] == 1
+    assert ranking[0]["celulas_ok"] == ranking[1]["celulas_ok"] == 9
 
 
 def test_grid_reset_lancamento_zera_progresso(client: TestClient):
