@@ -13279,6 +13279,7 @@ button.grid-daltonismo-btn:hover,
   background: rgba(0, 0, 0, 0.55);
 }
 .grid-modal-card {
+  position: relative;
   margin: 0;
   padding: 0.9rem;
   border-radius: 14px;
@@ -13293,6 +13294,7 @@ button.grid-daltonismo-btn:hover,
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  padding-right: 2.1rem;
 }
 .grid-modal-count {
   margin: 0.15rem 0 0;
@@ -13301,13 +13303,29 @@ button.grid-daltonismo-btn:hover,
 }
 .grid-modal-x {
   appearance: none;
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  width: auto;
+  min-width: 0;
+  margin: 0;
   border: 0;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 1.4rem;
+  font-size: 1.45rem;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  padding: 0.1rem 0.35rem;
+  padding: 0.2rem 0.45rem;
+  text-align: center;
+}
+.grid-modal-x:hover,
+.grid-modal-x:focus-visible {
+  color: var(--text);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  outline: none;
 }
 .grid-search {
   width: 100%;

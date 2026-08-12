@@ -691,7 +691,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=13" in r.text
+    assert "/static/grid.js?v=14" in r.text
     assert "data-virada-ms=" in r.text
     assert "vira às 00:00 (Brasília)" in r.text
     assert 'id="grid-admin"' in r.text
@@ -712,13 +712,19 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "WhatsApp</button>" not in r.text
     assert 'id="ranking"' in r.text
     assert "grid-result-top" in r.text
-    assert "data-grid-chute" in r.text
+    assert "data-grid-chute" not in r.text
     assert "data-grid-suggestions" in r.text
-    assert "~70%" in r.text
+    assert "~50%" in r.text or "50% do nome" in r.text
+    assert "grid-modal-note" not in r.text
+    assert "grid-modal-x" in r.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    modal_x = css.split(".grid-modal-x", 1)[1].split("}", 1)[0]
+    assert "position: absolute" in modal_x
+    assert "right:" in modal_x
+    assert "width: auto" in modal_x
     assert 'href="#ranking"' not in r.text
     assert "data-grid-streak" in r.text
     assert "grid-title" in r.text
-    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".grid-share-text" in css
     assert "text-align: center" in css.split(".grid-share-text", 1)[1].split("}", 1)[0]
     assert '.grid-page[data-daltonismo-mode="protanopia"]' in css
@@ -791,7 +797,7 @@ def test_grid_fluxo_logado(client: TestClient):
     core = nome_core_norm(clube["nome_norm"])
     precisa = min_chars_sugestao(clube["nome_norm"])
 
-    # Poucas letras: ainda sem sugestão (abaixo de 70%)
+    # Poucas letras: ainda sem sugestão (abaixo de 50%)
     curto_q = core[: max(1, precisa - 1)]
     curto = client.get(
         "/grid/api/buscar",
@@ -802,11 +808,11 @@ def test_grid_fluxo_logado(client: TestClient):
         x["id"] == clube["id"] for x in curto.json()["itens"]
     )
 
-    # ~70% do nome: aparece no catálogo completo
-    q70 = core[:precisa]
+    # ~50% do nome: aparece no catálogo completo
+    q50 = core[:precisa]
     busca = client.get(
         "/grid/api/buscar",
-        params={"linha": 0, "coluna": 0, "q": q70},
+        params={"linha": 0, "coluna": 0, "q": q50},
     )
     assert busca.status_code == 200
     assert busca.json()["pronto"] is True
@@ -1013,28 +1019,45 @@ def test_texto_share_usa_verde_e_vermelho():
     assert "🟥".encode("utf-8") in raw
 
 
-def test_sugestao_exige_cerca_de_70_por_cento_do_nome():
+def test_sugestao_exige_cerca_de_50_por_cento_do_nome():
     from src.grid_game import buscar_celula, min_chars_sugestao, nome_core_norm
 
     santos = next(c for c in clubes_grid() if c["nome_norm"] == "santos")
     precisa = min_chars_sugestao(santos["nome_norm"])
-    assert precisa == 5  # ceil(6 * 0.7)
+    assert precisa == 3  # ceil(6 * 0.5) — piso BUSCA_MIN_CHARS
 
     dia = "2026-08-10"
-    cedo = buscar_celula(dia=dia, linha=0, coluna=0, q="sant")
+    cedo = buscar_celula(dia=dia, linha=0, coluna=0, q="sa")  # < 3
     assert all(x["id"] != santos["id"] for x in cedo["itens"])
 
-    ok = buscar_celula(dia=dia, linha=0, coluna=0, q="santo")  # 5/6
+    ok = buscar_celula(dia=dia, linha=0, coluna=0, q="san")  # 3/6
     assert any(x["id"] == santos["id"] for x in ok["itens"])
 
-    # Barcelona (RJ): core=barcelona (9) → precisa 7
+    # Barcelona (RJ): core=barcelona (9) → precisa 5
     barca = next(c for c in clubes_grid() if c["nome_norm"] == "barcelona (rj)")
-    assert min_chars_sugestao(barca["nome_norm"]) == 7
+    assert min_chars_sugestao(barca["nome_norm"]) == 5
     assert nome_core_norm(barca["nome_norm"]) == "barcelona"
-    cedo_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barcel")  # 6
+    cedo_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barc")  # 4
     assert all(x["id"] != barca["id"] for x in cedo_b["itens"])
-    ok_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barcelo")  # 7
+    ok_b = buscar_celula(dia=dia, linha=0, coluna=0, q="barce")  # 5
     assert any(x["id"] == barca["id"] for x in ok_b["itens"])
+
+
+def test_gerar_puzzle_cache_acelera_busca():
+    from time import perf_counter
+
+    from src.grid_game import _gerar_puzzle_cached, buscar_celula
+
+    _gerar_puzzle_cached.cache_clear()
+    dia = "2026-08-12"
+    t0 = perf_counter()
+    buscar_celula(dia=dia, linha=0, coluna=0, q="flam")
+    primeira = perf_counter() - t0
+    t0 = perf_counter()
+    buscar_celula(dia=dia, linha=0, coluna=0, q="flamen")
+    segunda = perf_counter() - t0
+    assert segunda < 0.15
+    assert segunda < primeira * 0.5 or segunda < 0.05
 
 
 def test_chute_nome_inexistente_conta_como_erro(client: TestClient):
