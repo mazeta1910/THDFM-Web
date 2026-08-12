@@ -242,6 +242,7 @@ def _agregar_classificacao(
         return out
 
     anos_por: dict[str, set[int]] = {}
+    reb_counts: dict[str, int] = {}
     by_ano: dict[int, list[tuple[str, int, int, int, int, int, int, int]]] = {}
 
     with path.open(encoding="utf-8-sig", newline="") as f:
@@ -276,6 +277,7 @@ def _agregar_classificacao(
                 zona = _zona_rebaixamento(ano, n_clubes, competicao=competicao)
                 if zona and pos > n_clubes - zona:
                     out["rebaixado"].add(fid)
+                    reb_counts[fid] = reb_counts.get(fid, 0) + 1
             if com_stats and gp is not None and gc is not None:
                 by_ano.setdefault(ano, []).append(
                     (fid, pos, n_clubes, gp, gc, v or 0, e or 0, d or 0)
@@ -307,6 +309,9 @@ def _agregar_classificacao(
 
     for n in long_anos:
         out[f"long_{n}"] = {fid for fid, ys in anos_por.items() if len(ys) >= n}
+    # Metadados internos para variantes (yo-yo, décadas, eras).
+    out["_anos_por"] = anos_por  # type: ignore[assignment]
+    out["_reb_counts"] = reb_counts  # type: ignore[assignment]
     return out
 
 
@@ -393,6 +398,9 @@ def _carregar_copa() -> dict[str, frozenset[str]]:
 def historico_serie_a() -> dict[str, frozenset[str]]:
     """Mapas categoria_id → clubes FM (Série A/B/C/D + Copa do Brasil)."""
     out: dict[str, frozenset[str]] = {}
+    anos_a: dict[str, set[int]] = {}
+    anos_b: dict[str, set[int]] = {}
+    reb_a: dict[str, int] = {}
 
     if CLASSIF_CSV.is_file():
         agg_a = _agregar_classificacao(
@@ -403,6 +411,8 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             com_paridade=True,
             long_anos=(10, 20),
         )
+        anos_a = dict(agg_a.pop("_anos_por", {}) or {})  # type: ignore[arg-type]
+        reb_a = dict(agg_a.pop("_reb_counts", {}) or {})  # type: ignore[arg-type]
         out.update(_mapear_serie_a(agg_a))
 
     artilheiros: set[str] = set()
@@ -419,19 +429,18 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
     out["goleada:aplicou"] = frozenset(g_a[1])
     out["goleada:sofreu"] = frozenset(g_a[2])
 
-    # Série B — tabelas completas de data/torneios/Serie B.xlsx
     if CLASSIF_B_CSV.is_file():
         agg_b = _agregar_classificacao(
             CLASSIF_B_CSV,
             competicao="serie_b",
             com_stats=True,
             com_rebaixamento=True,
-            long_anos=(5, 10),
+            long_anos=(3, 4, 5, 6, 8, 10),
         )
+        anos_b = dict(agg_b.pop("_anos_por", {}) or {})  # type: ignore[arg-type]
+        agg_b.pop("_reb_counts", None)
         out.update(
-            _mapear_serie(
-                agg_b, tag="serie_b", com_stats=True, com_rebaixamento=True
-            )
+            _mapear_serie(agg_b, tag="serie_b", com_stats=True, com_rebaixamento=True)
         )
     g_b = _carregar_goleadas_por_competicao(
         GOLEADAS_LIGAS_CSV if GOLEADAS_LIGAS_CSV.is_file() else GOLEADAS_CSV,
@@ -442,7 +451,6 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
     out["goleada:aplicou_serie_b"] = frozenset(g_b[1])
     out["goleada:sofreu_serie_b"] = frozenset(g_b[2])
 
-    # Série C — classificações do xlsx/CSV local
     if CLASSIF_C_CSV.is_file():
         agg_c = _agregar_classificacao(
             CLASSIF_C_CSV,
@@ -451,23 +459,72 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             com_rebaixamento=True,
             long_anos=(5,),
         )
+        agg_c.pop("_anos_por", None)
+        agg_c.pop("_reb_counts", None)
         out.update(
-            _mapear_serie(
-                agg_c, tag="serie_c", com_stats=True, com_rebaixamento=True
-            )
+            _mapear_serie(agg_c, tag="serie_c", com_stats=True, com_rebaixamento=True)
         )
-
-    # Série D: sem CSV local em data/torneios — omitido de propósito
 
     out.update(_carregar_copa())
 
-    # Complementos ("nunca…") — densos e aumentam aleatoriedade do pool.
+    camp_br = set(out.get("titulo:campeao_br") or ())
+    vice_br = set(out.get("titulo:vice_br") or ())
+    g4 = set(out.get("premio:g4") or ())
+    camp_cdb = set(out.get("titulo:campeao_cdb") or ())
+    vice_cdb = set(out.get("titulo:vice_cdb") or ())
+    final_cdb = camp_cdb | vice_cdb
+
+    out["premio:g4_sem_titulo"] = frozenset(g4 - camp_br)
+    out["titulo:vice_sem_campeao"] = frozenset(vice_br - camp_br)
+    out["titulo:vice_cdb_sem_campeao"] = frozenset(vice_cdb - camp_cdb)
+    out["titulo:final_cdb"] = frozenset(final_cdb)
+    out["titulo:campeao_cdb_sem_br"] = frozenset(camp_cdb - camp_br)
+    out["titulo:campeao_br_sem_cdb"] = frozenset(camp_br - camp_cdb)
+
+    for n in (2, 3, 4, 5):
+        out[f"premio:rebaixado_{n}x"] = frozenset(
+            fid for fid, q in reb_a.items() if q >= n
+        )
+
+    for dec in range(1970, 2030, 10):
+        out[f"participacao:serie_a_dec_{dec}"] = frozenset(
+            fid for fid, ys in anos_a.items() if any(dec <= y < dec + 10 for y in ys)
+        )
+        out[f"participacao:serie_b_dec_{dec}"] = frozenset(
+            fid for fid, ys in anos_b.items() if any(dec <= y < dec + 10 for y in ys)
+        )
+
+    for corte in (1988, 1995, 2003, 2010, 2015, 2020):
+        out[f"participacao:serie_a_antes_{corte}"] = frozenset(
+            fid for fid, ys in anos_a.items() if any(y < corte for y in ys)
+        )
+        out[f"participacao:serie_a_desde_{corte}"] = frozenset(
+            fid for fid, ys in anos_a.items() if any(y >= corte for y in ys)
+        )
+        out[f"participacao:serie_a_so_desde_{corte}"] = frozenset(
+            fid for fid, ys in anos_a.items() if ys and all(y >= corte for y in ys)
+        )
+
+    if anos_a:
+        ano_max = max(max(ys) for ys in anos_a.values())
+        ano_min_janela = max(1959, ano_max - 10)
+        for inicio in range(ano_min_janela, ano_max + 1):
+            for fim in range(inicio, ano_max + 1):
+                if fim - inicio > 7:
+                    continue
+                precisa = set(range(inicio, fim + 1))
+                out[f"participacao:serie_a_seq_{inicio}_{fim}"] = frozenset(
+                    fid for fid, ys in anos_a.items() if precisa <= ys
+                )
+
     todos = _ids_clubes_grid()
     pares = (
         ("titulo:campeao_br", "titulo:nunca_campeao_br"),
         ("premio:artilheiro", "premio:nunca_artilheiro"),
         ("premio:melhor_defesa", "premio:nunca_melhor_defesa"),
         ("premio:rebaixado", "premio:nunca_rebaixado"),
+        ("titulo:campeao_cdb", "titulo:nunca_campeao_cdb"),
+        ("titulo:final_cdb", "titulo:nunca_final_cdb"),
     )
     for pos_id, neg_id in pares:
         pos = out.get(pos_id) or frozenset()
@@ -479,33 +536,9 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
 def _ids_clubes_grid() -> set[str]:
     """IDs FM com emblema e UF brasileira (mesmo critério do Grid)."""
     ufs_br = {
-        "AC",
-        "AL",
-        "AP",
-        "AM",
-        "BA",
-        "CE",
-        "DF",
-        "ES",
-        "GO",
-        "MA",
-        "MT",
-        "MS",
-        "MG",
-        "PA",
-        "PB",
-        "PR",
-        "PE",
-        "PI",
-        "RJ",
-        "RN",
-        "RS",
-        "RO",
-        "RR",
-        "SC",
-        "SP",
-        "SE",
-        "TO",
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+        "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+        "SP", "SE", "TO",
     }
     return {
         c["id"]
@@ -514,7 +547,9 @@ def _ids_clubes_grid() -> set[str]:
     }
 
 
-def _meta_serie(tag: str, rotulo: str, *, com_stats: bool, com_rebaixamento: bool, longs: tuple[int, ...]) -> list[tuple[str, str, str, str]]:
+def _meta_serie(
+    tag: str, rotulo: str, *, com_stats: bool, com_rebaixamento: bool, longs: tuple[int, ...]
+) -> list[tuple[str, str, str, str]]:
     rows: list[tuple[str, str, str, str]] = [
         (f"titulo:campeao_{tag}", "titulo", f"campeao_{tag}", f"Já foi campeão da {rotulo}"),
         (f"titulo:vice_{tag}", "titulo", f"vice_{tag}", f"Já foi vice da {rotulo}"),
@@ -544,11 +579,12 @@ def _meta_serie(tag: str, rotulo: str, *, com_stats: bool, com_rebaixamento: boo
     return rows
 
 
-HISTORICO_META: list[tuple[str, str, str, str]] = [
-    # Série A (chaves estáveis)
+HISTORICO_META_BASE: list[tuple[str, str, str, str]] = [
     ("titulo:campeao_br", "titulo", "campeao_br", "Já foi campeão do Brasileirão"),
     ("titulo:vice_br", "titulo", "vice_br", "Já foi vice do Brasileirão"),
     ("premio:g4", "premio", "g4", "Já ficou no G4 do Brasileirão"),
+    ("premio:g4_sem_titulo", "premio", "g4_sem_titulo", "Já foi G4 e nunca campeão do Brasileirão"),
+    ("titulo:vice_sem_campeao", "titulo", "vice_sem_campeao", "Já foi vice e nunca campeão do Brasileirão"),
     ("premio:melhor_ataque", "premio", "melhor_ataque", "Já teve o melhor ataque do Brasileirão"),
     ("premio:melhor_defesa", "premio", "melhor_defesa", "Já teve a melhor defesa do Brasileirão"),
     ("premio:pior_defesa", "premio", "pior_defesa", "Já teve a pior defesa do Brasileirão"),
@@ -570,22 +606,81 @@ HISTORICO_META: list[tuple[str, str, str, str]] = [
     ("longevidade:serie_a_20", "longevidade", "serie_a_20", "≥20 participações na Série A"),
     ("paridade:campeao_impar", "paridade", "campeao_impar", "Campeão do Brasileirão em ano ímpar"),
     ("paridade:campeao_par", "paridade", "campeao_par", "Campeão do Brasileirão em ano par"),
-    # Série B (Serie B.xlsx + goleadas)
-    *_meta_serie("serie_b", "Série B", com_stats=True, com_rebaixamento=True, longs=(5, 10)),
+    *_meta_serie("serie_b", "Série B", com_stats=True, com_rebaixamento=True, longs=(3, 4, 5, 6, 8, 10)),
     ("goleada:presente_serie_b", "goleada", "presente_serie_b", "Já esteve na maior goleada de uma edição da Série B"),
     ("goleada:aplicou_serie_b", "goleada", "aplicou_serie_b", "Já aplicou a maior goleada de uma edição da Série B"),
     ("goleada:sofreu_serie_b", "goleada", "sofreu_serie_b", "Já sofreu a maior goleada de uma edição da Série B"),
-    # Série C (classificações do xlsx local)
     *_meta_serie("serie_c", "Série C", com_stats=True, com_rebaixamento=True, longs=(5,)),
-    # Copa do Brasil (títulos + goleadas históricas)
     ("titulo:campeao_cdb", "titulo", "campeao_cdb", "Já foi campeão da Copa do Brasil"),
     ("titulo:vice_cdb", "titulo", "vice_cdb", "Já foi vice da Copa do Brasil"),
+    ("titulo:vice_cdb_sem_campeao", "titulo", "vice_cdb_sem_campeao", "Já foi vice e nunca campeão da Copa do Brasil"),
+    ("titulo:final_cdb", "titulo", "final_cdb", "Já foi à final da Copa do Brasil"),
+    ("titulo:nunca_campeao_cdb", "titulo", "nunca_campeao_cdb", "Nunca ganhou a Copa do Brasil"),
+    ("titulo:nunca_final_cdb", "titulo", "nunca_final_cdb", "Nunca foi à final da Copa do Brasil"),
+    ("titulo:campeao_cdb_sem_br", "titulo", "campeao_cdb_sem_br", "Campeão da Copa e nunca do Brasileirão"),
+    ("titulo:campeao_br_sem_cdb", "titulo", "campeao_br_sem_cdb", "Campeão do Brasileirão e nunca da Copa"),
     ("goleada:presente_cdb", "goleada", "presente_cdb", "Já esteve em uma das maiores goleadas da Copa do Brasil"),
     ("goleada:aplicou_cdb", "goleada", "aplicou_cdb", "Já aplicou uma das maiores goleadas da Copa do Brasil"),
     ("goleada:sofreu_cdb", "goleada", "sofreu_cdb", "Já sofreu uma das maiores goleadas da Copa do Brasil"),
 ]
 
 
+def _meta_dinamico(hist: dict[str, frozenset[str]]) -> list[tuple[str, str, str, str]]:
+    """Variantes com limiares/datas — só entram se o set existir e for denso o bastante."""
+    rows: list[tuple[str, str, str, str]] = []
+    for n in (2, 3, 4, 5):
+        cid = f"premio:rebaixado_{n}x"
+        if len(hist.get(cid) or ()) >= 4:
+            rows.append((cid, "premio", f"rebaixado_{n}x", f"≥{n} rebaixamentos da Série A"))
+    for dec in range(1970, 2030, 10):
+        for tag, rot in (("serie_a", "Série A"), ("serie_b", "Série B")):
+            cid = f"participacao:{tag}_dec_{dec}"
+            if len(hist.get(cid) or ()) >= 4:
+                # 1990 → "anos 90"; 2000 → "anos 2000"
+                label = f"anos {str(dec)[2:]}" if dec < 2000 else f"anos {dec}"
+                rows.append(
+                    (cid, "participacao", f"{tag}_dec_{dec}", f"Disputou a {rot} nos {label}")
+                )
+    for corte in (1988, 1995, 2003, 2010, 2015, 2020):
+        specs = (
+            (f"participacao:serie_a_antes_{corte}", f"Jogou a Série A antes de {corte}"),
+            (f"participacao:serie_a_desde_{corte}", f"Jogou a Série A em {corte} ou depois"),
+            (f"participacao:serie_a_so_desde_{corte}", f"Só jogou a Série A a partir de {corte}"),
+        )
+        for cid, rotulo in specs:
+            if len(hist.get(cid) or ()) >= 4:
+                rows.append((cid, "participacao", cid.split(":", 1)[1], rotulo))
+    for cid, membros in hist.items():
+        if not cid.startswith("participacao:serie_a_seq_"):
+            continue
+        if len(membros) < 4:
+            continue
+        _, resto = cid.split(":", 1)
+        # serie_a_seq_2024_2025
+        parts = resto.split("_")
+        if len(parts) < 4:
+            continue
+        inicio, fim = parts[2], parts[3]
+        if inicio == fim:
+            rotulo = f"Disputou a Série A em {inicio}"
+        else:
+            rotulo = f"Disputou a Série A de {inicio} a {fim}"
+        rows.append((cid, "participacao", resto, rotulo))
+    return rows
+
+
+@lru_cache(maxsize=1)
+def historico_meta() -> tuple[tuple[str, str, str, str], ...]:
+    """META base + variantes dinâmicas densas."""
+    hist = historico_serie_a()
+    return tuple(HISTORICO_META_BASE + _meta_dinamico(hist))
+
+
+# Compat: testes/código legado que iteram HISTORICO_META.
+HISTORICO_META = HISTORICO_META_BASE
+
+
 def limpar_caches_historico() -> None:
     historico_serie_a.cache_clear()
+    historico_meta.cache_clear()
     _indice_catalogo.cache_clear()

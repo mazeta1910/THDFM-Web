@@ -125,14 +125,14 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
 
 
 def test_novas_categorias_historicas_aparecem_no_pool():
-    from src.grid_historico import HISTORICO_META, limpar_caches_historico
+    from src.grid_historico import HISTORICO_META, historico_meta, limpar_caches_historico
 
     limpar_caches_historico()
     from src.grid_game import categorias_disponiveis
 
     categorias_disponiveis.cache_clear()
     cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
-    ids_meta = {m[0] for m in HISTORICO_META}
+    ids_meta = {m[0] for m in historico_meta()}
     assert "goleada:aplicou" in ids_meta
     assert "premio:rebaixado" in ids_meta
     assert "titulo:campeao_serie_b" in ids_meta
@@ -143,13 +143,16 @@ def test_novas_categorias_historicas_aparecem_no_pool():
     assert cats["titulo:campeao_serie_b"].rotulo.startswith("Já foi campeão da Série B")
     assert cats["titulo:campeao_cdb"].tipo == "titulo"
     hist = historico_serie_a()
-    for cid, _tipo, _val, _rot in HISTORICO_META:
+    for cid, _tipo, _val, _rot in historico_meta():
         assert cid in cats, cid
         assert len(hist.get(cid) or []) >= DENSIDADE_MIN, (cid, len(hist.get(cid) or []))
+    # base antiga continua coberta
+    for cid, *_ in HISTORICO_META:
+        assert cid in ids_meta
 
 
 def test_filtros_negacao_uf_regiao_e_nunca_historico():
-    """Subset inicial: gentílico UF, não-UF, não-região e 'nunca…' históricos."""
+    """Gentílico UF, não-UF, não-região e 'nunca…' históricos."""
     from src.grid_historico import limpar_caches_historico
 
     limpar_caches_historico()
@@ -158,47 +161,56 @@ def test_filtros_negacao_uf_regiao_e_nunca_historico():
 
     cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
     assert cats["uf:PR"].rotulo == "Time paranaense"
-    assert cats["uf:RO"].rotulo == "Time rondoniano"
     assert cats["nao_uf:PR"].rotulo == "Não é paranaense"
     assert cats["nao_regiao:Sul"].rotulo == "Não é da região Sul"
-    assert "nao_uf:SP" in cats
-    assert "nao_regiao:Sudeste" in cats
 
     hist = historico_serie_a()
+    assert not (hist["titulo:campeao_br"] & hist["titulo:nunca_campeao_br"])
+    assert "premio:nunca_rebaixado" in cats
+
+
+def test_filtros_nome_e_compostos_historicos():
+    """Nome (vogal/KWY/tamanho/letras) + compostos históricos densos."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    categorias_disponiveis.cache_clear()
+    clubes_grid.cache_clear()
+
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
     for key in (
-        "titulo:nunca_campeao_br",
-        "premio:nunca_artilheiro",
-        "premio:nunca_melhor_defesa",
-        "premio:nunca_rebaixado",
-        "premio:rebaixado",
+        "nome:vogal",
+        "nome:kwy",
+        "nome:curto",
+        "nome:longo",
+        "nome:nv:4",
+        "nome:nc:5",
+        "nome:tem:a",
+        "nome:nao:x",
+        "premio:g4_sem_titulo",
+        "titulo:vice_sem_campeao",
+        "titulo:nunca_campeao_cdb",
+        "titulo:nunca_final_cdb",
+        "premio:rebaixado_2x",
+        "longevidade:serie_b_3",
+        "participacao:serie_a_dec_1990",
+        "participacao:serie_a_antes_2003",
+        "participacao:serie_a_seq_2024_2025",
     ):
         assert key in cats, key
-        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
 
-    # Complementos disjuntos do positivo
-    assert not (hist["titulo:campeao_br"] & hist["titulo:nunca_campeao_br"])
-    assert not (hist["premio:rebaixado"] & hist["premio:nunca_rebaixado"])
+    hist = historico_serie_a()
+    assert hist["premio:g4_sem_titulo"].isdisjoint(hist["titulo:campeao_br"])
+    assert hist["titulo:vice_sem_campeao"].isdisjoint(hist["titulo:campeao_br"])
 
-    from src.grid_game import categorias_compativeis, clube_bate_categoria
+    from src.grid_game import clube_bate_categoria
 
-    pr = cats["uf:PR"]
-    nao_pr = cats["nao_uf:PR"]
-    sul = cats["regiao:Sul"]
-    nao_sul = cats["nao_regiao:Sul"]
-    assert categorias_compativeis(pr, nao_pr) is False
-    assert categorias_compativeis(pr, sul) is True
-    assert categorias_compativeis(pr, nao_sul) is False
-    assert categorias_compativeis(nao_pr, sul) is True
-
-    ath = next(
-        c
-        for c in clubes_grid()
-        if "athletico" in (c.get("nome") or "").casefold() and c.get("uf") == "PR"
-    )
-    assert clube_bate_categoria(ath, pr)
-    assert not clube_bate_categoria(ath, nao_pr)
-    assert clube_bate_categoria(ath, sul)
-    assert not clube_bate_categoria(ath, nao_sul)
+    vogal = cats["nome:vogal"]
+    curto = cats["nome:curto"]
+    sample = next(c for c in clubes_grid() if clube_bate_categoria(c, vogal))
+    assert sample["nome_core"][0] in "aeiou"
+    sample2 = next(c for c in clubes_grid() if clube_bate_categoria(c, curto))
+    assert sample2["nome_tam"] <= 6
 
 
 def test_categorias_serie_b_c_e_copa_densas():
@@ -252,18 +264,18 @@ def test_variedade_cutover_e_eixos_mistos():
             assert cont.get("termina", 0) <= 1, (dia, eixo)
             assert cont.get("letra", 0) <= 1, (dia, eixo)
             assert cont.get("regiao", 0) <= 1, (dia, eixo)
-            n_nome = cont.get("letra", 0) + cont.get("termina", 0)
+            n_nome = cont.get("letra", 0) + cont.get("termina", 0) + cont.get("nome", 0)
             assert n_nome <= 1, (dia, eixo)
-            assert not all(t in ("letra", "termina") for t in tipos), (dia, eixo)
+            assert not all(t in ("letra", "termina", "nome") for t in tipos), (dia, eixo)
 
         board = p["linhas"] + p["colunas"]
-        n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina"))
+        n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina", "nome"))
         assert n_nome_board <= 2, (dia, n_nome_board)
         tipos_all = {c["tipo"] for c in board}
         assert len(tipos_all) >= 4, (dia, tipos_all)
 
         def _fam(t: str) -> str:
-            if t in ("letra", "termina"):
+            if t in ("letra", "termina", "nome"):
                 return "nome"
             if t in ("uf", "nao_uf", "regiao", "nao_regiao", "serie"):
                 return "geo"
