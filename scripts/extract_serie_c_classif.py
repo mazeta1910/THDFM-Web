@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Extrai classificações finais da Série C (xlsx wiki dump) → CSV do Grid."""
+"""Extrai classificações finais da Série C (xlsx wiki dump) → CSV do Grid.
+
+Também anexa participantes da edição em andamento (lista do Serie C.CSV),
+sem estatísticas — só para participação/longevidade no Grid.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +15,25 @@ import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "torneios" / "Série C.xlsx"
+CSV_SRC = ROOT / "data" / "torneios" / "Serie C.CSV"
 OUT = ROOT / "data" / "torneios" / "classificacoes_serie_c.csv"
+
+FIELDS = [
+    "competicao",
+    "ano",
+    "posicao",
+    "n_clubes",
+    "nome",
+    "pts",
+    "j",
+    "v",
+    "e",
+    "d",
+    "gp",
+    "gc",
+    "sg",
+    "fonte_url",
+]
 
 
 def is_year(v) -> int | None:
@@ -43,7 +65,7 @@ def clean_name(v) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def main() -> None:
+def extract_xlsx_classif() -> list[dict]:
     wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
     rows = list(wb["Planilha1"].iter_rows(values_only=True))
     wb.close()
@@ -141,7 +163,6 @@ def main() -> None:
             and len({b["posicao"] for b in block}) == len(block)
             and all(b["nome"] and not b["nome"][0].isdigit() for b in block)
         )
-        # Exige estatística de gols na maioria (evita blocos só de mata-mata)
         with_stats = sum(1 for b in block if b["gp"] != "" and b["gc"] != "")
         if ok and with_stats >= max(4, len(block) // 2):
             n = max(b["posicao"] for b in block)
@@ -152,25 +173,77 @@ def main() -> None:
         else:
             print(f"SKIP {y} n={len(block)} stats={with_stats}")
         i = header_idx + 1
+    return out
 
-    fields = [
-        "competicao",
-        "ano",
-        "posicao",
-        "n_clubes",
-        "nome",
-        "pts",
-        "j",
-        "v",
-        "e",
-        "d",
-        "gp",
-        "gc",
-        "sg",
-        "fonte_url",
-    ]
+
+_UF_RE = re.compile(r"^[A-Z]{2}$")
+
+
+def extract_csv_participantes_ano(ano: int) -> list[dict]:
+    """Lista de participantes (sem pts) a partir do dump Serie C.CSV."""
+    if not CSV_SRC.is_file():
+        return []
+    text = CSV_SRC.read_text(encoding="latin-1")
+    rows = [list(csv.reader([ln], delimiter=";"))[0] for ln in text.splitlines()]
+    start = None
+    for i, r in enumerate(rows):
+        if r and is_year(r[0]) == ano:
+            start = i
+            break
+    if start is None:
+        return []
+    nomes: list[str] = []
+    for r in rows[start + 1 :]:
+        if r and is_year(r[0]):
+            break
+        if len(r) < 3:
+            continue
+        nome = clean_name(r[0])
+        uf = (r[2] or "").replace("\xa0", " ").strip().upper()
+        # Linha de participante: Clube ; Cidade ; UF ; …
+        if not nome or not _UF_RE.match(uf):
+            continue
+        if nome.isdigit():
+            continue
+        nomes.append(nome)
+    out: list[dict] = []
+    n = len(nomes)
+    for i, nome in enumerate(nomes, start=1):
+        out.append(
+            {
+                "competicao": "serie_c",
+                "ano": ano,
+                "posicao": i,
+                "n_clubes": n,
+                "nome": nome,
+                "pts": "",
+                "j": "",
+                "v": "",
+                "e": "",
+                "d": "",
+                "gp": "",
+                "gc": "",
+                "sg": "",
+                "fonte_url": "",
+            }
+        )
+    return out
+
+
+def main() -> None:
+    out = extract_xlsx_classif()
+    anos_com_tabela = {int(r["ano"]) for r in out}
+    # Anexa edições listadas no CSV sem tabela final (ex.: 2026 em andamento)
+    for ano in range(2026, 2031):
+        if ano in anos_com_tabela:
+            continue
+        part = extract_csv_participantes_ano(ano)
+        if len(part) >= 16:
+            out.extend(part)
+            print(f"PARTICIPANTES {ano}: {len(part)} (sem estatísticas)")
+            print("  " + ", ".join(p["nome"] for p in part))
     with OUT.open("w", encoding="utf-8-sig", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields, delimiter=";")
+        w = csv.DictWriter(f, fieldnames=FIELDS, delimiter=";")
         w.writeheader()
         w.writerows(out)
     print(f"wrote {OUT} rows={len(out)} anos={len({r['ano'] for r in out})}")

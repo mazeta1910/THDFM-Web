@@ -256,6 +256,8 @@ def _agregar_classificacao(
             ano = _to_int(row.get("ano"))
             pos = _to_int(row.get("posicao"))
             n_clubes = _to_int(row.get("n_clubes")) or 0
+            pts = _to_int(row.get("pts"))
+            j_jogos = _to_int(row.get("j"))
             gp = _to_int(row.get("gp"))
             gc = _to_int(row.get("gc"))
             v = _to_int(row.get("v"))
@@ -265,6 +267,15 @@ def _agregar_classificacao(
                 continue
             out["particip"].add(fid)
             anos_por.setdefault(fid, set()).add(ano)
+            # Temporada ainda sem tabela (só lista de participantes): conta
+            # participação/longevidade, mas não inventa campeão/G4/rebaixamento.
+            temporada_com_resultado = (
+                pts is not None
+                or j_jogos is not None
+                or (gp is not None and gc is not None)
+            )
+            if not temporada_com_resultado:
+                continue
             if pos == 1:
                 out["campeao"].add(fid)
                 if com_paridade:

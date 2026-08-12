@@ -273,7 +273,7 @@ def test_filtros_nome_e_compostos_historicos():
 
 def test_categorias_serie_b_c_e_copa_densas():
     """Categorias B/C/Copa vêm dos CSV/XLSX locais em data/torneios (sem scrape)."""
-    from src.grid_historico import limpar_caches_historico
+    from src.grid_historico import limpar_caches_historico, resolver_clube_fm
 
     limpar_caches_historico()
     hist = historico_serie_a()
@@ -300,6 +300,24 @@ def test_categorias_serie_b_c_e_copa_densas():
     assert "titulo:campeao_serie_d" not in hist
     assert hist["longevidade:cdb_5"] <= hist["participacao:cdb"]
     assert hist["longevidade:cdb_le_3"] <= hist["participacao:cdb"]
+
+    # Série C 2026 (em andamento) entra só como participação — Barra-SC
+    # nunca jogou a B e tem ≤3 na C (estreante em 2026).
+    barra = resolver_clube_fm("Barra-SC")
+    assert barra is not None
+    fid = barra["id"]
+    assert fid in hist["participacao:serie_c"]
+    assert fid in hist["participacao:nunca_serie_b"]
+    assert fid in hist["longevidade:serie_c_le_3"]
+    assert fid not in hist["titulo:campeao_serie_c"]
+    from src.grid_game import categorias_disponiveis, pool_celula
+
+    categorias_disponiveis.cache_clear()
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    pool = pool_celula(
+        cats["participacao:nunca_serie_b"], cats["longevidade:serie_c_le_3"]
+    )
+    assert any(c["id"] == fid for c in pool), [c["nome"] for c in pool if "Barra" in c["nome"]]
 
 
 def test_variedade_cutover_e_eixos_mistos():
