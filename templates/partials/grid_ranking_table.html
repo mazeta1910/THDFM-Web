@@ -1,5 +1,7 @@
 {# Ranking do THDFM Grid (tabela reutilizável). #}
 {% from "macros/avatar.html" import avatar %}
+{% set dias_totais = dias_totais|default(1) %}
+{% set celulas_dia = 9 %}
 <div class="card grid-rank-card">
   {% if linhas %}
   <div class="table-wrap">
@@ -17,6 +19,13 @@
       </thead>
       <tbody>
         {% for r in linhas %}
+        {% set dias_jogados = r.dias_finalizados or 0 %}
+        {% set celulas_ok = r.celulas_ok or 0 %}
+        {% set celulas_max = (dias_jogados * celulas_dia) if dias_jogados else celulas_dia %}
+        {% set dias_pct_raw = ((100 * dias_jogados) // dias_totais) if dias_totais else 0 %}
+        {% set dias_pct = 100 if dias_pct_raw > 100 else dias_pct_raw %}
+        {% set acertos_pct_raw = ((100 * celulas_ok) // celulas_max) if celulas_max else 0 %}
+        {% set acertos_pct = 100 if acertos_pct_raw > 100 else acertos_pct_raw %}
         <tr
           class="zona-{{ r.zona or 'meio' }}{% if r.posicao > 5 %} grid-rank-extra{% endif %}"
           {% if r.posicao > 5 %}hidden{% endif %}
@@ -36,10 +45,30 @@
               <span class="grid-rank-nome">{{ r.nome }}</span>
             </a>
           </td>
-          <td class="num" data-sort-value="{{ r.dias_finalizados }}">{{ r.dias_finalizados }}</td>
-          <td class="num" data-sort-value="{{ r.celulas_ok }}">{{ r.celulas_ok }}</td>
+          <td class="num" data-sort-value="{{ dias_jogados }}">
+            <span class="grid-rank-meter" title="{{ dias_jogados }} de {{ dias_totais }} dias">
+              <span class="grid-rank-meter-label">{{ dias_jogados }}/{{ dias_totais }}</span>
+              <span class="grid-rank-meter-bar" aria-hidden="true">
+                <span class="grid-rank-meter-fill" style="width: {{ dias_pct }}%"></span>
+              </span>
+            </span>
+          </td>
+          <td class="num" data-sort-value="{{ celulas_ok }}">
+            <span class="grid-rank-meter" title="{{ celulas_ok }} de {{ celulas_max }} células">
+              <span class="grid-rank-meter-label">{{ celulas_ok }}/{{ celulas_max }}</span>
+              <span class="grid-rank-meter-bar" aria-hidden="true">
+                <span class="grid-rank-meter-fill" style="width: {{ acertos_pct }}%"></span>
+              </span>
+            </span>
+          </td>
           <td class="num" data-sort-value="{{ r.taxa }}">{{ r.taxa }}%</td>
-          <td class="num" data-sort-value="{{ r.streak }}">{{ r.streak }}</td>
+          <td class="num" data-sort-value="{{ r.streak }}">
+            {% if r.streak and r.streak > 0 %}
+            <span class="grid-rank-streak-pos" title="Streak positivo">+{{ r.streak }}</span>
+            {% else %}
+            {{ r.streak or 0 }}
+            {% endif %}
+          </td>
           <td class="num" data-sort-value="{{ r.pontos_rep or 0 }}">{{ r.pontos_rep or 0 }}</td>
         </tr>
         {% endfor %}

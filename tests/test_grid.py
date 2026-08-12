@@ -19,6 +19,7 @@ from src.grid_game import (
     clubes_grid,
     clubes_por_id,
     dia_grid,
+    dias_totais_grid,
     gerar_puzzle,
     historico_ativo,
     ms_ate_proxima_virada,
@@ -894,13 +895,46 @@ def test_grid_zerar_ranking_botao_so_mazeta(client: TestClient):
     r_maz = client.get("/grid")
     assert r_maz.status_code == 200
     assert "data-grid-rank-zerar" in r_maz.text
+    assert "grid-rank-title-row" in r_maz.text
     assert "Zerar ranking do Grid" in r_maz.text
+    # Lixeira fica na mesma linha do título (não solta no header)
+    assert r_maz.text.index("grid-rank-title-row") < r_maz.text.index("data-grid-rank-zerar")
     ok = client.post("/grid/api/admin/zerar-ranking")
     assert ok.status_code == 200
     body = ok.json()
     assert body["ok"] is True
     assert body["apagados"] >= 1
     assert dbmod.ranking_grid() == []
+
+
+def test_dias_totais_grid():
+    assert dias_totais_grid("2026-08-10") == 0
+    assert dias_totais_grid("2026-08-11") == 1
+    assert dias_totais_grid("2026-08-12") == 2
+    assert dias_totais_grid("2026-08-20") == 10
+
+
+def test_grid_ranking_barras_e_streak_positivo(client: TestClient):
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Rank Barras", status="liberado", celular="11991112299")
+    # 4 acertos em 9 células, dia finalizado
+    cells = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
+    for i in range(3):
+        for j in range(3):
+            if i * 3 + j >= 4:
+                cells[i][j] = {"clube": str(i * 3 + j), "ok": False, "rep": 50}
+    dbmod.salvar_grid_progresso(part["id"], dia_grid(), cells, finalizado=True)
+    dbmod.definir_credenciais(part["id"], "rank.barras.user", "senha12345")
+    client.get(f"/p/{part['token']}")
+    r = client.get("/grid")
+    assert r.status_code == 200
+    assert "grid-rank-meter" in r.text
+    assert "4/9" in r.text
+    assert "grid-rank-streak-pos" in r.text
+    assert f'+{dbmod.grid_streak(part["id"])}' in r.text or "+1" in r.text
+    tot = dias_totais_grid(dia_grid())
+    assert f"1/{tot}" in r.text
 
 
 def test_chute_errado_marca_miss():

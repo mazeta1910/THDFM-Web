@@ -40,6 +40,19 @@ GRID_HISTORICO_DESDE = "2026-08-11"
 # Gerador com variedade de tipos (v3). Dias anteriores ao cutover mantêm v1/v2.
 # Regeneração admin (salt) em dia histórico também usa v3.
 GRID_VARIEDADE_DESDE = "2026-08-12"
+# Células por puzzle diário (3×3) — usado em barras do ranking.
+GRID_CELULAS_POR_DIA = 9
+
+
+def dias_totais_grid(ate: str | None = None) -> int:
+    """Dias de calendário do Grid desde GRID_HISTORICO_DESDE até ate (inclusive)."""
+    fim = date.fromisoformat(ate or dia_grid())
+    ini = date.fromisoformat(GRID_HISTORICO_DESDE)
+    if fim < ini:
+        return 0
+    return (fim - ini).days + 1
+
+
 _TIPOS_HISTORICOS = frozenset(
     {"titulo", "premio", "participacao", "longevidade", "paridade", "goleada"}
 )
