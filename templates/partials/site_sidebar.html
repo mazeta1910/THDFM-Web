@@ -89,7 +89,7 @@
       {% if guest %}
       <details class="site-menu-group site-menu-group--acesso" data-group="acesso" open>
         <summary class="site-menu-summary">
-          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('acesso', 13) }}<span>Acesso</span>
         </summary>
         <div class="site-menu-items">
@@ -102,7 +102,7 @@
       {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
       <details class="site-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking %}open{% endif %}>
         <summary class="site-menu-summary">
-          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
         </summary>
         <div class="site-menu-items">
@@ -113,7 +113,7 @@
 
       <details class="site-menu-group" data-group="bolao" open>
         <summary class="site-menu-summary">
-          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('meu-bolao', 13) }}<span>Bolão CdB</span>
         </summary>
         <div class="site-menu-items">
@@ -136,7 +136,7 @@
       {% if liberado_ok or (participante_nav and participante_nav.status == 'liberado') %}
       <details class="site-menu-group" data-group="grupo-whatsapp" open>
         <summary class="site-menu-summary">
-          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span>
         </summary>
         <div class="site-menu-items">
@@ -158,7 +158,7 @@
       {% if guest %}
       <details class="site-menu-group site-menu-group--marlon" data-group="marlon" open>
         <summary class="site-menu-summary">
-          <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('admin', 13) }}<span>Marlon <span class="marlon-sobrenome" data-marlon-sobrenome>Wietzikowski</span></span>
         </summary>
         <div class="site-menu-items">

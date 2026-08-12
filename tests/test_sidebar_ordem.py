@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import json
+import re
 
 from fastapi.testclient import TestClient
 
 from src import db as dbmod
 from src.config import ROOT_DIR
 from tests.conftest import login_admin
+
+
+def _chrome_js() -> str:
+    return (ROOT_DIR / "static" / "site-chrome.js").read_text(encoding="utf-8")
 
 
 def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
@@ -29,18 +34,46 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     # Hall aparece antes do Portal no markup
     assert html.index("site-hall-lendas") < html.index('data-group="portal"')
     assert html.index('data-group="portal"') < html.index("data-menu-sortable")
-    js = (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    js = _chrome_js()
     assert "initSidebarSortable" in js
     assert "thdfm-sidebar-ordem-v1" in js
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".site-hall-lendas" in css
     assert ".site-menu-drag" in css
+    assert "touch-action: none" in css
     assert ".hall-lendas-page" in css
     side = (ROOT_DIR / "templates" / "partials" / "site_sidebar.html").read_text(
         encoding="utf-8"
     )
     assert 'href="/hall-lendas"' in side
     assert "Em breve" not in side
+
+
+def test_sidebar_sortable_usa_pointer_events_para_mobile():
+    """HTML5 DnD falha no toque; o menu precisa de Pointer Events + captura."""
+    js = _chrome_js()
+    assert "addEventListener(\"pointerdown\"" in js or "addEventListener('pointerdown'" in js
+    assert "pointermove" in js
+    assert "pointerup" in js
+    assert "pointercancel" in js
+    assert "setPointerCapture" in js
+    assert "touch-action" not in js  # fica no CSS do handle
+    # Não depende do drag nativo no mobile
+    assert 'setAttribute("draggable", "false")' in js or "draggable\", \"false\"" in js
+    assert "reorderAt" in js or "insertBefore(dragging" in js
+
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    drag_block = css.split(".site-menu-drag {", 1)[1].split("}", 1)[0]
+    assert "touch-action: none" in drag_block
+    assert "-webkit-user-drag: none" in drag_block
+
+    for name in ("site_sidebar.html", "admin_sidebar.html"):
+        html = (ROOT_DIR / "templates" / "partials" / name).read_text(encoding="utf-8")
+        assert 'class="site-menu-drag"' in html
+        assert 'draggable="false"' in html
+        assert not re.search(
+            r'class="site-menu-drag"[^>]*draggable="true"', html
+        )
 
 
 def test_sidebar_ordem_api_e_persistencia(client: TestClient):
@@ -85,3 +118,4 @@ def test_admin_sidebar_admin_fixo_e_sortable(client: TestClient):
     assert "data-menu-sortable" in html
     assert html.index('data-group="admin"') < html.index("data-menu-sortable")
     assert "site-menu-drag" in html
+    assert 'draggable="false"' in html
