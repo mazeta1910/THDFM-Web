@@ -239,3 +239,31 @@
     carregar(dia);
   });
 })();
+
+(() => {
+  const btn = document.querySelector("[data-grid-rank-zerar]");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    if (btn.disabled) return;
+    const ok = window.confirm(
+      "Zerar todo o ranking do Grid?\nIsso apaga progresso, streaks e placares de todos os jogadores."
+    );
+    if (!ok) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch("/grid/api/admin/zerar-ranking", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.erro || "Não foi possível zerar o ranking");
+      }
+      window.location.reload();
+    } catch (err) {
+      btn.disabled = false;
+      window.alert(err.message || "Erro ao zerar ranking");
+    }
+  });
+})();

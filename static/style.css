@@ -12862,7 +12862,7 @@ button.grid-daltonismo-btn:hover,
 .grid-rank-inline-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem 1rem;
 }
@@ -12871,6 +12871,38 @@ button.grid-daltonismo-btn:hover,
   font-size: clamp(1.35rem, 3vw, 1.75rem);
   font-weight: 900;
   line-height: 1.15;
+}
+.grid-rank-zerar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  line-height: 0;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.grid-rank-zerar:hover,
+.grid-rank-zerar:focus-visible {
+  color: #b42318;
+  border-color: color-mix(in srgb, #b42318 45%, var(--border));
+  background: color-mix(in srgb, #b42318 8%, var(--bg));
+  outline: none;
+}
+.grid-rank-zerar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.grid-rank-zerar svg {
+  display: block;
 }
 .grid-share-btn {
   display: inline-flex;
