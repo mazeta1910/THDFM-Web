@@ -478,6 +478,9 @@ _PARES_COMPLEMENTO_HIST = frozenset(
         frozenset({"premio:rebaixado", "premio:nunca_rebaixado"}),
         frozenset({"titulo:campeao_cdb", "titulo:nunca_campeao_cdb"}),
         frozenset({"titulo:final_cdb", "titulo:nunca_final_cdb"}),
+        frozenset({"participacao:serie_a", "participacao:nunca_serie_a"}),
+        frozenset({"participacao:serie_b", "participacao:nunca_serie_b"}),
+        frozenset({"participacao:serie_c", "participacao:nunca_serie_c"}),
         frozenset({"titulo:campeao_br", "premio:g4_sem_titulo"}),
         frozenset({"titulo:campeao_br", "titulo:vice_sem_campeao"}),
         frozenset({"titulo:campeao_cdb", "titulo:vice_cdb_sem_campeao"}),
@@ -486,6 +489,47 @@ _PARES_COMPLEMENTO_HIST = frozenset(
     }
 )
 
+_NUNCA_SERIE_RE = re.compile(r"^participacao:nunca_(serie_[abc])$")
+
+
+def _implica_participacao_serie(cat_id: str, tag: str) -> bool:
+    """True se a categoria só faz sentido para quem já jogou aquela série."""
+    if cat_id.startswith(f"participacao:nunca_{tag}"):
+        return False
+    if cat_id.startswith(f"participacao:{tag}"):
+        return True
+    if cat_id.startswith(f"longevidade:{tag}"):
+        return True
+    # título/prêmio/goleada específicos da série (…_serie_b) ou Série A “solta”
+    if tag == "serie_a":
+        if cat_id.startswith(
+            (
+                "titulo:campeao_br",
+                "titulo:vice_br",
+                "titulo:vice_sem_campeao",
+                "titulo:nunca_campeao_br",
+                "premio:g4",
+                "premio:melhor_",
+                "premio:pior_defesa",
+                "premio:artilheiro",
+                "premio:lanterna",
+                "premio:mais_",
+                "premio:rebaixado",
+                "premio:nunca_",
+                "goleada:presente",
+                "goleada:aplicou",
+                "goleada:sofreu",
+                "paridade:",
+            )
+        ) and "_serie_b" not in cat_id and "_serie_c" not in cat_id and "_cdb" not in cat_id:
+            # nunca_rebaixado etc. ainda pressupõem histórico de A? "Nunca rebaixado" includes never played A
+            if cat_id.startswith("premio:nunca_") or cat_id.startswith("titulo:nunca_"):
+                return False
+            return True
+        return False
+    suf = f"_{tag}"
+    return suf in cat_id
+
 
 def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     """False quando a interseção é logicamente impossível."""
@@ -493,6 +537,10 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         return False
     if frozenset({a.id, b.id}) in _PARES_COMPLEMENTO_HIST:
         return False
+    for cat_n, cat_o in ((a, b), (b, a)):
+        m = _NUNCA_SERIE_RE.match(cat_n.id)
+        if m and _implica_participacao_serie(cat_o.id, m.group(1)):
+            return False
     # Terminações: letras/sílabas distintas só cruzam se uma for sufixo da outra
     # (ex.: ense ∩ e; eiro ∩ iro). Caso contrário, vazio.
     if a.tipo == "termina" and b.tipo == "termina":

@@ -196,12 +196,18 @@ def test_filtros_nome_e_compostos_historicos():
         "longevidade:serie_a_le_5",
         "longevidade:serie_b_le_3",
         "longevidade:serie_c_le_3",
+        "participacao:nunca_serie_a",
+        "participacao:nunca_serie_b",
+        "participacao:nunca_serie_c",
         "participacao:serie_a_dec_1990",
         "participacao:serie_a_antes_2003",
         "participacao:serie_a_seq_2024_2025",
     ):
         assert key in cats, key
 
+    assert cats["participacao:nunca_serie_a"].rotulo == "Nunca jogou a Série A"
+    assert cats["participacao:nunca_serie_b"].rotulo == "Nunca jogou a Série B"
+    assert cats["participacao:nunca_serie_c"].rotulo == "Nunca jogou a Série C"
     assert cats["participacao:serie_a_seq_2024_2025"].rotulo == (
         "Jogou a Série A em todos os anos de 2024 a 2025"
     )
@@ -212,8 +218,26 @@ def test_filtros_nome_e_compostos_historicos():
     hist = historico_serie_a()
     assert hist["premio:g4_sem_titulo"].isdisjoint(hist["titulo:campeao_br"])
     assert hist["titulo:vice_sem_campeao"].isdisjoint(hist["titulo:campeao_br"])
+    assert not (hist["participacao:serie_a"] & hist["participacao:nunca_serie_a"])
+    assert not (hist["participacao:serie_b"] & hist["participacao:nunca_serie_b"])
+    assert not (hist["participacao:serie_c"] & hist["participacao:nunca_serie_c"])
+    assert len(hist["participacao:nunca_serie_a"]) >= DENSIDADE_MIN
+    assert len(hist["participacao:nunca_serie_c"]) >= DENSIDADE_MIN
 
-    from src.grid_game import clube_bate_categoria
+    from src.grid_game import categorias_compativeis, clube_bate_categoria
+
+    assert (
+        categorias_compativeis(
+            cats["participacao:nunca_serie_a"], cats["participacao:serie_a"]
+        )
+        is False
+    )
+    assert (
+        categorias_compativeis(
+            cats["participacao:nunca_serie_b"], cats["longevidade:serie_b_3"]
+        )
+        is False
+    )
 
     vogal = cats["nome:vogal"]
     curto = cats["nome:curto"]

@@ -543,6 +543,9 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
         ("premio:rebaixado", "premio:nunca_rebaixado"),
         ("titulo:campeao_cdb", "titulo:nunca_campeao_cdb"),
         ("titulo:final_cdb", "titulo:nunca_final_cdb"),
+        ("participacao:serie_a", "participacao:nunca_serie_a"),
+        ("participacao:serie_b", "participacao:nunca_serie_b"),
+        ("participacao:serie_c", "participacao:nunca_serie_c"),
     )
     for pos_id, neg_id in pares:
         pos = out.get(pos_id) or frozenset()
@@ -579,6 +582,12 @@ def _meta_serie(
         (f"titulo:vice_{tag}", "titulo", f"vice_{tag}", f"Já foi vice da {rotulo}"),
         (f"premio:g4_{tag}", "premio", f"g4_{tag}", f"Já ficou no G4 da {rotulo}"),
         (f"participacao:{tag}", "participacao", tag, f"Já disputou a {rotulo}"),
+        (
+            f"participacao:nunca_{tag}",
+            "participacao",
+            f"nunca_{tag}",
+            f"Nunca jogou a {rotulo}",
+        ),
     ]
     if com_stats:
         rows.extend(
@@ -635,6 +644,12 @@ HISTORICO_META_BASE: list[tuple[str, str, str, str]] = [
     ("goleada:aplicou", "goleada", "aplicou", "Já aplicou a maior goleada de uma edição da Série A"),
     ("goleada:sofreu", "goleada", "sofreu", "Já sofreu a maior goleada de uma edição da Série A"),
     ("participacao:serie_a", "participacao", "serie_a", "Já disputou a Série A"),
+    (
+        "participacao:nunca_serie_a",
+        "participacao",
+        "nunca_serie_a",
+        "Nunca jogou a Série A",
+    ),
     ("longevidade:serie_a_5", "longevidade", "serie_a_5", "≥5 participações na Série A"),
     ("longevidade:serie_a_10", "longevidade", "serie_a_10", "≥10 participações na Série A"),
     ("longevidade:serie_a_15", "longevidade", "serie_a_15", "≥15 participações na Série A"),
