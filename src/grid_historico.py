@@ -419,21 +419,19 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
     out["goleada:aplicou"] = frozenset(g_a[1])
     out["goleada:sofreu"] = frozenset(g_a[2])
 
-    # Série B — dump local só traz top 4 (Detalhes); sem tabela completa → sem stats/rebaixamento
+    # Série B — tabelas completas de data/torneios/Serie B.xlsx
     if CLASSIF_B_CSV.is_file():
         agg_b = _agregar_classificacao(
             CLASSIF_B_CSV,
             competicao="serie_b",
-            com_stats=False,
-            com_rebaixamento=False,
-            long_anos=(),
+            com_stats=True,
+            com_rebaixamento=True,
+            long_anos=(5, 10),
         )
         out.update(
-            {
-                "titulo:campeao_serie_b": frozenset(agg_b["campeao"]),
-                "titulo:vice_serie_b": frozenset(agg_b["vice"]),
-                "premio:g4_serie_b": frozenset(agg_b["g4"]),
-            }
+            _mapear_serie(
+                agg_b, tag="serie_b", com_stats=True, com_rebaixamento=True
+            )
         )
     g_b = _carregar_goleadas_por_competicao(
         GOLEADAS_LIGAS_CSV if GOLEADAS_LIGAS_CSV.is_file() else GOLEADAS_CSV,
@@ -517,10 +515,8 @@ HISTORICO_META: list[tuple[str, str, str, str]] = [
     ("longevidade:serie_a_20", "longevidade", "serie_a_20", "≥20 participações na Série A"),
     ("paridade:campeao_impar", "paridade", "campeao_impar", "Campeão do Brasileirão em ano ímpar"),
     ("paridade:campeao_par", "paridade", "campeao_par", "Campeão do Brasileirão em ano par"),
-    # Série B (top 4 + goleadas do Goleadas.xlsx local)
-    ("titulo:campeao_serie_b", "titulo", "campeao_serie_b", "Já foi campeão da Série B"),
-    ("titulo:vice_serie_b", "titulo", "vice_serie_b", "Já foi vice da Série B"),
-    ("premio:g4_serie_b", "premio", "g4_serie_b", "Já ficou no G4 da Série B"),
+    # Série B (Serie B.xlsx + goleadas)
+    *_meta_serie("serie_b", "Série B", com_stats=True, com_rebaixamento=True, longs=(5, 10)),
     ("goleada:presente_serie_b", "goleada", "presente_serie_b", "Já esteve na maior goleada de uma edição da Série B"),
     ("goleada:aplicou_serie_b", "goleada", "aplicou_serie_b", "Já aplicou a maior goleada de uma edição da Série B"),
     ("goleada:sofreu_serie_b", "goleada", "sofreu_serie_b", "Já sofreu a maior goleada de uma edição da Série B"),

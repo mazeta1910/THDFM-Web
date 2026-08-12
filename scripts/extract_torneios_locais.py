@@ -2,7 +2,7 @@
 """Extrai dados do Grid a partir dos arquivos locais em data/torneios/ (sem scrape).
 
 Fontes:
-- Brasileirao Serie B.CSV → campeão/vice/3º/4º (linhas Detalhes)
+- Serie B.xlsx → classificações completas (via extract_serie_b_from_xlsx)
 - Série C.xlsx / Serie C.CSV → classificações finais (via extract_serie_c_classif)
 - Copa do Brasil.CSV → campeões e vices
 - Goleadas.xlsx → goleadas Série A/B e Copa do Brasil
@@ -32,53 +32,11 @@ def _clean(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def extract_serie_b_top4() -> Path:
-    """Linhas Detalhes do dump wiki local → posições 1–4 por ano."""
-    src = TORNEIOS / "Brasileirao Serie B.CSV"
-    lines = src.read_text(encoding="latin-1").splitlines()
-    rows: list[dict] = []
-    for i, line in enumerate(lines):
-        if not re.match(r"^(19|20)\d{2};", line):
-            continue
-        if "Não disputado" in line:
-            continue
-        ano = int(line.split(";", 1)[0][:4])
-        detalhes = None
-        for j in range(i + 1, min(i + 4, len(lines))):
-            cells = lines[j].split(";")
-            if cells and cells[0].strip() == "Detalhes":
-                detalhes = cells
-                break
-        if not detalhes or len(detalhes) < 6:
-            continue
-        nomes = [_clean(detalhes[k]) for k in (1, 3, 4, 5)]
-        if not nomes[0]:
-            continue
-        for pos, nome in enumerate(nomes, start=1):
-            if not nome:
-                continue
-            rows.append(
-                {
-                    "competicao": "serie_b",
-                    "ano": ano,
-                    "posicao": pos,
-                    "n_clubes": 4,
-                    "nome": nome,
-                    "pts": "",
-                    "j": "",
-                    "v": "",
-                    "e": "",
-                    "d": "",
-                    "gp": "",
-                    "gc": "",
-                    "sg": "",
-                    "fonte_url": "",
-                }
-            )
-    out = TORNEIOS / "classificacoes_serie_b.csv"
-    _write(out, rows)
-    print(f"Série B top4: {len(rows)} linhas, {len({r['ano'] for r in rows})} anos → {out.name}")
-    return out
+def extract_serie_b() -> Path:
+    """Serie B.xlsx → classificações finais confiáveis."""
+    script = ROOT / "scripts" / "extract_serie_b_from_xlsx.py"
+    subprocess.check_call([sys.executable, str(script)])
+    return TORNEIOS / "classificacoes_serie_b.csv"
 
 
 def extract_copa_campeoes() -> Path:
@@ -235,14 +193,14 @@ def _write_dict(path: Path, rows: list[dict]) -> None:
 
 
 def main() -> None:
-    extract_serie_b_top4()
+    extract_serie_b()
     # Série C: reusa extrator do xlsx local
     c_script = ROOT / "scripts" / "extract_serie_c_classif.py"
     if c_script.is_file():
         subprocess.check_call([sys.executable, str(c_script)])
     extract_copa_campeoes()
     extract_goleadas()
-    print("OK — tudo a partir de data/torneios/ local (sem Wikipedia).")
+    print("OK — tudo a partir de data/torneios/ local (sem scrape).")
 
 
 if __name__ == "__main__":
