@@ -609,6 +609,35 @@ def _migrate_hall_lendas(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
+    """Reports de bugs do Grid — usuário envia; Mazeta responde/atualiza status."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bug_reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          titulo TEXT NOT NULL,
+          mensagem TEXT NOT NULL,
+          imagem_path TEXT,
+          status TEXT NOT NULL DEFAULT 'aberto',
+          resposta TEXT NOT NULL DEFAULT '',
+          respondido_em TEXT,
+          usuario_leu_resposta INTEGER NOT NULL DEFAULT 1,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_bug_reports_part "
+        "ON bug_reports(participante_id, criado_em DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_bug_reports_status "
+        "ON bug_reports(status, atualizado_em DESC)"
+    )
+
+
 def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
     """Zera o progresso do Grid uma vez — lançamento público (ranking do zero)."""
     chave = "grid_progresso_reset_v1"
@@ -637,6 +666,7 @@ def init_db() -> None:
         _migrate_grid_progresso(conn)
         _migrate_grid_puzzle_salt(conn)
         _migrate_hall_lendas(conn)
+        _migrate_bug_reports(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
@@ -5250,3 +5280,230 @@ def list_participantes_liberados() -> list[dict[str, Any]]:
             """
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+BUG_STATUS_OK = frozenset({"aberto", "em_analise", "resolvido"})
+
+
+def _bug_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    d = dict(row)
+    d["usuario_leu_resposta"] = bool(d.get("usuario_leu_resposta"))
+    return d
+
+
+def criar_bug_report(
+    participante_id: int,
+    *,
+    titulo: str,
+    mensagem: str,
+    imagem_path: str | None = None,
+) -> dict[str, Any]:
+    titulo = re.sub(r"\s+", " ", (titulo or "").strip())
+    mensagem = (mensagem or "").strip()
+    if not titulo:
+        raise ValueError("Informe o título")
+    if len(titulo) > 120:
+        raise ValueError("Título com no máximo 120 caracteres")
+    if not mensagem:
+        raise ValueError("Escreva a mensagem do bug")
+    if len(mensagem) > 4000:
+        raise ValueError("Mensagem com no máximo 4000 caracteres")
+    img = (imagem_path or "").strip() or None
+    if img and ("/" in img or "\\" in img or ".." in img):
+        raise ValueError("Imagem inválida")
+    with get_db() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO bug_reports
+              (participante_id, titulo, mensagem, imagem_path, status, usuario_leu_resposta)
+            VALUES (?, ?, ?, ?, 'aberto', 1)
+            """,
+            (int(participante_id), titulo, mensagem, img),
+        )
+        rid = int(cur.lastrowid)
+        row = conn.execute(
+            "SELECT * FROM bug_reports WHERE id = ?", (rid,)
+        ).fetchone()
+    out = _bug_row(row)
+    assert out is not None
+    return out
+
+
+def listar_bug_reports_usuario(participante_id: int) -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM bug_reports
+            WHERE participante_id = ?
+            ORDER BY criado_em DESC, id DESC
+            """,
+            (int(participante_id),),
+        ).fetchall()
+    return [_bug_row(r) for r in rows if r]  # type: ignore[misc]
+
+
+def listar_bug_reports_admin(*, status: str | None = None) -> list[dict[str, Any]]:
+    st = (status or "").strip().lower() or None
+    if st and st not in BUG_STATUS_OK:
+        st = None
+    with get_db() as conn:
+        if st:
+            rows = conn.execute(
+                """
+                SELECT b.*, p.nome AS autor_nome, p.username AS autor_username,
+                       p.avatar_path AS autor_avatar
+                FROM bug_reports b
+                JOIN participantes p ON p.id = b.participante_id
+                WHERE b.status = ?
+                ORDER BY
+                  CASE b.status
+                    WHEN 'aberto' THEN 0
+                    WHEN 'em_analise' THEN 1
+                    ELSE 2
+                  END,
+                  b.atualizado_em DESC,
+                  b.id DESC
+                """,
+                (st,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT b.*, p.nome AS autor_nome, p.username AS autor_username,
+                       p.avatar_path AS autor_avatar
+                FROM bug_reports b
+                JOIN participantes p ON p.id = b.participante_id
+                ORDER BY
+                  CASE b.status
+                    WHEN 'aberto' THEN 0
+                    WHEN 'em_analise' THEN 1
+                    ELSE 2
+                  END,
+                  b.atualizado_em DESC,
+                  b.id DESC
+                """
+            ).fetchall()
+    return [_bug_row(r) for r in rows if r]  # type: ignore[misc]
+
+
+def get_bug_report(report_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT b.*, p.nome AS autor_nome, p.username AS autor_username,
+                   p.avatar_path AS autor_avatar
+            FROM bug_reports b
+            JOIN participantes p ON p.id = b.participante_id
+            WHERE b.id = ?
+            """,
+            (int(report_id),),
+        ).fetchone()
+    return _bug_row(row)
+
+
+def atualizar_bug_report_admin(
+    report_id: int,
+    *,
+    status: str,
+    resposta: str | None = None,
+) -> dict[str, Any]:
+    st = (status or "").strip().lower()
+    if st not in BUG_STATUS_OK:
+        raise ValueError("Status inválido")
+    resp = (resposta if resposta is not None else "").strip()
+    if len(resp) > 4000:
+        raise ValueError("Resposta com no máximo 4000 caracteres")
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM bug_reports WHERE id = ?", (int(report_id),)
+        ).fetchone()
+        if not row:
+            raise ValueError("Report não encontrado")
+        prev_resp = (row["resposta"] or "").strip()
+        nova_resposta = resp if resposta is not None else prev_resp
+        marcou_resposta = bool(nova_resposta) and nova_resposta != prev_resp
+        if resposta is not None and not nova_resposta and prev_resp:
+            # limpar resposta explícita
+            marcou_resposta = False
+        leu = 0 if (marcou_resposta and nova_resposta) else int(row["usuario_leu_resposta"] or 0)
+        if marcou_resposta and nova_resposta:
+            conn.execute(
+                """
+                UPDATE bug_reports
+                SET status = ?,
+                    resposta = ?,
+                    respondido_em = datetime('now', 'localtime'),
+                    usuario_leu_resposta = 0,
+                    atualizado_em = datetime('now', 'localtime')
+                WHERE id = ?
+                """,
+                (st, nova_resposta, int(report_id)),
+            )
+        else:
+            conn.execute(
+                """
+                UPDATE bug_reports
+                SET status = ?,
+                    resposta = ?,
+                    usuario_leu_resposta = ?,
+                    atualizado_em = datetime('now', 'localtime')
+                WHERE id = ?
+                """,
+                (st, nova_resposta, leu, int(report_id)),
+            )
+        out = conn.execute(
+            """
+            SELECT b.*, p.nome AS autor_nome, p.username AS autor_username,
+                   p.avatar_path AS autor_avatar
+            FROM bug_reports b
+            JOIN participantes p ON p.id = b.participante_id
+            WHERE b.id = ?
+            """,
+            (int(report_id),),
+        ).fetchone()
+    result = _bug_row(out)
+    assert result is not None
+    return result
+
+
+def contar_bug_reports_nao_lidos(participante_id: int) -> int:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM bug_reports
+            WHERE participante_id = ?
+              AND usuario_leu_resposta = 0
+              AND TRIM(COALESCE(resposta, '')) != ''
+            """,
+            (int(participante_id),),
+        ).fetchone()
+    return int(row["n"] if row else 0)
+
+
+def marcar_bug_reports_lidos(participante_id: int) -> None:
+    with get_db() as conn:
+        conn.execute(
+            """
+            UPDATE bug_reports
+            SET usuario_leu_resposta = 1
+            WHERE participante_id = ?
+              AND usuario_leu_resposta = 0
+            """,
+            (int(participante_id),),
+        )
+
+
+def contar_bug_reports_abertos() -> int:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM bug_reports
+            WHERE status IN ('aberto', 'em_analise')
+            """
+        ).fetchone()
+    return int(row["n"] if row else 0)

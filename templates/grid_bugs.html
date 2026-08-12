@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Reportar Bugs · THDFM Grid{% endblock %}
+{% block content %}
+<section class="grid-bugs-page">
+  <header class="grid-bugs-head">
+    <div>
+      <p class="grid-kicker">THDFM Grid</p>
+      <h1 class="grid-bugs-title">Reportar Bugs</h1>
+      <p class="grid-sub">Descreva o problema, anexe um print se puder e acompanhe o status da resposta.</p>
+    </div>
+    <a class="btn grid-bugs-back" href="/grid">Voltar ao Grid</a>
+  </header>
+
+  {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+
+  <section class="card grid-bugs-form-card">
+    <h2 class="grid-bugs-h">Novo report</h2>
+    <form
+      class="grid-bugs-form"
+      method="post"
+      action="/grid/bugs"
+      enctype="multipart/form-data"
+      data-grid-bugs-form
+    >
+      <label class="grid-bugs-label" for="bug-titulo">Título</label>
+      <input
+        id="bug-titulo"
+        class="grid-bugs-input"
+        name="titulo"
+        type="text"
+        maxlength="120"
+        required
+        placeholder="Ex.: célula não aceita chute"
+        autocomplete="off"
+      />
+
+      <label class="grid-bugs-label" for="bug-mensagem">Mensagem</label>
+      <textarea
+        id="bug-mensagem"
+        class="grid-bugs-input grid-bugs-textarea"
+        name="mensagem"
+        rows="5"
+        maxlength="4000"
+        required
+        placeholder="O que aconteceu? Em qual celular/navegador?"
+      ></textarea>
+
+      <label class="grid-bugs-label" for="bug-imagem">Imagem (opcional)</label>
+      <div class="grid-bugs-upload" data-grid-bugs-upload>
+        <input
+          id="bug-imagem"
+          class="grid-bugs-file"
+          name="imagem"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          data-grid-bugs-file
+        />
+        <p class="grid-bugs-upload-hint">
+          Escolha um arquivo ou <strong>cole um print</strong> (Ctrl+V / ⌘V) nesta página.
+        </p>
+        <div class="grid-bugs-preview" data-grid-bugs-preview hidden>
+          <img alt="Prévia do anexo" data-grid-bugs-preview-img />
+          <button type="button" class="grid-bugs-preview-x" data-grid-bugs-preview-clear aria-label="Remover imagem">×</button>
+        </div>
+      </div>
+
+      <div class="grid-bugs-actions">
+        <button type="submit" class="btn grid-bugs-submit">Enviar report</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card grid-bugs-list-card">
+    <h2 class="grid-bugs-h">Seus reports</h2>
+    {% if not reports %}
+    <p class="grid-bugs-empty">Você ainda não reportou nenhum bug.</p>
+    {% else %}
+    <ul class="grid-bugs-list">
+      {% for r in reports %}
+      <li class="grid-bugs-item status-{{ r.status }} {% if r.resposta and not r.usuario_leu_resposta %}is-new{% endif %}">
+        <header class="grid-bugs-item-head">
+          <strong>{{ r.titulo }}</strong>
+          <span class="grid-bugs-status grid-bugs-status--{{ r.status }}">
+            {{ bug_status_label.get(r.status, r.status) }}
+          </span>
+        </header>
+        <p class="grid-bugs-meta">{{ r.criado_em }}</p>
+        <p class="grid-bugs-msg">{{ r.mensagem }}</p>
+        {% if r.imagem_path %}
+        <a class="grid-bugs-shot" href="/bug-reports/{{ r.imagem_path }}" target="_blank" rel="noopener">
+          <img src="/bug-reports/{{ r.imagem_path }}" alt="Anexo do report" />
+        </a>
+        {% endif %}
+        {% if r.resposta %}
+        <div class="grid-bugs-reply">
+          <strong>Resposta da equipe</strong>
+          {% if r.respondido_em %}<span class="grid-bugs-meta">{{ r.respondido_em }}</span>{% endif %}
+          <p>{{ r.resposta }}</p>
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+</section>
+<script src="/static/grid-bugs.js?v=1" defer></script>
+{% endblock %}

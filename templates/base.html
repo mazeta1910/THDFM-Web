@@ -18,7 +18,7 @@
   <link rel="icon" href="/static/img/thdfm-logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/static/img/thdfm-logo.png" />
   <script src="/static/theme-boot.js?v=1"></script>
-  <link rel="stylesheet" href="/static/style.css?v=313" />
+  <link rel="stylesheet" href="/static/style.css?v=314" />
   {% if ADSENSE_CLIENT %}
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT }}"
      crossorigin="anonymous"></script>
@@ -34,7 +34,7 @@
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_grid_ranking = path.startswith('/grid/ranking') %}
-{% set on_grid = path == '/grid' or path.startswith('/grid/api') %}
+{% set on_grid = path == '/grid' or path.startswith('/grid/api') or path.startswith('/grid/bugs') %}
 {% set on_hall_lendas = path == '/hall-lendas' or path.startswith('/hall-lendas/') %}
 {% set on_xonhometro = path.startswith('/xonhometro') or path.startswith('/admin/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
