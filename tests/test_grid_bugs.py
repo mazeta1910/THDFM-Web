@@ -23,9 +23,17 @@ def test_botao_reportar_bugs_no_grid(client: TestClient):
     assert 'href="/grid/bugs"' in r.text
     assert "Reportar Bugs" in r.text
     assert "grid-report-btn" in r.text
+    assert "grid-head-title-row" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".grid-report-btn" in css
     assert "background: #c92a2a" in css
+    assert ".grid-head-title-row" in css
+    # Mobile: compacto ao lado do título (não full-width)
+    mobile = css.split("@media (max-width: 720px)", 1)[1]
+    report_mobile = mobile.split(".grid-report-btn", 1)[1].split("}", 1)[0]
+    assert "width: auto" in report_mobile
+    assert "width: 100%" not in report_mobile
+    assert "font-size: 0.66rem" in report_mobile
 
 
 def test_grid_bugs_fluxo_usuario_e_admin(client: TestClient):
