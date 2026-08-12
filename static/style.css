@@ -12789,6 +12789,7 @@ button.proto-text-btn:disabled {
   border-top: 1px solid var(--border);
 }
 @media (max-width: 720px) {
+  /* Reportar Bugs: compacto à direita do título */
   .grid-head-title-row {
     gap: 0.35rem 0.5rem;
   }

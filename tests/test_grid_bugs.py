@@ -29,8 +29,10 @@ def test_botao_reportar_bugs_no_grid(client: TestClient):
     assert "background: #c92a2a" in css
     assert ".grid-head-title-row" in css
     # Mobile: compacto ao lado do título (não full-width)
-    mobile = css.split("@media (max-width: 720px)", 1)[1]
-    report_mobile = mobile.split(".grid-report-btn", 1)[1].split("}", 1)[0]
+    assert "Reportar Bugs: compacto à direita do título" in css
+    report_mobile = css.split("Reportar Bugs: compacto à direita do título", 1)[1].split(
+        ".grid-bugs-head", 1
+    )[0]
     assert "width: auto" in report_mobile
     assert "width: 100%" not in report_mobile
     assert "font-size: 0.66rem" in report_mobile
