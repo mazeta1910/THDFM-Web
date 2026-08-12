@@ -175,6 +175,46 @@ def test_variedade_cutover_e_eixos_mistos():
     assert len(ids_vistos) >= 25
     assert max(familias_por_dia) >= 3
 
+
+def test_geracao_backtrack_valida_intersecoes_parciais():
+    """Estilo HoopsGrid: montagem sequencial rejeita célula rasa e retrocede."""
+    from src.grid_game import (
+        Categoria,
+        _parcial_soluvel,
+        _buscar_boards_backtrack,
+        categorias_disponiveis,
+    )
+
+    # Parcial com 1×1: densidade da única célula precisa valer
+    memo: dict[tuple[str, str], int] = {}
+    rows: list[Categoria | None] = [None, None, None]
+    cols: list[Categoria | None] = [None, None, None]
+    assert _parcial_soluvel(rows, cols, memo) is True
+
+    dia = "2026-09-15"
+    cats = list(categorias_disponiveis(dia))
+    by_tipo: dict[str, list] = {}
+    for c in cats:
+        by_tipo.setdefault(c.tipo, []).append(c)
+    import random
+
+    rng = random.Random(42)
+    boards = _buscar_boards_backtrack(
+        rng,
+        by_tipo,
+        tipos_row=None,
+        tipos_col=None,
+        memo={},
+        orcamento=3,
+    )
+    assert boards, "backtrack deveria achar ao menos um board denso"
+    for r, c, dens in boards:
+        assert len(r) == 3 and len(c) == 3
+        assert all(n >= DENSIDADE_MIN for row in dens for n in row)
+        # Nenhuma categoria repetida entre eixos
+        assert not ({x.id for x in r} & {x.id for x in c})
+
+
 def test_categoria_termina_com_letra_e_silaba():
     from src.grid_game import Categoria, categorias_compativeis, clube_bate_categoria
 

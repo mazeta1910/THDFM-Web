@@ -37,8 +37,10 @@ def fold_txt(s: str) -> str:
 # Categorias históricas (Brasileirão) só entram no puzzle a partir desta data
 # (00:00 America/Sao_Paulo). Dias anteriores mantêm o pool antigo.
 GRID_HISTORICO_DESDE = "2026-08-11"
-# Gerador com variedade de tipos (v3). Dias anteriores ao cutover mantêm v1/v2.
-# Regeneração admin (salt) em dia histórico também usa v3.
+# Gerador com variedade de tipos (v3/v4+). Dias anteriores ao cutover mantêm v1/v2.
+# Regeneração admin (salt) em dia histórico também usa o gerador novo.
+# A partir deste cutover: eixos mistos + montagem sequencial com backtracking
+# (solubilidade célula a célula, estilo HoopsGrid).
 GRID_VARIEDADE_DESDE = "2026-08-12"
 _TIPOS_HISTORICOS = frozenset(
     {"titulo", "premio", "participacao", "longevidade", "paridade"}
@@ -238,11 +240,11 @@ def variedade_ativa(dia: str | None = None) -> bool:
 
 
 def _rng_dia(dia: str) -> random.Random:
-    # v1: pool clássico; v2: histórico; v3: histórico + variedade de tipos
+    # v1: pool clássico; v2: histórico; v3/v4: variedade de tipos nos eixos
+    # v5: variedade + backtracking de solubilidade (células ≥ DENSIDADE_MIN)
     # salt opcional: regeneração admin de um dia sem afetar os demais
     if variedade_ativa(dia):
-        # v4: eixos mistos estilo HoopsGrid (sem eixo inteiro de “Nome…”)
-        ver = "v4"
+        ver = "v5"
     elif historico_ativo(dia):
         ver = "v2"
     else:
@@ -713,6 +715,52 @@ def _opcoes_eixo_livre(
     return out
 
 
+def _densidade_par(
+    row: Categoria,
+    col: Categoria,
+    memo: dict[tuple[str, str], int],
+) -> int:
+    """Quantos clubes satisfazem a interseção (com memo). 0 se incompatível."""
+    key = (row.id, col.id)
+    if key not in memo:
+        if not categorias_compativeis(row, col):
+            memo[key] = 0
+        else:
+            memo[key] = len(pool_celula(row, col))
+    return memo[key]
+
+
+def _parcial_soluvel(
+    rows: list[Categoria | None],
+    cols: list[Categoria | None],
+    memo: dict[tuple[str, str], int],
+) -> bool:
+    """Valida células já definidas (pares row×col preenchidos) ≥ DENSIDADE_MIN."""
+    ids = [c.id for c in rows + cols if c is not None]
+    if len(ids) != len(set(ids)):
+        return False
+    rows_ok = [r for r in rows if r is not None]
+    cols_ok = [c for c in cols if c is not None]
+    if len(rows_ok) == GRID_SIZE and not _eixo_diverso(rows_ok):
+        return False
+    if len(cols_ok) == GRID_SIZE and not _eixo_diverso(cols_ok):
+        return False
+    # Contagens parciais de tipo no eixo em construção
+    for eixo in (rows_ok, cols_ok):
+        cont = Counter(c.tipo for c in eixo)
+        for tipo, n in cont.items():
+            if n > _max_tipo(tipo):
+                return False
+        n_nome = sum(1 for c in eixo if c.tipo in _TIPOS_NOME)
+        if n_nome > 1:
+            return False
+    for r in rows_ok:
+        for c in cols_ok:
+            if _densidade_par(r, c, memo) < DENSIDADE_MIN:
+                return False
+    return True
+
+
 def _tentar_board(
     rows: list[Categoria],
     cols: list[Categoria],
@@ -727,17 +775,117 @@ def _tentar_board(
     for r in rows:
         linha_d: list[int] = []
         for c in cols:
-            if not categorias_compativeis(r, c):
-                return None
-            key = (r.id, c.id)
-            if key not in cache:
-                cache[key] = len(pool_celula(r, c))
-            n = cache[key]
+            n = _densidade_par(r, c, cache)
             if n < DENSIDADE_MIN:
                 return None
             linha_d.append(n)
         densidades.append(linha_d)
     return rows, cols, densidades
+
+
+def _candidatos_slot(
+    rng: random.Random,
+    by_tipo: dict[str, list[Categoria]],
+    usados: set[str],
+    eixo_parcial: list[Categoria],
+    tipos_preferidos: tuple[str, ...] | None,
+) -> list[Categoria]:
+    """Embaralha candidatos para o próximo critério, enviesando tipos preferidos."""
+    cont = Counter(c.tipo for c in eixo_parcial)
+    n_nome = sum(1 for c in eixo_parcial if c.tipo in _TIPOS_NOME)
+
+    def elegivel(c: Categoria) -> bool:
+        if c.id in usados:
+            return False
+        if cont[c.tipo] >= _max_tipo(c.tipo):
+            return False
+        if c.tipo in _TIPOS_NOME and n_nome >= 1:
+            return False
+        return True
+
+    preferidos: list[Categoria] = []
+    outros: list[Categoria] = []
+    tipos_pref = set(tipos_preferidos) if tipos_preferidos else None
+    for tipo, lst in by_tipo.items():
+        bucket = preferidos if (tipos_pref is None or tipo in tipos_pref) else outros
+        for c in lst:
+            if elegivel(c):
+                bucket.append(c)
+    rng.shuffle(preferidos)
+    rng.shuffle(outros)
+    # Sem preferência explícita: tudo junto
+    if tipos_pref is None:
+        todos = preferidos + outros
+        rng.shuffle(todos)
+        return todos
+    return preferidos + outros
+
+
+def _buscar_boards_backtrack(
+    rng: random.Random,
+    by_tipo: dict[str, list[Categoria]],
+    *,
+    tipos_row: tuple[str, ...] | None,
+    tipos_col: tuple[str, ...] | None,
+    memo: dict[tuple[str, str], int],
+    orcamento: int,
+) -> list[tuple[list[Categoria], list[Categoria], list[list[int]]]]:
+    """Monta critérios sequencialmente (r0,c0,r1,c1,r2,c2) com retrocesso.
+
+    Ao preencher cada critério, valida de imediato todas as interseções já
+    conhecidas — se alguma célula ficar < DENSIDADE_MIN, faz re-roll (backtrack).
+    """
+    rows: list[Categoria | None] = [None] * GRID_SIZE
+    cols: list[Categoria | None] = [None] * GRID_SIZE
+    # Alterna linha/coluna para detectar células vazias cedo (estilo HoopsGrid)
+    ordem: list[tuple[str, int]] = []
+    for i in range(GRID_SIZE):
+        ordem.append(("r", i))
+        ordem.append(("c", i))
+    achados: list[tuple[list[Categoria], list[Categoria], list[list[int]]]] = []
+
+    def dfs(pos: int) -> None:
+        if len(achados) >= orcamento:
+            return
+        if pos >= len(ordem):
+            r_final = [r for r in rows if r is not None]
+            c_final = [c for c in cols if c is not None]
+            if len(r_final) != GRID_SIZE or len(c_final) != GRID_SIZE:
+                return
+            if not _board_diverso(r_final, c_final):
+                return
+            if len({x.tipo for x in r_final + c_final}) < 4:
+                return
+            board = _tentar_board(r_final, c_final, memo)
+            if board:
+                achados.append(board)
+            return
+
+        kind, idx = ordem[pos]
+        if kind == "r":
+            eixo_parcial = [r for r in rows if r is not None]
+            prefs = tipos_row
+            alvo = rows
+        else:
+            eixo_parcial = [c for c in cols if c is not None]
+            prefs = tipos_col
+            alvo = cols
+
+        usados = {c.id for c in rows + cols if c is not None}
+        candidatos = _candidatos_slot(rng, by_tipo, usados, eixo_parcial, prefs)
+        # Limita ramificação por slot para manter o dia determinístico e rápido
+        limite = 18 if pos < 4 else 22
+        for cat in candidatos[:limite]:
+            alvo[idx] = cat
+            if _parcial_soluvel(rows, cols, memo):
+                dfs(pos + 1)
+                if len(achados) >= orcamento:
+                    alvo[idx] = None
+                    return
+            alvo[idx] = None
+
+    dfs(0)
+    return achados
 
 
 def _familia_categoria(tipo: str) -> str:
@@ -776,7 +924,12 @@ def _score_variedade(
 
 
 def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
-    """Gerador v4: categorias misturadas nos dois eixos (sem eixo só-Nome)."""
+    """Gerador v5: eixos mistos + backtracking de solubilidade (estilo HoopsGrid).
+
+    Sorteia critérios um a um (linha/coluna alternados). A cada passo consulta
+    a interseção já conhecida; se alguma célula ficar abaixo de DENSIDADE_MIN,
+    descarta e retrocede (re-roll automático).
+    """
     cats = list(categorias_disponiveis(dia_s))
     if len(cats) < GRID_SIZE * 2:
         raise RuntimeError("catálogo insuficiente para o grid")
@@ -787,7 +940,7 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
         by_tipo.setdefault(c.tipo, []).append(c)
         rng.shuffle(by_tipo[c.tipo])
 
-    # Só templates que misturam famílias — nunca um eixo inteiro de “Nome…”.
+    # Templates enviesam famílias — nunca um eixo inteiro de “Nome…”.
     templates: list[tuple[tuple[str, ...] | None, tuple[str, ...] | None]] = [
         (None, None),
         (_TIPOS_GEO, None),
@@ -796,7 +949,6 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
         (_TIPOS_GEO, tuple(_TIPOS_HISTORICOS)),
         (None, tuple(_TIPOS_HISTORICOS)),
         (tuple(_TIPOS_HISTORICOS), None),
-        # Nome entra como tempero (≤1 por eixo via _eixo_diverso), nunca sozinho
         (_TIPOS_GEO + _TIPOS_NOME, None),
         (None, _TIPOS_GEO + _TIPOS_NOME),
         (tuple(_TIPOS_HISTORICOS) + _TIPOS_NOME, _TIPOS_GEO),
@@ -807,49 +959,33 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
     melhor: dict[str, Any] | None = None
     melhor_score: tuple[int, int, int, int] | None = None
     tentativas_ok = 0
-    orcamento = 48
     memo: dict[tuple[str, str], int] = {}
 
     for left_pref, right_pref in templates:
-        left_opts = _opcoes_eixo_livre(
-            rng, by_tipo, limite=28, tipos_preferidos=left_pref
+        boards = _buscar_boards_backtrack(
+            rng,
+            by_tipo,
+            tipos_row=left_pref,
+            tipos_col=right_pref,
+            memo=memo,
+            orcamento=8,
         )
-        if not left_opts and left_pref is not None:
-            left_opts = _opcoes_eixo_livre(rng, by_tipo, limite=28, tipos_preferidos=None)
-        right_opts = _opcoes_eixo_livre(
-            rng, by_tipo, limite=28, tipos_preferidos=right_pref
-        )
-        if not right_opts and right_pref is not None:
-            right_opts = _opcoes_eixo_livre(
-                rng, by_tipo, limite=28, tipos_preferidos=None
-            )
-        rng.shuffle(left_opts)
-        rng.shuffle(right_opts)
-        for rows in left_opts:
-            for cols in right_opts:
-                if not _board_diverso(rows, cols):
-                    continue
-                board = _tentar_board(rows, cols, memo)
-                if not board:
-                    continue
-                r, c, dens = board
-                if len({x.tipo for x in r + c}) < 4:
-                    continue
-                score = _score_variedade(r, c, dens)
-                tentativas_ok += 1
-                if melhor_score is None or score > melhor_score:
-                    melhor_score = score
-                    melhor = {
-                        "dia": dia_s,
-                        "linhas": [x.to_public() for x in r],
-                        "colunas": [x.to_public() for x in c],
-                        "densidades": dens,
-                        "tamanho": GRID_SIZE,
-                    }
-                if score[0] >= 3 and score[1] >= 5 and tentativas_ok >= 6:
-                    return melhor
-                if tentativas_ok >= orcamento and melhor is not None:
-                    return melhor
+        for r, c, dens in boards:
+            score = _score_variedade(r, c, dens)
+            tentativas_ok += 1
+            if melhor_score is None or score > melhor_score:
+                melhor_score = score
+                melhor = {
+                    "dia": dia_s,
+                    "linhas": [x.to_public() for x in r],
+                    "colunas": [x.to_public() for x in c],
+                    "densidades": dens,
+                    "tamanho": GRID_SIZE,
+                }
+            if score[0] >= 3 and score[1] >= 5 and tentativas_ok >= 4:
+                return melhor
+            if tentativas_ok >= 36 and melhor is not None:
+                return melhor
 
     if melhor is not None:
         return melhor
