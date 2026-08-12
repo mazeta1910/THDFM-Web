@@ -736,6 +736,8 @@ def test_grid_fluxo_logado(client: TestClient):
     board_mobile = css.split("Cancela padding lateral do .wrap", 1)[1].split("/* —— Grid admin", 1)[0]
     assert "gap: 0.16rem" in board_mobile
     assert ".grid-board-wrap" in board_mobile
+    assert "calc(100% + 2rem)" in board_mobile
+    assert "overflow-x: clip" in css.split(".grid-page", 1)[1].split(".grid-head", 1)[0]
     # Não pode herdar width:100% do button global
     dalton_btn_css = css.split("button.grid-daltonismo-btn", 1)[1].split("}", 1)[0]
     assert "width: auto" in dalton_btn_css
@@ -855,8 +857,8 @@ def test_ranking_desempate_por_rep_baixa():
     # Mesmo dia finalizado, 9 acertos cada; A usou times fracos, B usou elite.
     full_a = [[_celula_ok(f"a{i}{j}", rep=200) for j in range(3)] for i in range(3)]
     full_b = [[_celula_ok(f"b{i}{j}", rep=7500) for j in range(3)] for i in range(3)]
-    dbmod.salvar_grid_progresso(a["id"], "2026-08-09", full_a, finalizado=True)
-    dbmod.salvar_grid_progresso(b["id"], "2026-08-09", full_b, finalizado=True)
+    dbmod.salvar_grid_progresso(a["id"], "2026-08-12", full_a, finalizado=True)
+    dbmod.salvar_grid_progresso(b["id"], "2026-08-12", full_b, finalizado=True)
 
     ranking = dbmod.ranking_grid(limite=10)
     assert ranking[0]["participante_id"] == a["id"]
@@ -871,7 +873,7 @@ def test_grid_reset_lancamento_zera_progresso(client: TestClient):
 
     part = dbmod.criar_participante("Reset Grid", status="liberado", celular="11991112202")
     full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
-    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
     assert dbmod.ranking_grid()
     assert dbmod.limpar_grid_progresso() >= 1
     assert dbmod.ranking_grid() == []
@@ -883,7 +885,7 @@ def test_grid_zerar_ranking_botao_so_mazeta(client: TestClient):
 
     part = dbmod.criar_participante("Rank Zerar", status="liberado", celular="11991112203")
     full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
-    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
     assert dbmod.ranking_grid()
 
     # Participante comum: sem botão e API 401/403
@@ -915,9 +917,44 @@ def test_grid_zerar_ranking_botao_so_mazeta(client: TestClient):
 
 def test_dias_totais_grid():
     assert dias_totais_grid("2026-08-10") == 0
-    assert dias_totais_grid("2026-08-11") == 1
-    assert dias_totais_grid("2026-08-12") == 2
-    assert dias_totais_grid("2026-08-20") == 10
+    assert dias_totais_grid("2026-08-11") == 0  # cutover histórico, sem dia oficial
+    assert dias_totais_grid("2026-08-12") == 1
+    assert dias_totais_grid("2026-08-20") == 9
+
+
+def test_listar_grid_dias_so_com_jogos():
+    """Dias só com salt / sem jogadores não entram em Dias com atividade; 11/08 fora."""
+    from src import db as dbmod
+
+    part = dbmod.criar_participante("Dias Ativ", status="liberado", celular="11991115501")
+    full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-11", full, finalizado=True)
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
+    dbmod.set_grid_salt("2026-08-13", "abc123salt")
+
+    # Sem purge: filtros de ranking/atividade já ignoram pré-ranking e dias sem jogo
+    dias = dbmod.listar_grid_dias(limite=30)
+    dias_set = {d["dia"] for d in dias}
+    assert "2026-08-11" not in dias_set
+    assert "2026-08-13" not in dias_set  # só salt, 0 jogadores
+    assert "2026-08-12" in dias_set
+    assert all(d["jogadores"] > 0 for d in dias)
+
+    ranking = dbmod.ranking_grid(limite=10)
+    assert ranking
+    assert ranking[0]["dias_finalizados"] == 1
+    assert ranking[0]["celulas_ok"] == 9
+
+    # Purge one-shot apaga progresso pré-ranking quando a meta ainda não rodou
+    with dbmod.get_db() as conn:
+        conn.execute("DELETE FROM meta WHERE chave = ?", ("grid_progresso_ranking_desde_v1",))
+        dbmod._purge_grid_progresso_pre_ranking(conn)
+    with dbmod.get_db() as conn:
+        n11 = conn.execute(
+            "SELECT COUNT(*) AS n FROM grid_progresso WHERE dia = ?",
+            ("2026-08-11",),
+        ).fetchone()["n"]
+    assert int(n11) == 0
 
 
 def test_grid_ranking_barras_e_streak_positivo(client: TestClient):
@@ -1131,9 +1168,9 @@ def test_ranking_e_stats_grid(client: TestClient):
     full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
     half = [[_celula_ok("9") if (i, j) == (0, 0) else None for j in range(3)] for i in range(3)]
 
-    dbmod.salvar_grid_progresso(a["id"], "2026-08-08", full, finalizado=True)
-    dbmod.salvar_grid_progresso(a["id"], "2026-08-09", full, finalizado=True)
-    dbmod.salvar_grid_progresso(b["id"], "2026-08-09", half, finalizado=False)
+    dbmod.salvar_grid_progresso(a["id"], "2026-08-12", full, finalizado=True)
+    dbmod.salvar_grid_progresso(a["id"], "2026-08-13", full, finalizado=True)
+    dbmod.salvar_grid_progresso(b["id"], "2026-08-13", half, finalizado=False)
 
     ranking = dbmod.ranking_grid(limite=10)
     assert ranking[0]["participante_id"] == a["id"]
@@ -1163,7 +1200,7 @@ def test_perfil_mostra_bloco_grid(client: TestClient):
     client.get(f"/p/{part['token']}")
 
     full = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
-    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
 
     r = client.get("/meu-perfil")
     assert r.status_code == 200
@@ -1191,7 +1228,7 @@ def test_grid_ranking_inline_e_redirect(client: TestClient):
     assert "#ranking" in loc
 
     full = [[_celula_ok("1") for _ in range(3)] for _ in range(3)]
-    dbmod.salvar_grid_progresso(part["id"], "2026-08-09", full, finalizado=True)
+    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
 
     r = client.get("/grid")
     assert r.status_code == 200
@@ -1255,10 +1292,10 @@ def test_grid_ranking_top5_ver_mais(client: TestClient):
         p = dbmod.criar_participante(
             f"Rank Top {i}", status="liberado", celular=f"1199222000{i}"
         )
-        # Dias diferentes para ordenar estável
+        # Dias diferentes para ordenar estável (a partir do ranking oficial)
         for d in range(i + 1):
             dbmod.salvar_grid_progresso(
-                p["id"], f"2026-07-{d + 1:02d}", full, finalizado=True
+                p["id"], f"2026-08-{12 + d:02d}", full, finalizado=True
             )
 
     r = client.get("/grid")
