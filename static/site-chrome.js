@@ -273,43 +273,95 @@
         }).catch(() => {});
       };
 
+      // Pointer Events (mouse + toque): HTML5 DnD não funciona no mobile.
       let dragging = null;
+      let activePointerId = null;
+      let dragMoved = false;
+      let startY = 0;
+
+      const clearDragOver = () => {
+        sortable.querySelectorAll(".is-drag-over").forEach((el) => el.classList.remove("is-drag-over"));
+      };
+
+      const reorderAt = (clientY) => {
+        if (!dragging) return;
+        clearDragOver();
+        const others = Array.from(sortable.querySelectorAll(":scope > [data-group]")).filter(
+          (el) => el !== dragging
+        );
+        if (!others.length) return;
+        let insertBeforeEl = null;
+        for (const other of others) {
+          const rect = other.getBoundingClientRect();
+          const mid = rect.top + rect.height / 2;
+          if (clientY < mid) {
+            insertBeforeEl = other;
+            break;
+          }
+        }
+        const next =
+          insertBeforeEl || null;
+        // nextSibling null = append no fim
+        const currentlyBefore = dragging.nextElementSibling;
+        if (next === currentlyBefore) return;
+        if (!next && currentlyBefore === null && sortable.lastElementChild === dragging) return;
+        if (next) {
+          next.classList.add("is-drag-over");
+          sortable.insertBefore(dragging, next);
+        } else {
+          others[others.length - 1].classList.add("is-drag-over");
+          sortable.appendChild(dragging);
+        }
+        dragMoved = true;
+      };
+
+      const endPointerDrag = () => {
+        if (!dragging) return;
+        dragging.classList.remove("is-dragging");
+        clearDragOver();
+        const ordem = currentOrdem();
+        dragging = null;
+        activePointerId = null;
+        if (dragMoved) persist(ordem);
+        dragMoved = false;
+      };
+
       sortable.querySelectorAll(":scope > [data-group]").forEach((group) => {
         const handle = group.querySelector(":scope > summary .site-menu-drag");
         if (!handle) return;
-        const blockToggle = (e) => {
+        // Evita DnD nativo (falha no toque) e o toggle do <details>.
+        handle.setAttribute("draggable", "false");
+        handle.addEventListener("dragstart", (e) => e.preventDefault());
+        handle.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-        };
-        handle.addEventListener("click", blockToggle);
-        handle.addEventListener("mousedown", (e) => e.stopPropagation());
-        handle.addEventListener("dragstart", (e) => {
+        });
+        handle.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
           dragging = group;
+          activePointerId = e.pointerId;
+          dragMoved = false;
+          startY = e.clientY;
           group.classList.add("is-dragging");
           try {
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", group.getAttribute("data-group") || "");
+            handle.setPointerCapture(e.pointerId);
           } catch (err) {}
         });
-        handle.addEventListener("dragend", () => {
-          if (dragging) dragging.classList.remove("is-dragging");
-          sortable.querySelectorAll(".is-drag-over").forEach((el) => el.classList.remove("is-drag-over"));
-          dragging = null;
-          persist(currentOrdem());
-        });
-        group.addEventListener("dragover", (e) => {
-          if (!dragging || dragging === group) return;
+        handle.addEventListener("pointermove", (e) => {
+          if (activePointerId !== e.pointerId || !dragging) return;
           e.preventDefault();
-          group.classList.add("is-drag-over");
-          const rect = group.getBoundingClientRect();
-          const before = e.clientY < rect.top + rect.height / 2;
-          if (before) sortable.insertBefore(dragging, group);
-          else sortable.insertBefore(dragging, group.nextSibling);
+          if (Math.abs(e.clientY - startY) > 3) dragMoved = true;
+          reorderAt(e.clientY);
         });
-        group.addEventListener("dragleave", () => group.classList.remove("is-drag-over"));
-        group.addEventListener("drop", (e) => {
-          e.preventDefault();
-          group.classList.remove("is-drag-over");
+        handle.addEventListener("pointerup", (e) => {
+          if (activePointerId !== e.pointerId) return;
+          endPointerDrag();
+        });
+        handle.addEventListener("pointercancel", (e) => {
+          if (activePointerId !== e.pointerId) return;
+          endPointerDrag();
         });
       });
     }
