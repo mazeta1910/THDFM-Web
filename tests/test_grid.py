@@ -36,9 +36,9 @@ from tests.conftest import login_admin
 _PUZZLE_2026_08_10 = {
     "dia": "2026-08-10",
     "linhas": [
-        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional"},
+        {"id": "serie:SEM", "tipo": "serie", "valor": "SEM", "rotulo": "Sem divisão nacional no atual ano"},
         {"id": "regiao:Norte", "tipo": "regiao", "valor": "Norte", "rotulo": "Região Norte"},
-        {"id": "serie:D", "tipo": "serie", "valor": "D", "rotulo": "Brasileirão Série D"},
+        {"id": "serie:D", "tipo": "serie", "valor": "D", "rotulo": "Disputa o Brasileirão Série D no atual ano"},
     ],
     "colunas": [
         {"id": "letra:A", "tipo": "letra", "valor": "A", "rotulo": "Nome começa com A"},
@@ -236,12 +236,23 @@ def test_filtros_nome_e_compostos_historicos():
     assert len(hist["participacao:cdb"]) >= DENSIDADE_MIN
     assert len(hist["participacao:nunca_cdb"]) >= DENSIDADE_MIN
     assert hist["longevidade:cdb_10"] <= hist["participacao:cdb"]
-    # ≤N inclui quem nunca disputou (0..N)
-    assert hist["participacao:nunca_cdb"] <= hist["longevidade:cdb_le_5"]
+    # ≤N inclui quem nunca disputou (0..N) — A, B, C e Copa do Brasil
+    assert hist["participacao:nunca_serie_a"] <= hist["longevidade:serie_a_le_5"]
+    assert hist["participacao:nunca_serie_b"] <= hist["longevidade:serie_b_le_5"]
     assert hist["participacao:nunca_serie_c"] <= hist["longevidade:serie_c_le_5"]
+    assert hist["participacao:nunca_cdb"] <= hist["longevidade:cdb_le_5"]
+    assert len(hist["longevidade:serie_a_le_5"]) > len(hist["participacao:serie_a"])
+    assert len(hist["longevidade:serie_b_le_5"]) > len(hist["participacao:serie_b"])
     assert len(hist["longevidade:serie_c_le_5"]) > len(hist["participacao:serie_c"])
+    assert len(hist["longevidade:cdb_le_5"]) > len(hist["participacao:cdb"])
     # Quase todo o catálogo tem ≤5 na C (só quem tem 6+ fica de fora)
     assert len(hist["longevidade:serie_c_le_5"]) >= len(clubes_grid()) - 40
+    assert cats["serie:A"].rotulo == "Disputa o Brasileirão Série A no atual ano"
+    assert cats["serie:B"].rotulo == "Disputa o Brasileirão Série B no atual ano"
+    assert cats["serie:C"].rotulo == "Disputa o Brasileirão Série C no atual ano"
+    assert cats["serie:SEM"].rotulo == "Sem divisão nacional no atual ano"
+    assert "atual ano" in cats["serie:C"].rotulo
+    assert "atual ano" in cats["serie:D"].rotulo
 
     from src.grid_game import categorias_compativeis, clube_bate_categoria
 
@@ -1293,7 +1304,12 @@ def test_letra_ignora_prefixo_juridico_fc_sc_ec():
     # Interseção letra C × Série D inclui FC Cascavel
     from src.grid_game import pool_celula
 
-    serie_d = Categoria("serie:D", "serie", "D", "Brasileirão Série D")
+    serie_d = Categoria(
+        "serie:D",
+        "serie",
+        "D",
+        "Disputa o Brasileirão Série D no atual ano",
+    )
     pool = pool_celula(cat_c, serie_d)
     assert any(c["id"] == cascavel["id"] for c in pool)
 
