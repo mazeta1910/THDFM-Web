@@ -521,8 +521,13 @@ def _implica_participacao_serie(cat_id: str, tag: str) -> bool:
     if cat_id.startswith(f"participacao:{tag}"):
         return True
     if cat_id.startswith(f"longevidade:{tag}"):
+        # ≤N inclui quem nunca jogou (0..N); ≥N exige participação.
+        if f"{tag}_le_" in cat_id or cat_id.startswith(f"longevidade:{tag}_le_"):
+            return False
         return True
     if tag == "cdb":
+        if cat_id.startswith("longevidade:cdb_le_"):
+            return False
         if cat_id.startswith(("participacao:cdb", "longevidade:cdb")):
             return True
         if "cdb" not in cat_id:

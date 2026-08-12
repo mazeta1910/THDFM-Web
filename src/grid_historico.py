@@ -323,7 +323,8 @@ def _agregar_classificacao(
     for n in long_anos:
         out[f"long_{n}"] = {fid for fid, ys in anos_por.items() if len(ys) >= n}
     for n in long_anos_le:
-        # Quem disputou e tem no máximo N edições (exclui quem nunca entrou).
+        # Quem tem no máximo N edições entre os que disputaram (0 entra depois,
+        # ao unir com participacao:nunca_* no histórico completo).
         out[f"long_le_{n}"] = {
             fid for fid, ys in anos_por.items() if 1 <= len(ys) <= n
         }
@@ -422,6 +423,7 @@ def _carregar_participacoes_copa(
             fid for fid, ys in anos_por.items() if len(ys) >= n
         )
     for n in long_anos_le:
+        # 1..N entre quem disputou; 0 (nunca) é unido depois no histórico completo.
         out[f"longevidade:cdb_le_{n}"] = frozenset(
             fid for fid, ys in anos_por.items() if 1 <= len(ys) <= n
         )
@@ -610,6 +612,16 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
     for pos_id, neg_id in pares:
         pos = out.get(pos_id) or frozenset()
         out[neg_id] = frozenset(cid for cid in todos if cid not in pos)
+
+    # ≤N participações = 0..N (inclui quem nunca disputou). Sem isso o rótulo
+    # “≤5 na Série C” só pegava estreantes/poucas edições e excluía a maioria do catálogo.
+    for tag in ("serie_a", "serie_b", "serie_c", "cdb"):
+        nunca = out.get(f"participacao:nunca_{tag}") or frozenset()
+        if not nunca:
+            continue
+        for key, val in list(out.items()):
+            if key.startswith(f"longevidade:{tag}_le_"):
+                out[key] = frozenset(val) | nunca
 
     return out
 
