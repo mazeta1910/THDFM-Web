@@ -1,25 +1,31 @@
-# Série A — classificações e artilheiros (Wikipedia)
+# Dados históricos do Grid — fontes locais em `data/torneios/`
 
-Gerado por `scripts/scrape_serie_a_wiki.py` via API da pt.wikipedia.
+Não usar scrape sob demanda: os dumps/CSV/XLSX desta pasta são a fonte.
 
-## Arquivos
+## Fontes brutas (levantamento)
 
-- `classificacoes_serie_a.csv` — tabelas finais **1959–2025** (1935 linhas), UTF-8 BOM, `;`
-- `artilheiros_serie_a.csv` — artilheiros por edição (1937–2025), UTF-8 BOM, `;`
-- `goleadas_serie_a.csv` — maiores goleadas por edição (export de `Goleadas.xlsx` aba Ligas), UTF-8 BOM, `;`
+| Arquivo | Uso no Grid |
+|---|---|
+| `classificacoes_serie_a.csv` | Série A (já normalizado) |
+| `artilheiros_serie_a.csv` | Artilheiros Série A |
+| `Brasileirao Serie B.CSV` | Top 4 por edição (linhas `Detalhes`) |
+| `Série C.xlsx` / `Serie C.CSV` | Classificações Série C |
+| `Copa do Brasil.CSV` | Campeões / vices da Copa |
+| `Goleadas.xlsx` | Goleadas Série A/B + Copa |
 
-## Notas
+## Artefatos normalizados (gerados localmente)
 
-- Classificações: prioriza seção **Classificação final** (depois geral). Inclui Taça Brasil / Robertão / mata-mata; posições refletem o desfecho do torneio, não só pontos.
-- **1967–1968:** scrape usa o **Torneio Roberto Gomes Pedrosa** (há também Taça Brasil no Wiki).
-- **1987:** a tabela capturada é a classificação do Módulo Verde (1º Flamengo). O título CBF é controverso (Sport).
-- **Melhor ataque / mais gols por edição:** derivar do maior `gp` na classificação (não precisa de CSV extra).
-- **Melhor/pior defesa, mais V/E/D:** derivar de `gc` / `v` / `e` / `d` por edição.
-- **Rebaixado (Grid):** heurística — zona dos últimos 4 (n≥20) ou 2 (16≤n<20) a partir de 1988; edições mata-mata anteriores sem zona.
-- **Goleadas:** por ano, maior `diff`; vencedor = aplicou, perdedor = sofreu, ambos = presente.
-- Artilheiros (jogadores): lista agregada + override **2003–2025** pelas páginas anuais.
-- Empates de artilharia: uma linha por jogador empatado no máximo de gols da edição.
-- Nomes podem precisar de aliases no join FM.
-- Dependência: `beautifulsoup4`.
-- Erros do scrape de classificação: nenhum
-- Divergências de campeão vs lista de checagem: nenhuma
+`scripts/extract_torneios_locais.py` (e `extract_serie_c_classif.py`) produzem:
+
+- `classificacoes_serie_b.csv` — só posições 1–4 (o dump B não traz tabela completa limpa)
+- `classificacoes_serie_c.csv` — tabelas finais aproveitáveis do xlsx
+- `campeoes_copa_do_brasil.csv`
+- `goleadas_ligas.csv` / `goleadas_serie_a.csv` / `goleadas_copa_do_brasil.csv`
+
+## Categorias
+
+- **Série A:** conjunto completo (classificação + artilheiros + goleadas)
+- **Série B:** campeão / vice / G4 + goleadas por edição
+- **Série C:** espelho das categorias de classificação (+ rebaixamento)
+- **Copa do Brasil:** campeão / vice + maiores goleadas históricas
+- **Série D:** sem arquivo local nesta pasta — fora do pool por enquanto

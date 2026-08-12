@@ -90,3 +90,61 @@ serie_a;2024;1;Palmeiras;Cuiabá;5;0;Palmeiras;Cuiabá;5;completar — B só tem
 serie_a;2025;1;Santos;Vasco da Gama;0;6;Vasco da Gama;Santos;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
 serie_a;2025;1;Fluminense;São Paulo;6;0;Fluminense;São Paulo;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
 serie_a;2025;1;Flamengo;Juventude;6;0;Flamengo;Juventude;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1971;1;CRB;Náutico;6;1;CRB;Náutico;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1972;1;Campinense;Calouros do Ar;6;1;Campinense;Calouros do Ar;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1980;1;Americano;Botafogo-BA;7;0;Americano;Botafogo-BA;7;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1981;1;Guarani;Serrano-RJ;6;0;Guarani;Serrano-RJ;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1982;1;Volta Redonda;Operário-MT;8;0;Volta Redonda;Operário-MT;8;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1983;1;Operário-MS;América-MG;6;0;Operário-MS;América-MG;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1984;1;Botafogo-PB;Uberlândia;0;4;Uberlândia;Botafogo-PB;4;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1985;1;Tuna Luso;Fortaleza;5;1;Tuna Luso;Fortaleza;4;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1986;1;América-MG;Mixo-MT;6;1;América-MG;Mixo-MT;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1987;1;Sport;Inter de Limeira;4;0;Sport;Inter de Limeira;4;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1987;1;Portuguesa;CSA;4;0;Portuguesa;CSA;4;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1988;1;Inter de Limeira;Atlético-GO;5;1;Inter de Limeira;Atlético-GO;4;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1989;1;Criciúma;Figueirense;6;0;Criciúma;Figueirense;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1990;1;Guarani;Moto Clube;6;1;Guarani;Moto Clube;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1991;1;Novorizontino;Taguatinga;7;0;Novorizontino;Taguatinga;7;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1992;1;Grêmio;Operário-MT;7;1;Grêmio;Operário-MT;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1994;1;Ceará;Tuna Luso;6;1;Ceará;Tuna Luso;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1995;1;Coritiba;Ferroviária;8;0;Coritiba;Ferroviária;8;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1996;1;Volta Redonda;Londrina;5;0;Volta Redonda;Londrina;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1997;1;América-MG;Tuna Luso;5;0;América-MG;Tuna Luso;5;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1998;1;XV de Piracicaba;Ceará;6;0;XV de Piracicaba;Ceará;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;1999;1;Remo;Avaí;7;1;Remo;Avaí;6;completar — B só tem ~12 goleadas parciais no CSV atual (ver anexo)
+serie_b;2000;1;Desportiva-ES;Serra-ES;6;0;Desportiva-ES;Serra-ES;6;quando houver export — Série C
+serie_b;2001;1;Londrina;Desportiva-ES;7;0;Londrina;Desportiva-ES;7;quando houver export — Série D
+serie_b;2002;1;Fortaleza;Botafogo-SP;7;1;Fortaleza;Botafogo-SP;6;quando houver export — Copa do Brasil
+serie_b;2003;1;Palmeiras;Avaí;1;6;Avaí;Palmeiras;5;
+serie_b;2004;1;Marília;Sport;7;1;Marília;Sport;6;
+serie_b;2005;1;Bahia;CRB;5;0;Bahia;CRB;5;
+serie_b;2006;1;Paulista;Paysandu;9;0;Paulista;Paysandu;9;
+serie_b;2007;1;Paulista;Barueri;7;0;Paulista;Barueri;7;
+serie_b;2008;1;Corinthians;Gama;5;0;Corinthians;Gama;5;
+serie_b;2008;1;Corinthians;Marília;5;0;Corinthians;Marília;5;
+serie_b;2009;1;ABC;Brasiliense;6;2;ABC;Brasiliense;4;
+serie_b;2010;1;Figueirense;ASA;6;0;Figueirense;ASA;6;
+serie_b;2011;1;Ponte Preta;ASA;5;0;Ponte Preta;ASA;5;
+serie_b;2012;1;Joinville;Ipatinga;6;0;Joinville;Ipatinga;6;
+serie_b;2012;1;Ipatinga;Goiás;0;6;Goiás;Ipatinga;6;
+serie_b;2012;1;Portuguesa;Bragantino;5;0;Portuguesa;Bragantino;5;
+serie_b;2013;1;Grêmio Barueri;Athletico-PR;0;6;Athletico-PR;Grêmio Barueri;6;
+serie_b;2014;1;América-MG;Sport;5;0;América-MG;Sport;5;
+serie_b;2015;1;Vasco;Avaí;0;5;Avaí;Vasco;5;
+serie_b;2016;1;Botafogo;Sampaio Corrêa;5;0;Botafogo;Sampaio Corrêa;5;
+serie_b;2017;1;Luverdense;Brasil de Pelotas;4;0;Luverdense;Brasil de Pelotas;4;
+serie_b;2017;1;Paraná Clube;Santa Cruz;4;0;Paraná Clube;Santa Cruz;4;
+serie_b;2017;1;Guarani;Paraná Clube;0;4;Paraná Clube;Guarani;4;
+serie_b;2018;1;Brasil de Pelotas;Vila Nova (GO);5;0;Brasil de Pelotas;Vila Nova (GO);5;
+serie_b;2019;1;Bragantino;Operário-PR;4;0;Bragantino;Operário-PR;4;
+serie_b;2019;1;América-MG;Figueirense;0;4;Figueirense;América-MG;4;
+serie_b;2019;1;Ponte Preta;Brasil de Pelotas;4;0;Ponte Preta;Brasil de Pelotas;4;
+serie_b;2020;1;Juventude;Paraná Clube;6;0;Juventude;Paraná Clube;6;
+serie_b;2021;1;Coritiba;Brusque;4;0;Coritiba;Brusque;4;
+serie_b;2021;1;Botafogo;Vasco da Gama;4;0;Botafogo;Vasco da Gama;4;
+serie_b;2022;1;Novorizontino;Náutico;6;0;Novorizontino;Náutico;6;
+serie_b;2023;1;CRB;Vitória;6;0;CRB;Vitória;6;
+serie_b;2024;1;Novorizontino;Avaí;4;0;Novorizontino;Avaí;4;
+serie_b;2024;1;Sport;Guarani;4;0;Sport;Guarani;4;
+serie_b;2024;1;Santos;Coritiba;4;0;Santos;Coritiba;4;
+serie_b;2025;1;Santos;Chapecoense;5;0;Santos;Chapecoense;5;

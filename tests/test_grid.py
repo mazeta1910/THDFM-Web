@@ -128,13 +128,47 @@ def test_novas_categorias_historicas_aparecem_no_pool():
     from src.grid_historico import HISTORICO_META, limpar_caches_historico
 
     limpar_caches_historico()
+    from src.grid_game import categorias_disponiveis
+
+    categorias_disponiveis.cache_clear()
     cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
     ids_meta = {m[0] for m in HISTORICO_META}
     assert "goleada:aplicou" in ids_meta
     assert "premio:rebaixado" in ids_meta
+    assert "titulo:campeao_serie_b" in ids_meta
+    assert "participacao:serie_c" in ids_meta
+    assert "titulo:campeao_cdb" in ids_meta
+    assert "participacao:serie_d" not in ids_meta  # sem CSV local de Série D
     assert cats["goleada:aplicou"].rotulo.startswith("Já aplicou")
-    assert cats["premio:mais_empates"].tipo == "premio"
-    assert cats["premio:g4"].rotulo  # já existia; segue no pool
+    assert cats["titulo:campeao_serie_b"].rotulo.startswith("Já foi campeão da Série B")
+    assert cats["titulo:campeao_cdb"].tipo == "titulo"
+    hist = historico_serie_a()
+    for cid, _tipo, _val, _rot in HISTORICO_META:
+        assert cid in cats, cid
+        assert len(hist.get(cid) or []) >= DENSIDADE_MIN, (cid, len(hist.get(cid) or []))
+
+
+def test_categorias_serie_b_c_e_copa_densas():
+    """Categorias B/C/Copa vêm dos CSV/XLSX locais em data/torneios (sem scrape)."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    hist = historico_serie_a()
+    for key in (
+        "titulo:campeao_serie_b",
+        "titulo:vice_serie_b",
+        "premio:g4_serie_b",
+        "goleada:aplicou_serie_b",
+        "titulo:campeao_serie_c",
+        "premio:g4_serie_c",
+        "premio:melhor_defesa_serie_c",
+        "titulo:campeao_cdb",
+        "titulo:vice_cdb",
+        "goleada:presente_cdb",
+    ):
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+    assert "titulo:campeao_serie_d" not in hist
+
 
 
 def test_variedade_cutover_e_eixos_mistos():
