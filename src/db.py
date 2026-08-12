@@ -4846,8 +4846,49 @@ def _contar_celulas_ok(celulas: Any) -> tuple[int, int]:
     return ok, filled
 
 
+def _rep_clube_celula(cell: dict[str, Any]) -> int:
+    """Rep FM do clube na célula (snapshot) ou lookup no catálogo."""
+    clube = cell.get("clube") if isinstance(cell, dict) else None
+    if not isinstance(clube, dict):
+        return 0
+    if "rep" in clube and clube.get("rep") is not None:
+        try:
+            return max(0, int(clube.get("rep") or 0))
+        except (TypeError, ValueError):
+            pass
+    cid = str(clube.get("id") or "").strip()
+    if not cid:
+        return 0
+    try:
+        from src.grid_game import clubes_por_id
+
+        cat = clubes_por_id().get(cid)
+        if cat:
+            return max(0, int(cat.get("rep") or 0))
+    except Exception:
+        pass
+    return 0
+
+
+def _somar_pontos_rep(celulas: Any) -> int:
+    """Soma pontos de desempate: menor reputação FM → mais pontos (só acertos)."""
+    from src.clubes_catalogo import pontos_rep_desempate
+
+    total = 0
+    if not isinstance(celulas, list):
+        return 0
+    for row in celulas:
+        if not isinstance(row, list):
+            continue
+        for cell in row:
+            if not isinstance(cell, dict) or not cell.get("clube") or not cell.get("ok"):
+                continue
+            total += pontos_rep_desempate(_rep_clube_celula(cell))
+    return total
+
+
 def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
-    """Ranking: dias finalizados → células corretas → streak."""
+    """Ranking: dias finalizados → acertos → streak → pontos Rep (obscuro vale mais)."""
     lim = max(1, min(int(limite), 200))
     with get_db() as conn:
         rows = conn.execute(
@@ -4872,6 +4913,7 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
                 "dias_finalizados": 0,
                 "celulas_ok": 0,
                 "celulas_preenchidas": 0,
+                "pontos_rep": 0,
             },
         )
         try:
@@ -4881,6 +4923,7 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
         ok, filled = _contar_celulas_ok(celulas)
         item["celulas_ok"] += ok
         item["celulas_preenchidas"] += filled
+        item["pontos_rep"] += _somar_pontos_rep(celulas)
         if row["finalizado"]:
             item["dias_finalizados"] += 1
     out: list[dict[str, Any]] = []
@@ -4899,6 +4942,7 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
             -int(r["dias_finalizados"]),
             -int(r["celulas_ok"]),
             -int(r["streak"]),
+            -int(r["pontos_rep"]),
             (r["nome"] or "").casefold(),
         )
     )

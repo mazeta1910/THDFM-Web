@@ -16,7 +16,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.clubes_catalogo import carregar_clubes
-from src.grid_historico import HISTORICO_META, historico_serie_a
+from src.grid_historico import historico_meta, historico_serie_a
 
 TZ_SP = ZoneInfo("America/Sao_Paulo")
 GRID_SIZE = 3
@@ -41,12 +41,14 @@ GRID_HISTORICO_DESDE = "2026-08-11"
 # Regeneração admin (salt) em dia histórico também usa v3.
 GRID_VARIEDADE_DESDE = "2026-08-12"
 _TIPOS_HISTORICOS = frozenset(
-    {"titulo", "premio", "participacao", "longevidade", "paridade"}
+    {"titulo", "premio", "participacao", "longevidade", "paridade", "goleada"}
 )
-_TIPOS_NOME = ("letra", "termina")
+_TIPOS_NOME = ("letra", "termina", "nome")
 _TIPOS_GEO = (
     "uf",
+    "nao_uf",
     "regiao",
+    "nao_regiao",
     "serie",
     "titulo",
     "premio",
@@ -58,14 +60,18 @@ _TIPOS_GEO = (
 _MAX_POR_TIPO_EIXO: dict[str, int] = {
     "termina": 1,
     "regiao": 1,
+    "nao_regiao": 1,
     "serie": 1,
     "letra": 1,
+    "nome": 1,
     "uf": 2,
+    "nao_uf": 1,
     "titulo": 1,
     "premio": 1,
     "participacao": 1,
     "longevidade": 1,
     "paridade": 1,
+    "goleada": 1,
 }
 
 # Sufixos/sílabas comuns em nomes de clubes BR (pool do eixo "termina com").
@@ -102,6 +108,47 @@ REGIOES: dict[str, set[str]] = {
     "Sul": {"PR", "RS", "SC"},
 }
 UF_PARA_REGIAO = {uf: reg for reg, ufs in REGIOES.items() for uf in ufs}
+
+# Gentílicos para rótulos do Grid (Time X / Não é X).
+UF_GENTILICO: dict[str, str] = {
+    "AC": "acreano",
+    "AL": "alagoano",
+    "AP": "amapaense",
+    "AM": "amazonense",
+    "BA": "baiano",
+    "CE": "cearense",
+    "DF": "brasiliense",
+    "ES": "capixaba",
+    "GO": "goiano",
+    "MA": "maranhense",
+    "MT": "mato-grossense",
+    "MS": "sul-mato-grossense",
+    "MG": "mineiro",
+    "PA": "paraense",
+    "PB": "paraibano",
+    "PR": "paranaense",
+    "PE": "pernambucano",
+    "PI": "piauiense",
+    "RJ": "carioca",
+    "RN": "potiguar",
+    "RS": "gaúcho",
+    "RO": "rondoniano",
+    "RR": "roraimense",
+    "SC": "catarinense",
+    "SP": "paulista",
+    "SE": "sergipano",
+    "TO": "tocantinense",
+}
+
+
+def rotulo_uf(uf: str) -> str:
+    g = UF_GENTILICO.get(uf)
+    return f"Time {g}" if g else f"Clube de {uf}"
+
+
+def rotulo_nao_uf(uf: str) -> str:
+    g = UF_GENTILICO.get(uf)
+    return f"Não é {g}" if g else f"Não é de {uf}"
 
 _SERIE_A_MARKERS = ("assaí", "assai", "série a", "serie a")
 _SERIE_B_MARKERS = ("série b", "serie b")
@@ -299,6 +346,10 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
         if ch.isalpha():
             termina_letra = ch.upper()
             break
+    letras = [ch for ch in core if ch.isalpha()]
+    vogais = sum(1 for ch in letras if ch in "aeiou")
+    cons = len(letras) - vogais
+    tam = len(letras)
     return {
         **c,
         "serie": normalizar_serie(c.get("divisao")),
@@ -308,6 +359,9 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
         "nome_core": core,
         "nome_sig": sig,
         "termina_letra": termina_letra,
+        "nome_nvogais": vogais,
+        "nome_ncons": cons,
+        "nome_tam": tam,
     }
 
 
@@ -335,8 +389,12 @@ def historico_ativo(dia: str | None = None) -> bool:
 def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
     if cat.tipo == "uf":
         return clube.get("uf") == cat.valor
+    if cat.tipo == "nao_uf":
+        return bool(clube.get("uf")) and clube.get("uf") != cat.valor
     if cat.tipo == "regiao":
         return clube.get("regiao") == cat.valor
+    if cat.tipo == "nao_regiao":
+        return bool(clube.get("regiao")) and clube.get("regiao") != cat.valor
     if cat.tipo == "serie":
         return clube.get("serie") == cat.valor
     if cat.tipo == "letra":
@@ -349,15 +407,91 @@ def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
         if len(suf) == 1:
             return (clube.get("termina_letra") or "") == suf.upper()
         return core.endswith(suf)
+    if cat.tipo == "nome":
+        return _clube_bate_nome(clube, cat.valor)
     if cat.tipo in _TIPOS_HISTORICOS:
         ids = historico_serie_a().get(cat.id)
         return bool(ids) and clube.get("id") in ids
     return False
 
 
+def _clube_bate_nome(clube: dict[str, Any], valor: str) -> bool:
+    core = clube.get("nome_core") or ""
+    if valor == "vogal":
+        return bool(core) and core[0] in "aeiou"
+    if valor == "kwy":
+        return any(ch in core for ch in "kwy")
+    if valor == "curto":
+        return 0 < int(clube.get("nome_tam") or 0) <= 6
+    if valor == "longo":
+        return int(clube.get("nome_tam") or 0) >= 12
+    if valor.startswith("nv:"):
+        try:
+            n = int(valor.split(":", 1)[1])
+        except ValueError:
+            return False
+        return int(clube.get("nome_nvogais") or 0) == n
+    if valor.startswith("nc:"):
+        try:
+            n = int(valor.split(":", 1)[1])
+        except ValueError:
+            return False
+        return int(clube.get("nome_ncons") or 0) == n
+    if valor.startswith("tem:"):
+        ch = valor.split(":", 1)[1]
+        return len(ch) == 1 and ch in core
+    if valor.startswith("nao:"):
+        ch = valor.split(":", 1)[1]
+        return bool(core) and len(ch) == 1 and ch not in core
+    return False
+
+
+def _nomes_compativeis(va: str, vb: str) -> bool:
+    """Regras de interseção entre filtros de nome."""
+    if va == vb:
+        return False
+
+    def fam(v: str) -> str:
+        return v.split(":", 1)[0] if ":" in v else v
+
+    fa, fb = fam(va), fam(vb)
+    if fa == "nv" and fb == "nv":
+        return False
+    if fa == "nc" and fb == "nc":
+        return False
+    if fa == "tem" and fb == "tem":
+        return va != vb
+    if fa == "nao" and fb == "nao":
+        return va != vb
+    if {fa, fb} == {"tem", "nao"}:
+        return va.split(":", 1)[1] != vb.split(":", 1)[1]
+    if {va, vb} == {"curto", "longo"}:
+        return False
+    return True
+
+
+_PARES_COMPLEMENTO_HIST = frozenset(
+    {
+        frozenset({"titulo:campeao_br", "titulo:nunca_campeao_br"}),
+        frozenset({"premio:artilheiro", "premio:nunca_artilheiro"}),
+        frozenset({"premio:melhor_defesa", "premio:nunca_melhor_defesa"}),
+        frozenset({"premio:rebaixado", "premio:nunca_rebaixado"}),
+        frozenset({"titulo:campeao_cdb", "titulo:nunca_campeao_cdb"}),
+        frozenset({"titulo:final_cdb", "titulo:nunca_final_cdb"}),
+        frozenset({"titulo:campeao_br", "premio:g4_sem_titulo"}),
+        frozenset({"titulo:campeao_br", "titulo:vice_sem_campeao"}),
+        frozenset({"titulo:campeao_cdb", "titulo:vice_cdb_sem_campeao"}),
+        frozenset({"titulo:campeao_br", "titulo:campeao_cdb_sem_br"}),
+        frozenset({"titulo:campeao_cdb", "titulo:campeao_br_sem_cdb"}),
+    }
+)
+
+
 def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     """False quando a interseção é logicamente impossível."""
     if a.id == b.id:
+        return False
+    if frozenset({a.id, b.id}) in _PARES_COMPLEMENTO_HIST:
         return False
     # Terminações: letras/sílabas distintas só cruzam se uma for sufixo da outra
     # (ex.: ense ∩ e; eiro ∩ iro). Caso contrário, vazio.
@@ -367,6 +501,34 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
         if not va or not vb or va == vb:
             return False
         return va.endswith(vb) or vb.endswith(va)
+    if a.tipo == "nome" and b.tipo == "nome":
+        return _nomes_compativeis(a.valor, b.valor)
+    # Negacoes UF/regiao: valores distintos AINDA intersectam (nao-SP ∩ nao-RJ).
+    if a.tipo == "nao_uf" and b.tipo == "nao_uf":
+        return a.valor != b.valor
+    if a.tipo == "nao_regiao" and b.tipo == "nao_regiao":
+        return a.valor != b.valor
+    if a.tipo == "uf" and b.tipo == "nao_uf":
+        return a.valor != b.valor
+    if a.tipo == "nao_uf" and b.tipo == "uf":
+        return a.valor != b.valor
+    if a.tipo == "regiao" and b.tipo == "nao_regiao":
+        return a.valor != b.valor
+    if a.tipo == "nao_regiao" and b.tipo == "regiao":
+        return a.valor != b.valor
+    if a.tipo == "nao_uf" and b.tipo == "regiao":
+        # Ex.: nao-SP ∩ Sudeste ainda tem RJ/MG/ES.
+        return True
+    if a.tipo == "regiao" and b.tipo == "nao_uf":
+        return True
+    if a.tipo == "nao_regiao" and b.tipo == "uf":
+        return b.valor not in REGIOES.get(a.valor, set())
+    if a.tipo == "uf" and b.tipo == "nao_regiao":
+        return a.valor not in REGIOES.get(b.valor, set())
+    if a.tipo == "nao_uf" and b.tipo == "nao_regiao":
+        return True
+    if a.tipo == "nao_regiao" and b.tipo == "nao_uf":
+        return True
     if a.tipo == b.tipo and a.valor != b.valor:
         # dois UFs / duas séries / duas letras distintas nunca intersectam
         return False
@@ -389,7 +551,6 @@ def categorias_compativeis(a: Categoria, b: Categoria) -> bool:
     # Paridade de campeão ∩ campeão = a própria paridade (ok, denso o bastante via outras)
     return True
 
-
 def pool_celula(row: Categoria, col: Categoria) -> list[dict[str, Any]]:
     if not categorias_compativeis(row, col):
         return []
@@ -408,12 +569,30 @@ def _montar_categorias(dia: str) -> list[Categoria]:
     for uf in ufs:
         n = sum(1 for c in clubes if c["uf"] == uf)
         if n >= DENSIDADE_MIN:
-            cats.append(Categoria(f"uf:{uf}", "uf", uf, f"Clube de {uf}"))
+            cats.append(Categoria(f"uf:{uf}", "uf", uf, rotulo_uf(uf)))
+        # Negacoes entram com o cutover historico para nao alterar puzzles antigos.
+        if historico_ativo(dia):
+            n_nao = sum(1 for c in clubes if c.get("uf") and c["uf"] != uf)
+            if n_nao >= DENSIDADE_MIN:
+                cats.append(
+                    Categoria(f"nao_uf:{uf}", "nao_uf", uf, rotulo_nao_uf(uf))
+                )
 
     for reg in REGIOES:
         n = sum(1 for c in clubes if c.get("regiao") == reg)
         if n >= DENSIDADE_MIN:
             cats.append(Categoria(f"regiao:{reg}", "regiao", reg, f"Região {reg}"))
+        if historico_ativo(dia):
+            n_nao = sum(1 for c in clubes if c.get("regiao") and c.get("regiao") != reg)
+            if n_nao >= DENSIDADE_MIN:
+                cats.append(
+                    Categoria(
+                        f"nao_regiao:{reg}",
+                        "nao_regiao",
+                        reg,
+                        f"Não é da região {reg}",
+                    )
+                )
 
     serie_labels = {
         "A": "Brasileirão Série A",
@@ -461,16 +640,43 @@ def _montar_categorias(dia: str) -> list[Categoria]:
                 )
             )
 
+    # Filtros de nome extras (cutover histórico — não altera puzzles antigos).
     if historico_ativo(dia):
+        cats.extend(_categorias_nome(clubes))
         hist = historico_serie_a()
         ids_grid = {c["id"] for c in clubes}
-        for cat_id, tipo, valor, rotulo in HISTORICO_META:
+        for cat_id, tipo, valor, rotulo in historico_meta():
             membros = hist.get(cat_id) or frozenset()
             n = sum(1 for cid in membros if cid in ids_grid)
             if n >= DENSIDADE_MIN:
                 cats.append(Categoria(cat_id, tipo, valor, rotulo))
 
     return cats
+
+
+def _categorias_nome(clubes: tuple[dict[str, Any], ...] | list[dict[str, Any]]) -> list[Categoria]:
+    out: list[Categoria] = []
+
+    def add(valor: str, rotulo: str, pred) -> None:
+        n = sum(1 for c in clubes if pred(c))
+        if n >= DENSIDADE_MIN:
+            out.append(Categoria(f"nome:{valor}", "nome", valor, rotulo))
+
+    add("vogal", "Nome começa com vogal", lambda c: bool(c.get("nome_core")) and c["nome_core"][0] in "aeiou")
+    add("kwy", "Nome tem K, W ou Y", lambda c: any(ch in (c.get("nome_core") or "") for ch in "kwy"))
+    add("curto", "Nome curto (≤6 letras)", lambda c: 0 < int(c.get("nome_tam") or 0) <= 6)
+    add("longo", "Nome longo (≥12 letras)", lambda c: int(c.get("nome_tam") or 0) >= 12)
+    for n in range(1, 12):
+        add(f"nv:{n}", f"Nome tem {n} vogais", lambda c, n=n: int(c.get("nome_nvogais") or 0) == n)
+        add(f"nc:{n}", f"Nome tem {n} consoantes", lambda c, n=n: int(c.get("nome_ncons") or 0) == n)
+    for ch in "abcdefghijklmnopqrstuvwxyz":
+        add(f"tem:{ch}", f"Nome tem a letra {ch.upper()}", lambda c, ch=ch: ch in (c.get("nome_core") or ""))
+        add(
+            f"nao:{ch}",
+            f"Nome não tem a letra {ch.upper()}",
+            lambda c, ch=ch: bool(c.get("nome_core")) and ch not in c["nome_core"],
+        )
+    return out
 
 
 @lru_cache(maxsize=16)
@@ -523,6 +729,7 @@ def _gerar_puzzle_legado(dia_s: str) -> dict[str, Any]:
         + list(by_tipo.get("participacao") or [])
         + list(by_tipo.get("longevidade") or [])
         + list(by_tipo.get("paridade") or [])
+        + list(by_tipo.get("goleada") or [])
     )
     nome_eixo = list(by_tipo.get("letra") or []) + list(by_tipo.get("termina") or [])
     rng.shuffle(geo)
@@ -743,7 +950,7 @@ def _tentar_board(
 def _familia_categoria(tipo: str) -> str:
     if tipo in _TIPOS_NOME:
         return "nome"
-    if tipo in ("uf", "regiao", "serie"):
+    if tipo in ("uf", "nao_uf", "regiao", "nao_regiao", "serie"):
         return "geo"
     if tipo in _TIPOS_HISTORICOS:
         return "hist"
@@ -1155,6 +1362,7 @@ def validar_chute(
     if not clube:
         raise ValueError("clube inválido")
     ok = clube_bate_categoria(clube, row) and clube_bate_categoria(clube, col)
+    rep = int(clube.get("rep") or 0)
     return {
         "ok": ok,
         "clube": {
@@ -1162,6 +1370,7 @@ def validar_chute(
             "nome": clube["nome"],
             "uf": clube["uf"],
             "emblema": clube["emblema"],
+            "rep": rep,
         },
         "linha": linha,
         "coluna": coluna,

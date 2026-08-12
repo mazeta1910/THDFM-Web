@@ -97,11 +97,146 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
     hist = historico_serie_a()
     assert len(hist.get("titulo:campeao_br") or []) >= DENSIDADE_MIN
     assert len(hist.get("premio:melhor_ataque") or []) >= DENSIDADE_MIN
+    # Novas categorias (classificação + goleadas)
+    for key in (
+        "premio:pior_defesa",
+        "premio:mais_vitorias",
+        "premio:mais_empates",
+        "premio:mais_derrotas",
+        "premio:rebaixado",
+        "premio:g4",
+        "premio:melhor_defesa",
+        "goleada:presente",
+        "goleada:aplicou",
+        "goleada:sofreu",
+    ):
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+        assert key in cats_depois
+
+    # Subconjuntos de goleada (ao longo das edições; um clube pode aplicar e sofrer em anos distintos)
+    assert hist["goleada:aplicou"] <= hist["goleada:presente"]
+    assert hist["goleada:sofreu"] <= hist["goleada:presente"]
+    assert hist["goleada:aplicou"] | hist["goleada:sofreu"] == hist["goleada:presente"]
 
     p = gerar_puzzle("2026-08-11")
     assert p["dia"] == "2026-08-11"
     for row in p["densidades"]:
         assert all(n >= DENSIDADE_MIN for n in row)
+
+
+def test_novas_categorias_historicas_aparecem_no_pool():
+    from src.grid_historico import HISTORICO_META, historico_meta, limpar_caches_historico
+
+    limpar_caches_historico()
+    from src.grid_game import categorias_disponiveis
+
+    categorias_disponiveis.cache_clear()
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    ids_meta = {m[0] for m in historico_meta()}
+    assert "goleada:aplicou" in ids_meta
+    assert "premio:rebaixado" in ids_meta
+    assert "titulo:campeao_serie_b" in ids_meta
+    assert "participacao:serie_c" in ids_meta
+    assert "titulo:campeao_cdb" in ids_meta
+    assert "participacao:serie_d" not in ids_meta  # sem CSV local de Série D
+    assert cats["goleada:aplicou"].rotulo.startswith("Já aplicou")
+    assert cats["titulo:campeao_serie_b"].rotulo.startswith("Já foi campeão da Série B")
+    assert cats["titulo:campeao_cdb"].tipo == "titulo"
+    hist = historico_serie_a()
+    for cid, _tipo, _val, _rot in historico_meta():
+        assert cid in cats, cid
+        assert len(hist.get(cid) or []) >= DENSIDADE_MIN, (cid, len(hist.get(cid) or []))
+    # base antiga continua coberta
+    for cid, *_ in HISTORICO_META:
+        assert cid in ids_meta
+
+
+def test_filtros_negacao_uf_regiao_e_nunca_historico():
+    """Gentílico UF, não-UF, não-região e 'nunca…' históricos."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    categorias_disponiveis.cache_clear()
+    clubes_grid.cache_clear()
+
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    assert cats["uf:PR"].rotulo == "Time paranaense"
+    assert cats["nao_uf:PR"].rotulo == "Não é paranaense"
+    assert cats["nao_regiao:Sul"].rotulo == "Não é da região Sul"
+
+    hist = historico_serie_a()
+    assert not (hist["titulo:campeao_br"] & hist["titulo:nunca_campeao_br"])
+    assert "premio:nunca_rebaixado" in cats
+
+
+def test_filtros_nome_e_compostos_historicos():
+    """Nome (vogal/KWY/tamanho/letras) + compostos históricos densos."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    categorias_disponiveis.cache_clear()
+    clubes_grid.cache_clear()
+
+    cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
+    for key in (
+        "nome:vogal",
+        "nome:kwy",
+        "nome:curto",
+        "nome:longo",
+        "nome:nv:4",
+        "nome:nc:5",
+        "nome:tem:a",
+        "nome:nao:x",
+        "premio:g4_sem_titulo",
+        "titulo:vice_sem_campeao",
+        "titulo:nunca_campeao_cdb",
+        "titulo:nunca_final_cdb",
+        "premio:rebaixado_2x",
+        "longevidade:serie_b_3",
+        "participacao:serie_a_dec_1990",
+        "participacao:serie_a_antes_2003",
+        "participacao:serie_a_seq_2024_2025",
+    ):
+        assert key in cats, key
+
+    hist = historico_serie_a()
+    assert hist["premio:g4_sem_titulo"].isdisjoint(hist["titulo:campeao_br"])
+    assert hist["titulo:vice_sem_campeao"].isdisjoint(hist["titulo:campeao_br"])
+
+    from src.grid_game import clube_bate_categoria
+
+    vogal = cats["nome:vogal"]
+    curto = cats["nome:curto"]
+    sample = next(c for c in clubes_grid() if clube_bate_categoria(c, vogal))
+    assert sample["nome_core"][0] in "aeiou"
+    sample2 = next(c for c in clubes_grid() if clube_bate_categoria(c, curto))
+    assert sample2["nome_tam"] <= 6
+
+
+def test_categorias_serie_b_c_e_copa_densas():
+    """Categorias B/C/Copa vêm dos CSV/XLSX locais em data/torneios (sem scrape)."""
+    from src.grid_historico import limpar_caches_historico
+
+    limpar_caches_historico()
+    hist = historico_serie_a()
+    for key in (
+        "titulo:campeao_serie_b",
+        "titulo:vice_serie_b",
+        "premio:g4_serie_b",
+        "premio:melhor_defesa_serie_b",
+        "premio:mais_vitorias_serie_b",
+        "premio:rebaixado_serie_b",
+        "participacao:serie_b",
+        "goleada:aplicou_serie_b",
+        "titulo:campeao_serie_c",
+        "premio:g4_serie_c",
+        "premio:melhor_defesa_serie_c",
+        "titulo:campeao_cdb",
+        "titulo:vice_cdb",
+        "goleada:presente_cdb",
+    ):
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+    assert "titulo:campeao_serie_d" not in hist
 
 
 def test_variedade_cutover_e_eixos_mistos():
@@ -129,20 +264,20 @@ def test_variedade_cutover_e_eixos_mistos():
             assert cont.get("termina", 0) <= 1, (dia, eixo)
             assert cont.get("letra", 0) <= 1, (dia, eixo)
             assert cont.get("regiao", 0) <= 1, (dia, eixo)
-            n_nome = cont.get("letra", 0) + cont.get("termina", 0)
+            n_nome = cont.get("letra", 0) + cont.get("termina", 0) + cont.get("nome", 0)
             assert n_nome <= 1, (dia, eixo)
-            assert not all(t in ("letra", "termina") for t in tipos), (dia, eixo)
+            assert not all(t in ("letra", "termina", "nome") for t in tipos), (dia, eixo)
 
         board = p["linhas"] + p["colunas"]
-        n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina"))
+        n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina", "nome"))
         assert n_nome_board <= 2, (dia, n_nome_board)
         tipos_all = {c["tipo"] for c in board}
         assert len(tipos_all) >= 4, (dia, tipos_all)
 
         def _fam(t: str) -> str:
-            if t in ("letra", "termina"):
+            if t in ("letra", "termina", "nome"):
                 return "nome"
-            if t in ("uf", "regiao", "serie"):
+            if t in ("uf", "nao_uf", "regiao", "nao_regiao", "serie"):
                 return "geo"
             if t in {
                 "titulo",
@@ -530,8 +665,34 @@ def test_grid_fluxo_logado(client: TestClient):
     assert chute2.status_code == 409
 
 
-def _celula_ok(clube_id: str = "1") -> dict:
-    return {"ok": True, "clube": {"id": clube_id, "nome": "Clube X"}}
+def _celula_ok(clube_id: str = "1", *, rep: int | None = None) -> dict:
+    clube: dict = {"id": clube_id, "nome": "Clube X"}
+    if rep is not None:
+        clube["rep"] = rep
+    return {"ok": True, "clube": clube}
+
+
+def test_ranking_desempate_por_rep_baixa():
+    """Com mesmos dias/acertos/streak, quem acertou times com menor Rep FM fica na frente."""
+    from src import db as dbmod
+    from src.clubes_catalogo import pontos_rep_desempate
+
+    assert pontos_rep_desempate(400) > pontos_rep_desempate(7750)
+
+    a = dbmod.criar_participante("Grid Obscuro", status="liberado", celular="11991110011")
+    b = dbmod.criar_participante("Grid Famoso", status="liberado", celular="11991110012")
+    # Mesmo dia finalizado, 9 acertos cada; A usou times fracos, B usou elite.
+    full_a = [[_celula_ok(f"a{i}{j}", rep=200) for j in range(3)] for i in range(3)]
+    full_b = [[_celula_ok(f"b{i}{j}", rep=7500) for j in range(3)] for i in range(3)]
+    dbmod.salvar_grid_progresso(a["id"], "2026-08-09", full_a, finalizado=True)
+    dbmod.salvar_grid_progresso(b["id"], "2026-08-09", full_b, finalizado=True)
+
+    ranking = dbmod.ranking_grid(limite=10)
+    assert ranking[0]["participante_id"] == a["id"]
+    assert ranking[1]["participante_id"] == b["id"]
+    assert ranking[0]["pontos_rep"] > ranking[1]["pontos_rep"]
+    assert ranking[0]["dias_finalizados"] == ranking[1]["dias_finalizados"] == 1
+    assert ranking[0]["celulas_ok"] == ranking[1]["celulas_ok"] == 9
 
 
 def test_grid_reset_lancamento_zera_progresso(client: TestClient):
