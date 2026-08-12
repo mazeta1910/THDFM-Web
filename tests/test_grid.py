@@ -252,6 +252,11 @@ def test_variedade_cutover_e_eixos_mistos():
     tipos_vistos: set[str] = set()
     familias_por_dia: list[int] = []
     ids_vistos: set[str] = set()
+    n_uf = 0
+    n_nao_uf = 0
+    n_serie_c = 0
+    from src.grid_game import _categoria_serie_c
+
     for i in range(36):
         dia = f"2026-09-{i + 1:02d}" if i < 30 else f"2026-10-{i - 29:02d}"
         p = gerar_puzzle(dia)
@@ -281,6 +286,16 @@ def test_variedade_cutover_e_eixos_mistos():
         assert n_nome_board <= 2, (dia, n_nome_board)
         tipos_all = {c["tipo"] for c in board}
         assert len(tipos_all) >= 4, (dia, tipos_all)
+
+        for c in board:
+            if c["tipo"] == "uf":
+                n_uf += 1
+            elif c["tipo"] == "nao_uf":
+                n_nao_uf += 1
+            cat = categoria_por_id(c["id"], dia)
+            assert cat is not None
+            if _categoria_serie_c(cat):
+                n_serie_c += 1
 
         def _fam(t: str) -> str:
             if t in ("letra", "termina", "nome"):
@@ -319,6 +334,10 @@ def test_variedade_cutover_e_eixos_mistos():
     assert len(tipos_vistos) >= 7
     assert len(ids_vistos) >= 25
     assert max(familias_por_dia) >= 3
+
+    # Preferência de sorteio: UF positiva > “Não é…”, e Série C aparece mais
+    assert n_uf > n_nao_uf, (n_uf, n_nao_uf)
+    assert n_serie_c >= 10, n_serie_c
 
 
 def test_subgrupos_semanticos_basicos():

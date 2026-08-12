@@ -288,8 +288,8 @@ def _rng_dia(dia: str) -> random.Random:
     # v1: pool clássico; v2: histórico; v3: histórico + variedade de tipos
     # salt opcional: regeneração admin de um dia sem afetar os demais
     if variedade_ativa(dia):
-        # v5: subgrupos semânticos + montagem sequencial com solubilidade
-        ver = "v5"
+        # v6: pesos — UF positiva e Série C sobem; “Não é…” desce
+        ver = "v6"
     elif historico_ativo(dia):
         ver = "v2"
     else:
@@ -849,6 +849,79 @@ def _subgrupo_categoria(cat: Categoria) -> str:
     return t
 
 
+def _categoria_serie_c(cat: Categoria) -> bool:
+    """True se a categoria fala explicitamente da Série C."""
+    if cat.tipo == "serie" and str(cat.valor).upper() == "C":
+        return True
+    valor = str(cat.valor or "").casefold()
+    if "serie_c" in valor:
+        return True
+    rot = fold_txt(cat.rotulo or "")
+    return "serie c" in rot
+
+
+def _peso_categoria(cat: Categoria) -> float:
+    """Peso no sorteio: UF positiva e Série C sobem; negações e nome descem."""
+    t = cat.tipo
+    w = 1.0
+    if t == "uf":
+        # “Time rondoniano” filtra bem; preferir a “Não é rondoniano”
+        w *= 4.5
+    elif t == "regiao":
+        w *= 2.8
+    elif t == "nao_uf":
+        w *= 0.22
+    elif t == "nao_regiao":
+        w *= 0.35
+    elif t in _TIPOS_NOME:
+        w *= 0.55
+    elif t == "serie":
+        # Divisão atual: C um pouco acima de A/B/D
+        serie = str(cat.valor or "").upper()
+        if serie == "C":
+            w *= 3.5
+        elif serie in ("A", "B"):
+            w *= 1.1
+        else:
+            w *= 0.9
+
+    if _categoria_serie_c(cat):
+        w *= 3.8
+    return w
+
+
+def _amostra_ponderada(
+    rng: random.Random,
+    itens: list[Categoria],
+    *,
+    k: int,
+) -> list[Categoria]:
+    """Amostra sem reposição com probabilidade proporcional a `_peso_categoria`."""
+    if not itens or k <= 0:
+        return []
+    pool = list(itens)
+    pesos = [_peso_categoria(c) for c in pool]
+    out: list[Categoria] = []
+    n = min(k, len(pool))
+    for _ in range(n):
+        total = sum(pesos)
+        if total <= 0:
+            # fallback uniforme
+            idx = rng.randrange(len(pool))
+        else:
+            alvo = rng.random() * total
+            acc = 0.0
+            idx = len(pool) - 1
+            for i, p in enumerate(pesos):
+                acc += p
+                if alvo <= acc:
+                    idx = i
+                    break
+        out.append(pool.pop(idx))
+        pesos.pop(idx)
+    return out
+
+
 def _eixo_parcial_ok(cats: list[Categoria]) -> bool:
     """Regras de diversidade aplicáveis a um eixo incompleto (1..GRID_SIZE)."""
     if not cats or len(cats) > GRID_SIZE:
@@ -955,7 +1028,7 @@ def _opcoes_eixo_livre(
             if not opcoes:
                 ok = False
                 break
-            pick = rng.choice(opcoes)
+            pick = _amostra_ponderada(rng, opcoes, k=1)[0]
             cats.append(pick)
             usados.add(pick.id)
         if not ok or not _eixo_diverso(cats):
@@ -1035,7 +1108,7 @@ def _familia_categoria(tipo: str) -> str:
 def _score_variedade(
     rows: list[Categoria], cols: list[Categoria], densidades: list[list[int]]
 ) -> tuple[int, int, int, int]:
-    """Maior = melhor: famílias distintas, tipos espalhados, pouco “Nome…”."""
+    """Maior = melhor: famílias distintas, UF+, Série C, pouco “Não é…”/Nome."""
     all_cats = rows + cols
     familias = {_familia_categoria(c.tipo) for c in all_cats}
     tipos_all = {c.tipo for c in all_cats}
@@ -1047,12 +1120,16 @@ def _score_variedade(
     dens_min = min(n for linha in densidades for n in linha)
     cont = Counter(c.tipo for c in all_cats)
     mono_penalty = sum(1 for n in cont.values() if n >= 3)
-    # Premia poucos rótulos “Nome…” no board (0–2)
     nome_bonus = 2 - n_nome
     subgrupos = {_subgrupo_categoria(c) for c in all_cats}
+    n_geo_pos = sum(1 for c in all_cats if c.tipo in ("uf", "regiao"))
+    n_geo_neg = sum(1 for c in all_cats if c.tipo in ("nao_uf", "nao_regiao"))
+    n_serie_c = sum(1 for c in all_cats if _categoria_serie_c(c))
+    # Premia filtros positivos e Série C; penaliza excesso de negação
+    bias = n_geo_pos * 2 + n_serie_c * 3 - n_geo_neg
     return (
         len(familias),
-        diversidade - mono_penalty + nome_bonus + len(subgrupos),
+        diversidade - mono_penalty + nome_bonus + len(subgrupos) + bias,
         tipos_eixo,
         dens_min,
     )
@@ -1069,10 +1146,11 @@ def _candidatos_eixo(
     memo: dict[tuple[str, str], int],
     limite: int = 36,
 ) -> list[Categoria]:
-    """Sorteia candidatos que respeitam subgrupo e solubilidade com o outro eixo."""
+    """Candidatos válidos, ordenados por sorteio ponderado (UF+/Série C)."""
+    validos: list[Categoria] = []
+    # Varre o pool embaralhado para não enviesar só pelo início da lista
     opcoes = [c for c in pool if c.id not in usados]
     rng.shuffle(opcoes)
-    out: list[Categoria] = []
     for c in opcoes:
         if not _eixo_parcial_ok(eixo + [c]):
             continue
@@ -1080,10 +1158,11 @@ def _candidatos_eixo(
             c, outro, cat_eh_linha=cat_eh_linha, memo=memo
         ):
             continue
-        out.append(c)
-        if len(out) >= limite:
+        validos.append(c)
+        # Coleta um pouco além do limite para o peso ter efeito
+        if len(validos) >= limite * 3:
             break
-    return out
+    return _amostra_ponderada(rng, validos, k=limite)
 
 
 def _montar_board_sequencial(
