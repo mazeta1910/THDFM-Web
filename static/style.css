@@ -12635,6 +12635,9 @@ button.proto-text-btn:disabled {
   display: inline-block;
   max-width: 100%;
 }
+.grid-bugs-preview[hidden] {
+  display: none !important;
+}
 .grid-bugs-preview img {
   display: block;
   max-width: min(100%, 22rem);
@@ -12645,25 +12648,65 @@ button.proto-text-btn:disabled {
   background: var(--card);
 }
 .grid-bugs-preview-x {
+  appearance: none;
   position: absolute;
   top: 0.35rem;
   right: 0.35rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1.7rem;
   height: 1.7rem;
+  margin: 0;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: color-mix(in srgb, #000 55%, transparent);
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  box-sizing: border-box;
+}
+.grid-bugs-preview-x:hover,
+.grid-bugs-preview-x:focus-visible {
+  background: color-mix(in srgb, #000 72%, transparent);
+  outline: none;
 }
 .grid-bugs-actions,
 .admin-reports-actions {
   margin-top: 0.85rem;
 }
+.grid-bugs-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
 .grid-bugs-submit {
   width: auto !important;
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+  padding: 0.65rem 0.85rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  line-height: 0;
+}
+.grid-bugs-submit svg {
+  display: block;
+}
+.grid-bugs-form-erro {
+  margin: 0.55rem 0 0;
+  color: var(--danger, #e03131);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-align: right;
+}
+.grid-bugs-form-erro[hidden] {
+  display: none !important;
 }
 .grid-bugs-list {
   list-style: none;

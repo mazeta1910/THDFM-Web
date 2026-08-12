@@ -3026,8 +3026,18 @@ async def grid_bugs_enviar(request: Request):
         return RedirectResponse("/?acesso=entrar", status_code=303)
 
     form = await request.form()
-    titulo = str(form.get("titulo") or "")
-    mensagem = str(form.get("mensagem") or "")
+    titulo = str(form.get("titulo") or "").strip()
+    mensagem = str(form.get("mensagem") or "").strip()
+    if not titulo or not mensagem:
+        return RedirectResponse(
+            "/grid/bugs?erro="
+            + quote(
+                "Informe título e mensagem para enviar o report."
+                if not titulo and not mensagem
+                else ("Informe o título do report." if not titulo else "Escreva a mensagem do bug.")
+            ),
+            status_code=303,
+        )
     upload = form.get("imagem")
     imagem_rel: str | None = None
 

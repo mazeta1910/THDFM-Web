@@ -60,14 +60,26 @@
           Escolha um arquivo ou <strong>cole um print</strong> (Ctrl+V / ⌘V) nesta página.
         </p>
         <div class="grid-bugs-preview" data-grid-bugs-preview hidden>
-          <img alt="Prévia do anexo" data-grid-bugs-preview-img />
+          <img data-grid-bugs-preview-img />
           <button type="button" class="grid-bugs-preview-x" data-grid-bugs-preview-clear aria-label="Remover imagem">×</button>
         </div>
       </div>
 
       <div class="grid-bugs-actions">
-        <button type="submit" class="btn grid-bugs-submit">Enviar report</button>
+        <button
+          type="submit"
+          class="btn grid-bugs-submit"
+          data-grid-bugs-submit
+          title="Enviar report"
+          aria-label="Enviar report"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
       </div>
+      <p class="grid-bugs-form-erro" data-grid-bugs-form-erro hidden></p>
     </form>
   </section>
 
@@ -105,5 +117,5 @@
     {% endif %}
   </section>
 </section>
-<script src="/static/grid-bugs.js?v=1" defer></script>
+<script src="/static/grid-bugs.js?v=2" defer></script>
 {% endblock %}

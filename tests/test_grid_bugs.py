@@ -46,6 +46,45 @@ def test_grid_bugs_fluxo_usuario_e_admin(client: TestClient):
     assert "Reportar Bugs" in page.text
     assert "Seus reports" in page.text
     assert "data-grid-bugs-form" in page.text
+    assert 'aria-label="Enviar report"' in page.text
+    assert "Enviar report</button>" not in page.text
+    assert "data-grid-bugs-preview" in page.text
+    assert "grid-bugs-preview" in page.text
+    assert 'data-grid-bugs-preview hidden' in page.text or 'hidden>' in page.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".grid-bugs-preview[hidden]" in css
+    assert "display: none !important" in css.split(".grid-bugs-preview[hidden]", 1)[1].split("}", 1)[0]
+    preview_x = css.split(".grid-bugs-preview-x", 1)[1].split("}", 1)[0]
+    assert "display: inline-flex" in preview_x
+    assert "align-items: center" in preview_x
+    assert "justify-content: center" in preview_x
+    actions = css.split(".grid-bugs-actions", 1)[1]
+    assert "justify-content: flex-end" in actions.split("}", 1)[0] or "justify-content: flex-end" in actions.split(".grid-bugs-submit", 1)[0]
+    js = (ROOT_DIR / "static" / "grid-bugs.js").read_text(encoding="utf-8")
+    assert "Escreva a mensagem do bug" in js
+    assert "Informe o título" in js
+    assert "/static/grid-bugs.js?v=2" in page.text
+
+    # Em branco / só espaços → rejeita
+    blank = client.post(
+        "/grid/bugs",
+        data={"titulo": "   ", "mensagem": "   "},
+        follow_redirects=False,
+    )
+    assert blank.status_code == 303
+    assert "erro=" in (blank.headers.get("location") or "")
+    assert dbmod.listar_bug_reports_usuario(part["id"]) == []
+
+    sem_msg = client.post(
+        "/grid/bugs",
+        data={"titulo": "Travou", "mensagem": "  "},
+        follow_redirects=False,
+    )
+    assert sem_msg.status_code == 303
+    assert "mensagem" in (sem_msg.headers.get("location") or "").casefold() or "erro=" in (
+        sem_msg.headers.get("location") or ""
+    )
+    assert dbmod.listar_bug_reports_usuario(part["id"]) == []
 
     envio = client.post(
         "/grid/bugs",
