@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Admin · Reports{% endblock %}
+{% block content %}
+<section class="card admin-reports">
+  <p class="credenciais-kicker">Só Mazeta</p>
+  <h1>Reports</h1>
+  <p class="login-lead">Bugs enviados pelos jogadores do THDFM Grid. Responda e atualize o status.</p>
+
+  {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+
+  <nav class="admin-reports-filters" aria-label="Filtrar por status">
+    <a class="admin-reports-filter {% if not filtro_status %}is-active{% endif %}" href="/admin/reports">Todos</a>
+    <a class="admin-reports-filter {% if filtro_status == 'aberto' %}is-active{% endif %}" href="/admin/reports?status=aberto">Aberto</a>
+    <a class="admin-reports-filter {% if filtro_status == 'em_analise' %}is-active{% endif %}" href="/admin/reports?status=em_analise">Em Análise</a>
+    <a class="admin-reports-filter {% if filtro_status == 'resolvido' %}is-active{% endif %}" href="/admin/reports?status=resolvido">Resolvido</a>
+  </nav>
+
+  {% if not reports %}
+  <p class="admin-reports-empty">Nenhum report neste filtro.</p>
+  {% else %}
+  <div class="admin-reports-list">
+    {% for r in reports %}
+    <article class="admin-reports-item status-{{ r.status }}">
+      <header class="admin-reports-item-head">
+        <div>
+          <strong>#{{ r.id }} · {{ r.titulo }}</strong>
+          <p class="admin-reports-meta">
+            {{ r.autor_nome }}{% if r.autor_username %} (@{{ r.autor_username }}){% endif %}
+            · {{ r.criado_em }}
+            · <span class="grid-bugs-status grid-bugs-status--{{ r.status }}">{{ bug_status_label.get(r.status, r.status) }}</span>
+          </p>
+        </div>
+      </header>
+      <p class="admin-reports-msg">{{ r.mensagem }}</p>
+      {% if r.imagem_path %}
+      <a class="grid-bugs-shot" href="/bug-reports/{{ r.imagem_path }}" target="_blank" rel="noopener">
+        <img src="/bug-reports/{{ r.imagem_path }}" alt="Anexo do report #{{ r.id }}" />
+      </a>
+      {% endif %}
+      <form class="admin-reports-form" method="post" action="/admin/reports/{{ r.id }}">
+        <label class="grid-bugs-label" for="status-{{ r.id }}">Status</label>
+        <select id="status-{{ r.id }}" class="grid-bugs-input" name="status" required>
+          <option value="aberto" {% if r.status == 'aberto' %}selected{% endif %}>Aberto</option>
+          <option value="em_analise" {% if r.status == 'em_analise' %}selected{% endif %}>Em Análise</option>
+          <option value="resolvido" {% if r.status == 'resolvido' %}selected{% endif %}>Resolvido</option>
+        </select>
+        <label class="grid-bugs-label" for="resposta-{{ r.id }}">Resposta ao jogador</label>
+        <textarea
+          id="resposta-{{ r.id }}"
+          class="grid-bugs-input grid-bugs-textarea"
+          name="resposta"
+          rows="3"
+          maxlength="4000"
+          placeholder="O jogador verá isso no painel /grid/bugs"
+        >{{ r.resposta or '' }}</textarea>
+        <div class="admin-reports-actions">
+          <button type="submit" class="btn" style="width:auto">Salvar</button>
+        </div>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

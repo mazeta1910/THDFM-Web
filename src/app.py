@@ -40,6 +40,11 @@ from src.config import (
     RECADO_MAX_BYTES,
     RECADOS_DIR,
     HALL_HERO_DIR,
+    BUG_REPORT_EXTS,
+    BUG_REPORT_MAX_BYTES,
+    BUG_REPORT_STATUS,
+    BUG_REPORT_STATUS_LABEL,
+    BUG_REPORTS_DIR,
     CLUBES_DIR,
     COMPROVANTE_EXTS,
     COMPROVANTE_MAX_BYTES,
@@ -93,7 +98,7 @@ def _path_publico(path: str) -> bool:
     # o handler ainda exige login para humanos (API /grid/api/* segue protegida).
     if path == "/grid":
         return True
-    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/") or path.startswith("/hall-hero/"):
+    if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/") or path.startswith("/hall-hero/") or path.startswith("/bug-reports/"):
         return True
     # Perfil (handler ainda exige liberado/admin)
     if path.startswith("/meu-perfil") or path.startswith("/perfil/") or path.startswith("/prototipo/"):
@@ -151,6 +156,7 @@ AVATARES_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_DIR.mkdir(parents=True, exist_ok=True)
 RECADOS_DIR.mkdir(parents=True, exist_ok=True)
 HALL_HERO_DIR.mkdir(parents=True, exist_ok=True)
+BUG_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/emblemas", StaticFiles(directory=str(EMBLEMAS_DIR)), name="emblemas")
@@ -160,6 +166,7 @@ app.mount("/avatars", StaticFiles(directory=str(AVATARES_DIR)), name="avatars")
 app.mount("/banners", StaticFiles(directory=str(BANNERS_DIR)), name="banners")
 app.mount("/recados-midia", StaticFiles(directory=str(RECADOS_DIR)), name="recados_midia")
 app.mount("/hall-hero", StaticFiles(directory=str(HALL_HERO_DIR)), name="hall_hero")
+app.mount("/bug-reports", StaticFiles(directory=str(BUG_REPORTS_DIR)), name="bug_reports")
 
 # Rate limit em memória: chave → timestamps de tentativas
 _AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
@@ -425,6 +432,19 @@ def render(request: Request, name: str, **ctx):
             ctx["admin_cobranca_count"] = int(st.get("n_incompletos") or 0)
         except Exception:
             ctx["admin_cobranca_count"] = 0
+    if "bug_reports_novos_count" not in ctx:
+        try:
+            ctx["bug_reports_novos_count"] = (
+                db.contar_bug_reports_nao_lidos(part_nav["id"]) if part_nav else 0
+            )
+        except Exception:
+            ctx["bug_reports_novos_count"] = 0
+    if is_adm and is_mazeta(request) and "admin_bug_reports_count" not in ctx:
+        try:
+            ctx["admin_bug_reports_count"] = db.contar_bug_reports_abertos()
+        except Exception:
+            ctx["admin_bug_reports_count"] = 0
+    ctx.setdefault("bug_status_label", BUG_REPORT_STATUS_LABEL)
     resp = TEMPLATES.TemplateResponse(request, name, ctx)
     if force_admin_cookie:
         resp.set_cookie(
@@ -2971,6 +2991,128 @@ def grid_ranking_page(request: Request):
     if neg:
         return neg
     return RedirectResponse("/grid#ranking", status_code=303)
+
+
+@app.get("/grid/bugs", response_class=HTMLResponse)
+def grid_bugs_page(request: Request):
+    """Painel do usuário: reportar bugs do Grid + status/respostas."""
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    voter = _voter_sessao(request)
+    if not voter:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    reports = db.listar_bug_reports_usuario(int(voter["id"]))
+    db.marcar_bug_reports_lidos(int(voter["id"]))
+    return render(
+        request,
+        "grid_bugs.html",
+        reports=reports,
+        bug_reports_novos_count=0,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/grid/bugs", response_class=HTMLResponse)
+async def grid_bugs_enviar(request: Request):
+    neg = _require_perfil(request)
+    if neg:
+        return neg
+    voter = _voter_sessao(request)
+    if not voter:
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+
+    form = await request.form()
+    titulo = str(form.get("titulo") or "")
+    mensagem = str(form.get("mensagem") or "")
+    upload = form.get("imagem")
+    imagem_rel: str | None = None
+
+    if upload is not None and hasattr(upload, "read"):
+        filename = getattr(upload, "filename", "") or ""
+        if filename.strip():
+            ext = Path(filename).suffix.lower()
+            if ext not in BUG_REPORT_EXTS:
+                return RedirectResponse(
+                    "/grid/bugs?erro=" + quote("Imagem deve ser jpg/png/webp/gif"),
+                    status_code=303,
+                )
+            data = await upload.read()
+            if not data or len(data) > BUG_REPORT_MAX_BYTES:
+                return RedirectResponse(
+                    "/grid/bugs?erro=" + quote("Imagem inválida ou maior que 4MB"),
+                    status_code=303,
+                )
+            import secrets
+
+            imagem_rel = f"{int(voter['id'])}_{int(time.time())}_{secrets.token_hex(4)}{ext}"
+            (BUG_REPORTS_DIR / imagem_rel).write_bytes(data)
+
+    try:
+        db.criar_bug_report(
+            int(voter["id"]),
+            titulo=titulo,
+            mensagem=mensagem,
+            imagem_path=imagem_rel,
+        )
+    except ValueError as exc:
+        if imagem_rel:
+            (BUG_REPORTS_DIR / imagem_rel).unlink(missing_ok=True)
+        return RedirectResponse(
+            "/grid/bugs?erro=" + quote(str(exc)),
+            status_code=303,
+        )
+    return RedirectResponse(
+        "/grid/bugs?msg=" + quote("Bug reportado. Obrigado!"),
+        status_code=303,
+    )
+
+
+@app.get("/admin/reports", response_class=HTMLResponse)
+def admin_reports_page(request: Request):
+    """Inbox de bug reports — só Mazeta."""
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    filtro = (request.query_params.get("status") or "").strip().lower() or None
+    if filtro and filtro not in BUG_REPORT_STATUS:
+        filtro = None
+    reports = db.listar_bug_reports_admin(status=filtro)
+    return render(
+        request,
+        "admin_reports.html",
+        reports=reports,
+        filtro_status=filtro or "",
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+        admin_bug_reports_count=db.contar_bug_reports_abertos(),
+    )
+
+
+@app.post("/admin/reports/{report_id:int}", response_class=HTMLResponse)
+async def admin_reports_atualizar(request: Request, report_id: int):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    status = str(form.get("status") or "").strip()
+    resposta = str(form.get("resposta") or "")
+    try:
+        db.atualizar_bug_report_admin(
+            report_id,
+            status=status,
+            resposta=resposta,
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            "/admin/reports?erro=" + quote(str(exc)),
+            status_code=303,
+        )
+    return RedirectResponse(
+        "/admin/reports?msg=" + quote("Report atualizado"),
+        status_code=303,
+    )
 
 
 @app.get("/grid/api/hoje")

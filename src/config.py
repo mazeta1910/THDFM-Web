@@ -40,6 +40,7 @@ AVATARES_DIR = DATA_DIR / "avatars"
 BANNERS_DIR = DATA_DIR / "banners"
 RECADOS_DIR = DATA_DIR / "recados"
 HALL_HERO_DIR = DATA_DIR / "hall-hero"
+BUG_REPORTS_DIR = DATA_DIR / "bug-reports"
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "troque-esta-senha")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
@@ -113,6 +114,14 @@ BANNER_MAX_BYTES = 3 * 1024 * 1024
 BANNER_PRESETS = ("padrao", "laranja", "gramado", "noite", "carbono", "ouro")
 RECADO_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 RECADO_MAX_BYTES = 4 * 1024 * 1024
+BUG_REPORT_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+BUG_REPORT_MAX_BYTES = 4 * 1024 * 1024
+BUG_REPORT_STATUS = ("aberto", "em_analise", "resolvido")
+BUG_REPORT_STATUS_LABEL = {
+    "aberto": "Aberto",
+    "em_analise": "Em Análise",
+    "resolvido": "Resolvido",
+}
 PERFIL_TIMES_MAX = 12
 NOME_MAX_LEN = 30
 

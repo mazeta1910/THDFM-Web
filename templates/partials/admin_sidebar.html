@@ -11,8 +11,9 @@
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
 {% set on_admin_hall_lendas = path.startswith('/admin/hall-lendas') %}
 {% set on_hall_lendas = path.startswith('/hall-lendas') %}
-{% set on_grid = path == '/grid' or path.startswith('/grid/api') %}
+{% set on_grid = path == '/grid' or path.startswith('/grid/api') or path.startswith('/grid/bugs') %}
 {% set on_grid_ranking = path.startswith('/grid/ranking') %}
+{% set on_admin_reports = path.startswith('/admin/reports') %}
 {% set on_regras = path.startswith('/regras') %}
 {% set on_xonhometro = path.startswith('/xonhometro') %}
 {% set on_grupo_bans = path.startswith('/grupo/bans') %}
@@ -27,6 +28,7 @@
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set pend_n = admin_pendentes_count|default(0) %}
 {% set cobranca_n = admin_cobranca_count|default(0) %}
+{% set reports_n = admin_bug_reports_count|default(0) %}
 {% from "partials/nav_icons.html" import ico %}
 {% from "macros/avatar.html" import avatar_face, avatar_camera, lenda_frame_mod %}
 
@@ -107,7 +109,7 @@
       </div>
 
       <div class="admin-menu-sortable" data-menu-sortable>
-      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas %}open{% endif %}>
+      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas or on_admin_reports %}open{% endif %}>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="true" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
@@ -115,6 +117,10 @@
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
           {% if is_mazeta %}
+          <a class="admin-side-link {% if on_admin_reports %}active{% endif %}" href="/admin/reports">
+            {{ ico('bug') }}<span>Reports</span>
+            {% if reports_n %}<span class="admin-badge">{{ reports_n }}</span>{% endif %}
+          </a>
           <a class="admin-side-link {% if on_hall_lendas or on_admin_hall_lendas %}active{% endif %}" href="/admin/hall-lendas">{{ ico('classificacao') }}<span>Hall das Lendas</span></a>
           {% endif %}
         </div>
