@@ -705,6 +705,12 @@ def test_grid_fluxo_logado(client: TestClient):
     assert '.grid-page[data-daltonismo-mode="protanopia"]' in css
     assert "button.grid-daltonismo-btn" in css
     assert ".grid-daltonismo-toggles" in css
+    # Board mobile: sem margem lateral do wrap + gap menor (não estoura o card)
+    assert "margin-inline: -1rem" in css
+    assert "Cancela padding lateral do .wrap" in css
+    board_mobile = css.split("Cancela padding lateral do .wrap", 1)[1].split("/* —— Grid admin", 1)[0]
+    assert "gap: 0.16rem" in board_mobile
+    assert ".grid-board-wrap" in board_mobile
     # Não pode herdar width:100% do button global
     dalton_btn_css = css.split("button.grid-daltonismo-btn", 1)[1].split("}", 1)[0]
     assert "width: auto" in dalton_btn_css
