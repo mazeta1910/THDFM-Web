@@ -13188,6 +13188,17 @@ button.grid-daltonismo-btn:hover,
   justify-content: space-between;
   gap: 0.75rem 1rem;
 }
+.grid-rank-inline-intro {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.grid-rank-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  flex-wrap: nowrap;
+}
 .grid-rank-inline-title {
   margin: 0;
   font-size: clamp(1.35rem, 3vw, 1.75rem);
@@ -13200,7 +13211,7 @@ button.grid-daltonismo-btn:hover,
   justify-content: center;
   width: 2.15rem;
   height: 2.15rem;
-  margin-left: auto;
+  margin: 0;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -13208,7 +13219,7 @@ button.grid-daltonismo-btn:hover,
   color: var(--muted);
   cursor: pointer;
   box-sizing: border-box;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   line-height: 0;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
@@ -13419,6 +13430,43 @@ button.grid-daltonismo-btn:hover,
 .grid-rank-table .num {
   text-align: right;
   white-space: nowrap;
+}
+.grid-rank-meter {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.22rem;
+  min-width: 3.4rem;
+  vertical-align: middle;
+}
+.grid-rank-meter-label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.grid-rank-meter-bar {
+  display: block;
+  width: 3.4rem;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 24%, transparent);
+  overflow: hidden;
+}
+.grid-rank-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  max-width: 100%;
+}
+.grid-rank-streak-pos {
+  color: #2f9e44;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+html.theme-light .grid-rank-streak-pos,
+html[data-theme="light"] .grid-rank-streak-pos {
+  color: #2b8a3e;
 }
 .grid-rank-player {
   display: inline-flex;

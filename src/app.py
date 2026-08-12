@@ -2945,6 +2945,7 @@ def grid_page(request: Request):
             return neg
     from src.grid_game import (
         dia_grid,
+        dias_totais_grid,
         get_virada_hm,
         parse_celulas_progresso,
         puzzle_publico,
@@ -2977,6 +2978,7 @@ def grid_page(request: Request):
         streak=streak,
         share=share,
         linhas=db.ranking_grid(limite=100),
+        dias_totais=dias_totais_grid(dia),
         grid_privado=False,
         virada_hora=virada_hora,
         virada_minuto=virada_minuto,
