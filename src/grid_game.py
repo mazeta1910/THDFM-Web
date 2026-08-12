@@ -64,7 +64,7 @@ _MAX_POR_TIPO_EIXO: dict[str, int] = {
     "serie": 1,
     "letra": 1,
     "nome": 1,
-    "uf": 2,
+    "uf": 1,
     "nao_uf": 1,
     "titulo": 1,
     "premio": 1,
@@ -288,8 +288,8 @@ def _rng_dia(dia: str) -> random.Random:
     # v1: pool clássico; v2: histórico; v3: histórico + variedade de tipos
     # salt opcional: regeneração admin de um dia sem afetar os demais
     if variedade_ativa(dia):
-        # v4: eixos mistos estilo HoopsGrid (sem eixo inteiro de “Nome…”)
-        ver = "v4"
+        # v5: subgrupos semânticos + montagem sequencial com solubilidade
+        ver = "v5"
     elif historico_ativo(dia):
         ver = "v2"
     else:
@@ -812,25 +812,75 @@ def _max_tipo(tipo: str) -> int:
     return _MAX_POR_TIPO_EIXO.get(tipo, 1)
 
 
-def _eixo_diverso(cats: list[Categoria]) -> bool:
-    """Eixo válido: ≥2 tipos, tetos por tipo, no máx. 1 categoria de nome."""
-    if len(cats) != GRID_SIZE:
+def _subgrupo_categoria(cat: Categoria) -> str:
+    """Subgrupo semântico — no máximo 1 categoria do mesmo subgrupo por eixo.
+
+    Agrupa rótulos parecidos (ex.: vários “Já…”, “Não é…”, contagens “≥N”,
+    eras “Disputou/Jogou…”) mesmo quando o `tipo` técnico difere.
+    """
+    t = cat.tipo
+    if t in ("uf", "regiao"):
+        return "geo_pos"
+    if t in ("nao_uf", "nao_regiao"):
+        return "geo_neg"
+    if t == "serie":
+        return "serie"
+    if t in _TIPOS_NOME:
+        return "nome"
+    if t == "paridade":
+        return "hist_paridade"
+    if t == "longevidade":
+        return "hist_contagem"
+    if t == "goleada":
+        return "hist_ja"
+
+    rot = (cat.rotulo or "").strip()
+    if rot.startswith("Já "):
+        return "hist_ja"
+    if rot.startswith("Nunca "):
+        return "hist_nunca"
+    if rot.startswith("≥") or rot.startswith(">="):
+        return "hist_contagem"
+    if t == "participacao":
+        return "hist_era"
+    if t in ("titulo", "premio"):
+        # Ex.: "Campeão da Copa e nunca do Brasileirão"
+        return "hist_titulo_composto"
+    return t
+
+
+def _eixo_parcial_ok(cats: list[Categoria]) -> bool:
+    """Regras de diversidade aplicáveis a um eixo incompleto (1..GRID_SIZE)."""
+    if not cats or len(cats) > GRID_SIZE:
         return False
-    cont = Counter(c.tipo for c in cats)
-    if len(cont) < 2:
-        return False
-    for tipo, n in cont.items():
+    cont_tipo = Counter(c.tipo for c in cats)
+    for tipo, n in cont_tipo.items():
         if n > _max_tipo(tipo):
             return False
-    # Evita eixo “Nome começa / Nome começa / Nome termina”
+    cont_sub = Counter(_subgrupo_categoria(c) for c in cats)
+    if any(n > 1 for n in cont_sub.values()):
+        return False
     n_nome = sum(1 for c in cats if c.tipo in _TIPOS_NOME)
     if n_nome > 1:
         return False
     return True
 
 
+def _eixo_diverso(cats: list[Categoria]) -> bool:
+    """Eixo válido: 3 cats, ≥2 tipos, ≤1 por subgrupo semântico, ≤1 nome."""
+    if len(cats) != GRID_SIZE:
+        return False
+    if not _eixo_parcial_ok(cats):
+        return False
+    if len({c.tipo for c in cats}) < 2:
+        return False
+    return True
+
+
 def _board_diverso(rows: list[Categoria], cols: list[Categoria]) -> bool:
-    """Board no estilo HoopsGrid: sem eixo só-Nome e poucas categorias de nome."""
+    """Board no estilo HoopsGrid: eixos diversos e poucas categorias de nome."""
+    if not _eixo_diverso(rows) or not _eixo_diverso(cols):
+        return False
     if all(c.tipo in _TIPOS_NOME for c in rows):
         return False
     if all(c.tipo in _TIPOS_NOME for c in cols):
@@ -920,6 +970,36 @@ def _opcoes_eixo_livre(
     return out
 
 
+def _densidade_celula(
+    row: Categoria,
+    col: Categoria,
+    memo: dict[tuple[str, str], int],
+) -> int | None:
+    """Retorna densidade da célula ou None se incompatível."""
+    if not categorias_compativeis(row, col):
+        return None
+    key = (row.id, col.id)
+    if key not in memo:
+        memo[key] = len(pool_celula(row, col))
+    return memo[key]
+
+
+def _candidato_encaixa_no_outro_eixo(
+    cat: Categoria,
+    outro: list[Categoria],
+    *,
+    cat_eh_linha: bool,
+    memo: dict[tuple[str, str], int],
+) -> bool:
+    """Valida solubilidade de `cat` contra todas as categorias já fixadas no outro eixo."""
+    for outra in outro:
+        row, col = (cat, outra) if cat_eh_linha else (outra, cat)
+        n = _densidade_celula(row, col, memo)
+        if n is None or n < DENSIDADE_MIN:
+            return False
+    return True
+
+
 def _tentar_board(
     rows: list[Categoria],
     cols: list[Categoria],
@@ -934,13 +1014,8 @@ def _tentar_board(
     for r in rows:
         linha_d: list[int] = []
         for c in cols:
-            if not categorias_compativeis(r, c):
-                return None
-            key = (r.id, c.id)
-            if key not in cache:
-                cache[key] = len(pool_celula(r, c))
-            n = cache[key]
-            if n < DENSIDADE_MIN:
+            n = _densidade_celula(r, c, cache)
+            if n is None or n < DENSIDADE_MIN:
                 return None
             linha_d.append(n)
         densidades.append(linha_d)
@@ -974,27 +1049,167 @@ def _score_variedade(
     mono_penalty = sum(1 for n in cont.values() if n >= 3)
     # Premia poucos rótulos “Nome…” no board (0–2)
     nome_bonus = 2 - n_nome
+    subgrupos = {_subgrupo_categoria(c) for c in all_cats}
     return (
         len(familias),
-        diversidade - mono_penalty + nome_bonus,
+        diversidade - mono_penalty + nome_bonus + len(subgrupos),
         tipos_eixo,
         dens_min,
     )
 
 
+def _candidatos_eixo(
+    rng: random.Random,
+    pool: list[Categoria],
+    eixo: list[Categoria],
+    outro: list[Categoria],
+    usados: set[str],
+    *,
+    cat_eh_linha: bool,
+    memo: dict[tuple[str, str], int],
+    limite: int = 36,
+) -> list[Categoria]:
+    """Sorteia candidatos que respeitam subgrupo e solubilidade com o outro eixo."""
+    opcoes = [c for c in pool if c.id not in usados]
+    rng.shuffle(opcoes)
+    out: list[Categoria] = []
+    for c in opcoes:
+        if not _eixo_parcial_ok(eixo + [c]):
+            continue
+        if outro and not _candidato_encaixa_no_outro_eixo(
+            c, outro, cat_eh_linha=cat_eh_linha, memo=memo
+        ):
+            continue
+        out.append(c)
+        if len(out) >= limite:
+            break
+    return out
+
+
+def _montar_board_sequencial(
+    rng: random.Random,
+    pool: list[Categoria],
+    memo: dict[tuple[str, str], int],
+    *,
+    tentativas_folha: int = 6,
+) -> tuple[list[Categoria], list[Categoria], list[list[int]]] | None:
+    """Monta linhas/colunas uma a uma com re-roll e retrocesso por solubilidade.
+
+    Ordem: L0 → C0 (célula) → C1 → C2 → L1 → L2, validando cada cruzamento
+    assim que ambos os eixos têm a categoria correspondente.
+    """
+    rows: list[Categoria] = []
+    cols: list[Categoria] = []
+    usados: set[str] = set()
+
+    # Sequência de passos: ("row"|"col", índice_alvo)
+    passos: list[tuple[str, int]] = [
+        ("row", 0),
+        ("col", 0),
+        ("col", 1),
+        ("col", 2),
+        ("row", 1),
+        ("row", 2),
+    ]
+
+    def dfs(passo_i: int) -> tuple[list[Categoria], list[Categoria], list[list[int]]] | None:
+        if passo_i >= len(passos):
+            return _tentar_board(rows, cols, memo)
+
+        kind, _idx = passos[passo_i]
+        if kind == "row":
+            cands = _candidatos_eixo(
+                rng,
+                pool,
+                rows,
+                cols,
+                usados,
+                cat_eh_linha=True,
+                memo=memo,
+                limite=24,
+            )
+            eixo = rows
+        else:
+            cands = _candidatos_eixo(
+                rng,
+                pool,
+                cols,
+                rows,
+                usados,
+                cat_eh_linha=False,
+                memo=memo,
+                limite=24,
+            )
+            eixo = cols
+
+        if not cands:
+            return None
+
+        # Limita ramificação: tenta um subconjunto aleatório já embaralhado
+        for cat in cands[:tentativas_folha]:
+            eixo.append(cat)
+            usados.add(cat.id)
+            achou = dfs(passo_i + 1)
+            if achou is not None:
+                return achou
+            eixo.pop()
+            usados.discard(cat.id)
+        return None
+
+    return dfs(0)
+
+
 def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
-    """Gerador v4: categorias misturadas nos dois eixos (sem eixo só-Nome)."""
+    """Gerador v5: sorteio sequencial + solubilidade + ≤1 subgrupo por eixo."""
     cats = list(categorias_disponiveis(dia_s))
     if len(cats) < GRID_SIZE * 2:
         raise RuntimeError("catálogo insuficiente para o grid")
 
     rng = _rng_dia(dia_s)
+    memo: dict[tuple[str, str], int] = {}
+
+    melhor: dict[str, Any] | None = None
+    melhor_score: tuple[int, int, int, int] | None = None
+    tentativas_ok = 0
+    orcamento = 28
+
+    for _ in range(orcamento * 2):
+        board = _montar_board_sequencial(rng, cats, memo)
+        if not board:
+            continue
+        r, c, dens = board
+        if not _board_diverso(r, c):
+            continue
+        if len({x.tipo for x in r + c}) < 4:
+            continue
+        score = _score_variedade(r, c, dens)
+        tentativas_ok += 1
+        if melhor_score is None or score > melhor_score:
+            melhor_score = score
+            melhor = {
+                "dia": dia_s,
+                "linhas": [x.to_public() for x in r],
+                "colunas": [x.to_public() for x in c],
+                "densidades": dens,
+                "tamanho": GRID_SIZE,
+            }
+        # Bom o bastante: famílias ≥3 e subgrupos bem espalhados
+        if score[0] >= 3 and score[1] >= 10 and tentativas_ok >= 2:
+            return melhor
+        if tentativas_ok >= 8 and melhor is not None:
+            return melhor
+        if tentativas_ok >= orcamento and melhor is not None:
+            return melhor
+
+    if melhor is not None:
+        return melhor
+
+    # Fallback: templates por tipo (ainda com filtro de subgrupo via _eixo_diverso)
     by_tipo: dict[str, list[Categoria]] = {}
     for c in cats:
         by_tipo.setdefault(c.tipo, []).append(c)
         rng.shuffle(by_tipo[c.tipo])
 
-    # Só templates que misturam famílias — nunca um eixo inteiro de “Nome…”.
     templates: list[tuple[tuple[str, ...] | None, tuple[str, ...] | None]] = [
         (None, None),
         (_TIPOS_GEO, None),
@@ -1003,7 +1218,6 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
         (_TIPOS_GEO, tuple(_TIPOS_HISTORICOS)),
         (None, tuple(_TIPOS_HISTORICOS)),
         (tuple(_TIPOS_HISTORICOS), None),
-        # Nome entra como tempero (≤1 por eixo via _eixo_diverso), nunca sozinho
         (_TIPOS_GEO + _TIPOS_NOME, None),
         (None, _TIPOS_GEO + _TIPOS_NOME),
         (tuple(_TIPOS_HISTORICOS) + _TIPOS_NOME, _TIPOS_GEO),
@@ -1011,24 +1225,18 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
     ]
     rng.shuffle(templates)
 
-    melhor: dict[str, Any] | None = None
-    melhor_score: tuple[int, int, int, int] | None = None
-    tentativas_ok = 0
-    orcamento = 48
-    memo: dict[tuple[str, str], int] = {}
-
     for left_pref, right_pref in templates:
         left_opts = _opcoes_eixo_livre(
-            rng, by_tipo, limite=28, tipos_preferidos=left_pref
+            rng, by_tipo, limite=20, tipos_preferidos=left_pref
         )
         if not left_opts and left_pref is not None:
-            left_opts = _opcoes_eixo_livre(rng, by_tipo, limite=28, tipos_preferidos=None)
+            left_opts = _opcoes_eixo_livre(rng, by_tipo, limite=20, tipos_preferidos=None)
         right_opts = _opcoes_eixo_livre(
-            rng, by_tipo, limite=28, tipos_preferidos=right_pref
+            rng, by_tipo, limite=20, tipos_preferidos=right_pref
         )
         if not right_opts and right_pref is not None:
             right_opts = _opcoes_eixo_livre(
-                rng, by_tipo, limite=28, tipos_preferidos=None
+                rng, by_tipo, limite=20, tipos_preferidos=None
             )
         rng.shuffle(left_opts)
         rng.shuffle(right_opts)
@@ -1053,9 +1261,7 @@ def _gerar_puzzle_variado(dia_s: str) -> dict[str, Any]:
                         "densidades": dens,
                         "tamanho": GRID_SIZE,
                     }
-                if score[0] >= 3 and score[1] >= 5 and tentativas_ok >= 6:
-                    return melhor
-                if tentativas_ok >= orcamento and melhor is not None:
+                if tentativas_ok >= 12 and melhor is not None:
                     return melhor
 
     if melhor is not None:

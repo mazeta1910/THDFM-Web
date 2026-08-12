@@ -240,6 +240,8 @@ def test_categorias_serie_b_c_e_copa_densas():
 
 
 def test_variedade_cutover_e_eixos_mistos():
+    from src.grid_game import _subgrupo_categoria, categoria_por_id
+
     assert GRID_VARIEDADE_DESDE == "2026-08-12"
     assert variedade_ativa("2026-08-11") is False
     assert variedade_ativa("2026-08-12") is True
@@ -268,6 +270,12 @@ def test_variedade_cutover_e_eixos_mistos():
             assert n_nome <= 1, (dia, eixo)
             assert not all(t in ("letra", "termina", "nome") for t in tipos), (dia, eixo)
 
+            # ≤1 categoria por subgrupo semântico no mesmo eixo
+            cats = [categoria_por_id(c["id"], dia) for c in eixo]
+            assert all(c is not None for c in cats), (dia, eixo)
+            subs = [_subgrupo_categoria(c) for c in cats]
+            assert len(subs) == len(set(subs)), (dia, eixo, subs)
+
         board = p["linhas"] + p["colunas"]
         n_nome_board = sum(1 for c in board if c["tipo"] in ("letra", "termina", "nome"))
         assert n_nome_board <= 2, (dia, n_nome_board)
@@ -285,6 +293,7 @@ def test_variedade_cutover_e_eixos_mistos():
                 "participacao",
                 "longevidade",
                 "paridade",
+                "goleada",
             }:
                 return "hist"
             return t
@@ -297,18 +306,67 @@ def test_variedade_cutover_e_eixos_mistos():
         assert gerar_puzzle(dia) == p
 
     # Cobertura ampla: nomes, geo e histórico aparecem ao longo dos dias
-    assert tipos_vistos & {"letra", "termina"}
-    assert tipos_vistos & {"uf", "regiao", "serie"}
+    assert tipos_vistos & {"letra", "termina", "nome"}
+    assert tipos_vistos & {"uf", "regiao", "serie", "nao_uf", "nao_regiao"}
     assert tipos_vistos & {
         "titulo",
         "premio",
         "participacao",
         "longevidade",
         "paridade",
+        "goleada",
     }
     assert len(tipos_vistos) >= 7
     assert len(ids_vistos) >= 25
     assert max(familias_por_dia) >= 3
+
+
+def test_subgrupos_semanticos_basicos():
+    from src.grid_game import Categoria, _subgrupo_categoria
+
+    assert (
+        _subgrupo_categoria(Categoria("nao_uf:SP", "nao_uf", "SP", "Não é paulista"))
+        == "geo_neg"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("nao_regiao:Sul", "nao_regiao", "Sul", "Não é da região Sul")
+        )
+        == "geo_neg"
+    )
+    assert (
+        _subgrupo_categoria(Categoria("uf:RJ", "uf", "RJ", "Time carioca")) == "geo_pos"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("titulo:a", "titulo", "a", "Já foi campeão do Brasileirão")
+        )
+        == "hist_ja"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("premio:b", "premio", "b", "Já teve artilheiro do Brasileirão")
+        )
+        == "hist_ja"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("titulo:c", "titulo", "c", "Nunca foi campeão do Brasileirão")
+        )
+        == "hist_nunca"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("longevidade:d", "longevidade", "d", "≥5 participações na Série B")
+        )
+        == "hist_contagem"
+    )
+    assert (
+        _subgrupo_categoria(
+            Categoria("participacao:e", "participacao", "e", "Disputou a Série A nos anos 90")
+        )
+        == "hist_era"
+    )
 
 def test_categoria_termina_com_letra_e_silaba():
     from src.grid_game import Categoria, categorias_compativeis, clube_bate_categoria
