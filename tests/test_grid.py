@@ -236,6 +236,12 @@ def test_filtros_nome_e_compostos_historicos():
     assert len(hist["participacao:cdb"]) >= DENSIDADE_MIN
     assert len(hist["participacao:nunca_cdb"]) >= DENSIDADE_MIN
     assert hist["longevidade:cdb_10"] <= hist["participacao:cdb"]
+    # ≤N inclui quem nunca disputou (0..N)
+    assert hist["participacao:nunca_cdb"] <= hist["longevidade:cdb_le_5"]
+    assert hist["participacao:nunca_serie_c"] <= hist["longevidade:serie_c_le_5"]
+    assert len(hist["longevidade:serie_c_le_5"]) > len(hist["participacao:serie_c"])
+    # Quase todo o catálogo tem ≤5 na C (só quem tem 6+ fica de fora)
+    assert len(hist["longevidade:serie_c_le_5"]) >= len(clubes_grid()) - 40
 
     from src.grid_game import categorias_compativeis, clube_bate_categoria
 
@@ -300,7 +306,7 @@ def test_categorias_serie_b_c_e_copa_densas():
         assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
     assert "titulo:campeao_serie_d" not in hist
     assert hist["longevidade:cdb_5"] <= hist["participacao:cdb"]
-    assert hist["longevidade:cdb_le_3"] <= hist["participacao:cdb"]
+    assert hist["participacao:nunca_cdb"] <= hist["longevidade:cdb_le_3"]
 
     # Série C 2026 (em andamento) entra só como participação — Barra-SC
     # nunca jogou a B e tem ≤3 na C (estreante em 2026).
@@ -311,7 +317,7 @@ def test_categorias_serie_b_c_e_copa_densas():
     assert fid in hist["participacao:nunca_serie_b"]
     assert fid in hist["longevidade:serie_c_le_3"]
     assert fid not in hist["titulo:campeao_serie_c"]
-    from src.grid_game import categorias_disponiveis, pool_celula
+    from src.grid_game import categorias_compativeis, categorias_disponiveis, pool_celula
 
     categorias_disponiveis.cache_clear()
     cats = {c.id: c for c in categorias_disponiveis("2026-08-12")}
@@ -319,6 +325,15 @@ def test_categorias_serie_b_c_e_copa_densas():
         cats["participacao:nunca_serie_b"], cats["longevidade:serie_c_le_3"]
     )
     assert any(c["id"] == fid for c in pool), [c["nome"] for c in pool if "Barra" in c["nome"]]
+    assert len(pool) >= 100
+    assert hist["participacao:nunca_serie_c"] <= hist["longevidade:serie_c_le_3"]
+    assert categorias_compativeis(
+        cats["participacao:nunca_serie_c"], cats["longevidade:serie_c_le_5"]
+    )
+    pool_nunca = pool_celula(
+        cats["participacao:nunca_serie_c"], cats["longevidade:serie_c_le_5"]
+    )
+    assert len(pool_nunca) == len(hist["participacao:nunca_serie_c"])
 
 
 def test_variedade_cutover_e_eixos_mistos():
