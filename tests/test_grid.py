@@ -199,6 +199,10 @@ def test_filtros_nome_e_compostos_historicos():
         "participacao:nunca_serie_a",
         "participacao:nunca_serie_b",
         "participacao:nunca_serie_c",
+        "participacao:cdb",
+        "participacao:nunca_cdb",
+        "longevidade:cdb_10",
+        "longevidade:cdb_le_5",
         "participacao:serie_a_dec_1990",
         "participacao:serie_a_antes_2003",
         "participacao:serie_a_seq_2024_2025",
@@ -208,6 +212,10 @@ def test_filtros_nome_e_compostos_historicos():
     assert cats["participacao:nunca_serie_a"].rotulo == "Nunca jogou a Série A"
     assert cats["participacao:nunca_serie_b"].rotulo == "Nunca jogou a Série B"
     assert cats["participacao:nunca_serie_c"].rotulo == "Nunca jogou a Série C"
+    assert cats["participacao:nunca_cdb"].rotulo == "Nunca jogou a Copa do Brasil"
+    assert cats["participacao:cdb"].rotulo == "Já disputou a Copa do Brasil"
+    assert cats["longevidade:cdb_10"].rotulo == "≥10 participações na Copa do Brasil"
+    assert cats["longevidade:cdb_le_5"].rotulo == "≤5 participações na Copa do Brasil"
     assert cats["participacao:serie_a_seq_2024_2025"].rotulo == (
         "Jogou a Série A em todos os anos de 2024 a 2025"
     )
@@ -221,8 +229,12 @@ def test_filtros_nome_e_compostos_historicos():
     assert not (hist["participacao:serie_a"] & hist["participacao:nunca_serie_a"])
     assert not (hist["participacao:serie_b"] & hist["participacao:nunca_serie_b"])
     assert not (hist["participacao:serie_c"] & hist["participacao:nunca_serie_c"])
+    assert not (hist["participacao:cdb"] & hist["participacao:nunca_cdb"])
     assert len(hist["participacao:nunca_serie_a"]) >= DENSIDADE_MIN
     assert len(hist["participacao:nunca_serie_c"]) >= DENSIDADE_MIN
+    assert len(hist["participacao:cdb"]) >= DENSIDADE_MIN
+    assert len(hist["participacao:nunca_cdb"]) >= DENSIDADE_MIN
+    assert hist["longevidade:cdb_10"] <= hist["participacao:cdb"]
 
     from src.grid_game import categorias_compativeis, clube_bate_categoria
 
@@ -235,6 +247,18 @@ def test_filtros_nome_e_compostos_historicos():
     assert (
         categorias_compativeis(
             cats["participacao:nunca_serie_b"], cats["longevidade:serie_b_3"]
+        )
+        is False
+    )
+    assert (
+        categorias_compativeis(
+            cats["participacao:nunca_cdb"], cats["longevidade:cdb_10"]
+        )
+        is False
+    )
+    assert (
+        categorias_compativeis(
+            cats["participacao:nunca_cdb"], cats["titulo:campeao_cdb"]
         )
         is False
     )
@@ -268,9 +292,14 @@ def test_categorias_serie_b_c_e_copa_densas():
         "titulo:campeao_cdb",
         "titulo:vice_cdb",
         "goleada:presente_cdb",
+        "participacao:cdb",
+        "longevidade:cdb_5",
+        "longevidade:cdb_le_3",
     ):
         assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
     assert "titulo:campeao_serie_d" not in hist
+    assert hist["longevidade:cdb_5"] <= hist["participacao:cdb"]
+    assert hist["longevidade:cdb_le_3"] <= hist["participacao:cdb"]
 
 
 def test_variedade_cutover_e_eixos_mistos():
