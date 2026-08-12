@@ -697,11 +697,11 @@ def _montar_categorias(dia: str) -> list[Categoria]:
                 )
 
     serie_labels = {
-        "A": "Brasileirão Série A",
-        "B": "Brasileirão Série B",
-        "C": "Brasileirão Série C",
-        "D": "Brasileirão Série D",
-        "SEM": "Sem divisão nacional",
+        "A": "Disputa o Brasileirão Série A no atual ano",
+        "B": "Disputa o Brasileirão Série B no atual ano",
+        "C": "Disputa o Brasileirão Série C no atual ano",
+        "D": "Disputa o Brasileirão Série D no atual ano",
+        "SEM": "Sem divisão nacional no atual ano",
     }
     for key, rotulo in serie_labels.items():
         n = sum(1 for c in clubes if c.get("serie") == key)
