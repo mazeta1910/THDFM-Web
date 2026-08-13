@@ -141,6 +141,67 @@ def test_treze_artilheiro_taca_brasil_1967():
     assert gremio["id"] in hist["premio:melhor_ataque"]
 
 
+def test_stats_abc_cobertura_ved_gp_gc():
+    """Melhor ataque/defesa e mais V/E/D cobrem A/B/C nas edições com tabela."""
+    import csv
+    from collections import defaultdict
+    from pathlib import Path
+
+    from src.config import ROOT_DIR
+    from src.grid_historico import historico_serie_a, limpar_caches_historico
+    from src.grid_game import DENSIDADE_MIN
+
+    def anos_completos(path: Path) -> set[int]:
+        by: dict[int, list[dict]] = defaultdict(list)
+        with path.open(encoding="utf-8-sig", newline="") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                by[int(row["ano"])].append(row)
+
+        def ok(r: dict, k: str) -> bool:
+            return str(r.get(k) or "").strip() not in ("", "-")
+
+        out: set[int] = set()
+        for ano, rows in by.items():
+            if all(ok(r, k) for r in rows for k in ("v", "e", "d", "gp", "gc")):
+                out.add(ano)
+        return out
+
+    base = ROOT_DIR / "data" / "torneios"
+    a_ok = anos_completos(base / "classificacoes_serie_a.csv")
+    b_ok = anos_completos(base / "classificacoes_serie_b.csv")
+    c_ok = anos_completos(base / "classificacoes_serie_c.csv")
+
+    # A: quase tudo; 2000 tem módulos só com participação
+    assert len(a_ok) >= 66
+    # B: todas as temporadas disputadas no CSV
+    assert len(b_ok) >= 46
+    # C: dump local completo salvo 2002 (só PG/J) e 2026 (em andamento)
+    assert len(c_ok) >= 34
+    assert 2002 not in c_ok
+    assert 2026 not in c_ok
+
+    limpar_caches_historico()
+    hist = historico_serie_a()
+    for key in (
+        "premio:melhor_ataque",
+        "premio:melhor_defesa",
+        "premio:mais_vitorias",
+        "premio:mais_empates",
+        "premio:mais_derrotas",
+        "premio:melhor_ataque_serie_b",
+        "premio:melhor_defesa_serie_b",
+        "premio:mais_vitorias_serie_b",
+        "premio:mais_empates_serie_b",
+        "premio:mais_derrotas_serie_b",
+        "premio:melhor_ataque_serie_c",
+        "premio:melhor_defesa_serie_c",
+        "premio:mais_vitorias_serie_c",
+        "premio:mais_empates_serie_c",
+        "premio:mais_derrotas_serie_c",
+    ):
+        assert len(hist.get(key) or []) >= DENSIDADE_MIN, key
+
+
 def test_novas_categorias_historicas_aparecem_no_pool():
     from src.grid_historico import HISTORICO_META, historico_meta, limpar_caches_historico
 
@@ -261,8 +322,9 @@ def test_filtros_nome_e_compostos_historicos():
     assert len(hist["longevidade:serie_b_le_5"]) > len(hist["participacao:serie_b"])
     assert len(hist["longevidade:serie_c_le_5"]) > len(hist["participacao:serie_c"])
     assert len(hist["longevidade:cdb_le_5"]) > len(hist["participacao:cdb"])
-    # Quase todo o catálogo tem ≤5 na C (só quem tem 6+ fica de fora)
-    assert len(hist["longevidade:serie_c_le_5"]) >= len(clubes_grid()) - 40
+    # Maioria do catálogo ainda tem ≤5 na C; com mais edições no dump, sobe o nº com 6+
+    assert len(hist["longevidade:serie_c_le_5"]) >= len(clubes_grid()) - 120
+    assert len(hist["longevidade:serie_c_le_5"]) >= DENSIDADE_MIN * 20
     assert cats["serie:A"].rotulo == "Disputa o Brasileirão Série A no atual ano"
     assert cats["serie:B"].rotulo == "Disputa o Brasileirão Série B no atual ano"
     assert cats["serie:C"].rotulo == "Disputa o Brasileirão Série C no atual ano"

@@ -29,6 +29,19 @@ Não houve Série B nestes anos (ausência esperada, não lacuna de export):
 
 `1973, 1974, 1975, 1976, 1977, 1978, 1979, 1993, 2000`
 
+### Cobertura de stats (melhor ataque/defesa, mais V/E/D)
+
+Regenerar com `python scripts/extract_serie_b_from_xlsx.py` e
+`python scripts/extract_serie_c_classif.py`.
+
+| Série | Edições com V/E/D/GP/GC | Observação |
+|---|---|---|
+| A | 1959–2025 (2000 parcial nos módulos sem tabela) | 100% das edições com tabela |
+| B | 1971–2025 exceto anos sem disputa | 100% após correção do extract (V/E/D) |
+| C | 1981–2025 no dump, **exceto 2002** | 2002 no wiki/xlsx só tem PG/J (sem gols/V/E/D); 2026 só participantes |
+
+Anos da C sem edição no dump (ausência histórica, não lacuna): várias entre 1982–1993.
+
 ## Categorias
 
 - **Série A:** conjunto completo (classificação + artilheiros + goleadas)
