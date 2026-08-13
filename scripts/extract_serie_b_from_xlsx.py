@@ -139,7 +139,7 @@ def _load_grid(path: Path) -> list[list[str]]:
 
 
 def _col_end(grid: list[list[str]], yr: int, yc: int, year_markers: list[tuple[int, int, int]]) -> int:
-    """Limite direito do bloco = proximo ano na mesma linha, senao yc+14."""
+    """Limite direito do bloco = proximo ano na mesma linha, senao yc+18."""
     same_row = sorted(c for r, c, _a in year_markers if r == yr and c > yc)
     if same_row:
         return same_row[0]
@@ -150,8 +150,9 @@ def _col_end(grid: list[list[str]], yr: int, yc: int, year_markers: list[tuple[i
         if abs(r - yr) <= 2 and c > yc
     )
     if near:
-        return min(near[0], yc + 16)
-    return min(len(grid[yr]), yc + 14)
+        return min(near[0], yc + 20)
+    # Precisa caber Pos…SG mesmo com lista de participantes à esquerda (ex.: 1986).
+    return min(len(grid[yr]), yc + 18)
 
 
 def _map_header_row(
@@ -159,11 +160,16 @@ def _map_header_row(
 ) -> dict[str, int] | None:
     mapping: dict[str, int] = {}
     texts = [t.lower() for t in row]
-    english = any(
-        texts[j] in {"team", "pld", "pts", "gf", "ga", "gd", "points"}
-        for j in range(c0, min(c1, len(texts)))
-        if texts[j]
+    slice_t = [texts[j] for j in range(c0, min(c1, len(texts))) if texts[j]]
+    # "Pts"/"GF" aparecem em tabelas PT — não usar como sinal de inglês.
+    # Inglês de verdade: W/D/L (ou Wins/Losses) sem V/E portugueses.
+    has_pt_ved = any(t in {"v", "vit", "vitórias", "vitorias"} for t in slice_t) and any(
+        t in {"e", "emp", "empates"} for t in slice_t
     )
+    has_en_wdl = any(t in {"w", "win", "wins"} for t in slice_t) and any(
+        t in {"l", "loss", "losses"} for t in slice_t
+    )
+    english = has_en_wdl and not has_pt_ved
     for j in range(c0, min(c1, len(row))):
         t = texts[j]
         if not t:
@@ -188,9 +194,9 @@ def _map_header_row(
             mapping.setdefault("d", j)
         elif (not english) and t in {"d", "der", "derrotas"}:
             mapping.setdefault("d", j)
-        elif t in {"gp", "gf", "gols pró", "gols pro"}:
+        elif t in {"gp", "gf", "gols pró", "gols pro", "gm"}:
             mapping.setdefault("gp", j)
-        elif t in {"gc", "ga", "gols contra"}:
+        elif t in {"gc", "ga", "gols contra", "gs"}:
             mapping.setdefault("gc", j)
         elif t in {"sg", "saldo", "gd"}:
             mapping.setdefault("sg", j)
