@@ -636,6 +636,59 @@ def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_bug_reports_status "
         "ON bug_reports(status, atualizado_em DESC)"
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bug_report_mensagens (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          report_id INTEGER NOT NULL REFERENCES bug_reports(id) ON DELETE CASCADE,
+          autor TEXT NOT NULL,
+          texto TEXT NOT NULL,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_bug_report_mensagens_report "
+        "ON bug_report_mensagens(report_id, criado_em ASC, id ASC)"
+    )
+    # Backfill do log a partir dos campos legados (uma vez).
+    chave = "bug_report_mensagens_backfill_v1"
+    if not conn.execute("SELECT 1 FROM meta WHERE chave = ?", (chave,)).fetchone():
+        rows = conn.execute("SELECT * FROM bug_reports ORDER BY id ASC").fetchall()
+        for row in rows:
+            rid = int(row["id"])
+            ja = conn.execute(
+                "SELECT 1 FROM bug_report_mensagens WHERE report_id = ? LIMIT 1",
+                (rid,),
+            ).fetchone()
+            if ja:
+                continue
+            msg = (row["mensagem"] or "").strip()
+            if msg:
+                conn.execute(
+                    """
+                    INSERT INTO bug_report_mensagens (report_id, autor, texto, criado_em)
+                    VALUES (?, 'usuario', ?, ?)
+                    """,
+                    (rid, msg, row["criado_em"] or None),
+                )
+            resp = (row["resposta"] or "").strip()
+            if resp:
+                conn.execute(
+                    """
+                    INSERT INTO bug_report_mensagens (report_id, autor, texto, criado_em)
+                    VALUES (?, 'admin', ?, ?)
+                    """,
+                    (
+                        rid,
+                        resp,
+                        row["respondido_em"] or row["atualizado_em"] or None,
+                    ),
+                )
+        conn.execute(
+            "INSERT INTO meta (chave, valor) VALUES (?, ?)",
+            (chave, "1"),
+        )
 
 
 def _reset_grid_progresso_lancamento(conn: sqlite3.Connection) -> None:
@@ -5316,6 +5369,52 @@ def _bug_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
     return d
 
 
+def _anexar_bug_mensagens(reports: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not reports:
+        return reports
+    ids = [int(r["id"]) for r in reports]
+    placeholders = ",".join("?" for _ in ids)
+    by_id: dict[int, list[dict[str, Any]]] = {i: [] for i in ids}
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT id, report_id, autor, texto, criado_em
+            FROM bug_report_mensagens
+            WHERE report_id IN ({placeholders})
+            ORDER BY criado_em ASC, id ASC
+            """,
+            ids,
+        ).fetchall()
+    for row in rows:
+        by_id.setdefault(int(row["report_id"]), []).append(dict(row))
+    for r in reports:
+        msgs = by_id.get(int(r["id"]), [])
+        if not msgs:
+            # Fallback legado se o backfill ainda não rodou neste banco.
+            msgs = [
+                {
+                    "id": 0,
+                    "report_id": int(r["id"]),
+                    "autor": "usuario",
+                    "texto": r.get("mensagem") or "",
+                    "criado_em": r.get("criado_em"),
+                }
+            ]
+            resp = (r.get("resposta") or "").strip()
+            if resp:
+                msgs.append(
+                    {
+                        "id": 0,
+                        "report_id": int(r["id"]),
+                        "autor": "admin",
+                        "texto": resp,
+                        "criado_em": r.get("respondido_em") or r.get("atualizado_em"),
+                    }
+                )
+        r["mensagens"] = msgs
+    return reports
+
+
 def criar_bug_report(
     participante_id: int,
     *,
@@ -5346,11 +5445,27 @@ def criar_bug_report(
             (int(participante_id), titulo, mensagem, img),
         )
         rid = int(cur.lastrowid)
+        conn.execute(
+            """
+            INSERT INTO bug_report_mensagens (report_id, autor, texto)
+            VALUES (?, 'usuario', ?)
+            """,
+            (rid, mensagem),
+        )
         row = conn.execute(
             "SELECT * FROM bug_reports WHERE id = ?", (rid,)
         ).fetchone()
     out = _bug_row(row)
     assert out is not None
+    out["mensagens"] = [
+        {
+            "id": 0,
+            "report_id": rid,
+            "autor": "usuario",
+            "texto": mensagem,
+            "criado_em": out.get("criado_em"),
+        }
+    ]
     return out
 
 
@@ -5365,7 +5480,7 @@ def listar_bug_reports_usuario(participante_id: int) -> list[dict[str, Any]]:
             """,
             (int(participante_id),),
         ).fetchall()
-    return [_bug_row(r) for r in rows if r]  # type: ignore[misc]
+    return _anexar_bug_mensagens([_bug_row(r) for r in rows if r])  # type: ignore[misc]
 
 
 def listar_bug_reports_admin(*, status: str | None = None) -> list[dict[str, Any]]:
@@ -5409,7 +5524,7 @@ def listar_bug_reports_admin(*, status: str | None = None) -> list[dict[str, Any
                   b.id DESC
                 """
             ).fetchall()
-    return [_bug_row(r) for r in rows if r]  # type: ignore[misc]
+    return _anexar_bug_mensagens([_bug_row(r) for r in rows if r])  # type: ignore[misc]
 
 
 def get_bug_report(report_id: int) -> dict[str, Any] | None:
@@ -5424,7 +5539,10 @@ def get_bug_report(report_id: int) -> dict[str, Any] | None:
             """,
             (int(report_id),),
         ).fetchone()
-    return _bug_row(row)
+    out = _bug_row(row)
+    if not out:
+        return None
+    return _anexar_bug_mensagens([out])[0]
 
 
 def atualizar_bug_report_admin(
@@ -5445,14 +5563,15 @@ def atualizar_bug_report_admin(
         ).fetchone()
         if not row:
             raise ValueError("Report não encontrado")
-        prev_resp = (row["resposta"] or "").strip()
-        nova_resposta = resp if resposta is not None else prev_resp
-        marcou_resposta = bool(nova_resposta) and nova_resposta != prev_resp
-        if resposta is not None and not nova_resposta and prev_resp:
-            # limpar resposta explícita
-            marcou_resposta = False
-        leu = 0 if (marcou_resposta and nova_resposta) else int(row["usuario_leu_resposta"] or 0)
-        if marcou_resposta and nova_resposta:
+        acrescentou = bool(resp)
+        if acrescentou:
+            conn.execute(
+                """
+                INSERT INTO bug_report_mensagens (report_id, autor, texto)
+                VALUES (?, 'admin', ?)
+                """,
+                (int(report_id), resp),
+            )
             conn.execute(
                 """
                 UPDATE bug_reports
@@ -5463,19 +5582,18 @@ def atualizar_bug_report_admin(
                     atualizado_em = datetime('now', 'localtime')
                 WHERE id = ?
                 """,
-                (st, nova_resposta, int(report_id)),
+                (st, resp, int(report_id)),
             )
         else:
+            # Só status — mantém o log e a última resposta intactos.
             conn.execute(
                 """
                 UPDATE bug_reports
                 SET status = ?,
-                    resposta = ?,
-                    usuario_leu_resposta = ?,
                     atualizado_em = datetime('now', 'localtime')
                 WHERE id = ?
                 """,
-                (st, nova_resposta, leu, int(report_id)),
+                (st, int(report_id)),
             )
         out = conn.execute(
             """
@@ -5489,7 +5607,7 @@ def atualizar_bug_report_admin(
         ).fetchone()
     result = _bug_row(out)
     assert result is not None
-    return result
+    return _anexar_bug_mensagens([result])[0]
 
 
 def contar_bug_reports_nao_lidos(participante_id: int) -> int:
