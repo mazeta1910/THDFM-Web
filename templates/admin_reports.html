@@ -4,7 +4,7 @@
 <section class="card admin-reports">
   <p class="credenciais-kicker">Só Mazeta</p>
   <h1>Reports</h1>
-  <p class="login-lead">Bugs enviados pelos jogadores do THDFM Grid. Responda e atualize o status.</p>
+  <p class="login-lead">Bugs enviados pelos jogadores do THDFM Grid. Responda e atualize o status — o histórico da conversa fica salvo.</p>
 
   {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
   {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
@@ -32,12 +32,22 @@
           </p>
         </div>
       </header>
-      <p class="admin-reports-msg">{{ r.mensagem }}</p>
       {% if r.imagem_path %}
       <a class="grid-bugs-shot" href="/bug-reports/{{ r.imagem_path }}" target="_blank" rel="noopener">
         <img src="/bug-reports/{{ r.imagem_path }}" alt="Anexo do report #{{ r.id }}" />
       </a>
       {% endif %}
+      <div class="bug-thread" aria-label="Histórico da conversa">
+        {% for m in r.mensagens or [] %}
+        <div class="bug-thread-msg bug-thread-msg--{{ m.autor }}">
+          <div class="bug-thread-meta">
+            <strong>{% if m.autor == 'admin' %}Equipe{% else %}{{ r.autor_nome }}{% endif %}</strong>
+            {% if m.criado_em %}<span>{{ m.criado_em }}</span>{% endif %}
+          </div>
+          <p>{{ m.texto }}</p>
+        </div>
+        {% endfor %}
+      </div>
       <form class="admin-reports-form" method="post" action="/admin/reports/{{ r.id }}">
         <label class="grid-bugs-label" for="status-{{ r.id }}">Status</label>
         <select id="status-{{ r.id }}" class="grid-bugs-input" name="status" required>
@@ -45,15 +55,15 @@
           <option value="em_analise" {% if r.status == 'em_analise' %}selected{% endif %}>Em Análise</option>
           <option value="resolvido" {% if r.status == 'resolvido' %}selected{% endif %}>Resolvido</option>
         </select>
-        <label class="grid-bugs-label" for="resposta-{{ r.id }}">Resposta ao jogador</label>
+        <label class="grid-bugs-label" for="resposta-{{ r.id }}">Nova resposta ao jogador</label>
         <textarea
           id="resposta-{{ r.id }}"
           class="grid-bugs-input grid-bugs-textarea"
           name="resposta"
           rows="3"
           maxlength="4000"
-          placeholder="O jogador verá isso no painel /grid/bugs"
-        >{{ r.resposta or '' }}</textarea>
+          placeholder="Escreva uma nova mensagem (o histórico acima permanece)"
+        ></textarea>
         <div class="admin-reports-actions">
           <button type="submit" class="btn" style="width:auto">Salvar</button>
         </div>

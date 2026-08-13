@@ -98,19 +98,36 @@
           </span>
         </header>
         <p class="grid-bugs-meta">{{ r.criado_em }}</p>
-        <p class="grid-bugs-msg">{{ r.mensagem }}</p>
         {% if r.imagem_path %}
         <a class="grid-bugs-shot" href="/bug-reports/{{ r.imagem_path }}" target="_blank" rel="noopener">
           <img src="/bug-reports/{{ r.imagem_path }}" alt="Anexo do report" />
         </a>
         {% endif %}
-        {% if r.resposta %}
-        <div class="grid-bugs-reply">
-          <strong>Resposta da equipe</strong>
-          {% if r.respondido_em %}<span class="grid-bugs-meta">{{ r.respondido_em }}</span>{% endif %}
-          <p>{{ r.resposta }}</p>
+        <div class="bug-thread" aria-label="Histórico da conversa">
+          {% for m in r.mensagens or [] %}
+          <div class="bug-thread-msg bug-thread-msg--{{ m.autor }}">
+            <div class="bug-thread-meta">
+              <strong>{% if m.autor == 'admin' %}Equipe{% else %}Você{% endif %}</strong>
+              {% if m.criado_em %}<span>{{ m.criado_em }}</span>{% endif %}
+            </div>
+            <p>{{ m.texto }}</p>
+          </div>
+          {% else %}
+          <div class="bug-thread-msg bug-thread-msg--usuario">
+            <div class="bug-thread-meta"><strong>Você</strong></div>
+            <p>{{ r.mensagem }}</p>
+          </div>
+          {% if r.resposta %}
+          <div class="bug-thread-msg bug-thread-msg--admin">
+            <div class="bug-thread-meta">
+              <strong>Equipe</strong>
+              {% if r.respondido_em %}<span>{{ r.respondido_em }}</span>{% endif %}
+            </div>
+            <p>{{ r.resposta }}</p>
+          </div>
+          {% endif %}
+          {% endfor %}
         </div>
-        {% endif %}
       </li>
       {% endfor %}
     </ul>

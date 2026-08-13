@@ -292,12 +292,15 @@ def _agregar_classificacao(
                     out["rebaixado"].add(fid)
                     reb_counts[fid] = reb_counts.get(fid, 0) + 1
             if com_stats and gp is not None and gc is not None:
-                by_ano.setdefault(ano, []).append(
+                # Agrupa por edição (ano + fonte): em 1967/68 Taça Brasil e
+                # Robertão são dois Brasileirões no mesmo ano.
+                fonte = (row.get("fonte_url") or "").strip()
+                by_ano.setdefault((ano, fonte), []).append(
                     (fid, pos, n_clubes, gp, gc, v or 0, e or 0, d or 0)
                 )
 
     if com_stats:
-        for _ano, lst in by_ano.items():
+        for _chave, lst in by_ano.items():
             if not lst:
                 continue
             mx_gp = max(x[3] for x in lst)

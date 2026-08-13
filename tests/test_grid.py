@@ -125,6 +125,22 @@ def test_categorias_historicas_so_apos_cutover_meia_noite():
         assert all(n >= DENSIDADE_MIN for n in row)
 
 
+def test_treze_artilheiro_taca_brasil_1967():
+    """Chicletes/Treze foi artilheiro da Taça Brasil 1967 (Brasileirão unificado)."""
+    from src.grid_historico import historico_serie_a, limpar_caches_historico, resolver_clube_fm
+
+    limpar_caches_historico()
+    treze = resolver_clube_fm("Treze")
+    assert treze is not None
+    hist = historico_serie_a()
+    assert treze["id"] in hist["premio:artilheiro"]
+    # Melhor ataque da Taça Brasil 1967 foi o Grêmio (16 gols); Treze ficou com 15.
+    assert treze["id"] not in hist["premio:melhor_ataque"]
+    gremio = resolver_clube_fm("Grêmio")
+    assert gremio is not None
+    assert gremio["id"] in hist["premio:melhor_ataque"]
+
+
 def test_novas_categorias_historicas_aparecem_no_pool():
     from src.grid_historico import HISTORICO_META, historico_meta, limpar_caches_historico
 

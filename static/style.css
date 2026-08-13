@@ -12803,6 +12803,45 @@ button.proto-text-btn:disabled {
   white-space: pre-wrap;
   line-height: 1.4;
 }
+.bug-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.75rem 0 0.35rem;
+}
+.bug-thread-msg {
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.bug-thread-msg p {
+  margin: 0.3rem 0 0;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+.bug-thread-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  align-items: baseline;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.bug-thread-meta strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.bug-thread-msg--usuario {
+  background: color-mix(in srgb, var(--bg) 55%, var(--card));
+}
+.bug-thread-msg--admin {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+.bug-thread-msg.is-new {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
 .grid-bugs-empty,
 .admin-reports-empty {
   margin: 0;

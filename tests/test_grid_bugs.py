@@ -137,6 +137,12 @@ def test_grid_bugs_fluxo_usuario_e_admin(client: TestClient):
     assert "layout mobile" in rep["resposta"]
     assert rep["usuario_leu_resposta"] is False
     assert dbmod.contar_bug_reports_nao_lidos(part["id"]) == 1
+    msgs = rep["mensagens"]
+    assert len(msgs) == 2
+    assert msgs[0]["autor"] == "usuario"
+    assert "mobile" in msgs[0]["texto"].casefold() or "chutar" in msgs[0]["texto"].casefold()
+    assert msgs[1]["autor"] == "admin"
+    assert "layout mobile" in msgs[1]["texto"]
 
     # Sai do admin para simular o jogador (sessão admin sobrescreve o part_nav)
     client.get("/admin/logout", follow_redirects=False)
@@ -149,7 +155,8 @@ def test_grid_bugs_fluxo_usuario_e_admin(client: TestClient):
     assert bugs.status_code == 200
     assert "Em Análise" in bugs.text
     assert "Estamos olhando isso no layout mobile." in bugs.text
-    assert "Resposta da equipe" in bugs.text
+    assert "bug-thread" in bugs.text
+    assert "Equipe" in bugs.text
     assert dbmod.contar_bug_reports_nao_lidos(part["id"]) == 0
 
     login_admin(client)
@@ -159,7 +166,30 @@ def test_grid_bugs_fluxo_usuario_e_admin(client: TestClient):
         follow_redirects=False,
     )
     assert done.status_code == 303
-    assert dbmod.get_bug_report(rid)["status"] == "resolvido"
+    final = dbmod.get_bug_report(rid)
+    assert final["status"] == "resolvido"
+    assert final["resposta"] == "Corrigido no mobile fit."
+    # Log acumula: mensagem do usuário + 2 respostas da equipe
+    assert len(final["mensagens"]) == 3
+    assert [m["autor"] for m in final["mensagens"]] == ["usuario", "admin", "admin"]
+    assert "layout mobile" in final["mensagens"][1]["texto"]
+    assert "mobile fit" in final["mensagens"][2]["texto"]
+
+    admin_page2 = client.get("/admin/reports")
+    assert admin_page2.status_code == 200
+    assert "bug-thread" in admin_page2.text
+    assert "Estamos olhando isso no layout mobile." in admin_page2.text
+    assert "Corrigido no mobile fit." in admin_page2.text
+    assert "Nova resposta ao jogador" in admin_page2.text
+
+    # Só status, sem nova mensagem, não apaga o log
+    only_st = client.post(
+        f"/admin/reports/{rid}",
+        data={"status": "resolvido", "resposta": ""},
+        follow_redirects=False,
+    )
+    assert only_st.status_code == 303
+    assert len(dbmod.get_bug_report(rid)["mensagens"]) == 3
 
 
 def test_admin_reports_exige_login(client: TestClient):
