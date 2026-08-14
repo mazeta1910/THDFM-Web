@@ -355,6 +355,9 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
     nome_norm = fold_txt(nome)
     core = nome_core_norm(nome_norm)
     sig = nome_sem_prefixo_juridico(nome_norm)
+    # Base do eixo "termina com": ignora (UF) e FC/EC/… no fim
+    # (ex.: Operário (PR), Operário FC (MT) → "operario").
+    termina = nome_para_terminacao(nome_norm)
     letra = ""
     for ch in sig:
         if ch.isalpha():
@@ -363,7 +366,7 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
     if not letra:
         letra = nome[:1].upper() if nome and nome[0].isalpha() else ""
     termina_letra = ""
-    for ch in reversed(core):
+    for ch in reversed(termina):
         if ch.isalpha():
             termina_letra = ch.upper()
             break
@@ -379,6 +382,7 @@ def _clube_enriquecido(c: dict[str, Any]) -> dict[str, Any]:
         "nome_norm": nome_norm,
         "nome_core": core,
         "nome_sig": sig,
+        "nome_termina": termina,
         "termina_letra": termina_letra,
         "nome_nvogais": vogais,
         "nome_ncons": cons,
@@ -421,13 +425,15 @@ def clube_bate_categoria(clube: dict[str, Any], cat: Categoria) -> bool:
     if cat.tipo == "letra":
         return clube.get("letra") == cat.valor
     if cat.tipo == "termina":
-        core = clube.get("nome_core") or nome_core_norm(clube.get("nome_norm") or "")
+        base = clube.get("nome_termina") or nome_para_terminacao(
+            clube.get("nome_norm") or ""
+        )
         suf = fold_txt(cat.valor)
         if not suf:
             return False
         if len(suf) == 1:
             return (clube.get("termina_letra") or "") == suf.upper()
-        return core.endswith(suf)
+        return base.endswith(suf)
     if cat.tipo == "nome":
         return _clube_bate_nome(clube, cat.valor)
     if cat.tipo in _TIPOS_HISTORICOS:
@@ -731,7 +737,7 @@ def _montar_categorias(dia: str) -> list[Categoria]:
         suf = fold_txt(silaba)
         if not suf:
             continue
-        n = sum(1 for c in clubes if (c.get("nome_core") or "").endswith(suf))
+        n = sum(1 for c in clubes if (c.get("nome_termina") or "").endswith(suf))
         if n >= DENSIDADE_MIN:
             cats.append(
                 Categoria(
@@ -1586,6 +1592,19 @@ def nome_sem_prefixo_juridico(nome_norm: str) -> str:
     return core
 
 
+def nome_para_terminacao(nome_norm: str) -> str:
+    """Nome usado no eixo 'termina com': sem (UF) e sem FC/EC/… no fim.
+
+    Assim 'Operário (PR)' e 'Operário FC (MT)' terminam em 'rio', não em
+    '(pr)' / 'fc'.
+    """
+    core = nome_core_norm(nome_norm)
+    parts = core.split()
+    while len(parts) >= 2 and parts[-1] in _PREFIXOS_JURIDICOS:
+        parts = parts[:-1]
+    return " ".join(parts).strip()
+
+
 def min_chars_sugestao(nome_norm: str) -> int:
     core = nome_core_norm(nome_norm)
     n = max(len(core), 1)
@@ -1628,18 +1647,34 @@ def buscar_celula(
         total = int(dens[linha][coluna])
     except (IndexError, TypeError, ValueError):
         total = 0
+    row = categoria_por_id(puzzle["linhas"][linha]["id"], dia)
+    col = categoria_por_id(puzzle["colunas"][coluna]["id"], dia)
     query = fold_txt(q or "")
     pronto = len(query) >= BUSCA_MIN_CHARS
     itens: list[dict[str, Any]] = []
     if pronto:
         candidatos = [c for c in clubes_grid() if _clube_elegivel_sugestao(c, query)]
-        candidatos.sort(
-            key=lambda c: (
+
+        def _rank(c: dict[str, Any]) -> tuple[int, int, int, str]:
+            # Prioriza quem fecha a célula (linha ∩ coluna) — evita chute vermelho
+            # por homônimo (ex.: Operário FC quando a cat é "termina com rio").
+            fecha = 0
+            if row and col:
+                fecha = (
+                    0
+                    if (
+                        clube_bate_categoria(c, row) and clube_bate_categoria(c, col)
+                    )
+                    else 1
+                )
+            return (
+                fecha,
                 0 if nome_core_norm(c["nome_norm"]).startswith(query) else 1,
                 len(nome_core_norm(c["nome_norm"])),
                 c["nome_norm"],
             )
-        )
+
+        candidatos.sort(key=_rank)
         lim = max(1, min(int(limite), 30))
         itens = [
             {

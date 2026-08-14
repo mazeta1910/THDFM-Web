@@ -585,7 +585,7 @@ def test_categoria_termina_com_letra_e_silaba():
     bateu = False
     for c in clubes_grid():
         if clube_bate_categoria(c, ense):
-            assert c["nome_core"].endswith("ense")
+            assert (c.get("nome_termina") or c["nome_core"]).endswith("ense")
             assert clube_bate_categoria(c, letra_e)
             bateu = True
             break
@@ -599,6 +599,63 @@ def test_categoria_termina_com_letra_e_silaba():
         Categoria("termina:eiro", "termina", "eiro", "x"),
         Categoria("termina:iro", "termina", "iro", "y"),
     ) is True
+
+
+def test_termina_com_ignora_sufixo_uf_e_fc():
+    """Operário (PR) / Operário FC contam em 'Nome termina com rio'."""
+    from src.grid_game import Categoria, clube_bate_categoria, nome_para_terminacao
+
+    cat = Categoria("termina:rio", "termina", "rio", "Nome termina com rio")
+    por_nome = {c["nome"]: c for c in clubes_grid()}
+
+    operario_pr = por_nome["Operário (PR)"]
+    assert operario_pr["nome_norm"] == "operario (pr)"
+    assert nome_para_terminacao(operario_pr["nome_norm"]) == "operario"
+    assert operario_pr["nome_termina"] == "operario"
+    assert clube_bate_categoria(operario_pr, cat) is True
+
+    operario_fc = por_nome["Operário FC (MT)"]
+    assert nome_para_terminacao(operario_fc["nome_norm"]) == "operario"
+    assert clube_bate_categoria(operario_fc, cat) is True
+
+    # Homônimo que de fato não termina em rio
+    caarapo = por_nome["Operário de Caarapó"]
+    assert clube_bate_categoria(caarapo, cat) is False
+
+    ferroviario = por_nome["Ferroviário (CE)"]
+    assert clube_bate_categoria(ferroviario, cat) is True
+
+
+def test_busca_prioriza_clube_que_fecha_celula(monkeypatch):
+    """Sugestões sobem quem fecha linha∩coluna (evita miss por homônimo)."""
+    from src.grid_game import (
+        Categoria,
+        buscar_celula,
+        clube_bate_categoria,
+        clubes_grid,
+    )
+
+    cat_rio = Categoria("termina:rio", "termina", "rio", "Nome termina com rio")
+    cat_sul = Categoria("regiao:Sul", "regiao", "Sul", "Região Sul")
+    puzzle = {
+        "linhas": [cat_rio.to_public()],
+        "colunas": [cat_sul.to_public()],
+        "densidades": [[5]],
+    }
+    monkeypatch.setattr("src.grid_game.gerar_puzzle", lambda _dia: puzzle)
+    monkeypatch.setattr(
+        "src.grid_game.categoria_por_id",
+        lambda cid, _dia=None: {"termina:rio": cat_rio, "regiao:Sul": cat_sul}.get(cid),
+    )
+
+    data = buscar_celula(dia="2026-08-14", linha=0, coluna=0, q="operario", limite=12)
+    itens = data["itens"]
+    assert itens
+    primeiro = next(c for c in clubes_grid() if c["id"] == itens[0]["id"])
+    assert clube_bate_categoria(primeiro, cat_rio)
+    assert clube_bate_categoria(primeiro, cat_sul)
+    # Operário (PR) é Sul e termina em rio; deve vir antes de homônimos que não fecham
+    assert primeiro["nome"] == "Operário (PR)"
 
 
 def test_virada_meia_noite_sao_paulo():
