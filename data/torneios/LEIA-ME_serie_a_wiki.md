@@ -36,7 +36,7 @@ Regenerar com `python scripts/extract_serie_b_from_xlsx.py` e
 
 | Série | Edições com V/E/D/GP/GC | Observação |
 |---|---|---|
-| A | 1959–2025 (2000 parcial nos módulos sem tabela) | 100% das edições com tabela |
+| A | 1959–2025 (2000 parcial nos módulos sem tabela) | 100% das edições com tabela; **2026 só participantes** |
 | B | 1971–2025 exceto anos sem disputa | 100% após correção do extract (V/E/D) |
 | C | 1981–2025 no dump, **exceto 2002** | 2002 no wiki/xlsx só tem PG/J (sem gols/V/E/D); 2026 só participantes |
 
