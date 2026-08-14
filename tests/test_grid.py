@@ -171,10 +171,12 @@ def test_stats_abc_cobertura_ved_gp_gc():
     b_ok = anos_completos(base / "classificacoes_serie_b.csv")
     c_ok = anos_completos(base / "classificacoes_serie_c.csv")
 
-    # A: quase tudo; 2000 tem módulos só com participação
+    # A: quase tudo; 2000 tem módulos só com participação; 2026 só lista
     assert len(a_ok) >= 66
+    assert 2026 not in a_ok
     # B: todas as temporadas disputadas no CSV
     assert len(b_ok) >= 46
+    assert 2026 not in b_ok
     # C: dump local completo salvo 2002 (só PG/J) e 2026 (em andamento)
     assert len(c_ok) >= 34
     assert 2002 not in c_ok
@@ -423,6 +425,39 @@ def test_categorias_serie_b_c_e_copa_densas():
         cats["participacao:nunca_serie_c"], cats["longevidade:serie_c_le_5"]
     )
     assert len(pool_nunca) == len(hist["participacao:nunca_serie_c"])
+
+
+def test_serie_a_2026_participantes_contam_desde_2010():
+    """Remo (A 2026) fecha 'Jogou a Série A em 2010 ou depois' + não Centro-Oeste."""
+    from src.grid_historico import limpar_caches_historico, resolver_clube_fm
+    from src.grid_game import (
+        clube_bate_categoria,
+        clubes_por_id,
+        categoria_por_id,
+    )
+
+    limpar_caches_historico()
+    historico_serie_a.cache_clear()
+    clubes_por_id.cache_clear()
+    clubes_grid.cache_clear()
+
+    remo = resolver_clube_fm("Remo")
+    assert remo is not None
+    hist = historico_serie_a()
+    fid = remo["id"]
+    assert fid in hist["participacao:serie_a_desde_2010"]
+    assert fid in hist["participacao:serie_a_desde_2020"]
+    assert fid in hist["participacao:serie_a_dec_2020"]
+    # Temporada em andamento: conta participação, não inventa título de 2026
+    assert fid not in hist["titulo:campeao_br"]
+
+    cat_desde = categoria_por_id("participacao:serie_a_desde_2010", "2026-08-14")
+    cat_nao_co = categoria_por_id("nao_regiao:Centro-Oeste", "2026-08-14")
+    assert cat_desde is not None and cat_nao_co is not None
+    clube = clubes_por_id()[fid]
+    assert clube["regiao"] == "Norte"
+    assert clube_bate_categoria(clube, cat_desde) is True
+    assert clube_bate_categoria(clube, cat_nao_co) is True
 
 
 def test_variedade_cutover_e_eixos_mistos():
