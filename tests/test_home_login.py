@@ -26,8 +26,14 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "site-footer" in text
     bolao = text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
     assert "Entrar" in bolao
-    assert "Recuperar link" in bolao
+    assert "Recuperar link" not in bolao
     assert "Meus Palpites" not in bolao
+    assert "Classificação" in bolao
+    assert "THDFM Grid" in bolao
+    assert "PIX da inscrição" not in bolao
+    assert "Inscrição encerrada" in bolao
+    assert 'href="/classificacao"' in bolao
+    assert 'href="/grid"' in bolao
     assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
     assert "Entrar no grupo" in text
     assert 'id="drawer-senha"' in text
@@ -64,7 +70,8 @@ def test_home_alias_tambem_renderiza(client: TestClient):
     r = client.get("/home", follow_redirects=False)
     assert r.status_code == 200
     assert "Bolão da Copa do Brasil" in r.text
-    assert "PIX da inscrição" in r.text
+    assert "Inscrição encerrada" in r.text
+    assert "PIX da inscrição" not in r.text
     # Bolão é o primeiro slide (is-active no #bolao)
     bolao_pos = r.text.find('id="bolao"')
     apres_pos = r.text.find('id="apresentacao"')
@@ -261,6 +268,7 @@ def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
     assert 'data-group="marlon"' not in r.text
+    assert "site-menu-acesso-fixo" not in r.text
     assert 'id="loguin-drawer-root"' not in r.text
     assert "Fazer Loguin" not in r.text
     assert ">Loguin<" not in r.text
@@ -281,23 +289,25 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     assert "LOGUIN" in r_home.text
     assert "loguin-drawer-root" in r_home.text
     assert "Marlon" in r_home.text
-    assert 'data-group="marlon"' in r_home.text
-    assert "Sub-menu exclusivo" in r_home.text
+    assert 'data-group="marlon"' not in r_home.text
+    assert "site-menu-acesso-fixo" in r_home.text
+    assert ">Loguin<" in r_home.text
     assert "ortografia" not in r_home.text.casefold()
     assert 'data-loguin-open' in r_home.text
 
     # LOGUIN saiu do grupo Portal
     portal_block = r_home.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert "data-loguin-open" not in portal_block
-    # Entrar vive em Acesso, não misturado no Bolão
-    assert 'data-group="acesso"' in r_home.text
-    acesso_block = r_home.text.split('data-group="acesso"', 1)[1].split("data-group=", 1)[0]
-    assert 'href="/?acesso=entrar"' in acesso_block or 'data-acesso-open="entrar"' in acesso_block
-    assert "Entrar" in acesso_block
-    assert 'href="/?acesso=recuperar"' in acesso_block or 'data-acesso-open="recuperar"' in acesso_block
+    # Entrar e Loguin ficam fixos abaixo do Hall, não em grupo arrastável
+    assert 'data-group="acesso"' not in r_home.text
+    fixo = r_home.text.split("site-menu-acesso-fixo", 1)[1].split("data-group=", 1)[0]
+    assert 'href="/?acesso=entrar"' in fixo or 'data-acesso-open="entrar"' in fixo
+    assert "Entrar" in fixo
+    assert "data-loguin-open" in fixo
     bolao_block = r_home.text.split('data-group="bolao"', 1)[1].split("data-group=", 1)[0]
     assert 'data-acesso-open="entrar"' not in bolao_block
     assert 'href="/inscricao"' not in bolao_block
+    assert "Recuperar link" in bolao_block
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},

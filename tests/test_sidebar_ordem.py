@@ -31,14 +31,16 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     assert 'data-group="portal"' in html
     assert "data-menu-sortable" in html
     assert "site-menu-drag" in html
-    # Hall aparece antes do Portal no markup
-    assert html.index("site-hall-lendas") < html.index('data-group="portal"')
+    # Hall → acesso fixo (visitante) → Portal → sortable
+    assert html.index("site-hall-lendas") < html.index("site-menu-acesso-fixo")
+    assert html.index("site-menu-acesso-fixo") < html.index('data-group="portal"')
     assert html.index('data-group="portal"') < html.index("data-menu-sortable")
     js = _chrome_js()
     assert "initSidebarSortable" in js
     assert "thdfm-sidebar-ordem-v1" in js
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".site-hall-lendas" in css
+    assert ".site-menu-acesso-fixo" in css
     assert ".site-menu-drag" in css
     assert "touch-action: none" in css
     assert ".hall-lendas-page" in css

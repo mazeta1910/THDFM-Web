@@ -170,9 +170,10 @@ def test_menu_portal_minimizado_e_loguin_capitalizacao(client: TestClient):
     assert 'data-group="portal"' in r.text
     portal_tag = r.text.split('data-group="portal"', 1)[0].rsplit("<details", 1)[-1]
     assert " open" not in portal_tag.split(">", 1)[0]
-    assert 'data-group="acesso" open' in r.text or 'data-group="acesso"open' in r.text.replace(" ", "")
+    assert "site-menu-acesso-fixo" in r.text
+    assert 'data-group="acesso"' not in r.text
     assert ">Loguin<" in r.text
-    assert ">LOGUIN<" not in r.text.split("data-group=\"marlon\"", 1)[1].split("</details>", 1)[0]
+    assert 'data-group="marlon"' not in r.text
 def test_alterar_senha_na_conta(client: TestClient):
     part = db.criar_participante("TrocaSenha", status="liberado", celular="11999334455")
     db.definir_credenciais(part["id"], "troca.senha", "antiga123")

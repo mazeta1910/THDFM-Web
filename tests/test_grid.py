@@ -825,9 +825,23 @@ def test_vancouver_whitecaps_no_catalogo_fora_do_puzzle():
     assert white["id"] not in {c["id"] for c in clubes_grid()}
 
 
-def test_grid_exige_login(client: TestClient):
+def test_grid_publico_chute_exige_login(client: TestClient):
     r = client.get("/grid", follow_redirects=False)
-    assert r.status_code in (303, 302)
+    assert r.status_code == 200
+    assert "THDFM Grid" in r.text
+    assert 'data-pode-salvar="0"' in r.text
+    assert "grid-login-banner" in r.text
+    assert 'href="/?acesso=entrar"' in r.text
+    api = client.get("/grid/api/hoje", follow_redirects=False)
+    assert api.status_code == 200
+    assert api.json()["pode_salvar"] is False
+    chute = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "nome": "Flamengo"},
+        follow_redirects=False,
+    )
+    assert chute.status_code == 401
+    assert "Entre" in (chute.json().get("erro") or "")
 
 
 def test_grid_og_preview_para_bot_whatsapp(client: TestClient):
@@ -863,6 +877,8 @@ def test_grid_liberado_para_participante(client: TestClient):
     assert "Puzzle diário" in r.text
     assert 'id="grid-admin"' not in r.text
     assert "Painel do Grid" not in r.text
+    assert 'data-pode-salvar="1"' in r.text
+    assert "grid-login-banner" not in r.text
     api = client.get("/grid/api/hoje")
     assert api.status_code == 200
     assert api.json()["pode_salvar"] is True
@@ -952,7 +968,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=14" in r.text
+    assert "/static/grid.js?v=15" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1030,6 +1046,8 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "data-daltonismo-mode" in js
     assert "clubeJaUsado" in js
     assert "já foi usado" in js
+    assert "pedirLogin" in js
+    assert "status === 401" in js
     assert "aplicarMiopia" not in js
     assert "data-miopia" not in js
     assert 'href="/grid"' in (
@@ -1477,7 +1495,14 @@ def test_perfil_mostra_bloco_grid(client: TestClient):
 def test_grid_ranking_inline_e_redirect(client: TestClient):
     r_guest = client.get("/grid/ranking", follow_redirects=False)
     assert r_guest.status_code in (303, 302)
-    assert "acesso=entrar" in (r_guest.headers.get("location") or "")
+    loc_guest = r_guest.headers.get("location") or ""
+    assert "/grid" in loc_guest
+    assert "#ranking" in loc_guest
+    assert "acesso=entrar" not in loc_guest
+
+    page_guest = client.get("/grid")
+    assert page_guest.status_code == 200
+    assert 'id="ranking"' in page_guest.text
 
     from src import db as dbmod
 

@@ -103,11 +103,10 @@
     // Portal fechado; demais abertos. Acervo Xonha fica sempre maximizado.
     const DEFAULT_OPEN = {
       portal: false,
-      acesso: true,
       bolao: true,
+      "jogos-passatempos": true,
       "grupo-whatsapp": true,
       "acervo-xonha": true,
-      marlon: true,
     };
     const ALWAYS_OPEN = new Set(["acervo-xonha"]);
     const readGroups = () => {
