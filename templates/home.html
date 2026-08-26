@@ -21,27 +21,42 @@
       <div class="home-hero-inner home-hero-inner--bolao">
         <p class="home-kicker">Em andamento</p>
         <h1 class="home-headline">Bolão da Copa do Brasil</h1>
+        {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
         <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
         <ol class="home-steps home-steps--hero" aria-label="Como participar">
-          <li><span class="home-step-n">1</span><span>PIX da inscrição ({{ taxa_valor_label }})</span></li>
-          <li><span class="home-step-n">2</span><span>Envia nome, Zap e comprovante</span></li>
-          <li><span class="home-step-n">3</span><span>Recebe seu link no WhatsApp</span></li>
+          <li><span class="home-step-n">1</span><span>Palpite os jogos da Copa</span></li>
+          <li><span class="home-step-n">2</span><span>Dispute a classificação do grupo</span></li>
+          <li><span class="home-step-n">3</span><span>Acompanhe regras e transparência</span></li>
         </ol>
         <div class="home-ctas">
-          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
           <a class="btn home-cta-primary" href="/bolao/meus-palpites">Meus Palpites</a>
           <a class="btn secondary home-cta-secondary" href="/classificacao">Classificação</a>
-          {% elif participante_nav and participante_nav.status == 'liberado' %}
+        </div>
+        {% elif participante_nav and participante_nav.status == 'liberado' %}
+        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
+        <div class="home-ctas">
           <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
           <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Ver inscrição</a>
-          {% elif participante_nav %}
+        </div>
+        {% elif participante_nav %}
+        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
+        <div class="home-ctas">
           <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Ver status da inscrição</a>
           <a class="btn secondary home-cta-secondary" href="/meu-perfil/editar">Editar perfil</a>
-          {% else %}
-          <a class="btn home-cta-primary" href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
-          <a class="btn secondary home-cta-secondary" href="/?acesso=recuperar" data-acesso-open="recuperar">Recuperar link</a>
-          {% endif %}
         </div>
+        {% else %}
+        <p class="home-lead">Inscrição encerrada. Acompanhe o ranking, as regras e o Grid sem conta — palpite é de quem já está no grupo.</p>
+        <ol class="home-steps home-steps--hero" aria-label="O que dá para ver sem login">
+          <li><span class="home-step-n">1</span><span>Classificação, regras e transparência abertas</span></li>
+          <li><span class="home-step-n">2</span><span>THDFM Grid para explorar (chute pede login)</span></li>
+          <li><span class="home-step-n">3</span><span>Já é do bolão? Entre pelo menu</span></li>
+        </ol>
+        <div class="home-ctas">
+          <a class="btn home-cta-primary" href="/classificacao">Classificação</a>
+          <a class="btn secondary home-cta-secondary" href="/grid">THDFM Grid</a>
+        </div>
+        <p class="home-cta-login">Já participa? <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a></p>
+        {% endif %}
       </div>
     </article>
 

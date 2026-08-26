@@ -32,6 +32,18 @@
   let searchTimer = 0;
   let searchAbort = null;
   const MIN_CHARS = 3;
+  const podeSalvar =
+    root.getAttribute("data-pode-salvar") === "1" || boot.pode_salvar === true;
+
+  function pedirLogin(msg) {
+    setModalHint(msg || "Entre para registrar o chute.", true);
+    const trigger = document.querySelector('[data-acesso-open="entrar"]');
+    if (trigger) {
+      trigger.click();
+      return;
+    }
+    window.location.href = "/?acesso=entrar";
+  }
 
   // Escapes ASCII-safe: evita charset errado no .js quebrar o WhatsApp
   const SQ_OK = "\uD83D\uDFE9"; // large green square
@@ -255,6 +267,10 @@
 
   async function submitGuessByName(nomeRaw) {
     if (!active) return;
+    if (!podeSalvar) {
+      pedirLogin();
+      return;
+    }
     const nome = String(nomeRaw || "").trim();
     if (nome.length < MIN_CHARS) {
       setModalHint("Digite pelo menos 3 letras do nome.", true);
@@ -268,6 +284,10 @@
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
+      if (r.status === 401) {
+        pedirLogin(data.erro);
+        return;
+      }
       // Ex.: time já usado — não preenche o quadro; usuário tenta de novo
       setModalHint(data.erro || "Não foi possível registrar o chute.", true);
       return;
@@ -277,6 +297,10 @@
 
   async function submitGuessById(clubeId) {
     if (!active || !clubeId) return;
+    if (!podeSalvar) {
+      pedirLogin();
+      return;
+    }
     if (clubeJaUsado(clubeId)) {
       setModalHint("Esse time já foi usado neste grid. Escolha outro.", true);
       return;
@@ -289,6 +313,10 @@
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
+      if (r.status === 401) {
+        pedirLogin(data.erro);
+        return;
+      }
       setModalHint(data.erro || "Não foi possível registrar o chute.", true);
       return;
     }

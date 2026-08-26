@@ -18,7 +18,7 @@
   data-dia="{{ puzzle.dia }}"
   data-streak="{{ streak }}"
   data-virada-ms="{{ puzzle.virada_em_ms }}"
-  data-pode-salvar="1"
+  data-pode-salvar="{{ 1 if grid_pode_salvar else 0 }}"
 >
   <header class="grid-head">
     <div class="grid-head-main">
@@ -52,6 +52,14 @@
       </p>
     </div>
   </header>
+
+  {% if not grid_pode_salvar %}
+  <p class="grid-login-banner" role="status">
+    Explore o puzzle à vontade.
+    <a href="/?acesso=entrar" data-acesso-open="entrar">Entre</a>
+    para registrar os chutes e aparecer no ranking.
+  </p>
+  {% endif %}
 
   <div class="grid-board-wrap card">
     <div class="grid-board" data-grid-board aria-label="Grade do dia">
@@ -320,11 +328,11 @@
   </form>
 </dialog>
 
-<script type="application/json" id="grid-boot">{{ {"puzzle": puzzle, "progresso": progresso, "streak": streak, "share": share}|tojson }}</script>
+<script type="application/json" id="grid-boot">{{ {"puzzle": puzzle, "progresso": progresso, "streak": streak, "share": share, "pode_salvar": grid_pode_salvar}|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=14" defer></script>
+<script src="/static/grid.js?v=15" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=4" defer></script>
 {% endif %}

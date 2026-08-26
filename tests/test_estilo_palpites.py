@@ -24,11 +24,34 @@ def test_inscricao_aberta_helper():
     assert inscricao_aberta(agora=datetime(2026, 8, 1, 16, 12, tzinfo=tz)) is False
 
 
-def test_gate_bloqueia_anonimo(client):
-    for path in ("/classificacao", "/regras", "/transparencia", "/xonhometro", "/grupo/listra"):
+def test_leitura_publica_anonimo(client):
+    for path in (
+        "/classificacao",
+        "/regras",
+        "/transparencia",
+        "/xonhometro",
+        "/grupo/listra",
+        "/grid",
+    ):
         r = client.get(path, follow_redirects=False)
-        assert r.status_code == 303, path
-        assert r.headers["location"].startswith("/?acesso=entrar")
+        assert r.status_code == 200, path
+
+    part = db.criar_participante("Perfil Pub", status="liberado", celular="11990009911")
+    perfil = client.get(f"/perfil/{part['id']}", follow_redirects=False)
+    assert perfil.status_code == 200
+    assert 'id="public-recado-form"' not in perfil.text
+    assert "proto-steam-compose-guest" in perfil.text
+
+
+def test_escrita_ainda_pede_login(client):
+    r = client.post("/grupo/listra", data={"texto": "x"}, follow_redirects=False)
+    assert r.status_code in (303, 401, 403)
+    chute = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "nome": "Flamengo"},
+        follow_redirects=False,
+    )
+    assert chute.status_code == 401
 
 
 def test_home_continua_publica(client):
@@ -122,7 +145,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Estilo de palpites" not in r.text
     assert "perfis-estilo-json" not in r.text
     assert "Clique no nome para ver o estilo de palpites" not in r.text
-    assert "/static/style.css?v=313" in r.text
+    assert "/static/style.css?v=321" in r.text
     assert 'href="/perfil/' in r.text
     assert "classificacao-player-link" in r.text
     assert "classificacao-nome-btn" not in r.text
@@ -224,7 +247,7 @@ def test_resumo_rodadas_helper_e_sem_ficha_na_classificacao(client):
     assert "ficha-estilo-card" not in r.text
     assert "perfis-estilo-json" not in r.text
     assert "data-abrir-ficha" not in r.text
-    assert "/static/style.css?v=313" in r.text
+    assert "/static/style.css?v=321" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     # Estilos compartilhados com o perfil (resumo de rodadas) permanecem
     assert ".ficha-rodada-rotulo-short" in css

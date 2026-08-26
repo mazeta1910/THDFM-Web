@@ -957,6 +957,18 @@ a.site-hall-lendas.active {
   color: #e2b93d;
   filter: drop-shadow(0 0 0.35px color-mix(in srgb, #d4a017 50%, transparent));
 }
+.site-menu-acesso-fixo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0 0 0.45rem;
+  padding: 0.3rem 0.15rem 0.35rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.site-menu-acesso-fixo .site-side-link {
+  padding: 0.55rem 0.65rem;
+}
 .site-menu-drag {
   display: inline-flex;
   align-items: center;
@@ -6852,6 +6864,21 @@ html[data-theme="light"] .home-hero-scrim {
   gap: 0.65rem;
   max-width: 28rem;
 }
+.home-cta-login {
+  margin: 0.7rem 0 0;
+  max-width: 28rem;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+.home-cta-login a {
+  color: #fff;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.home-cta-login a:hover {
+  color: var(--accent);
+}
 .home-ctas .btn {
   width: auto;
   flex: 1 1 10rem;
@@ -11163,6 +11190,15 @@ button.proto-steam-icons:hover .proto-steam-icon.is-on {
   align-items: end;
   margin-bottom: 0.75rem;
 }
+.proto-steam-compose-guest {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.proto-steam-compose-guest a {
+  font-weight: 800;
+  color: var(--accent);
+}
 .proto-steam-compose-main {
   display: grid;
   gap: 0.4rem;
@@ -12510,6 +12546,20 @@ button.proto-text-btn:disabled {
   gap: 1.15rem;
   min-width: 0;
   box-sizing: border-box;
+}
+.grid-login-banner {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.grid-login-banner a {
+  font-weight: 800;
+  color: var(--accent);
 }
 .grid-head {
   display: block;

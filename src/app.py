@@ -90,23 +90,14 @@ load_dotenv(ROOT_DIR / ".env")
 app = FastAPI(title="Bolão THDFM — Copa do Brasil")
 
 
-def _path_publico(path: str) -> bool:
-    """Rotas acessíveis sem sessão (home + login + assets + link mágico)."""
+def _path_publico(path: str, method: str = "GET") -> bool:
+    """Rotas acessíveis sem sessão (home, leitura pública, login, assets)."""
+    method = (method or "GET").upper()
     if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
-        return True
-    # Grid HTML: middleware deixa passar para crawlers de preview (OG);
-    # o handler ainda exige login para humanos (API /grid/api/* segue protegida).
-    if path == "/grid":
         return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/") or path.startswith("/hall-hero/") or path.startswith("/bug-reports/"):
         return True
-    # Perfil (handler ainda exige liberado/admin)
-    if path.startswith("/meu-perfil") or path.startswith("/perfil/") or path.startswith("/prototipo/"):
-        return True
-    # Link mágico do participante
-    if path.startswith("/p/"):
-        return True
-    # Auth / logout
+    # Auth / logout (GET e POST)
     if path in (
         "/entrar",
         "/login",
@@ -121,13 +112,34 @@ def _path_publico(path: str) -> bool:
         return True
     if path == "/hall-lendas" or path.startswith("/hall-lendas/"):
         return True
+    # Link mágico do participante
+    if path.startswith("/p/"):
+        return True
+    # Leitura pública (AdSense + navegação). Escrita (chute, recado, listra) segue gated.
+    if method in ("GET", "HEAD"):
+        if path in ("/classificacao", "/regras", "/transparencia"):
+            return True
+        if path == "/xonhometro" or path.startswith("/xonhometro/"):
+            return True
+        if path.startswith("/grupo/"):
+            return True
+        if path == "/grid" or path == "/grid/ranking":
+            return True
+        if path.startswith("/prototipo/"):
+            return True
+    # Perfil público + APIs (recados/karma): o handler devolve JSON 401 em vez de redirect HTML.
+    if path.startswith("/perfil/"):
+        return True
+    # APIs do Grid (exceto admin): o handler devolve JSON 401 em vez de redirect HTML.
+    if path.startswith("/grid/api/") and not path.startswith("/grid/api/admin"):
+        return True
     return False
 
 
 @app.middleware("http")
 async def gate_login_middleware(request: Request, call_next):
     path = request.url.path
-    if _path_publico(path):
+    if _path_publico(path, request.method):
         return await call_next(request)
     # Sessão de participante ou admin (SessionMiddleware roda por fora).
     if request.session.get("participante_token") or request.session.get("admin_login"):
@@ -1406,9 +1418,6 @@ def perfil_participante(request: Request, participante_id: int):
     """Perfil público de qualquer participante liberado."""
     import json
 
-    neg = _require_perfil(request)
-    if neg:
-        return neg
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse("/classificacao", status_code=303)
@@ -2850,9 +2859,6 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
 
 @app.get("/classificacao", response_class=HTMLResponse)
 def classificacao(request: Request):
-    if not admin_ok(request) and not request.session.get("participante_token"):
-        return RedirectResponse("/?acesso=entrar", status_code=303)
-
     from src.ranking import _rodada_historico_vazia
 
     historico_all = db.list_rodadas_historico()
@@ -2907,7 +2913,7 @@ def _grid_neg_json(request: Request) -> JSONResponse | None:
     """Grid liberado para perfil autenticado (mesmo critério do mural)."""
     if _require_perfil(request) is None:
         return None
-    return JSONResponse({"erro": "Não autorizado"}, status_code=401)
+    return JSONResponse({"erro": "Entre para registrar o chute."}, status_code=401)
 
 
 def _grid_mazeta_neg_json(request: Request) -> JSONResponse | None:
@@ -2937,12 +2943,7 @@ def _is_link_preview_bot(request: Request) -> bool:
 
 @app.get("/grid", response_class=HTMLResponse)
 def grid_page(request: Request):
-    """THDFM Grid — puzzle diário (liberado para participantes logados)."""
-    # Preview de link: serve a página com meta OG (sem redirect de login).
-    if not _is_link_preview_bot(request):
-        neg = _require_perfil(request)
-        if neg:
-            return neg
+    """THDFM Grid — puzzle diário (leitura pública; chute exige login)."""
     from src.grid_game import (
         dia_grid,
         dias_totais_grid,
@@ -2980,6 +2981,7 @@ def grid_page(request: Request):
         linhas=db.ranking_grid(limite=100),
         dias_totais=dias_totais_grid(dia),
         grid_privado=False,
+        grid_pode_salvar=bool(voter),
         virada_hora=virada_hora,
         virada_minuto=virada_minuto,
         virada_rotulo=virada_rotulo,
@@ -2989,9 +2991,6 @@ def grid_page(request: Request):
 @app.get("/grid/ranking", response_class=HTMLResponse)
 def grid_ranking_page(request: Request):
     """Compat: ranking agora vive em /grid#ranking."""
-    neg = _require_perfil(request)
-    if neg:
-        return neg
     return RedirectResponse("/grid#ranking", status_code=303)
 
 
@@ -3129,9 +3128,6 @@ async def admin_reports_atualizar(request: Request, report_id: int):
 
 @app.get("/grid/api/hoje")
 def grid_api_hoje(request: Request):
-    neg = _grid_neg_json(request)
-    if neg:
-        return neg
     from src.grid_game import dia_grid, puzzle_publico
 
     dia = dia_grid()
@@ -3167,9 +3163,6 @@ def grid_api_buscar(
     coluna: int = 0,
     q: str = "",
 ):
-    neg = _grid_neg_json(request)
-    if neg:
-        return neg
     from src.grid_game import buscar_celula, dia_grid
 
     try:

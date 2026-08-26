@@ -166,7 +166,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=313" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=321" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
     assert "overflow-x: hidden" in css
     assert "overscroll-behavior-x: contain" in css
     assert ".xonha-timeline-loading" in css
@@ -340,7 +340,8 @@ def test_menu_tem_xonhometro(client: TestClient):
     assert 'ico(\'xonha\'' not in r.text  # rendered SVG, not macro call
     # Acervo Xonha começa maximizado no HTML
     assert 'data-group="acervo-xonha" open' in r.text
-    assert "thdfm-site-menu-groups-v5" in r.text
+    chrome = (ROOT_DIR / "static" / "site-chrome.js").read_text(encoding="utf-8")
+    assert "thdfm-site-menu-groups-v5" in chrome
     # Saiu do Portal
     portal = r.text.split('data-group="portal"', 1)[1].split("data-group=", 1)[0]
     assert "Xonhômetro" not in portal
