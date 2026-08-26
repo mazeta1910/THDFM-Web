@@ -23,6 +23,14 @@ GOLEADAS_COPA_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_copa_do_brasil.cs
 CAMPEOES_COPA_CSV = ROOT_DIR / "data" / "torneios" / "campeoes_copa_do_brasil.csv"
 PARTICIP_COPA_CSV = ROOT_DIR / "data" / "torneios" / "participacoes_copa_do_brasil.csv"
 
+_UFS_BR = frozenset(
+    {
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+        "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+        "SP", "SE", "TO",
+    }
+)
+
 # Aliases Wikipedia → nome canônico no catálogo FM (sem UF).
 _ALIAS_NOME: dict[str, str] = {
     "vasco da gama": "vasco",
@@ -39,6 +47,14 @@ _ALIAS_NOME: dict[str, str] = {
     "atletico goianiense": "atletico goianiense",
     "atletico mineiro": "atletico mineiro",
     "atletico mg": "atletico mineiro",
+    # Homônimos / nomes longos que o match frouxo puxava pro grande
+    "boa esporte": "boa",
+    "corinthians de presidente prudente": "corinthians pp",
+    "corinthians presidente prudente": "corinthians pp",
+    "botafogo sobradinho": "botafogo",  # + UF DF via _ALIAS_UF
+    "desportiva ferroviaria": "desportiva",
+    "auto esporte pb": "auto esporte",
+    "auto esporte-pb": "auto esporte",
 }
 
 # Quando o alias aponta a um nome compartilhado, desambiguar por UF.
@@ -58,6 +74,11 @@ _ALIAS_UF: dict[str, str] = {
     "atletico paranaense": "PR",
     "atletico-pr": "PR",
     "atletico pr": "PR",
+    "boa esporte": "MG",
+    "botafogo sobradinho": "DF",
+    "desportiva ferroviaria": "ES",
+    "auto esporte pb": "PB",
+    "auto esporte-pb": "PB",
 }
 
 
@@ -73,6 +94,34 @@ def normalizar_nome(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
+def _extrair_uf_do_nome(raw: str) -> tuple[str, str | None]:
+    """Separa sufixo de UF (`Flamengo-PI`, `Botafogo (PB)`) do nome base."""
+    s = (raw or "").strip()
+    if not s:
+        return "", None
+    m = re.search(r"[\-–—]\s*([A-Za-z]{2})\s*$", s)
+    if m and m.group(1).upper() in _UFS_BR:
+        return s[: m.start()].strip(), m.group(1).upper()
+    m = re.search(r"\(([A-Za-z]{2})\)\s*$", s)
+    if m and m.group(1).upper() in _UFS_BR:
+        base = (s[: m.start()] + s[m.end() :]).strip()
+        return base, m.group(1).upper()
+    return s, None
+
+
+def _tokens_contiguos(curto: str, longo: str) -> bool:
+    """True se os tokens de `curto` aparecem em sequência contígua em `longo`."""
+    a = curto.split()
+    b = longo.split()
+    if not a or not b or len(a) > len(b):
+        return False
+    n = len(a)
+    for i in range(len(b) - n + 1):
+        if b[i : i + n] == a:
+            return True
+    return False
+
+
 def _to_int(raw: str | None) -> int | None:
     s = (raw or "").strip().replace("−", "-").replace("–", "-")
     if not s or s in "-—":
@@ -81,7 +130,7 @@ def _to_int(raw: str | None) -> int | None:
     return int(m.group()) if m else None
 
 
-def _score_candidato(c: dict[str, Any]) -> int:
+def _score_candidato(c: dict[str, Any], *, uf: str | None = None, alvo: str = "") -> int:
     nome = c.get("nome") or ""
     div = (c.get("divisao") or "").casefold()
     s = 0
@@ -93,11 +142,20 @@ def _score_candidato(c: dict[str, Any]) -> int:
         s += 50
     elif "série c" in div or "serie c" in div:
         s += 25
-    # Preferir nome “nu” (Flamengo) a Flamengo (SP)
-    if not re.search(r"\([A-Z]{2}\)\s*$", nome):
+    tem_uf_no_nome = bool(re.search(r"\([A-Z]{2}\)\s*$", nome))
+    # Com UF pedida, preferir o homônimo estadual (Flamengo-PI → Flamengo (PI)).
+    if uf and (c.get("uf") or "") == uf:
+        s += 80
+        if tem_uf_no_nome:
+            s += 40
+    elif not tem_uf_no_nome:
+        # Preferir nome “nu” (Flamengo) a Flamengo (SP) quando não há UF
         s += 15
     if nome.endswith(" B"):
         s -= 40
+    kn = normalizar_nome(nome)
+    if alvo and kn == alvo:
+        s += 50
     return s
 
 
@@ -115,29 +173,61 @@ def _indice_catalogo() -> dict[str, list[dict[str, Any]]]:
 
 def resolver_clube_fm(nome_wiki: str, uf_hint: str | None = None) -> dict[str, Any] | None:
     raw = nome_wiki or ""
-    n = normalizar_nome(raw)
+    base_raw, uf_nome = _extrair_uf_do_nome(raw)
+    n = normalizar_nome(base_raw) if base_raw else normalizar_nome(raw)
     if not n:
         return None
-    uf = uf_hint or _ALIAS_UF.get(n) or _ALIAS_UF.get(raw.casefold())
-    alvo = _ALIAS_NOME.get(n, n)
+    # "flamengo pi" / "barra sc" após normalizar: último token UF
+    parts = n.split()
+    if len(parts) >= 2 and parts[-1].upper() in _UFS_BR:
+        uf_nome = uf_nome or parts[-1].upper()
+        n = " ".join(parts[:-1])
+    if not n:
+        return None
+    uf = (
+        (uf_hint.upper() if uf_hint else None)
+        or uf_nome
+        or _ALIAS_UF.get(n)
+        or _ALIAS_UF.get(raw.casefold())
+        or _ALIAS_UF.get(normalizar_nome(raw))
+    )
+    alvo = _ALIAS_NOME.get(n) or _ALIAS_NOME.get(normalizar_nome(raw)) or n
+    if alvo in _ALIAS_UF and not uf:
+        uf = _ALIAS_UF[alvo]
     by = _indice_catalogo()
     cands = list(by.get(alvo) or [])
     if not cands and alvo != n:
         cands = list(by.get(n) or [])
     if not cands:
-        # contém / contido (mín. 5 chars)
+        # Match por tokens (nunca substring de caracteres: "sport" ⊂ "esporte").
         for k, vs in by.items():
-            if len(alvo) >= 5 and (alvo == k or alvo in k or k in alvo):
+            if len(alvo) < 5:
+                continue
+            if alvo == k:
                 cands.extend(vs)
+                continue
+            # Query mais curta contida no catálogo (ex.: "barra" ⊂ "barra sc")
+            if _tokens_contiguos(alvo, k):
+                cands.extend(vs)
+                continue
+            # Catálogo mais curto contido na query só com UF (Flamengo-PI)
+            # ou se a query não acrescenta tokens além do nome do catálogo.
+            if _tokens_contiguos(k, alvo):
+                extra = len(alvo.split()) - len(k.split())
+                if uf or extra <= 0:
+                    cands.extend(vs)
     if not cands:
         return None
     if uf:
         filtrados = [c for c in cands if (c.get("uf") or "") == uf]
         if filtrados:
             cands = filtrados
+        elif uf_nome:
+            # Homônimo estadual inexistente no catálogo: não chutar o grande (SP/RJ).
+            return None
     # unique by id
     uniq = {c["id"]: c for c in cands}
-    return max(uniq.values(), key=_score_candidato)
+    return max(uniq.values(), key=lambda c: _score_candidato(c, uf=uf, alvo=alvo))
 
 
 def _zona_rebaixamento(ano: int, n_clubes: int, *, competicao: str = "serie_a") -> int:
