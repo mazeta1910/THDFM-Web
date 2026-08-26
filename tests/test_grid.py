@@ -249,6 +249,71 @@ def test_filtros_negacao_uf_regiao_e_nunca_historico():
     assert "premio:nunca_rebaixado" in cats
 
 
+def test_resolver_nao_confunde_homonimos_com_grandes():
+    """Flamengo-PI / Boa Esporte / Corinthians-AL não viram Fla/Sport/Corinthians."""
+    from src.grid_historico import limpar_caches_historico, resolver_clube_fm
+
+    limpar_caches_historico()
+
+    assert resolver_clube_fm("Flamengo")["id"] == "322"
+    assert resolver_clube_fm("Flamengo-PI")["nome"] == "Flamengo (PI)"
+    assert resolver_clube_fm("Flamengo (PI)")["nome"] == "Flamengo (PI)"
+    assert resolver_clube_fm("Botafogo-PB")["nome"] == "Botafogo (PB)"
+    assert resolver_clube_fm("Vasco-AC")["nome"] == "Vasco (AC)"
+    assert resolver_clube_fm("Barra-SC")["nome"] == "Barra (SC)"
+
+    boa = resolver_clube_fm("Boa Esporte")
+    assert boa is not None and boa["nome"] == "Boa"
+    assert boa["id"] != "338"  # não é Sport-PE
+
+    # Homônimo estadual sem entrada no catálogo: não chutar o grande
+    assert resolver_clube_fm("Corinthians-AL") is None
+    # "sport" ⊂ "esporte" não pode mapear Esportivo → Sport
+    passos = resolver_clube_fm("Esportivo de Passos")
+    assert passos is None or passos["id"] != "338"
+
+
+def test_nunca_serie_c_sport_corinthians_flamengo():
+    """Grandes que nunca jogaram a C fecham 'Nunca jogou a Série C' ∩ longevidade A."""
+    from src.grid_game import Categoria, clube_bate_categoria, clubes_por_id
+    from src.grid_historico import limpar_caches_historico, resolver_clube_fm
+
+    limpar_caches_historico()
+    clubes_por_id.cache_clear()
+    historico_serie_a.cache_clear()
+    hist = historico_serie_a()
+
+    cat_nunca = Categoria(
+        "participacao:nunca_serie_c",
+        "participacao",
+        "nunca_serie_c",
+        "Nunca jogou a Série C",
+    )
+    cat_a15 = Categoria(
+        "longevidade:serie_a_15",
+        "longevidade",
+        "serie_a_15",
+        "≥15 participações na Série A",
+    )
+    cat_vice = Categoria(
+        "titulo:vice_cdb",
+        "titulo",
+        "vice_cdb",
+        "Já foi vice da Copa do Brasil",
+    )
+
+    for nome in ("Sport", "Corinthians", "Flamengo"):
+        clube_fm = resolver_clube_fm(nome)
+        assert clube_fm is not None, nome
+        fid = clube_fm["id"]
+        assert fid not in hist["participacao:serie_c"], nome
+        assert fid in hist["participacao:nunca_serie_c"], nome
+        clube = clubes_por_id()[fid]
+        assert clube_bate_categoria(clube, cat_nunca) is True
+        assert clube_bate_categoria(clube, cat_a15) is True
+        assert clube_bate_categoria(clube, cat_vice) is True
+
+
 def test_filtros_nome_e_compostos_historicos():
     """Nome (vogal/KWY/tamanho/letras) + compostos históricos densos."""
     from src.grid_historico import limpar_caches_historico
