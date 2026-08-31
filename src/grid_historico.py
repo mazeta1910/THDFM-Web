@@ -16,6 +16,7 @@ from src.config import ROOT_DIR
 CLASSIF_CSV = ROOT_DIR / "data" / "torneios" / "classificacoes_serie_a.csv"
 CLASSIF_B_CSV = ROOT_DIR / "data" / "torneios" / "classificacoes_serie_b.csv"
 CLASSIF_C_CSV = ROOT_DIR / "data" / "torneios" / "classificacoes_serie_c.csv"
+FINAIS_C_CSV = ROOT_DIR / "data" / "torneios" / "finais_serie_c.csv"
 ARTILH_CSV = ROOT_DIR / "data" / "torneios" / "artilheiros_serie_a.csv"
 GOLEADAS_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_serie_a.csv"
 GOLEADAS_LIGAS_CSV = ROOT_DIR / "data" / "torneios" / "goleadas_ligas.csv"
@@ -303,6 +304,22 @@ def _carregar_goleadas_serie_a() -> tuple[set[str], set[str], set[str]]:
     return _carregar_goleadas_por_competicao(src, comp, por_edicao=True)
 
 
+def _carregar_finais(path: Path) -> dict[int, tuple[str, str]]:
+    """ano → (campeão, vice) a partir do infobox (mata-mata), não da 1ª fase."""
+    out: dict[int, tuple[str, str]] = {}
+    if not path.is_file():
+        return out
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            ano = _to_int(row.get("ano"))
+            camp = (row.get("campeao") or "").strip()
+            vice = (row.get("vice") or "").strip()
+            if ano is None or not camp:
+                continue
+            out[ano] = (camp, vice)
+    return out
+
+
 def _agregar_classificacao(
     path: Path,
     *,
@@ -312,6 +329,7 @@ def _agregar_classificacao(
     com_paridade: bool = False,
     long_anos: tuple[int, ...] = (),
     long_anos_le: tuple[int, ...] = (),
+    finais_por_ano: dict[int, tuple[str, str]] | None = None,
 ) -> dict[str, set[str]]:
     """Lê CSV de classificação e devolve sets sem prefixo de categoria."""
     out: dict[str, set[str]] = {
@@ -333,6 +351,7 @@ def _agregar_classificacao(
     if not path.is_file():
         return out
 
+    finais = finais_por_ano or {}
     anos_por: dict[str, set[int]] = {}
     reb_counts: dict[str, int] = {}
     by_ano: dict[int, list[tuple[str, int, int, int, int, int, int, int]]] = {}
@@ -366,12 +385,14 @@ def _agregar_classificacao(
             )
             if not temporada_com_resultado:
                 continue
-            if pos == 1:
-                out["campeao"].add(fid)
-                if com_paridade:
-                    (out["camp_impar"] if ano % 2 else out["camp_par"]).add(fid)
-            if pos == 2:
-                out["vice"].add(fid)
+            # Mata-mata: campeão/vice vêm do infobox, não da 1ª fase concatenada.
+            if ano not in finais:
+                if pos == 1:
+                    out["campeao"].add(fid)
+                    if com_paridade:
+                        (out["camp_impar"] if ano % 2 else out["camp_par"]).add(fid)
+                if pos == 2:
+                    out["vice"].add(fid)
             if pos <= 4:
                 out["g4"].add(fid)
             if n_clubes and pos == n_clubes:
@@ -388,6 +409,22 @@ def _agregar_classificacao(
                 by_ano.setdefault((ano, fonte), []).append(
                     (fid, pos, n_clubes, gp, gc, v or 0, e or 0, d or 0)
                 )
+
+    for ano, (nome_c, nome_v) in finais.items():
+        camp = resolver_clube_fm(nome_c)
+        vice = resolver_clube_fm(nome_v) if nome_v else None
+        if camp:
+            out["campeao"].add(camp["id"])
+            out["g4"].add(camp["id"])
+            out["particip"].add(camp["id"])
+            anos_por.setdefault(camp["id"], set()).add(ano)
+            if com_paridade:
+                (out["camp_impar"] if ano % 2 else out["camp_par"]).add(camp["id"])
+        if vice:
+            out["vice"].add(vice["id"])
+            out["g4"].add(vice["id"])
+            out["particip"].add(vice["id"])
+            anos_por.setdefault(vice["id"], set()).add(ano)
 
     if com_stats:
         for _chave, lst in by_ano.items():
@@ -630,6 +667,7 @@ def historico_serie_a() -> dict[str, frozenset[str]]:
             com_rebaixamento=True,
             long_anos=(3, 5, 8),
             long_anos_le=(2, 3, 5),
+            finais_por_ano=_carregar_finais(FINAIS_C_CSV),
         )
         agg_c.pop("_anos_por", None)
         agg_c.pop("_reb_counts", None)
