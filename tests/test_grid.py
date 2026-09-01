@@ -492,6 +492,46 @@ def test_categorias_serie_b_c_e_copa_densas():
     assert len(pool_nunca) == len(hist["participacao:nunca_serie_c"])
 
 
+def test_vitoria_vice_serie_c_e_goleada_serie_b():
+    """Vitória (BA) foi vice da Série C 2006 e sofreu 6–0 do CRB na B 2023.
+
+    A tabela 2006 no CSV é a 1ª fase concatenada (Vitória em 12º); o título
+    de vice vem de finais_serie_c.csv.
+    """
+    from src.grid_game import clube_bate_categoria
+    from src.grid_historico import limpar_caches_historico, resolver_clube_fm
+
+    limpar_caches_historico()
+    historico_serie_a.cache_clear()
+    clubes_por_id.cache_clear()
+    clubes_grid.cache_clear()
+    categorias_disponiveis.cache_clear()
+
+    hist = historico_serie_a()
+    vitoria = resolver_clube_fm("Vitória")
+    assert vitoria is not None and vitoria.get("uf") == "BA"
+    vid = vitoria["id"]
+    assert vid in hist["titulo:vice_serie_c"]
+    assert vid in hist["goleada:presente_serie_b"]
+    assert vid in hist["goleada:sofreu_serie_b"]
+    # 1ª fase 2006 não pode promover Brasil de Pelotas a vice.
+    pelotas = resolver_clube_fm("Brasil de Pelotas")
+    assert pelotas is not None
+    assert pelotas["id"] not in hist["titulo:vice_serie_c"]
+    criciuma = resolver_clube_fm("Criciúma")
+    assert criciuma is not None
+    assert criciuma["id"] in hist["titulo:campeao_serie_c"]
+
+    row = categoria_por_id("goleada:presente_serie_b")
+    col = categoria_por_id("titulo:vice_serie_c")
+    assert row and col
+    clube = clubes_por_id()[vid]
+    assert clube_bate_categoria(clube, row)
+    assert clube_bate_categoria(clube, col)
+    pool = pool_celula(row, col)
+    assert any(c["id"] == vid for c in pool)
+
+
 def test_serie_a_2026_participantes_contam_desde_2010():
     """Remo (A 2026) fecha 'Jogou a Série A em 2010 ou depois' + não Centro-Oeste."""
     from src.grid_historico import limpar_caches_historico, resolver_clube_fm

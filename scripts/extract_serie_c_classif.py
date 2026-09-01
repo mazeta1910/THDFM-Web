@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Extrai classificações finais da Série C (xlsx wiki dump) → CSV do Grid.
+"""Extrai classificações da Série C (xlsx wiki dump) → CSV do Grid.
+
+Fases de grupo concatenadas NÃO definem campeão/vice (ex.: 2006 Vitória
+foi vice no mata-mata, mas a 1ª fase o deixa em 12º). Títulos vêm de
+`data/torneios/finais_serie_c.csv`.
 
 Também anexa participantes da edição em andamento (lista do Serie C.CSV),
 sem estatísticas — só para participação/longevidade no Grid.
