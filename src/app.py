@@ -4404,8 +4404,15 @@ def admin_janela(request: Request, janela: str = Form(...)):
     try:
         db.set_janela(janela)
     except ValueError:
-        return RedirectResponse("/admin?erro=Janela+invalida", status_code=303)
-    return RedirectResponse(f"/admin?msg=Janela+{janela}", status_code=303)
+        return RedirectResponse(
+            "/admin?sec=resultados&erro=Janela+invalida", status_code=303
+        )
+    labels = {"ida": "Ida", "volta": "Volta", "fechado": "Fechado"}
+    label = labels.get(janela, janela)
+    return RedirectResponse(
+        f"/admin?sec=resultados&msg={quote('Meus Palpites abre em ' + label)}",
+        status_code=303,
+    )
 
 
 @app.post("/admin/fase")
@@ -4415,8 +4422,12 @@ def admin_fase(request: Request, fase: str = Form(...)):
     try:
         db.set_fase_atual(fase)
     except ValueError:
-        return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
-    return RedirectResponse(f"/admin?msg=Fase+{fase}", status_code=303)
+        return RedirectResponse(
+            "/admin?sec=resultados&erro=Fase+invalida", status_code=303
+        )
+    return RedirectResponse(
+        f"/admin?sec=resultados&msg={quote('Fase ' + fase)}", status_code=303
+    )
 
 
 @app.post("/admin/participante")

@@ -163,6 +163,19 @@
             <h2 class="fases-panel-title">Fase e perna</h2>
             <p class="fases-panel-summary" data-fases-summary></p>
           </div>
+          {% set fase_aberta_label = fases|selectattr('ativa')|map(attribute='label')|first|default('Fase') %}
+          <form method="post" action="/admin/janela" id="form-janela" class="admin-janela-padrao">
+            <label for="select-janela">Abrir Meus Palpites em</label>
+            <div class="select-wrap admin-janela-padrao-wrap">
+              <select name="janela" id="select-janela" aria-describedby="admin-janela-hint">
+                <option value="ida"{% if janela == 'ida' %} selected{% endif %}>{{ fase_aberta_label }} · Ida</option>
+                <option value="volta"{% if janela == 'volta' %} selected{% endif %}>{{ fase_aberta_label }} · Volta</option>
+                <option value="fechado"{% if janela == 'fechado' %} selected{% endif %}>Palpites fechados</option>
+              </select>
+            </div>
+            <button type="button" class="secondary" id="btn-atualizar-janela">Aplicar</button>
+            <p class="admin-janela-hint" id="admin-janela-hint">Card inicial em Meus Palpites e rótulo ao vivo no perfil. Fechar a Ida também avança para a Volta.</p>
+          </form>
         </div>
         <div class="fases-panel-body">
           <div class="transparencia-nav" id="admin-placares-nav" role="navigation" aria-label="Fase e perna">
@@ -887,6 +900,7 @@
         <li>A tabela <strong>Ao vivo</strong> vira histórico (ex.: Rodada 1)</li>
         <li>A coluna <strong>Rodada</strong> zera para todo mundo</li>
         <li>O movimento ▲/▼ passa a contar a partir deste fechamento</li>
+        <li>Se esta for a <strong>Ida</strong> da fase, Meus Palpites passa a abrir na <strong>Volta</strong></li>
       </ul>
       <p class="confirm-alert-warn">Só faça isso quando for divulgar o ranking da rodada. Se for engano, dá para desfazer depois.</p>
     </div>
@@ -898,15 +912,15 @@
 </div>
 <div class="modal-backdrop" id="modal-janela" hidden>
   <div class="inscricao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-janela-title">
-    <h3 id="modal-janela-title">Mudar janela de palpites?</h3>
+    <h3 id="modal-janela-title">Mudar card padrão de Meus Palpites?</h3>
     <div class="confirm-alert">
-      <p>Você vai mudar a janela para <strong id="modal-janela-valor">—</strong>.</p>
+      <p>Você vai abrir Meus Palpites em <strong id="modal-janela-valor">—</strong>.</p>
       <ul>
-        <li><strong>Ida</strong> — só o jogo 1 pode ser editado</li>
-        <li><strong>Volta</strong> — ida congela; libera o jogo 2</li>
+        <li><strong>Ida</strong> — card do jogo 1; palpites da ida ainda editáveis</li>
+        <li><strong>Volta</strong> — card do jogo 2; ida congela no bolão</li>
         <li><strong>Fechado</strong> — ninguém edita mais palpites</li>
       </ul>
-      <p class="confirm-alert-warn">Isso vale na hora para todos os participantes.</p>
+      <p class="confirm-alert-warn">Vale na hora para Meus Palpites e para o rótulo ao vivo no perfil.</p>
     </div>
     <div class="modal-actions">
       <button type="button" class="secondary" id="modal-janela-cancelar">Cancelar</button>

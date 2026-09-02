@@ -392,16 +392,20 @@ def serializar_linhas_historico(linhas: list[dict]) -> list[dict]:
 
 def confirmar_rodada() -> dict:
     """Arquiva a tabela atual e atualiza o baseline da próxima rodada."""
-    from src.db import append_rodada_historico, get_meta, save_snapshot
+    from src.db import append_rodada_historico, get_meta, save_snapshot, set_janela
 
     linhas = calcular_classificacao()
     fase = get_meta("fase_atual", "oitavas") or "oitavas"
+    janela_hist = janela_para_nova_rodada(fase)
     hist = append_rodada_historico(
         linhas=serializar_linhas_historico(linhas),
         fase=fase,
-        janela=janela_para_nova_rodada(fase),
+        janela=janela_hist,
     )
     save_snapshot(snapshot_atual(linhas))
+    # Fecha a Ida: Meus Palpites e o rótulo ao vivo do perfil passam para a Volta.
+    if janela_hist == "ida" and not _rodada_historico_vazia({"linhas": linhas}):
+        set_janela("volta")
     return hist
 
 
@@ -720,6 +724,7 @@ def desfazer_ultima_rodada() -> dict:
         get_ultima_rodada_historico,
         list_rodadas_historico,
         save_snapshot,
+        set_janela,
     )
 
     ultima = get_ultima_rodada_historico()
@@ -728,6 +733,9 @@ def desfazer_ultima_rodada() -> dict:
 
     if not delete_rodada_historico(int(ultima["id"])):
         raise ValueError("Não foi possível remover a rodada")
+    janela_desfeita = ultima.get("janela") or ""
+    if janela_desfeita in ("ida", "volta"):
+        set_janela(janela_desfeita)
 
     restantes = list_rodadas_historico()
     if restantes:
