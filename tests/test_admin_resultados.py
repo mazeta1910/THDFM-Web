@@ -19,9 +19,12 @@ def test_admin_resultados_sem_janela_fase_cards(client):
     assert r.status_code == 200
     assert "Confrontos e placares" in r.text
     assert "admin-dash-chave" in r.text or "match-cell" in r.text
-    assert "Janela de palpites" not in r.text
     assert "Fase liberada" not in r.text
     assert "Atualizar janela" not in r.text
+    assert "Abrir Meus Palpites em" in r.text
+    assert 'id="form-janela"' in r.text
+    assert 'id="select-janela"' in r.text
+    assert 'id="btn-atualizar-janela"' in r.text
     assert "match-cell" in r.text
     assert "admin-sticky-save" in r.text
     assert 'data-confirmar-jogo' in r.text or "Confirmado" in r.text
