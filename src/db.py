@@ -4013,6 +4013,16 @@ def apagar_listra_frase(frase_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def ultima_listra_frase() -> dict[str, Any] | None:
+    """Frase mais recente do acervo (qualquer ano)."""
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_LISTRA_FRASE_COLS} FROM listra_frases "
+            "ORDER BY datetime(criado_em) DESC, id DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def get_listra_permissao(participante_id: int) -> dict[str, Any]:
     with get_db() as conn:
         row = conn.execute(

@@ -34,6 +34,28 @@
     <p class="listra-add-note">
       Novas entradas vão para a Listra do ano atual. No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).
     </p>
+    <p class="listra-ultima-item" id="listra-ultima-item" role="status">
+      <span class="listra-ultima-item-label">Último item inserido:</span>
+      {% if ultima_frase %}
+      <a class="listra-ultima-item-link" href="#listra-frase-{{ ultima_frase.id }}">
+        {% if ultima_frase.emoji_efetivo %}<span class="listra-ultima-item-emoji" aria-hidden="true">{{ ultima_frase.emoji_efetivo }}</span>{% endif %}
+        <span class="listra-ultima-item-texto">{{ ultima_frase.destaque or ultima_frase.texto_contexto or ultima_frase.texto }}</span>
+        {% if ultima_frase.responsavel %}
+        <span class="listra-ultima-item-meta">· {{ ultima_frase.responsavel }}</span>
+        {% endif %}
+      </a>
+      {% else %}
+      <span class="listra-ultima-item-vazio">nenhum ainda</span>
+      {% endif %}
+    </p>
+    <div
+      class="listra-presenca"
+      id="listra-presenca"
+      hidden
+      role="status"
+      aria-live="polite"
+      data-listra-presenca
+    ></div>
     <form method="post" action="/grupo/listra" class="listra-add-form" autocomplete="off" data-listra-frase-form>
       <input type="hidden" name="ano" value="{{ ano_atual }}" />
       <div class="listra-add-blocos" data-listra-blocos>
@@ -324,7 +346,7 @@
     {% endfor %}
   </div>
 
-  {% if is_admin %}
+  {% if pode_gerenciar %}
   <template id="listra-edit-template">
     <form
       method="post"
@@ -450,13 +472,14 @@
   </button>
 </section>
 
-<script type="application/json" id="listra-boot-json">{{ {"is_admin": is_admin, "meliantes": listra_meliantes|default([]) }|tojson }}</script>
+<script type="application/json" id="listra-boot-json">{{ {"is_admin": is_admin, "pode_gerenciar": pode_gerenciar|default(false), "pode_adicionar": pode_adicionar|default(false), "meliantes": listra_meliantes|default([]) }|tojson }}</script>
 <script>
 (function () {
   var bootEl = document.getElementById("listra-boot-json");
-  var boot = { is_admin: false, meliantes: [] };
+  var boot = { is_admin: false, pode_gerenciar: false, pode_adicionar: false, meliantes: [] };
   try { boot = JSON.parse(bootEl && bootEl.textContent || "{}"); } catch (e) {}
   var isAdmin = !!boot.is_admin;
+  var podeGerenciar = !!boot.pode_gerenciar || isAdmin;
   var cache = Object.create(null);
   var loading = Object.create(null);
 
@@ -505,7 +528,7 @@
 
   function attachEditForm(item, f) {
     var tpl = document.getElementById("listra-edit-template");
-    if (!tpl || !isAdmin) return;
+    if (!tpl || !podeGerenciar) return;
     var form = tpl.content.firstElementChild.cloneNode(true);
     form.querySelector("[data-listra-edit-id]").value = String(f.id);
     form.querySelector("[data-listra-edit-emoji]").value = f.emoji_efetivo || "";
@@ -556,7 +579,7 @@
       : "";
     var quando = fmtQuando(f.criado_em);
     var adminActions = "";
-    if (isAdmin) {
+    if (podeGerenciar) {
       adminActions =
         '<div class="listra-item-actions">' +
         '<button type="button" class="listra-editar-btn" data-listra-edit-open title="Editar" aria-label="Editar frase">' +
@@ -599,7 +622,7 @@
     var timeEl = li.querySelector(".listra-item-quando");
     if (timeEl) timeEl.textContent = quando;
 
-    if (isAdmin) attachEditForm(li, f);
+    if (podeGerenciar) attachEditForm(li, f);
     return li;
   }
 
@@ -1300,7 +1323,7 @@
 </script>
 {% endif %}
 
-{% if is_admin %}
+{% if pode_gerenciar %}
 <script>
 (function () {
   function fecharTodos() {
@@ -1346,6 +1369,72 @@
   document.addEventListener("click", function (ev) {
     var form = ev.target.closest && ev.target.closest("[data-listra-edit-form]");
     if (form) ev.stopPropagation();
+  });
+})();
+</script>
+{% endif %}
+{% if pode_adicionar %}
+<script>
+(function () {
+  var box = document.getElementById("listra-presenca");
+  if (!box) return;
+  var timer = null;
+  var stopped = false;
+
+  function renderOutros(outros) {
+    outros = Array.isArray(outros) ? outros : [];
+    if (!outros.length) {
+      box.hidden = true;
+      box.textContent = "";
+      return;
+    }
+    var nomes = outros
+      .map(function (o) { return (o && o.nome) || "Alguém"; })
+      .filter(Boolean);
+    if (!nomes.length) {
+      box.hidden = true;
+      box.textContent = "";
+      return;
+    }
+    var lista =
+      nomes.length === 1
+        ? nomes[0]
+        : nomes.slice(0, -1).join(", ") + " e " + nomes[nomes.length - 1];
+    box.hidden = false;
+    box.textContent =
+      nomes.length === 1
+        ? lista + " também está nesta página — combinem antes de inserir os mesmos itens."
+        : lista + " também estão nesta página — combinem antes de inserir os mesmos itens.";
+  }
+
+  function ping() {
+    if (stopped || document.hidden) return;
+    fetch("/grupo/listra/presenca", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("presenca");
+        return r.json();
+      })
+      .then(function (data) {
+        renderOutros(data && data.outros);
+      })
+      .catch(function () {
+        /* silencioso: presença é só aviso */
+      });
+  }
+
+  ping();
+  timer = setInterval(ping, 15000);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) ping();
+  });
+  window.addEventListener("pagehide", function () {
+    stopped = true;
+    if (timer) clearInterval(timer);
   });
 })();
 </script>
