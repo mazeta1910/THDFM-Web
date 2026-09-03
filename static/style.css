@@ -6664,22 +6664,55 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   background: color-mix(in srgb, var(--muted) 12%, transparent);
 }
 .participante-edit-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
   min-width: 0;
 }
 .participante-edit-wrap > .participante-edit-card {
   height: 100%;
 }
-.participante-bolao-status-form {
+.participante-edit-card.has-status-corner {
+  padding-top: 0.85rem;
+}
+.participante-card-status-form {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 3;
   margin: 0;
 }
-.participante-inativar-btn,
-.participante-reativar-btn {
-  width: 100%;
-  font-size: 0.82rem;
-  padding: 0.45rem 0.65rem;
+.participante-card-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 0;
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 12%, transparent);
+}
+.participante-card-status-btn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.participante-card-status-btn.is-inativar:hover {
+  color: var(--accent2);
+  border-color: color-mix(in srgb, var(--accent2) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent2) 10%, var(--card));
+}
+.participante-card-status-btn.is-reativar {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.participante-card-status-btn.is-reativar:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
 }
 .participante-edit-card-inativo {
   opacity: 0.92;

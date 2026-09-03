@@ -49,7 +49,8 @@ def test_admin_inativar_e_reativar_ui(client):
     assert page.status_code == 200
     assert "Inativos" in page.text
     assert "Inativo UI" in page.text
-    assert "Marcar inativo" in page.text or "Reativar no bolão" in page.text
+    assert "participante-card-status-btn" in page.text
+    assert "Marcar" in page.text  # aria-label / title do botão no canto do card
     assert "data-inscricoes-col=\"inativos\"" in page.text
 
     cob = client.get("/admin/cobranca")

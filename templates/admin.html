@@ -26,7 +26,7 @@
   method="post"
   action="/admin/participante/atualizar"
   enctype="multipart/form-data"
-  class="card participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
+  class="card participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}{% if p.status == 'liberado' %} has-status-corner{% endif %}"
   data-nome="{{ p.nome|e }}"
   data-celular="{{ (p.celular or '')|e }}"
 >
@@ -102,14 +102,39 @@
   </div>
 </form>
 {% if p.status == 'liberado' and not p.inativo_em %}
-<form method="post" action="/admin/inativar" class="participante-bolao-status-form form-inativar">
+<form method="post" action="/admin/inativar" class="participante-card-status-form form-inativar">
   <input type="hidden" name="participante_id" value="{{ p.id }}" />
-  <button type="submit" class="secondary participante-inativar-btn" title="Some da classificação e do aviso Quem palpitou">Marcar inativo</button>
+  <button
+    type="submit"
+    class="participante-card-status-btn is-inativar"
+    title="Marcar inativo — some da classificação e do Quem palpitou"
+    aria-label="Marcar {{ p.nome }} como inativo"
+  >
+    {# vetor atual: user-x — troque se preferir outra opção #}
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="17" y1="8" x2="22" y2="13" />
+      <line x1="22" y1="8" x2="17" y2="13" />
+    </svg>
+  </button>
 </form>
 {% elif p.status == 'liberado' and p.inativo_em %}
-<form method="post" action="/admin/reativar" class="participante-bolao-status-form">
+<form method="post" action="/admin/reativar" class="participante-card-status-form">
   <input type="hidden" name="participante_id" value="{{ p.id }}" />
-  <button type="submit" class="participante-reativar-btn" title="Volta à classificação e à cobrança de palpites">Reativar no bolão</button>
+  <button
+    type="submit"
+    class="participante-card-status-btn is-reativar"
+    title="Reativar no bolão — volta à classificação e à cobrança"
+    aria-label="Reativar {{ p.nome }} no bolão"
+  >
+    {# vetor atual: user-check #}
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <polyline points="16 11 18 13 22 9" />
+    </svg>
+  </button>
 </form>
 {% endif %}
 </div>
