@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS participantes (
     celular TEXT,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     link_enviado_em TEXT,
-    recusado_em TEXT
+    recusado_em TEXT,
+    inativo_em TEXT
 );
 
 CREATE TABLE IF NOT EXISTS confrontos (
@@ -177,6 +178,8 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
             )
     if "recusado_em" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN recusado_em TEXT")
+    if "inativo_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN inativo_em TEXT")
     if "admin_login" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN admin_login TEXT")
     if "username" not in cols:
@@ -785,11 +788,18 @@ def set_fase_atual(fase: str) -> None:
 
 _PARTICIPANTE_COLS = (
     "id, nome, token, status, comprovante_path, comprovante_em, liberado_em, "
-    "avatar_path, celular, criado_em, link_enviado_em, recusado_em, admin_login, "
-    "username, password_hash, credenciais_em, recados_visto_ate, "
+    "avatar_path, celular, criado_em, link_enviado_em, recusado_em, inativo_em, "
+    "admin_login, username, password_hash, credenciais_em, recados_visto_ate, "
     "perfil_frase, perfil_relacionamento, perfil_aniversario, "
     "banner_preset, banner_path, times_json, sidebar_ordem_json"
 )
+
+
+def participante_ativo_no_bolao(part: dict[str, Any] | None) -> bool:
+    """Liberado e ainda no bolão (não marcado como inativo)."""
+    if not part or part.get("status") != "liberado":
+        return False
+    return not (part.get("inativo_em") or "").strip()
 
 
 def list_participantes() -> list[dict[str, Any]]:
@@ -800,7 +810,8 @@ def list_participantes() -> list[dict[str, Any]]:
             "WHEN admin_login IS NOT NULL AND admin_login != '' THEN 0 "
             "ELSE 1 END, "
             "CASE "
-            "WHEN status = 'liberado' THEN 3 "
+            "WHEN status = 'liberado' AND (inativo_em IS NULL OR inativo_em = '') THEN 3 "
+            "WHEN status = 'liberado' THEN 4 "
             "WHEN recusado_em IS NOT NULL AND recusado_em != '' THEN 2 "
             "WHEN status = 'comprovante' THEN 0 "
             "ELSE 1 END, "
@@ -1166,9 +1177,7 @@ def status_palpites_liberados(
     ids_set = set(jogo_ids)
     por_id = {j["id"]: j for j in considerados}
 
-    liberados = [
-        p for p in list_participantes() if p.get("status") == "liberado"
-    ]
+    liberados = [p for p in list_participantes() if participante_ativo_no_bolao(p)]
     feitos_por_pid: dict[int, set[int]] = {int(p["id"]): set() for p in liberados}
     if jogo_ids:
         placeholders = ",".join("?" * len(jogo_ids))
@@ -1572,7 +1581,8 @@ def liberar_participante(participante_id: int) -> None:
     with get_db() as conn:
         conn.execute(
             "UPDATE participantes SET status = 'liberado', "
-            "liberado_em = datetime('now', 'localtime'), recusado_em = NULL "
+            "liberado_em = datetime('now', 'localtime'), "
+            "recusado_em = NULL, inativo_em = NULL "
             "WHERE id = ?",
             (participante_id,),
         )
@@ -1633,6 +1643,40 @@ def recusar_todos_pendentes() -> int:
             "AND (recusado_em IS NULL OR recusado_em = '')"
         )
         return cur.rowcount
+
+
+def inativar_participante(participante_id: int) -> bool:
+    """Marca liberado como inativo (some da classificação/cobrança). Mantém histórico."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT status, inativo_em FROM participantes WHERE id = ?",
+            (participante_id,),
+        ).fetchone()
+        if not row or row["status"] != "liberado":
+            return False
+        if (row["inativo_em"] or "").strip():
+            return True
+        conn.execute(
+            "UPDATE participantes SET inativo_em = datetime('now', 'localtime') "
+            "WHERE id = ?",
+            (participante_id,),
+        )
+        return True
+
+
+def reativar_participante(participante_id: int) -> bool:
+    """Tira o liberado da lista de inativos (volta ao bolão ativo)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT status FROM participantes WHERE id = ?", (participante_id,)
+        ).fetchone()
+        if not row or row["status"] != "liberado":
+            return False
+        conn.execute(
+            "UPDATE participantes SET inativo_em = NULL WHERE id = ?",
+            (participante_id,),
+        )
+        return True
 
 
 def apagar_participante(participante_id: int) -> dict[str, Any] | None:
@@ -5355,13 +5399,14 @@ def set_hall_hero_html(html: str) -> str:
 
 
 def list_participantes_liberados() -> list[dict[str, Any]]:
-    """Liberados para o seletor do admin do Hall."""
+    """Liberados ativos para o seletor do admin do Hall."""
     with get_db() as conn:
         rows = conn.execute(
             """
             SELECT id, nome, username, avatar_path, status
             FROM participantes
             WHERE status = 'liberado'
+              AND (inativo_em IS NULL OR inativo_em = '')
             ORDER BY nome COLLATE NOCASE ASC
             """
         ).fetchall()

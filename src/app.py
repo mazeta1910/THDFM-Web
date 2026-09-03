@@ -4179,7 +4179,7 @@ def admin_credenciais(request: Request):
     partes = [
         p
         for p in db.list_participantes()
-        if p.get("status") == "liberado"
+        if db.participante_ativo_no_bolao(p)
     ]
     return render(
         request,
@@ -4412,6 +4412,33 @@ def admin_recusar(request: Request, participante_id: int = Form(...)):
         )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Inscricao+recusada", status_code=303
+    )
+
+
+@app.post("/admin/inativar")
+def admin_inativar(request: Request, participante_id: int = Form(...)):
+    """Inativa liberado: some da classificação e do aviso Quem palpitou."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not db.inativar_participante(participante_id):
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Nao+foi+possivel+inativar", status_code=303
+        )
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Participante+inativo", status_code=303
+    )
+
+
+@app.post("/admin/reativar")
+def admin_reativar(request: Request, participante_id: int = Form(...)):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not db.reativar_participante(participante_id):
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Nao+foi+possivel+reativar", status_code=303
+        )
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Participante+reativado", status_code=303
     )
 
 
