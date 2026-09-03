@@ -1889,7 +1889,8 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
       const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
       const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
       const hit = !q || nomeBate(nome, q) || celularBate(celular, q, qDigits);
-      card.hidden = !hit;
+      const wrap = card.closest(".participante-edit-wrap") || card;
+      wrap.hidden = !hit;
       if (hit) visible += 1;
     });
     if (countEl) {
