@@ -72,7 +72,7 @@ def test_listra_publica_com_anos(client: TestClient):
     assert "listra-scroll-fab-icon--up" not in body
     assert "listra-scroll-fab-icon--down" not in body
     assert body.count("listra-scroll-fab-icon") == 1
-    assert "/static/style.css?v=322" in body
+    assert "/static/style.css?v=323" in body
     assert "Usar seleção" not in body
     assert "data-listra-destaque-sel" not in body
     assert len(body) < 250_000
@@ -262,7 +262,10 @@ def test_admin_adiciona_no_ano_atual(client: TestClient):
     assert frase["criado_em"][10] == " "
     assert "Mazeta" in db.list_listra_meliantes()
     pub = client.get("/grupo/listra")
-    assert "Nova pérola do teste" not in pub.text
+    # First paint leve: a frase não entra na lista lazy; só no "Último item inserido".
+    assert pub.text.count("Nova pérola do teste") == 1
+    assert "listra-ultima-item-texto" in pub.text
+    assert "Nova pérola do teste" in pub.text
     assert "Mazeta" in pub.text  # opção do select / template de edição
     assert 'data-listra-meliante-select' in pub.text
     assert "listra-save-btn" in pub.text
@@ -311,7 +314,9 @@ def test_admin_edita_frase(client: TestClient):
     pub = client.get(
         f"/grupo/listra?msg=Edi%C3%A7%C3%A3o+feita+com+sucesso#listra-frase-{criada['id']}"
     )
-    assert "Texto editado" not in pub.text
+    # Lista continua lazy; o texto editado aparece no "Último item inserido".
+    assert pub.text.count("Texto editado") == 1
+    assert "listra-ultima-item-texto" in pub.text
     assert "Ciclano" in pub.text  # meliante no select
     assert "listraEnsureFrase" in pub.text
     assert 'id="listra-toast-host"' in pub.text
@@ -353,6 +358,7 @@ def test_admin_permissoes_painel(client: TestClient):
     assert r.status_code == 200
     assert part["nome"] in r.text
     assert "Gestor de meliantes" in r.text
+    assert "também edita e apaga" in r.text
     assert 'id="meliantes"' in r.text
     assert "/admin/listra/meliantes" in r.text
 
@@ -480,6 +486,87 @@ def test_participante_com_permissao_enviar(client: TestClient):
     assert "ultimaFraseCopiada" in r.text
     assert "Última frase:" in r.text
     assert "copiada com sucesso" in r.text
+    # Só enviar: sem editar/apagar nem formulário de novas entradas
+    assert "Último item inserido:" not in r.text
+    assert '"pode_gerenciar": true' not in r.text
+    assert '"pode_gerenciar":true' not in r.text
+    assert 'id="listra-edit-template"' not in r.text
+
+
+def test_participante_com_permissao_adicionar_edita_e_apaga(client: TestClient):
+    """Quem pode adicionar (ex.: Gui) também edita/apaga e vê o último item."""
+    from urllib.parse import unquote
+
+    from src import db
+    from src.listra_presenca import limpar as limpar_presenca
+    from src.listra_seed import LISTRA_ANO_ATUAL
+
+    limpar_presenca()
+    part = _criar_liberado(
+        nome="Gui Listra", username="gui.listra", senha="senha12345", celular="11999990055"
+    )
+    db.salvar_listra_permissao(part["id"], pode_adicionar=True, pode_enviar=False)
+    _login_participante(client, part)
+
+    page = client.get("/grupo/listra")
+    assert page.status_code == 200
+    assert "Último item inserido:" in page.text
+    assert 'id="listra-presenca"' in page.text
+    assert '"pode_gerenciar": true' in page.text or '"pode_gerenciar":true' in page.text
+    assert 'id="listra-edit-template"' in page.text
+    assert "/grupo/listra/atualizar" in page.text
+    assert "/grupo/listra/apagar" in page.text
+    assert "/grupo/listra/presenca" in page.text
+    assert "também está nesta página" in page.text
+
+    criada = db.criar_listra_frase(
+        "Pérola do Gui", "Gui", ano=LISTRA_ANO_ATUAL, emoji="🧪", destaque="GUI TESTE"
+    )
+    page2 = client.get("/grupo/listra")
+    assert "Último item inserido:" in page2.text
+    assert "GUI TESTE" in page2.text or "Pérola do Gui" in page2.text
+
+    edit = client.post(
+        "/grupo/listra/atualizar",
+        data={
+            "frase_id": criada["id"],
+            "texto": "Pérola editada pelo Gui",
+            "responsavel": "Gui",
+            "emoji": "🧪",
+            "destaque": "GUI EDIT",
+        },
+        follow_redirects=False,
+    )
+    assert edit.status_code == 303
+    assert "sucesso" in unquote(edit.headers.get("location") or "").lower()
+    assert db.get_listra_frase(criada["id"])["texto"] == "Pérola editada pelo Gui"
+
+    # Presença: outro editor online
+    outro = _criar_liberado(
+        nome="Outro Editor", username="outro.listra", senha="senha12345", celular="11999990056"
+    )
+    db.salvar_listra_permissao(outro["id"], pode_adicionar=True, pode_enviar=False)
+    from tests.conftest import login_admin as _noop  # noqa: F401
+    from fastapi.testclient import TestClient
+    from src.app import app
+
+    c2 = TestClient(app)
+    _login_participante(c2, outro)
+    assert c2.post("/grupo/listra/presenca").status_code == 200
+    p1 = client.post("/grupo/listra/presenca")
+    assert p1.status_code == 200
+    outros_gui = p1.json()["outros"]
+    assert any(o.get("nome") == "Outro Editor" for o in outros_gui)
+
+    apaga = client.post(
+        "/grupo/listra/apagar",
+        data={"frase_id": criada["id"]},
+        follow_redirects=False,
+    )
+    assert apaga.status_code == 303
+    assert "removida" in unquote(apaga.headers.get("location") or "").lower()
+    assert db.get_listra_frase(criada["id"]) is None
+    limpar_presenca()
 
 
 def test_export_por_ano(client: TestClient):

@@ -2038,12 +2038,30 @@ def _listra_caps(request: Request) -> dict:
     )
     pode_add = is_adm or bool(perm and perm.get("pode_adicionar"))
     pode_env = is_adm or bool(perm and perm.get("pode_enviar"))
+    # Quem adiciona também edita/apaga (ex.: Gui).
+    pode_gerenciar = pode_add
     return {
         "is_admin": is_adm,
         "participante": part,
         "pode_adicionar": pode_add,
         "pode_enviar": pode_env,
+        "pode_gerenciar": pode_gerenciar,
     }
+
+
+def _listra_presenca_identidade(request: Request, caps: dict) -> tuple[str, str] | None:
+    """Chave estável + nome exibido para o heartbeat da Listra."""
+    part = caps.get("participante")
+    if part and part.get("id") is not None:
+        nome = (part.get("nome") or "").strip() or f"Participante {part['id']}"
+        return f"p:{int(part['id'])}", nome
+    if caps.get("is_admin"):
+        login = (request.session.get("admin_login") or "").strip().lower()
+        if not login:
+            return None
+        nome = (admin_nome(request) or login).strip() or login
+        return f"a:{login}", nome
+    return None
 
 
 @app.get("/grupo/listra", response_class=HTMLResponse)
@@ -2054,6 +2072,7 @@ def grupo_listra(request: Request):
     # First paint leve: só cascas dos anos. Frases vêm de /grupo/listra/{ano}.json
     # ao abrir cada <details> (ano atual carrega sozinho por já nascer aberto).
     listras = db.resumo_listra_anos()
+    ultima = db.ultima_listra_frase()
     return render(
         request,
         "listra.html",
@@ -2062,8 +2081,10 @@ def grupo_listra(request: Request):
         total_frases=sum(l["total"] for l in listras),
         pode_adicionar=caps["pode_adicionar"],
         pode_enviar=caps["pode_enviar"],
+        pode_gerenciar=caps["pode_gerenciar"],
         participante_listra=caps["participante"],
         listra_meliantes=db.list_listra_meliantes(),
+        ultima_frase=db.listra_frase_api(ultima) if ultima else None,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
@@ -2192,10 +2213,11 @@ def grupo_listra_atualizar(
     emoji: str = Form(""),
     destaque: str = Form(""),
 ):
-    if not admin_ok(request):
+    caps = _listra_caps(request)
+    if not caps["pode_gerenciar"]:
         return RedirectResponse(
             "/grupo/listra?erro="
-            + quote("Só a administração pode editar frases."),
+            + quote("Você não tem permissão para editar frases da Listra."),
             status_code=303,
         )
     try:
@@ -2220,9 +2242,11 @@ def grupo_listra_atualizar(
 
 @app.post("/grupo/listra/apagar")
 def grupo_listra_apagar(request: Request, frase_id: int = Form(...)):
-    if not admin_ok(request):
+    caps = _listra_caps(request)
+    if not caps["pode_gerenciar"]:
         return RedirectResponse(
-            "/grupo/listra?erro=" + quote("Só a administração pode apagar frases."),
+            "/grupo/listra?erro="
+            + quote("Você não tem permissão para apagar frases da Listra."),
             status_code=303,
         )
     frase = db.get_listra_frase(frase_id)
@@ -2236,6 +2260,25 @@ def grupo_listra_apagar(request: Request, frase_id: int = Form(...)):
     return RedirectResponse(
         f"/grupo/listra?msg={quote('Frase removida')}{ancora}",
         status_code=303,
+    )
+
+
+@app.post("/grupo/listra/presenca")
+def grupo_listra_presenca(request: Request):
+    """Heartbeat: quem pode adicionar avisa que está na página."""
+    from src import listra_presenca
+
+    caps = _listra_caps(request)
+    if not caps["pode_adicionar"]:
+        raise HTTPException(status_code=403, detail="Sem permissão.")
+    ident = _listra_presenca_identidade(request, caps)
+    if not ident:
+        raise HTTPException(status_code=403, detail="Sessão inválida para presença.")
+    chave, nome = ident
+    outros = listra_presenca.ping(chave, nome)
+    return JSONResponse(
+        {"ok": True, "outros": outros},
+        headers={"Cache-Control": "no-store"},
     )
 
 

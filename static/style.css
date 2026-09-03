@@ -8852,6 +8852,62 @@ textarea.xonha-input {
   font-size: 0.85rem;
   color: var(--muted);
 }
+.listra-ultima-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  margin: -0.35rem 0 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  background: color-mix(in srgb, var(--bg2, var(--bg)) 72%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: var(--text);
+}
+.listra-ultima-item-label {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-transform: none;
+}
+.listra-ultima-item-link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.listra-ultima-item-link:hover .listra-ultima-item-texto {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.listra-ultima-item-emoji {
+  flex: 0 0 auto;
+}
+.listra-ultima-item-texto {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.listra-ultima-item-meta,
+.listra-ultima-item-vazio {
+  color: var(--muted);
+  font-weight: 600;
+}
+.listra-presenca {
+  margin: -0.35rem 0 0.85rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #e85d04 45%, var(--border));
+  background: color-mix(in srgb, #e85d04 12%, var(--card));
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
 .listra-anos {
   display: flex;
   flex-direction: column;
