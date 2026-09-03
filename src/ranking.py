@@ -6,6 +6,7 @@ from src.db import (
     list_participantes,
     load_snapshot,
     palpites_do_participante,
+    participante_ativo_no_bolao,
 )
 from src.fidelidade import FidelidadeDetalhe, calcular_fidelidade
 from src.models import PontosParticipante
@@ -56,7 +57,9 @@ def calcular_classificacao() -> list[dict]:
     from collections import defaultdict
 
     confrontos = list_confrontos_completos()
-    participantes = [p for p in list_participantes() if p.get("status") == "liberado"]
+    participantes = [
+        p for p in list_participantes() if participante_ativo_no_bolao(p)
+    ]
     snapshot = snapshot_para_calculo()
     baseline = snapshot.get("somas", {})
     posicoes_ant = snapshot.get("posicoes") or {}

@@ -2072,6 +2072,11 @@ details:not(.nav-dropdown) { margin-top: 0.4rem; color: var(--muted); font-size:
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
+.status-pill.inativo {
+  color: var(--muted);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+}
 html.theme-light .status-pill.link-enviado,
 html[data-theme="light"] .status-pill.link-enviado {
   color: var(--accent);
@@ -2323,7 +2328,8 @@ input[type="file"] {
 }
 .inscricao-fab-form button.inscricao-fab-ok,
 .inscricao-fab-form button.inscricao-fab-no,
-.inscricao-fab-form button.inscricao-fab-reopen {
+.inscricao-fab-form button.inscricao-fab-reopen,
+.inscricao-fab-form button.inscricao-fab-inativo {
   width: 32px !important;
   min-width: 32px;
   height: 32px;
@@ -2335,7 +2341,8 @@ input[type="file"] {
 .inscricao-fab-undo,
 .inscricao-fab-ok,
 .inscricao-fab-no,
-.inscricao-fab-reopen {
+.inscricao-fab-reopen,
+.inscricao-fab-inativo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2388,6 +2395,25 @@ input[type="file"] {
 }
 .inscricao-fab-no:hover {
   background: color-mix(in srgb, var(--accent2) 24%, var(--card));
+}
+.inscricao-fab-inativo {
+  background: color-mix(in srgb, var(--muted) 16%, var(--card));
+  color: var(--muted);
+  border-color: var(--border);
+  font-size: 0.75rem;
+}
+.inscricao-fab-inativo:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent2) 40%, var(--border));
+}
+.inscricao-hint-inativos {
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.inscricao-item-inativo {
+  opacity: 0.92;
 }
 .inscricoes-list {
   display: flex;
@@ -2455,6 +2481,11 @@ input[type="file"] {
   color: var(--muted);
   border-color: var(--border);
   background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+.inscricoes-stat-pill.inativos {
+  color: var(--muted);
+  border-color: color-mix(in srgb, var(--muted) 55%, var(--border));
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
 }
 .inscricoes-col-title {
   display: flex;
@@ -6626,6 +6657,32 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   color: var(--accent2);
   border-color: rgba(220, 60, 60, 0.35);
   background: rgba(220, 60, 60, 0.1);
+}
+.participante-status-tag.status-liberado.status-inativo {
+  color: var(--muted);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+.participante-edit-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.participante-edit-wrap > .participante-edit-card {
+  height: 100%;
+}
+.participante-bolao-status-form {
+  margin: 0;
+}
+.participante-inativar-btn,
+.participante-reativar-btn {
+  width: 100%;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.65rem;
+}
+.participante-edit-card-inativo {
+  opacity: 0.92;
 }
 .participante-status-tag.status-comprovante {
   color: var(--accent);

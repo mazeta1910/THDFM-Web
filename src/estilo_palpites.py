@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from itertools import combinations
 from typing import Any
 
-from src.db import list_confrontos_completos, list_participantes, palpites_do_participante
+from src.db import list_confrontos_completos, list_participantes, palpites_do_participante, participante_ativo_no_bolao
 
 # Nick id → (rótulo, explicação)
 EXPLICACOES_NICK: dict[str, tuple[str, str]] = {
@@ -82,7 +82,7 @@ def _pct(n: int, total: int) -> float | None:
 def _carregar_universo(fase: str | None = None) -> dict[str, Any]:
     """Carrega liberados, jogos da fase e palpites indexados."""
     confrontos = list_confrontos_completos(fase)
-    liberados = [p for p in list_participantes() if p.get("status") == "liberado"]
+    liberados = [p for p in list_participantes() if participante_ativo_no_bolao(p)]
     liberados.sort(key=lambda p: ((p.get("nome") or "").casefold(), p["id"]))
 
     jogos: list[dict[str, Any]] = []

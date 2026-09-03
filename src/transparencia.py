@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.db import list_confrontos_completos, list_participantes, map_hall_bordas, palpites_do_participante
+from src.db import list_confrontos_completos, list_participantes, map_hall_bordas, palpites_do_participante, participante_ativo_no_bolao
 from src.scoring import classificar_palpite, lado_por_clube, pontos_detalhados
 from src.seed_data import formatar_inicio_jogo
 
@@ -364,7 +364,7 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
     exigir_resultado=False (admin): todos os jogos; inclui quem ainda não palpitou.
     """
     confrontos = list_confrontos_completos(fase)
-    liberados = [p for p in list_participantes() if p.get("status") == "liberado"]
+    liberados = [p for p in list_participantes() if participante_ativo_no_bolao(p)]
     liberados.sort(key=lambda p: (p.get("nome") or "").casefold())
     hall_bordas = map_hall_bordas([p["id"] for p in liberados])
 

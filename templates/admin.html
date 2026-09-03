@@ -8,7 +8,9 @@
 </div>
 {% endblock %}
 {% block content %}
-{% set liberados = participantes | selectattr('status', 'equalto', 'liberado') | list %}
+{% set liberados_todos = participantes | selectattr('status', 'equalto', 'liberado') | list %}
+{% set liberados = liberados_todos | rejectattr('inativo_em') | list %}
+{% set liberados_inativos = liberados_todos | selectattr('inativo_em') | list %}
 {% set nao_liberados = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
 {% set liberacao_pendente = nao_liberados | rejectattr('recusado_em') | list %}
 {% set liberacao_recusada = nao_liberados | selectattr('recusado_em') | list %}
@@ -19,11 +21,12 @@
 {% set recuperacao_pedidos = recuperacao_pedidos|default([]) %}
 
 {% macro participante_edit_card(p) -%}
+<div class="participante-edit-wrap{% if p.inativo_em %} is-inativo{% endif %}">
 <form
   method="post"
   action="/admin/participante/atualizar"
   enctype="multipart/form-data"
-  class="card participante-edit-card"
+  class="card participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
   data-nome="{{ p.nome|e }}"
   data-celular="{{ (p.celular or '')|e }}"
 >
@@ -42,14 +45,17 @@
         {% if p.admin_login %}
         <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
         {% endif %}
-        <span class="participante-status-tag status-{{ p.status }}{% if p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-          {% if p.status == 'liberado' %}Liberado
+        <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+          {% if p.status == 'liberado' and p.inativo_em %}Inativo
+          {% elif p.status == 'liberado' %}Liberado
           {% elif p.recusado_em %}Recusado
           {% elif p.status == 'comprovante' %}Com comprovante
           {% else %}Pendente{% endif %}
         </span>
       </div>
-      {% if p.link_enviado_em %}
+      {% if p.inativo_em %}
+      <span class="participante-meta-line">Inativo desde {{ p.inativo_em }}</span>
+      {% elif p.link_enviado_em %}
       <span class="participante-meta-line">Link enviado · {{ p.link_enviado_em }}</span>
       {% endif %}
       {% if p.criado_em %}
@@ -95,6 +101,18 @@
     </button>
   </div>
 </form>
+{% if p.status == 'liberado' and not p.inativo_em %}
+<form method="post" action="/admin/inativar" class="participante-bolao-status-form form-inativar">
+  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+  <button type="submit" class="secondary participante-inativar-btn" title="Some da classificação e do aviso Quem palpitou">Marcar inativo</button>
+</form>
+{% elif p.status == 'liberado' and p.inativo_em %}
+<form method="post" action="/admin/reativar" class="participante-bolao-status-form">
+  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+  <button type="submit" class="participante-reativar-btn" title="Volta à classificação e à cobrança de palpites">Reativar no bolão</button>
+</form>
+{% endif %}
+</div>
 {%- endmacro %}
 
     <section class="admin-panel{% if admin_sec != 'inscricoes' %} active{% endif %}" data-panel="resultados">
@@ -420,6 +438,9 @@
                 <div class="inscricoes-stats">
                   <span class="inscricoes-stat-pill liberados">{{ liberados|length }} liberados</span>
                   <span class="inscricoes-stat-pill pendentes">{{ liberacao_pendente|length }} pendentes</span>
+                  {% if liberados_inativos %}
+                  <span class="inscricoes-stat-pill inativos">{{ liberados_inativos|length }} inativos</span>
+                  {% endif %}
                   {% if liberacao_recusada %}
                   <span class="inscricoes-stat-pill recusados">{{ liberacao_recusada|length }} recusados</span>
                   {% endif %}
@@ -536,6 +557,10 @@
               </p>
               {% endif %}
               <div class="inscricao-fabs">
+                <form method="post" action="/admin/inativar" class="inscricao-fab-form form-inativar">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-inativo" title="Marcar inativo (some da classificação e do Quem palpitou)" aria-label="Marcar {{ p.nome }} como inativo">⏸</button>
+                </form>
                 <a class="inscricao-fab-check" href="/admin/marcar-link/{{ p.id }}?enviado=1" title="Já enviei o link" aria-label="Já enviei o link de {{ p.nome }}">✓</a>
                 {% if p.celular %}
                 <a class="inscricao-fab-wa" href="/admin/avisar-link/{{ p.id }}" target="_blank" rel="noopener" title="Enviar link no WhatsApp" aria-label="Enviar link no WhatsApp para {{ p.nome }}">
@@ -575,6 +600,10 @@
               </p>
               {% endif %}
               <div class="inscricao-fabs">
+                <form method="post" action="/admin/inativar" class="inscricao-fab-form form-inativar">
+                  <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                  <button type="submit" class="inscricao-fab-inativo" title="Marcar inativo (some da classificação e do Quem palpitou)" aria-label="Marcar {{ p.nome }} como inativo">⏸</button>
+                </form>
                 <a class="inscricao-fab-undo" href="/admin/marcar-link/{{ p.id }}?enviado=0" title="Voltar para sem link" aria-label="Marcar {{ p.nome }} como sem link">↩</a>
                 {% if p.celular %}
                 <a class="inscricao-fab-wa" href="/admin/avisar-link/{{ p.id }}" target="_blank" rel="noopener" title="Reenviar no WhatsApp" aria-label="Reenviar link no WhatsApp para {{ p.nome }}">
@@ -589,6 +618,38 @@
             </div>
             </div>
           </section>
+
+          {% if liberados_inativos %}
+          <section class="inscricoes-col" id="inativos-col" data-inscricoes-col="inativos">
+            <h3 class="inscricoes-col-title">
+              Inativos
+              <span class="inscricoes-stat-pill inativos">{{ liberados_inativos|length }}</span>
+            </h3>
+            <p class="inscricao-hint-inativos">Fora da classificação e do aviso “Quem palpitou”. Conta e histórico ficam guardados.</p>
+            <div class="inscricoes-list" id="inativos-list">
+              {% for p in liberados_inativos %}
+              <div class="ref inscricao-item inscricao-item-fab inscricao-item-inativo" data-nome="{{ p.nome|e }}" data-data="{{ p.inativo_em or p.criado_em or '' }}" data-id="{{ p.id }}">
+                <div class="inscricao-item-head">
+                  <strong class="inscricao-nome">{{ p.nome }}</strong>
+                  <div class="inscricao-item-end">
+                    <span class="status-pill inativo">inativo</span>
+                    <button type="button" class="btn-apagar-x" title="Apagar inscrição" aria-label="Apagar inscrição de {{ p.nome }}" data-id="{{ p.id }}" data-nome="{{ p.nome }}">×</button>
+                  </div>
+                </div>
+                <div class="inscricao-meta-row">
+                  <span>Inativo em: {{ p.inativo_em or "—" }}</span>
+                </div>
+                <div class="inscricao-fabs">
+                  <form method="post" action="/admin/reativar" class="inscricao-fab-form">
+                    <input type="hidden" name="participante_id" value="{{ p.id }}" />
+                    <button type="submit" class="inscricao-fab-reopen" title="Reativar no bolão" aria-label="Reativar {{ p.nome }}">▶</button>
+                  </form>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
 
           <section class="inscricoes-col" id="pendentes-col" data-inscricoes-col="pendentes">
             <h3 class="inscricoes-col-title">
@@ -724,7 +785,7 @@
       <div class="participantes-dash inscricoes-gestao-block">
         <h2 class="participantes-gestao-title">Gestão de Participantes</h2>
         <div class="participantes-toolbar">
-          <p class="participantes-lead">Edite nome na tabela, celular e foto. Pendentes ficam separados até a liberação.</p>
+          <p class="participantes-lead">Edite nome na tabela, celular e foto. Quem saiu do bolão pode ficar <strong>inativo</strong> (some da classificação e do aviso na lateral).</p>
         </div>
 
         <form method="post" action="/admin/avatar-padrao" enctype="multipart/form-data" class="card avatar-padrao-card">
@@ -798,6 +859,21 @@
             {% endfor %}
           </div>
         </section>
+
+        {% if liberados_inativos %}
+        <section class="participantes-section" data-participantes-section="inativos">
+          <h2 class="participantes-section-title">
+            Inativos no bolão
+            <span class="participantes-count">{{ liberados_inativos|length }}</span>
+          </h2>
+          <p class="participantes-empty" style="margin-top:0">Não entram na classificação nem no contador de “Quem palpitou”.</p>
+          <div class="participantes-grid" data-participantes-grid>
+            {% for p in liberados_inativos %}
+            {{ participante_edit_card(p) }}
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
 
         <section class="participantes-section" data-participantes-section="pendentes">
           <h2 class="participantes-section-title">
@@ -1522,6 +1598,13 @@ document.querySelectorAll(".form-recusar").forEach((form) => {
     if (!confirm(`Recusar a inscrição de ${nome}? Ela vai para Liberação recusada (não apaga).`)) e.preventDefault();
   });
 });
+document.querySelectorAll(".form-inativar").forEach((form) => {
+  form.addEventListener("submit", (e) => {
+    if (!confirm("Marcar como inativo? Some da classificação e do aviso Quem palpitou (pode reativar depois).")) {
+      e.preventDefault();
+    }
+  });
+});
 
 const modalRecusarTodos = document.getElementById("modal-recusar-todos");
 const formRecusarTodos = document.getElementById("form-recusar-todos");
@@ -1806,7 +1889,8 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
       const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
       const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
       const hit = !q || nomeBate(nome, q) || celularBate(celular, q, qDigits);
-      card.hidden = !hit;
+      const wrap = card.closest(".participante-edit-wrap") || card;
+      wrap.hidden = !hit;
       if (hit) visible += 1;
     });
     if (countEl) {
