@@ -1008,7 +1008,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=24" in r.text
+    assert "/static/grid.js?v=25" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1035,6 +1035,10 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'class="grid-dica-opt-title"' in r.text
     assert 'data-grid-matriz-custo' in r.text
     assert "Matriz de clubes" in r.text
+    assert 'data-dica-tipo="contagem"' not in r.text
+    assert "Usar dica" in r.text
+    assert "data-grid-matriz-celula" in r.text
+    assert "data-grid-dica-eixos" in r.text
     assert "data-grid-chute" not in r.text
     assert "data-grid-suggestions" in r.text
     assert "~50%" in r.text or "50% do nome" in r.text

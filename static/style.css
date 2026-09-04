@@ -15262,6 +15262,12 @@ button.grid-chip-btn-ghost:hover:not(:disabled),
   gap: 0.65rem;
   margin-top: 0.75rem;
 }
+.grid-dica-eixos {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
 .grid-dica-opt {
   display: flex;
   flex-direction: column;

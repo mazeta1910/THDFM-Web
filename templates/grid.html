@@ -424,13 +424,10 @@
 <dialog class="grid-modal" id="grid-dica-modal" data-grid-dica-modal>
   <div class="grid-modal-card">
     <button type="button" class="grid-modal-x" data-grid-dica-close aria-label="Fechar">×</button>
-    <h2 class="grid-result-title">Escolher dica</h2>
+    <h2 class="grid-result-title">Usar dica</h2>
     <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
+    <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
     <div class="grid-dica-opcoes">
-      <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="contagem">
-        <span class="grid-dica-opt-title">Contagem (−10)</span>
-        <small>Revela quantos clubes cabem na célula</small>
-      </button>
       <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
         <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
         <small>20 clubes (2 válidos) — custo sobe a cada uso</small>
@@ -444,7 +441,11 @@
   <div class="grid-modal-card grid-modal-card--wide">
     <button type="button" class="grid-modal-x" data-grid-matriz-close aria-label="Fechar">×</button>
     <h2 class="grid-result-title">Matriz de clubes</h2>
-    <p class="grid-sub">2 destes clubes fecham a célula — descubra quais.</p>
+    <p class="grid-sub">
+      Célula <span data-grid-matriz-celula></span> —
+      2 destes clubes fecham essa célula. Descubra quais.
+    </p>
+    <p class="grid-dica-eixos" data-grid-matriz-eixos hidden></p>
     <div class="grid-matriz-grid" data-grid-matriz-grid></div>
   </div>
 </dialog>
@@ -462,7 +463,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=24" defer></script>
+<script src="/static/grid.js?v=25" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

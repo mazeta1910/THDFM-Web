@@ -36,9 +36,12 @@
   const dicaModal = document.querySelector("[data-grid-dica-modal]");
   const dicaHintEl = document.querySelector("[data-grid-dica-hint]");
   const dicaCelulaEl = document.querySelector("[data-grid-dica-celula]");
+  const dicaEixosEl = document.querySelector("[data-grid-dica-eixos]");
   const matrizModal = document.querySelector("[data-grid-matriz-modal]");
   const matrizGridEl = document.querySelector("[data-grid-matriz-grid]");
   const matrizCustoEl = document.querySelector("[data-grid-matriz-custo]");
+  const matrizCelulaEl = document.querySelector("[data-grid-matriz-celula]");
+  const matrizEixosEl = document.querySelector("[data-grid-matriz-eixos]");
 
   const REP_TETO = 8000;
   const MIN_CHARS = 3;
@@ -938,6 +941,30 @@
   });
 
   // —— Dicas ——
+  function eixoRotulo(lista, idx) {
+    const item = Array.isArray(lista) ? lista[idx] : null;
+    if (!item) return "";
+    return item.rotulo != null ? String(item.rotulo) : "";
+  }
+
+  function descricaoCelula(cell) {
+    if (!cell) return { coords: "", eixos: "" };
+    const coords = `(${cell.linha + 1}, ${cell.coluna + 1})`;
+    const row = eixoRotulo(puzzle && puzzle.linhas, cell.linha);
+    const col = eixoRotulo(puzzle && puzzle.colunas, cell.coluna);
+    const eixos = row && col ? `${row} × ${col}` : row || col || "";
+    return { coords, eixos };
+  }
+
+  function preencherInfoCelulaDica(cell, coordsEl, eixosEl) {
+    const { coords, eixos } = descricaoCelula(cell);
+    if (coordsEl) coordsEl.textContent = coords;
+    if (eixosEl) {
+      eixosEl.textContent = eixos;
+      eixosEl.hidden = !eixos;
+    }
+  }
+
   function resolveDicaCell() {
     if (active && !celulas[active.linha][active.coluna]) return active;
     if (lastCell && celulas[lastCell.linha] && !celulas[lastCell.linha][lastCell.coluna]) {
@@ -959,9 +986,7 @@
       return;
     }
     lastCell = cell;
-    if (dicaCelulaEl) {
-      dicaCelulaEl.textContent = `(${cell.linha + 1}, ${cell.coluna + 1})`;
-    }
+    preencherInfoCelulaDica(cell, dicaCelulaEl, dicaEixosEl);
     setDicaHint("");
     updateMatrizCusto(proximoCustoMatriz);
     if (dicaModal && typeof dicaModal.showModal === "function") dicaModal.showModal();
@@ -981,6 +1006,11 @@
       setDicaHint("Selecione uma célula vazia.", true);
       return;
     }
+    // Só matriz permanece na UI; contagem legado ignorada.
+    if (tipo !== "matriz") {
+      setDicaHint("Dica indisponível.", true);
+      return;
+    }
     setDicaHint("");
     const r = await fetch("/grid/api/dica", {
       method: "POST",
@@ -989,7 +1019,7 @@
         partida_id: partidaId,
         linha: cell.linha,
         coluna: cell.coluna,
-        tipo,
+        tipo: "matriz",
       }),
     });
     const data = await r.json().catch(() => ({}));
@@ -1007,30 +1037,11 @@
     }
 
     const dica = data.dica || {};
-    if (dica.tipo === "contagem") {
-      densidadesReveladas.add(cellKey(cell.linha, cell.coluna));
-      const dens =
-        dica.payload && dica.payload.densidade != null
-          ? dica.payload.densidade
-          : null;
-      if (dens != null) {
-        const btn = cellBtn(cell.linha, cell.coluna);
-        if (btn) btn.setAttribute("data-possiveis", String(dens));
-      }
-      paintCell(cell.linha, cell.coluna);
-      if (dicaModal && dicaModal.open) dicaModal.close();
-      setHint(
-        `Contagem revelada na célula (${cell.linha + 1}, ${cell.coluna + 1}): ${
-          dens != null ? dens : "?"
-        } possíveis.`
-      );
-      return;
-    }
-
     if (dica.tipo === "matriz") {
       const clubes =
         (dica.payload && Array.isArray(dica.payload.clubes) && dica.payload.clubes) ||
         [];
+      preencherInfoCelulaDica(cell, matrizCelulaEl, matrizEixosEl);
       if (matrizGridEl) {
         matrizGridEl.innerHTML = clubes
           .map(
@@ -1048,13 +1059,16 @@
       if (matrizModal && typeof matrizModal.showModal === "function") {
         matrizModal.showModal();
       }
+      setHint(
+        `Matriz revelada na célula ${descricaoCelula(cell).coords}. Fechar sem escolher não devolve a dica.`
+      );
     }
   }
 
   document.querySelectorAll("[data-dica-tipo]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tipo = btn.getAttribute("data-dica-tipo");
-      if (tipo === "contagem" || tipo === "matriz") {
+      if (tipo === "matriz") {
         pedirDica(tipo).catch(() => {});
       }
     });
