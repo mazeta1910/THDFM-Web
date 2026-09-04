@@ -15025,6 +15025,13 @@ button.grid-admin-dia-btn,
   background: color-mix(in srgb, var(--bg2, var(--card)) 85%, transparent);
   color: var(--muted);
 }
+.grid-chip-btn-ghost {
+  color: var(--muted);
+  border-color: color-mix(in srgb, var(--border) 65%, transparent);
+}
+.grid-chip-btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+}
 .grid-live-stats {
   display: flex;
   flex-wrap: wrap;
