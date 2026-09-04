@@ -5603,8 +5603,9 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
     No Contínuo (xonha), só a **primeira** partida de cada dia conta no score
     (as demais são só diversão).
 
-    Score = acertos + completo + tempo − dicas (+ streak). Raridade (Rep) só
-    desempatam após dias / acertos.
+    Score = acertos + completo + tempo + raridade(média×índice) − dicas (+ streak).
+    Raridade ajuda quem joga times obscuros, sem reverter um déficit grande
+    de acertos; ainda desempatam via pontos_rep bruto.
     """
     from src.grid_game import GRID_RANKING_DESDE, dia_grid
     from src.grid_score import pontos_partida, pontos_rep_celulas, score_ranking

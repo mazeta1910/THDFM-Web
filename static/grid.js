@@ -1404,8 +1404,8 @@
     if (sub) {
       sub.textContent =
         m === "xonha"
-          ? "só a 1ª partida Contínuo de cada dia conta · acertos, tempo e streak · raridade só desempata"
-          : "acertos, tempo e streak · raridade só desempata · Pro zera ao sair da página";
+          ? "só a 1ª Contínuo/dia conta · acertos, tempo, raridade (média×índice) e streak"
+          : "acertos, tempo, raridade (média×índice) e streak · Pro zera ao sair da página";
     }
   }
 

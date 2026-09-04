@@ -197,7 +197,7 @@ def test_xonha_ranking_so_primeira_partida_do_dia(client):
 
 
 def test_ranking_modo_acertos_vencem_raridade(client):
-    """Quem acertou mais casas fica na frente, mesmo com times mais famosos."""
+    """Déficit grande (3 vs 6): mais acertos vencem, mesmo com Rep menor."""
     from src.grid_partidas import iniciar_xonha as _ix
 
     a = dbmod.criar_participante("3 Obscuros", status="liberado")
@@ -238,6 +238,39 @@ def test_ranking_modo_acertos_vencem_raridade(client):
     assert me_a["celulas_ok"] == 3
     assert me_b["score"] > me_a["score"]
     assert me_a["pontos_rep"] > me_b["pontos_rep"]
+
+
+def test_ranking_modo_raros_podem_passar_safe(client):
+    """7/9 obscuros podem ficar na frente de 8/9 safe."""
+    from src.grid_partidas import iniciar_xonha as _ix
+
+    a = dbmod.criar_participante("7 Raros", status="liberado")
+    b = dbmod.criar_participante("8 Safe", status="liberado")
+    dia = dia_grid()
+    pa = _ix(a["id"], dia)
+    pb = _ix(b["id"], dia)
+
+    def cells(n: int, rep: int, prefix: str):
+        flat = [
+            {"ok": True, "clube": {"id": f"{prefix}{i}", "nome": f"{prefix}{i}", "rep": rep}}
+            for i in range(n)
+        ] + [None] * (9 - n)
+        return [flat[0:3], flat[3:6], flat[6:9]]
+
+    dbmod.atualizar_grid_partida(
+        pa["id"], pontos=1, finalizado=True, celulas=cells(7, 200, "r")
+    )
+    dbmod.atualizar_grid_partida(
+        pb["id"], pontos=99999, finalizado=True, celulas=cells(8, 7750, "s")
+    )
+    rank = dbmod.ranking_grid_modo("xonha")
+    ids = [x["participante_id"] for x in rank]
+    assert ids.index(a["id"]) < ids.index(b["id"])
+    me_a = next(x for x in rank if x["participante_id"] == a["id"])
+    me_b = next(x for x in rank if x["participante_id"] == b["id"])
+    assert me_a["celulas_ok"] == 7
+    assert me_b["celulas_ok"] == 8
+    assert me_a["score"] > me_b["score"]
 
 
 def test_xonha_streak_exige_primeira_finalizada(client):
