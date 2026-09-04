@@ -1401,13 +1401,16 @@ def test_texto_share_pro_score_e_dicas():
         modo="raiz",
         pontos=420,
         dicas_usadas=0,
+        ranking=1,
     )
     assert text.startswith("THDFM Grid Pro — 04/09/2026")
     assert "1/9" in text
     lines = text.splitlines()
-    assert "420" in lines
-    assert "💡Dicas Utilizadas: 0" in lines
-    assert lines.index("420") < lines.index("💡Dicas Utilizadas: 0")
+    assert "🏆 Ranking: 1º" in lines
+    assert "⭐ Pontos: 420" in lines
+    assert "💡 Dicas Utilizadas: 0" in lines
+    assert lines.index("🏆 Ranking: 1º") < lines.index("⭐ Pontos: 420")
+    assert lines.index("⭐ Pontos: 420") < lines.index("💡 Dicas Utilizadas: 0")
     assert lines[-1] == "https://thdfm.com.br/grid"
 
 
@@ -1418,12 +1421,27 @@ def test_texto_share_continuo_indice():
         celulas=celulas,
         modo="xonha",
         indice=2,
-        pontos=100,
-        dicas_usadas=3,
+        pontos=55,
+        dicas_usadas=2,
+        ranking=3,
     )
     assert text.startswith("THDFM Grid 2 — 04/09/2026")
-    assert "💡Dicas Utilizadas: 3" in text
-    assert "100" in text.splitlines()
+    assert "🏆 Ranking: 3º" in text
+    assert "⭐ Pontos: 55" in text
+    assert "💡 Dicas Utilizadas: 2" in text
+    assert "55" not in text.splitlines()  # pontos só na linha com ⭐
+    expected = (
+        "THDFM Grid 2 — 04/09/2026\n"
+        "0/9\n"
+        "⬜ ⬜ ⬜\n"
+        "⬜ ⬜ ⬜\n"
+        "⬜ ⬜ ⬜\n"
+        "🏆 Ranking: 3º\n"
+        "⭐ Pontos: 55\n"
+        "💡 Dicas Utilizadas: 2\n"
+        "https://thdfm.com.br/grid"
+    )
+    assert text == expected
 
 
 def test_sugestao_exige_cerca_de_50_por_cento_do_nome():

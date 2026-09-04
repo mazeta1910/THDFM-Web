@@ -261,6 +261,7 @@ def texto_share_partida(
     *,
     celulas: list | None = None,
     pontos: int | None = None,
+    ranking: int | None = None,
 ) -> str:
     """Monta texto de share WhatsApp a partir de uma partida (Pro / 1 / 2 / 3)."""
     from src.grid_game import parse_celulas_progresso, texto_share
@@ -271,6 +272,9 @@ def texto_share_partida(
     indice = int(part["indice_dia"]) if modo == "xonha" else None
     pts = pontos if pontos is not None else int(part.get("pontos") or 0)
     dicas = part.get("dicas") or []
+    pos = ranking
+    if pos is None and part.get("participante_id") is not None and modo in ("raiz", "xonha"):
+        pos = db.posicao_ranking_grid_modo(int(part["participante_id"]), modo)
     return texto_share(
         dia=str(part.get("dia") or ""),
         celulas=cells,
@@ -278,6 +282,7 @@ def texto_share_partida(
         indice=indice,
         pontos=pts,
         dicas_usadas=len(dicas) if isinstance(dicas, list) else 0,
+        ranking=pos,
     )
 
 
