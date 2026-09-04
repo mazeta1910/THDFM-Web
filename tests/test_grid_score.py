@@ -45,11 +45,12 @@ def test_custo_contagem_fixo():
     assert custo_dica_contagem() == CUSTO_CONTAGEM == 10
 
 
-def test_custo_matriz_exponencial():
+def test_custo_matriz_linear_ilimitado():
     assert custo_dica_matriz(0) == 80
     assert custo_dica_matriz(1) == 160
-    assert custo_dica_matriz(2) == 320
-    assert custo_dica_matriz(3) == 640
+    assert custo_dica_matriz(2) == 240
+    assert custo_dica_matriz(3) == 320
+    assert custo_dica_matriz(9) == 800
     assert custo_dica_matriz(-1) == MATRIZ_BASE  # trata negativo como 0
 
 

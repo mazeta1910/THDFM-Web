@@ -839,7 +839,7 @@
       const usos = ((partida && partida.dicas) || []).filter(
         (d) => d && d.tipo === "matriz"
       ).length;
-      updateMatrizCusto(80 * Math.pow(2, usos));
+      updateMatrizCusto(80 * (usos + 1));
     }
     syncDicasFromPartida(partida);
     if (data.puzzle) rebuildBoard(data.puzzle);

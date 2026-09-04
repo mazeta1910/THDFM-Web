@@ -350,7 +350,7 @@ def aplicar_dica_matriz(
     linha: int,
     coluna: int,
 ) -> dict[str, Any]:
-    """Matriz 20 clubes (2 válidos + 18 inválidos); custo exponencial ilimitado."""
+    """Matriz 20 clubes (2 válidos + 18 inválidos); custo linear ilimitado."""
     import random
 
     from src.grid_game import (

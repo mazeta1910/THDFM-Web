@@ -122,6 +122,15 @@ def test_dicas_contagem_e_matriz(client):
     )
     assert m2.status_code == 200
     assert m2.json()["dica"]["custo"] == 160
+    assert m2.json()["proximo_custo_matriz"] == 240
+
+    m3 = client.post(
+        "/grid/api/dica",
+        json={"partida_id": pid, "linha": 2, "coluna": 2, "tipo": "matriz"},
+    )
+    assert m3.status_code == 200
+    assert m3.json()["dica"]["custo"] == 240
+    assert m3.json()["proximo_custo_matriz"] == 320
 
 
 def test_matriz_tem_exatos_dois_validos(client):
