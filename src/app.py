@@ -3012,9 +3012,19 @@ def grid_page(request: Request):
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
         if progresso and progresso.get("finalizado"):
+            # Legado: progresso sem partida → trata como Pro.
             share = texto_share(
-                dia=dia, celulas=parse_celulas_progresso(progresso.get("celulas"))
+                dia=dia,
+                celulas=parse_celulas_progresso(progresso.get("celulas")),
+                modo="raiz",
+                pontos=None,
+                dicas_usadas=0,
             )
+            raiz = db.get_grid_partida_raiz(int(voter["id"]), dia)
+            if raiz and (raiz.get("finalizado") or raiz.get("interrompido")):
+                from src.grid_partidas import texto_share_partida
+
+                share = texto_share_partida(raiz)
         from src.grid_partidas import pode_iniciar_xonha
 
         _ok, cota_xonha = pode_iniciar_xonha(int(voter["id"]), dia)
@@ -3193,8 +3203,16 @@ def grid_api_hoje(request: Request):
             from src.grid_game import parse_celulas_progresso, texto_share
 
             share = texto_share(
-                dia=dia, celulas=parse_celulas_progresso(progresso.get("celulas"))
+                dia=dia,
+                celulas=parse_celulas_progresso(progresso.get("celulas")),
+                modo="raiz",
+                dicas_usadas=0,
             )
+            raiz = db.get_grid_partida_raiz(int(voter["id"]), dia)
+            if raiz and (raiz.get("finalizado") or raiz.get("interrompido")):
+                from src.grid_partidas import texto_share_partida
+
+                share = texto_share_partida(raiz)
     return JSONResponse(
         {
             "puzzle": puzzle,
@@ -3297,6 +3315,7 @@ async def grid_api_iniciar(request: Request):
     from src.grid_game import dia_grid
     from src.grid_partidas import (
         CotaXonhaEsgotada,
+        anexar_indice_dia,
         iniciar_raiz,
         iniciar_xonha,
         pode_iniciar_xonha,
@@ -3340,6 +3359,7 @@ async def grid_api_iniciar(request: Request):
     )
     usos_matriz = sum(1 for d in (partida.get("dicas") or []) if d.get("tipo") == "matriz")
     _ok, cota = pode_iniciar_xonha(pid, dia)
+    partida = anexar_indice_dia(partida)
     return JSONResponse(
         {
             "dia": dia,
@@ -3385,7 +3405,7 @@ async def grid_api_interromper(request: Request):
     neg = _grid_neg_json(request)
     if neg:
         return neg
-    from src.grid_partidas import interromper_partida
+    from src.grid_partidas import anexar_indice_dia, interromper_partida
 
     try:
         body = await request.json()
@@ -3403,7 +3423,13 @@ async def grid_api_interromper(request: Request):
         return JSONResponse({"erro": str(exc)}, status_code=404)
     except ValueError as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
-    return JSONResponse({"partida": partida, "interrompido": True})
+    partida = anexar_indice_dia(partida)
+    from src.grid_partidas import texto_share_partida
+    from src.grid_game import parse_celulas_progresso
+
+    celulas = parse_celulas_progresso(partida.get("celulas"))
+    share = texto_share_partida(partida, celulas=celulas)
+    return JSONResponse({"partida": partida, "interrompido": True, "share": share})
 
 
 @app.post("/grid/api/chute")
@@ -3512,13 +3538,20 @@ async def grid_api_chute(request: Request):
             return JSONResponse({"erro": str(exc)}, status_code=404)
         finalizado = bool(partida.get("finalizado"))
         celulas = parse_celulas_progresso(partida.get("celulas"))
-        share = texto_share(dia=dia, celulas=celulas) if finalizado else None
         score = pontos_partida(
             celulas,
             finalizado=finalizado,
             interrompido=bool(partida.get("interrompido")),
             tempo_segundos=partida.get("tempo_segundos"),
             dicas=partida.get("dicas") or [],
+        )
+        from src.grid_partidas import anexar_indice_dia, texto_share_partida
+
+        partida = anexar_indice_dia(partida)
+        share = (
+            texto_share_partida(partida, celulas=celulas, pontos=score)
+            if finalizado
+            else None
         )
         return JSONResponse(
             {
@@ -3569,7 +3602,11 @@ async def grid_api_chute(request: Request):
         )
         streak = db.grid_streak(voter["id"], ate_dia=dia)
 
-    share = texto_share(dia=dia, celulas=celulas) if finalizado else None
+    share = (
+        texto_share(dia=dia, celulas=celulas, modo="raiz", dicas_usadas=0)
+        if finalizado
+        else None
+    )
     return JSONResponse(
         {
             "resultado": resultado,

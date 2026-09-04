@@ -1008,7 +1008,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=15" in r.text
+    assert "/static/grid.js?v=25" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1016,7 +1016,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=4" in r.text
+    assert "/static/grid-admin.js?v=5" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text
@@ -1032,6 +1032,17 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "WhatsApp</button>" not in r.text
     assert 'id="ranking"' in r.text
     assert "grid-result-top" in r.text
+    assert 'class="grid-dica-opt-title"' in r.text
+    assert 'data-grid-matriz-custo' in r.text
+    assert "Matriz de clubes" in r.text
+    assert 'data-dica-tipo="contagem"' not in r.text
+    assert "Usar dica" in r.text
+    assert "data-grid-matriz-celula" in r.text
+    assert "data-grid-dica-eixos" in r.text
+    assert "data-grid-leave-matriz-modal" in r.text
+    assert "Sair da matriz?" in r.text
+    assert "data-grid-leave-matriz-ok" in r.text
+    assert "data-grid-leave-matriz-voltar" in r.text
     assert "data-grid-chute" not in r.text
     assert "data-grid-suggestions" in r.text
     assert "~50%" in r.text or "50% do nome" in r.text
@@ -1376,6 +1387,43 @@ def test_texto_share_usa_verde_e_vermelho():
     raw = text.encode("utf-8")
     assert "🟩".encode("utf-8") in raw
     assert "🟥".encode("utf-8") in raw
+
+
+def test_texto_share_pro_score_e_dicas():
+    celulas = [
+        [{"ok": True, "clube": {"id": "1"}}, None, None],
+        [None, None, None],
+        [None, None, None],
+    ]
+    text = texto_share(
+        dia="2026-09-04",
+        celulas=celulas,
+        modo="raiz",
+        pontos=420,
+        dicas_usadas=0,
+    )
+    assert text.startswith("THDFM Grid Pro — 04/09/2026")
+    assert "1/9" in text
+    lines = text.splitlines()
+    assert "420" in lines
+    assert "💡Dicas Utilizadas: 0" in lines
+    assert lines.index("420") < lines.index("💡Dicas Utilizadas: 0")
+    assert lines[-1] == "https://thdfm.com.br/grid"
+
+
+def test_texto_share_continuo_indice():
+    celulas = [[None, None, None], [None, None, None], [None, None, None]]
+    text = texto_share(
+        dia="2026-09-04",
+        celulas=celulas,
+        modo="xonha",
+        indice=2,
+        pontos=100,
+        dicas_usadas=3,
+    )
+    assert text.startswith("THDFM Grid 2 — 04/09/2026")
+    assert "💡Dicas Utilizadas: 3" in text
+    assert "100" in text.splitlines()
 
 
 def test_sugestao_exige_cerca_de_50_por_cento_do_nome():

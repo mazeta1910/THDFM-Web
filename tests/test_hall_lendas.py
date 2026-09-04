@@ -229,7 +229,7 @@ def test_hall_hero_padrao_e_lapis_so_mazeta(client: TestClient):
     assert "data-hall-size" in r2.text
     assert "hall-hero-edit.js" not in r2.text
     css = (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
-    assert "style.css?v=328" in css
+    assert "style.css?v=330" in css
     assert "hall-rich-edit.js?v=2" in (ROOT_DIR / "templates" / "hall_lendas.html").read_text(
         encoding="utf-8"
     )

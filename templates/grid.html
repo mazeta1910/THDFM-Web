@@ -424,15 +424,12 @@
 <dialog class="grid-modal" id="grid-dica-modal" data-grid-dica-modal>
   <div class="grid-modal-card">
     <button type="button" class="grid-modal-x" data-grid-dica-close aria-label="Fechar">×</button>
-    <h2 class="grid-result-title">Escolher dica</h2>
+    <h2 class="grid-result-title">Usar dica</h2>
     <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
+    <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
     <div class="grid-dica-opcoes">
-      <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="contagem">
-        Contagem (−10)
-        <small>Revela quantos clubes cabem na célula</small>
-      </button>
       <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
-        Matriz de clubes (<span data-grid-matriz-custo>−80</span>)
+        <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
         <small>20 clubes (2 válidos) — custo sobe a cada uso</small>
       </button>
     </div>
@@ -444,8 +441,33 @@
   <div class="grid-modal-card grid-modal-card--wide">
     <button type="button" class="grid-modal-x" data-grid-matriz-close aria-label="Fechar">×</button>
     <h2 class="grid-result-title">Matriz de clubes</h2>
-    <p class="grid-sub">2 destes clubes fecham a célula — descubra quais.</p>
+    <p class="grid-sub">
+      Célula <span data-grid-matriz-celula></span> —
+      2 destes clubes fecham essa célula. Descubra quais.
+    </p>
+    <p class="grid-dica-eixos" data-grid-matriz-eixos hidden></p>
     <div class="grid-matriz-grid" data-grid-matriz-grid></div>
+  </div>
+</dialog>
+
+<dialog class="grid-modal" id="grid-leave-matriz-modal" data-grid-leave-matriz-modal>
+  <div class="grid-modal-card">
+    <h2 class="grid-result-title">Sair da matriz?</h2>
+    <p class="grid-sub">Deseja mesmo sair? A dica já foi usada e os pontos já foram descontados. Você não verá esta lista de clubes de novo.</p>
+    <div class="grid-modal-actions">
+      <button type="button" class="grid-chip-btn grid-chip-btn-ghost" data-grid-leave-matriz-voltar title="Continuar na matriz">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        <span>Voltar</span>
+      </button>
+      <button type="button" class="grid-chip-btn" data-grid-leave-matriz-ok title="Sair sem escolher">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12l5 5L20 7"/>
+        </svg>
+        <span>Sair</span>
+      </button>
+    </div>
   </div>
 </dialog>
 
@@ -462,7 +484,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=23" defer></script>
+<script src="/static/grid.js?v=26" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

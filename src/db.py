@@ -5161,6 +5161,25 @@ def contar_grid_partidas_dia(
             ).fetchone()
         return int(row["n"] or 0) if row else 0
 
+
+def indice_grid_partida_dia(
+    participante_id: int,
+    dia: str,
+    *,
+    modo: str,
+    partida_id: int,
+) -> int:
+    """Índice 1-based da partida entre as do mesmo dia/modo (ordem de criação)."""
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM grid_partida
+            WHERE participante_id = ? AND dia = ? AND modo = ? AND id <= ?
+            """,
+            (int(participante_id), str(dia), str(modo), int(partida_id)),
+        ).fetchone()
+        return max(1, int(row["n"] or 1) if row else 1)
+
 def criar_grid_partida(
     participante_id: int,
     dia: str,

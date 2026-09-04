@@ -36,9 +36,13 @@
   const dicaModal = document.querySelector("[data-grid-dica-modal]");
   const dicaHintEl = document.querySelector("[data-grid-dica-hint]");
   const dicaCelulaEl = document.querySelector("[data-grid-dica-celula]");
+  const dicaEixosEl = document.querySelector("[data-grid-dica-eixos]");
   const matrizModal = document.querySelector("[data-grid-matriz-modal]");
   const matrizGridEl = document.querySelector("[data-grid-matriz-grid]");
   const matrizCustoEl = document.querySelector("[data-grid-matriz-custo]");
+  const matrizCelulaEl = document.querySelector("[data-grid-matriz-celula]");
+  const matrizEixosEl = document.querySelector("[data-grid-matriz-eixos]");
+  const leaveMatrizModal = document.querySelector("[data-grid-leave-matriz-modal]");
 
   const REP_TETO = 8000;
   const MIN_CHARS = 3;
@@ -76,6 +80,8 @@
   let active = null; // {linha, coluna}
   /** @type {{linha:number, coluna:number}|null} */
   let lastCell = null;
+  /** Permite fechar a matriz sem o aviso (chute ou confirmação de saída). */
+  let matrizAllowClose = false;
   let shareText = "";
   let searchTimer = 0;
   let searchAbort = null;
@@ -450,8 +456,28 @@
     const parts = (dia || "").split("-");
     const rotulo =
       parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dia || "hoje";
-    const modoTag = modo === "xonha" ? " Contínuo" : modo === "raiz" ? " Pro" : "";
-    return `THDFM Grid${modoTag} — ${rotulo}\n${ok}/${size * size}\n${lines.join("\n")}\nhttps://thdfm.com.br/grid`;
+    let modoTag = "";
+    if (modo === "raiz") modoTag = " Pro";
+    else if (modo === "xonha") {
+      const idx =
+        partida && partida.indice_dia != null
+          ? Number(partida.indice_dia)
+          : null;
+      modoTag = idx && !Number.isNaN(idx) ? ` ${idx}` : " Contínuo";
+    }
+    const dicasN = ((partida && partida.dicas) || []).length;
+    const scoreLine =
+      typeof scoreParcial === "number" && !Number.isNaN(scoreParcial)
+        ? String(scoreParcial)
+        : "";
+    return [
+      `THDFM Grid${modoTag} — ${rotulo}`,
+      `${ok}/${size * size}`,
+      ...lines,
+      ...(scoreLine ? [scoreLine] : []),
+      `💡Dicas Utilizadas: ${dicasN}`,
+      "https://thdfm.com.br/grid",
+    ].join("\n");
   }
 
   function showResult(serverShare) {
@@ -918,6 +944,30 @@
   });
 
   // —— Dicas ——
+  function eixoRotulo(lista, idx) {
+    const item = Array.isArray(lista) ? lista[idx] : null;
+    if (!item) return "";
+    return item.rotulo != null ? String(item.rotulo) : "";
+  }
+
+  function descricaoCelula(cell) {
+    if (!cell) return { coords: "", eixos: "" };
+    const coords = `(${cell.linha + 1}, ${cell.coluna + 1})`;
+    const row = eixoRotulo(puzzle && puzzle.linhas, cell.linha);
+    const col = eixoRotulo(puzzle && puzzle.colunas, cell.coluna);
+    const eixos = row && col ? `${row} × ${col}` : row || col || "";
+    return { coords, eixos };
+  }
+
+  function preencherInfoCelulaDica(cell, coordsEl, eixosEl) {
+    const { coords, eixos } = descricaoCelula(cell);
+    if (coordsEl) coordsEl.textContent = coords;
+    if (eixosEl) {
+      eixosEl.textContent = eixos;
+      eixosEl.hidden = !eixos;
+    }
+  }
+
   function resolveDicaCell() {
     if (active && !celulas[active.linha][active.coluna]) return active;
     if (lastCell && celulas[lastCell.linha] && !celulas[lastCell.linha][lastCell.coluna]) {
@@ -939,9 +989,7 @@
       return;
     }
     lastCell = cell;
-    if (dicaCelulaEl) {
-      dicaCelulaEl.textContent = `(${cell.linha + 1}, ${cell.coluna + 1})`;
-    }
+    preencherInfoCelulaDica(cell, dicaCelulaEl, dicaEixosEl);
     setDicaHint("");
     updateMatrizCusto(proximoCustoMatriz);
     if (dicaModal && typeof dicaModal.showModal === "function") dicaModal.showModal();
@@ -951,14 +999,63 @@
     if (dicaModal && dicaModal.open) dicaModal.close();
   });
 
-  document.querySelector("[data-grid-matriz-close]")?.addEventListener("click", () => {
+  function forceCloseMatriz() {
+    matrizAllowClose = true;
+    if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
     if (matrizModal && matrizModal.open) matrizModal.close();
+    matrizAllowClose = false;
+  }
+
+  function pedirConfirmacaoSaidaMatriz() {
+    if (!matrizModal || !matrizModal.open) return;
+    if (leaveMatrizModal && typeof leaveMatrizModal.showModal === "function") {
+      leaveMatrizModal.showModal();
+      return;
+    }
+    forceCloseMatriz();
+  }
+
+  document.querySelector("[data-grid-matriz-close]")?.addEventListener("click", () => {
+    pedirConfirmacaoSaidaMatriz();
   });
+
+  if (matrizModal) {
+    matrizModal.addEventListener("cancel", (e) => {
+      // Esc: intercepta e pede confirmação em vez de fechar direto.
+      e.preventDefault();
+      if (matrizAllowClose) return;
+      pedirConfirmacaoSaidaMatriz();
+    });
+    matrizModal.addEventListener("close", () => {
+      if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
+    });
+  }
+
+  document.querySelector("[data-grid-leave-matriz-voltar]")?.addEventListener("click", () => {
+    if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
+  });
+
+  document.querySelector("[data-grid-leave-matriz-ok]")?.addEventListener("click", () => {
+    forceCloseMatriz();
+    setHint("Matriz fechada. A dica e os pontos desta rodada já tinham sido consumidos.");
+  });
+
+  if (leaveMatrizModal) {
+    leaveMatrizModal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      if (leaveMatrizModal.open) leaveMatrizModal.close();
+    });
+  }
 
   async function pedirDica(tipo) {
     const cell = resolveDicaCell();
     if (!cell || !partidaId) {
       setDicaHint("Selecione uma célula vazia.", true);
+      return;
+    }
+    // Só matriz permanece na UI; contagem legado ignorada.
+    if (tipo !== "matriz") {
+      setDicaHint("Dica indisponível.", true);
       return;
     }
     setDicaHint("");
@@ -969,7 +1066,7 @@
         partida_id: partidaId,
         linha: cell.linha,
         coluna: cell.coluna,
-        tipo,
+        tipo: "matriz",
       }),
     });
     const data = await r.json().catch(() => ({}));
@@ -987,30 +1084,11 @@
     }
 
     const dica = data.dica || {};
-    if (dica.tipo === "contagem") {
-      densidadesReveladas.add(cellKey(cell.linha, cell.coluna));
-      const dens =
-        dica.payload && dica.payload.densidade != null
-          ? dica.payload.densidade
-          : null;
-      if (dens != null) {
-        const btn = cellBtn(cell.linha, cell.coluna);
-        if (btn) btn.setAttribute("data-possiveis", String(dens));
-      }
-      paintCell(cell.linha, cell.coluna);
-      if (dicaModal && dicaModal.open) dicaModal.close();
-      setHint(
-        `Contagem revelada na célula (${cell.linha + 1}, ${cell.coluna + 1}): ${
-          dens != null ? dens : "?"
-        } possíveis.`
-      );
-      return;
-    }
-
     if (dica.tipo === "matriz") {
       const clubes =
         (dica.payload && Array.isArray(dica.payload.clubes) && dica.payload.clubes) ||
         [];
+      preencherInfoCelulaDica(cell, matrizCelulaEl, matrizEixosEl);
       if (matrizGridEl) {
         matrizGridEl.innerHTML = clubes
           .map(
@@ -1019,7 +1097,7 @@
             c.id
           )}">
             <img src="${escapeHtml(c.emblema || "")}" alt="" />
-            <span>${escapeHtml(c.nome || "")}</span>
+            <span class="grid-matriz-nome">${escapeHtml(c.nome || "")}</span>
           </button>`
           )
           .join("");
@@ -1028,13 +1106,16 @@
       if (matrizModal && typeof matrizModal.showModal === "function") {
         matrizModal.showModal();
       }
+      setHint(
+        `Matriz revelada na célula ${descricaoCelula(cell).coords}. Fechar sem escolher não devolve a dica.`
+      );
     }
   }
 
   document.querySelectorAll("[data-dica-tipo]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tipo = btn.getAttribute("data-dica-tipo");
-      if (tipo === "contagem" || tipo === "matriz") {
+      if (tipo === "matriz") {
         pedirDica(tipo).catch(() => {});
       }
     });
@@ -1047,7 +1128,7 @@
       const cell = resolveDicaCell();
       if (!cell) return;
       active = { ...cell };
-      if (matrizModal && matrizModal.open) matrizModal.close();
+      forceCloseMatriz();
       submitGuessById(btn.getAttribute("data-clube-id")).catch(() => {});
     });
   }
