@@ -780,6 +780,39 @@ def _cutover_grid_raiz_xonha_v1(conn: sqlite3.Connection) -> None:
     )
 
 
+def _cutover_grid_pro_relaunch_v1(conn: sqlite3.Connection) -> None:
+    """Relança o modo Pro: novo salt do dia + zera progresso/partidas Pro de hoje."""
+    import secrets
+
+    chave = "grid_pro_relaunch_v1"
+    if conn.execute("SELECT 1 FROM meta WHERE chave = ?", (chave,)).fetchone():
+        return
+    # dia_grid depende da virada em meta — já migrada neste init.
+    from src.grid_game import dia_grid
+
+    dia = dia_grid()
+    salt = secrets.token_hex(8)
+    conn.execute(
+        """
+        INSERT INTO grid_puzzle_salt (dia, salt, atualizado_em)
+        VALUES (?, ?, datetime('now', 'localtime'))
+        ON CONFLICT(dia) DO UPDATE SET
+          salt = excluded.salt,
+          atualizado_em = datetime('now', 'localtime')
+        """,
+        (dia, salt),
+    )
+    conn.execute("DELETE FROM grid_progresso WHERE dia = ?", (dia,))
+    conn.execute(
+        "DELETE FROM grid_partida WHERE dia = ? AND modo = 'raiz'",
+        (dia,),
+    )
+    conn.execute(
+        "INSERT INTO meta (chave, valor) VALUES (?, ?)",
+        (chave, dia),
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -803,6 +836,7 @@ def init_db() -> None:
         _reset_grid_progresso_lancamento(conn)
         _purge_grid_progresso_pre_ranking(conn)
         _cutover_grid_raiz_xonha_v1(conn)
+        _cutover_grid_pro_relaunch_v1(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -810,6 +844,13 @@ def init_db() -> None:
             )
         if not conn.execute("SELECT 1 FROM confrontos LIMIT 1").fetchone():
             _seed_oitavas(conn)
+    # Invalida cache de puzzle após eventual novo salt do cutover Pro.
+    try:
+        from src.grid_game import _gerar_puzzle_cached
+
+        _gerar_puzzle_cached.cache_clear()
+    except Exception:
+        pass
 
 
 def get_meta(chave: str, default: str | None = None) -> str | None:
@@ -5090,24 +5131,34 @@ def get_grid_partida_aberta(
 
 
 def contar_grid_partidas_dia(
-    participante_id: int, dia: str, *, modo: str
+    participante_id: int,
+    dia: str,
+    *,
+    modo: str,
+    so_encerradas: bool = False,
 ) -> int:
-    """Conta só partidas encerradas (finalizadas ou interrompidas).
-
-    A partida Contínuo em andamento NÃO reduz "Grids disponíveis".
-    """
+    """Conta partidas do dia. Com so_encerradas=True, ignora a aberta (cota Contínuo)."""
     with get_db() as conn:
-        row = conn.execute(
-            """
-            SELECT COUNT(*) AS n FROM grid_partida
-            WHERE participante_id = ? AND dia = ? AND modo = ?
-              AND (
-                COALESCE(finalizado, 0) = 1
-                OR COALESCE(interrompido, 0) = 1
-              )
-            """,
-            (int(participante_id), str(dia), str(modo)),
-        ).fetchone()
+        if so_encerradas:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM grid_partida
+                WHERE participante_id = ? AND dia = ? AND modo = ?
+                  AND (
+                    COALESCE(finalizado, 0) = 1
+                    OR COALESCE(interrompido, 0) = 1
+                  )
+                """,
+                (int(participante_id), str(dia), str(modo)),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM grid_partida
+                WHERE participante_id = ? AND dia = ? AND modo = ?
+                """,
+                (int(participante_id), str(dia), str(modo)),
+            ).fetchone()
         return int(row["n"] or 0) if row else 0
 
 def criar_grid_partida(

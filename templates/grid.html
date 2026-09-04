@@ -74,7 +74,7 @@
 
       <div class="grid-toolbar" data-grid-toolbar>
         <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
-          <button type="button" class="grid-mode-btn" data-grid-mode="raiz" role="tab" aria-selected="false">Raiz</button>
+          <button type="button" class="grid-mode-btn" data-grid-mode="raiz" role="tab" aria-selected="false">Pro</button>
           <button type="button" class="grid-mode-btn is-active" data-grid-mode="xonha" role="tab" aria-selected="true">Contínuo</button>
         </div>
         <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
@@ -197,12 +197,12 @@
         </div>
         <div class="grid-rank-controls">
           <div class="grid-mode-toggle grid-mode-toggle--rank" role="tablist" data-grid-rank-modo>
-            <button type="button" class="grid-mode-btn is-active" data-rank-modo="raiz" aria-selected="true">Raiz</button>
+            <button type="button" class="grid-mode-btn is-active" data-rank-modo="raiz" aria-selected="true">Pro</button>
             <button type="button" class="grid-mode-btn" data-rank-modo="xonha" aria-selected="false">Contínuo</button>
           </div>
           <button type="button" class="grid-chip-btn" data-grid-rank-vista-toggle aria-pressed="false">Detalhes</button>
         </div>
-        <p class="grid-sub" data-grid-rank-sub>Score único · acertos, tempo, raridade e streak · Raiz zera ao sair da página</p>
+        <p class="grid-sub" data-grid-rank-sub>Score único · acertos, tempo, raridade e streak · Pro zera ao sair da página</p>
       </div>
     </header>
     <div data-grid-rank-raiz>
@@ -381,8 +381,8 @@
 
 <dialog class="grid-modal" id="grid-warn-modal" data-grid-warn-modal>
   <div class="grid-modal-card">
-    <h2 class="grid-result-title">Modo Raiz</h2>
-    <p class="grid-sub">Se você sair desta página (outra aba, outro app ou fechar), sua tentativa do dia será encerrada e você não poderá preencher as casas restantes.</p>
+    <h2 class="grid-result-title">Modo Pro</h2>
+    <p class="grid-sub">Se você sair desta página <strong>ou mudar para Contínuo</strong>, sua tentativa do dia será encerrada e você não poderá preencher as casas restantes.</p>
     <div class="grid-modal-actions">
       <button type="button" class="grid-chip-btn grid-chip-btn-ghost" data-grid-warn-voltar title="Voltar">
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -395,6 +395,27 @@
           <path d="M5 12l5 5L20 7"/>
         </svg>
         <span>Ok</span>
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="grid-modal" id="grid-leave-pro-modal" data-grid-leave-pro-modal>
+  <div class="grid-modal-card">
+    <h2 class="grid-result-title">Sair do Pro?</h2>
+    <p class="grid-sub">Ao mudar para Contínuo, sua tentativa Pro de hoje será encerrada. As casas vazias não poderão mais ser preenchidas.</p>
+    <div class="grid-modal-actions">
+      <button type="button" class="grid-chip-btn grid-chip-btn-ghost" data-grid-leave-pro-voltar title="Voltar">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        <span>Voltar</span>
+      </button>
+      <button type="button" class="grid-chip-btn" data-grid-leave-pro-ok title="Encerrar e ir ao Contínuo">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12l5 5L20 7"/>
+        </svg>
+        <span>Encerrar</span>
       </button>
     </div>
   </div>
@@ -441,7 +462,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=21" defer></script>
+<script src="/static/grid.js?v=23" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

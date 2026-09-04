@@ -15,7 +15,7 @@ Qualquer `<button>` novo **sem** override vira um bloco enorme na tela.
 
 ## Regras obrigatórias
 
-1. **Nunca** use as classes `.btn` / `.btn.secondary` para toggles, chips, filtros, Raiz/Xonha, Dica, Detalhes, ranking ou ações secundárias no Grid.
+1. **Nunca** use as classes `.btn` / `.btn.secondary` para toggles, chips, filtros, Pro/Contínuo, Dica, Detalhes, ranking ou ações secundárias no Grid.
 2. Use controles compactos dedicados (ex.: `.grid-mode-btn`, `.grid-chip-btn`) com:
    - seletor `button.classe` (não só `.classe`) + `!important` em width/padding/background
    - `width: auto !important; max-width: max-content !important`
@@ -24,8 +24,8 @@ Qualquer `<button>` novo **sem** override vira um bloco enorme na tela.
    - `border-radius` ≤ `8px` (não pill 999px em toggles de modo)
    - `min-height: 0`
    - Sempre bump em `templates/base.html` (`style.css?v=N`) ao mudar CSS de botão
-3. Modo ativo (Raiz/Xonha) = **cinza muted** (como fases encerradas do bolão), **nunca** accent/laranja destacado.
-4. Toggle Raiz/Xonha: pequeno, alinhado à **direita**, os dois na **mesma linha** horizontal.
+3. Modo ativo (Pro/Contínuo) em destaque (accent); controles compactos com `button.classe` + `!important`.
+4. Toggle Pro/Contínuo: pequeno, na toolbar centralizada acima do grid.
 5. Não invente cards com borda/sombra/padding grosso em torno de Score, Tempo, ranking compacto ou o board — layout flat.
 6. Cronômetro do Grid: só começa no **primeiro clique numa célula**, não ao escolher o modo.
 7. "Outro Xonha" só habilitado quando a partida atual estiver **finalizada**.

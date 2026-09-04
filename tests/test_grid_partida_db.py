@@ -57,6 +57,32 @@ def test_passe_xonha_ativo_por_data(client):
     assert db.grid_xonha_passe_ativo(p["id"], hoje="2026-10-05") is False
 
 
+def test_cutover_pro_relaunch_define_salt_do_dia(tmp_path, monkeypatch):
+    from src.config import ROOT_DIR
+    from src.grid_game import dia_grid, gerar_puzzle
+
+    monkeypatch.chdir(ROOT_DIR)
+    db.DB_PATH = tmp_path / "pro_relaunch.db"
+    db.init_db()
+    dia = dia_grid()
+    assert db.get_meta("grid_pro_relaunch_v1") == dia
+    salt = db.get_grid_salt(dia)
+    assert salt
+    # Puzzle oficial do dia usa o salt do relaunch (diferente do vazio).
+    p1 = gerar_puzzle(dia)
+    p2 = gerar_puzzle(dia, salt="")
+    # Com salt do dia vs salt explícito vazio, eixos podem divergir.
+    assert p1["linhas"] and p1["colunas"]
+    assert (p1["linhas"], p1["colunas"]) != (p2["linhas"], p2["colunas"]) or p1[
+        "densidades"
+    ] != p2["densidades"]
+
+    # Idempotente
+    with db.get_db() as conn:
+        db._cutover_grid_pro_relaunch_v1(conn)
+    assert db.get_grid_salt(dia) == salt
+
+
 def test_cutover_raiz_xonha_zera_progresso_uma_vez(tmp_path, monkeypatch):
     from src.config import ROOT_DIR
 
