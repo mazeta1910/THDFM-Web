@@ -13317,6 +13317,50 @@ button.grid-cell,
 .grid-cell:disabled {
   cursor: default;
 }
+.grid-cell.is-locked {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--border) 80%, #666);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 5px,
+      color-mix(in srgb, var(--muted) 10%, transparent) 5px,
+      color-mix(in srgb, var(--muted) 10%, transparent) 10px
+    ),
+    color-mix(in srgb, var(--card) 55%, transparent);
+  color: var(--muted);
+  opacity: 0.92;
+  cursor: not-allowed;
+}
+.grid-cell.is-locked:hover {
+  border-color: color-mix(in srgb, var(--border) 80%, #666);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 5px,
+      color-mix(in srgb, var(--muted) 10%, transparent) 5px,
+      color-mix(in srgb, var(--muted) 10%, transparent) 10px
+    ),
+    color-mix(in srgb, var(--card) 55%, transparent);
+}
+.grid-cell-locked {
+  display: grid;
+  place-items: center;
+  opacity: 0.75;
+}
+.grid-cell-locked svg {
+  display: block;
+}
+.grid-cell-locked-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.1;
+}
 .grid-cell-empty {
   font-size: 1.85rem;
   font-weight: 800;

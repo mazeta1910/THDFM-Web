@@ -80,6 +80,8 @@
   /** @type {Set<string>} */
   let densidadesReveladas = new Set();
   let warnAccepted = false;
+  /** Tentativa Pro do dia já foi encerrada (interrompida ou finalizada). */
+  let proEncerradoHoje = boot.pro_encerrado === true;
 
   /** @type {(null|{ok:boolean, clube:object})[][]} */
   let celulas = emptyBoard();
@@ -247,11 +249,25 @@
     const btn = cellBtn(r, c);
     if (!btn) return;
     const data = celulas[r] && celulas[r][c];
-    btn.classList.remove("is-ok", "is-miss", "is-done");
+    btn.classList.remove("is-ok", "is-miss", "is-done", "is-locked");
     btn.removeAttribute("data-rarity");
     btn.style.removeProperty("--grid-rarity");
 
     if (!data) {
+      const bloqueada = interrompido || finalizado;
+      btn.disabled = bloqueada;
+      if (interrompido) {
+        btn.classList.add("is-locked");
+        btn.innerHTML = `
+          <span class="grid-cell-locked" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="11" width="14" height="10" rx="2"/>
+              <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+            </svg>
+          </span>
+          <span class="grid-cell-locked-label">Encerrada</span>`;
+        return;
+      }
       const showDens =
         modo !== "xonha" || densidadesReveladas.has(cellKey(r, c));
       if (showDens) {
@@ -260,8 +276,6 @@
       } else {
         btn.innerHTML = `<span class="grid-cell-empty">+</span>`;
       }
-      const bloqueada = interrompido || finalizado;
-      btn.disabled = bloqueada;
       return;
     }
 
@@ -782,6 +796,9 @@
     interrompido = !!(partida && partida.interrompido);
     finalizado = !!(partida && partida.finalizado);
     iniciadoEm = (partida && partida.iniciado_em) || null;
+    if (modo === "raiz" && (interrompido || finalizado)) {
+      proEncerradoHoje = true;
+    }
     if (typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
     else if (partida && typeof partida.pontos === "number") updateLiveScore(partida.pontos);
     if (typeof data.proximo_custo_matriz === "number") {
@@ -857,6 +874,7 @@
   function interromperProBeacon() {
     if (modo !== "raiz" || !partidaId || finalizado || interrompido) return;
     interrompido = true;
+    proEncerradoHoje = true;
     stopTimer();
     paintAll();
     updateXonhaActions();
@@ -883,6 +901,7 @@
     if (modo !== "raiz" || !partidaId || finalizado || interrompido) return false;
     const pid = partidaId;
     interrompido = true;
+    proEncerradoHoje = true;
     stopTimer();
     paintAll();
     updateXonhaActions();
@@ -940,6 +959,16 @@
       }
       if (m === "raiz") {
         if (proAtivo()) return;
+        // Já no Pro encerrado: só reexibe o estado (sem aviso).
+        if (modo === "raiz" && (interrompido || finalizado)) {
+          paintAll();
+          return;
+        }
+        // Tentativa Pro do dia já foi cancelada/finalizada → entra direto.
+        if (proEncerradoHoje || warnAccepted) {
+          iniciar("raiz").catch(() => {});
+          return;
+        }
         if (warnModal && typeof warnModal.showModal === "function") {
           warnModal.showModal();
         } else {

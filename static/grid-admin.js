@@ -202,7 +202,7 @@
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           dia,
-          limpar_progresso: !!(limpar && limpar.checked),
+          limpar_progresso: true,
           restaurar: acao === "restaurar",
         }),
       });
