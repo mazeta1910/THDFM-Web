@@ -140,13 +140,15 @@
 
   function updateCota(cota) {
     if (!cotaEl) return;
-    if (!cota || modo !== "xonha") {
-      cotaEl.hidden = modo === "xonha" ? false : true;
-      if (modo !== "xonha") {
-        cotaEl.textContent = "";
-        return;
-      }
+    const continuo = modo === "xonha" || (!modo && boot.modo_default === "xonha");
+    if (!continuo) {
+      cotaEl.hidden = true;
+      cotaEl.textContent = "";
+      return;
+    }
+    if (!cota) {
       cotaEl.textContent = "Grids disponíveis: —";
+      cotaEl.hidden = false;
       return;
     }
     if (cota.passe_ativo) {
@@ -165,7 +167,8 @@
   function updateModeButtons() {
     root.querySelectorAll("[data-grid-mode]").forEach((btn) => {
       const m = btn.getAttribute("data-grid-mode");
-      const on = modo != null && m === modo;
+      const effective = modo || boot.modo_default || "xonha";
+      const on = m === effective;
       btn.classList.toggle("is-active", on);
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
@@ -173,14 +176,19 @@
 
   function updateXonhaActions() {
     if (!xonhaActions) return;
-    const show = modo === "xonha" && !!partidaId && !interrompido;
-    xonhaActions.hidden = !show;
+    const showBar = modo === "xonha" && !!partidaId && !interrompido;
+    xonhaActions.hidden = !showBar;
+    const dicaBtn = document.querySelector("[data-grid-dica-open]");
+    if (dicaBtn) {
+      dicaBtn.hidden = !showBar || finalizado;
+    }
     const novaBtn = document.querySelector("[data-grid-xonha-nova]");
     if (novaBtn) {
-      const podeOutro = show && finalizado;
+      const podeOutro = showBar && finalizado;
+      novaBtn.hidden = !podeOutro;
       novaBtn.disabled = !podeOutro;
       novaBtn.title = podeOutro
-        ? "Iniciar outro grid Xonha"
+        ? "Iniciar outro grid Contínuo"
         : "Termine o grid atual para jogar outro";
     }
   }
@@ -438,7 +446,7 @@
     const parts = (dia || "").split("-");
     const rotulo =
       parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dia || "hoje";
-    const modoTag = modo === "xonha" ? " Xonha" : modo === "raiz" ? " Raiz" : "";
+    const modoTag = modo === "xonha" ? " Contínuo" : modo === "raiz" ? " Raiz" : "";
     return `THDFM Grid${modoTag} — ${rotulo}\n${ok}/${size * size}\n${lines.join("\n")}\nhttps://thdfm.com.br/grid`;
   }
 
@@ -482,7 +490,7 @@
       setHint(
         modo
           ? "Aguarde o início da partida…"
-          : "Escolha Raiz ou Xonha para começar."
+          : "Escolha Raiz ou Contínuo para começar."
       );
       return;
     }
@@ -612,7 +620,7 @@
       return;
     }
     if (!partidaId) {
-      setModalHint("Escolha Raiz ou Xonha para começar.", true);
+      setModalHint("Escolha Raiz ou Contínuo para começar.", true);
       return;
     }
     const nome = String(nomeRaw || "").trim();
@@ -645,7 +653,7 @@
       return;
     }
     if (!partidaId) {
-      setModalHint("Escolha Raiz ou Xonha para começar.", true);
+      setModalHint("Escolha Raiz ou Contínuo para começar.", true);
       return;
     }
     if (clubeJaUsado(clubeId)) {
@@ -705,7 +713,7 @@
     } else if (finalizado) {
       showResult(boot.share || null);
     } else if (modo === "xonha") {
-      setHint("Xonha: densidades ocultas. Use Dica para revelar contagem ou matriz.");
+      setHint("Contínuo: densidades ocultas. Use Dica para revelar contagem ou matriz.");
     } else {
       setHint("Toque numa célula vazia para buscar o clube.");
     }
@@ -719,7 +727,7 @@
     const m = nextModo === "xonha" ? "xonha" : "raiz";
     if (m === "raiz") warnAccepted = true;
 
-    setHint(m === "xonha" ? "Iniciando Xonha…" : "Iniciando Raiz…");
+    setHint(m === "xonha" ? "Iniciando Contínuo…" : "Iniciando Raiz…");
     const r = await fetch("/grid/api/iniciar", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -737,7 +745,7 @@
         const chave = data.pix_chave || boot.taxa_pix || "";
         setHint(
           data.erro ||
-            `Cota Xonha esgotada. Pix ${pix}${chave ? ` · ${chave}` : ""}`
+            `Cota Contínuo esgotada. Pix ${pix}${chave ? ` · ${chave}` : ""}`
         );
         if (cotaEl) {
           cotaEl.hidden = false;
@@ -841,7 +849,7 @@
   }
   document.querySelector("[data-grid-xonha-nova]")?.addEventListener("click", () => {
     if (!finalizado) {
-      setHint("Termine o grid atual antes de iniciar outro Xonha.");
+      setHint("Termine o grid atual antes de iniciar outro Contínuo.");
       return;
     }
     iniciar("xonha").catch(() => {});
@@ -1128,7 +1136,7 @@
     if (sub) {
       sub.textContent =
         m === "xonha"
-          ? "Score único · acertos, raridade, dicas e streak · várias partidas/dia"
+          ? "Score único · acertos, raridade, dicas e streak · várias partidas/dia (Contínuo)"
           : "Score único · acertos, tempo, raridade e streak · Raiz zera ao sair da página";
     }
   }
@@ -1206,10 +1214,16 @@
   initDaltonismo();
   initRanking();
   agendarVirada();
+  updateModeButtons();
+  updateCota(boot.cota_xonha || null);
 
   if (!podeSalvar) {
     setHint("Explore o puzzle à vontade. Entre para registrar os chutes.");
   } else {
-    setHint("Escolha Raiz ou Xonha para começar.");
+    // Contínuo é o default: inicia (ou retoma) automaticamente.
+    setHint("Iniciando Contínuo…");
+    iniciar("xonha").catch(() => {
+      setHint("Escolha Raiz ou Contínuo para começar.");
+    });
   }
 })();

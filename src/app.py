@@ -3007,6 +3007,7 @@ def grid_page(request: Request):
     progresso = None
     streak = 0
     share = None
+    cota_xonha = None
     if voter:
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
@@ -3014,6 +3015,9 @@ def grid_page(request: Request):
             share = texto_share(
                 dia=dia, celulas=parse_celulas_progresso(progresso.get("celulas"))
             )
+        from src.grid_partidas import pode_iniciar_xonha
+
+        _ok, cota_xonha = pode_iniciar_xonha(int(voter["id"]), dia)
     return render(
         request,
         "grid.html",
@@ -3030,6 +3034,7 @@ def grid_page(request: Request):
         virada_minuto=virada_minuto,
         virada_rotulo=virada_rotulo,
         taxa_pix=os.environ.get("TAXA_PIX", TAXA_PIX),
+        cota_xonha=cota_xonha,
     )
 
 

@@ -30,16 +30,19 @@ def test_grid_page_tem_modos_e_rankings(client):
     assert r.status_code == 200
     assert 'data-grid-mode="raiz"' in r.text
     assert 'data-grid-mode="xonha"' in r.text
+    assert "Contínuo" in r.text
     assert "data-grid-live-score" in r.text
+    assert "grid-corner-score" in r.text
+    assert "grid-title-row" in r.text
     assert "data-grid-warn-modal" in r.text
     assert 'data-rank-modo="xonha"' in r.text
     assert "data-grid-rank-panel" in r.text
     assert "Detalhes" in r.text
-    assert "/static/grid.js?v=19" in r.text
+    assert "/static/grid.js?v=20" in r.text
     assert "grid-chip-btn" in r.text
     assert "Grids disponíveis" in r.text
     assert 'data-grid-xonha-nova' in r.text
-    assert "disabled" in r.text
+    assert "Outro Grid" in r.text
     assert 'data-grid-warn-ok' in r.text
     assert 'data-grid-warn-voltar' in r.text
     assert "Entendi — começar" not in r.text

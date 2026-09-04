@@ -41,29 +41,37 @@
           {% endif %}
         </a>
       </div>
-      <h1 class="grid-title">
-        THDFM Grid
-        <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
-      </h1>
+      <div class="grid-title-row">
+        <h1 class="grid-title">
+          THDFM Grid
+          <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
+        </h1>
+        <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
+          <button type="button" class="grid-mode-btn" data-grid-mode="raiz" role="tab" aria-selected="false">Raiz</button>
+          <button type="button" class="grid-mode-btn is-active" data-grid-mode="xonha" role="tab" aria-selected="true">Contínuo</button>
+        </div>
+      </div>
       <p class="grid-sub grid-sub--lead" data-grid-sub>
         Puzzle de <strong data-grid-rotulo>{{ puzzle.rotulo }}</strong>; Acerte um clube em cada célula.
       </p>
       <p class="grid-sub grid-sub--rule">Você tem uma tentativa por casa.</p>
-      <div class="grid-mode-row">
-        <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
-          <button type="button" class="grid-mode-btn is-active" data-grid-mode="raiz" role="tab" aria-selected="true">Raiz</button>
-          <button type="button" class="grid-mode-btn" data-grid-mode="xonha" role="tab" aria-selected="false">Xonha</button>
-        </div>
-      </div>
-      <p class="grid-cota" data-grid-cota hidden>Grids disponíveis: —</p>
+      <p class="grid-cota" data-grid-cota {% if not cota_xonha %}hidden{% endif %}>
+        {%- if cota_xonha and cota_xonha.passe_ativo -%}
+        Grids disponíveis: ilimitados (passe ativo)
+        {%- elif cota_xonha -%}
+        Grids disponíveis: {{ cota_xonha.restantes if cota_xonha.restantes is not none else cota_xonha.limite_livre }}
+        {%- else -%}
+        Grids disponíveis: —
+        {%- endif -%}
+      </p>
       <div class="grid-live-stats" data-grid-live-stats>
-        <div class="grid-score-block">
-          <span class="grid-score-label">Score</span>
-          <strong class="grid-score-value" data-grid-live-score>0</strong>
-        </div>
         <div class="grid-timer-block" title="Tempo da partida">
           <span class="grid-timer-label">Tempo</span>
           <strong class="grid-timer-value" data-grid-timer>00:00</strong>
+        </div>
+        <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
+          <button type="button" class="grid-chip-btn" data-grid-dica-open>Dica</button>
+          <button type="button" class="grid-chip-btn" data-grid-xonha-nova hidden disabled title="Termine o grid atual para jogar outro">Outro Grid</button>
         </div>
       </div>
     </div>
@@ -79,7 +87,12 @@
 
   <div class="grid-board-wrap" data-grid-board-wrap>
     <div class="grid-board" data-grid-board aria-label="Grade do dia">
-      <div class="grid-corner" aria-hidden="true" data-grid-corner></div>
+      <div class="grid-corner" data-grid-corner>
+        <div class="grid-corner-score">
+          <span class="grid-score-label">Score</span>
+          <strong class="grid-score-value" data-grid-live-score>0</strong>
+        </div>
+      </div>
       {% for col in puzzle.colunas %}
       <div class="grid-axis grid-axis--col" data-grid-axis-col title="{{ col.rotulo }}">{{ col.rotulo }}</div>
       {% endfor %}
@@ -104,10 +117,6 @@
     </div>
     <div class="grid-board-footer">
       <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
-      <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
-        <button type="button" class="grid-chip-btn" data-grid-dica-open>Dica</button>
-        <button type="button" class="grid-chip-btn" data-grid-xonha-nova disabled title="Termine o grid atual para jogar outro">Outro Xonha</button>
-      </div>
       <div class="grid-daltonismo" data-grid-daltonismo>
         <span class="grid-daltonismo-label" id="grid-daltonismo-label">Daltonismo</span>
         <div class="grid-daltonismo-toggles" role="radiogroup" aria-labelledby="grid-daltonismo-label">
@@ -186,7 +195,7 @@
         <div class="grid-rank-controls">
           <div class="grid-mode-toggle grid-mode-toggle--rank" role="tablist" data-grid-rank-modo>
             <button type="button" class="grid-mode-btn is-active" data-rank-modo="raiz" aria-selected="true">Raiz</button>
-            <button type="button" class="grid-mode-btn" data-rank-modo="xonha" aria-selected="false">Xonha</button>
+            <button type="button" class="grid-mode-btn" data-rank-modo="xonha" aria-selected="false">Contínuo</button>
           </div>
           <button type="button" class="grid-chip-btn" data-grid-rank-vista-toggle aria-pressed="false">Detalhes</button>
         </div>
@@ -281,8 +290,8 @@
         </div>
       </form>
       <form class="grid-admin-panel" data-grid-admin-passe>
-        <h3 class="grid-admin-h">Passe Xonha</h3>
-        <p class="grid-admin-help">Libera 30 dias de Xonha ilimitado (PIX R$ 1,65).</p>
+        <h3 class="grid-admin-h">Passe Contínuo</h3>
+        <p class="grid-admin-help">Libera 30 dias de Contínuo ilimitado (PIX R$ 1,65).</p>
         <label class="grid-admin-label" for="grid-admin-passe-pid">ID do participante</label>
         <input id="grid-admin-passe-pid" class="grid-admin-input" type="number" min="1" data-grid-admin-passe-pid required />
         <p class="grid-admin-status" data-grid-admin-passe-status hidden></p>
@@ -422,12 +431,14 @@
   "streak": streak,
   "share": share,
   "pode_salvar": grid_pode_salvar,
-  "taxa_pix": taxa_pix|default('')
+  "taxa_pix": taxa_pix|default(''),
+  "cota_xonha": cota_xonha|default(none),
+  "modo_default": "xonha"
 }|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=19" defer></script>
+<script src="/static/grid.js?v=20" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

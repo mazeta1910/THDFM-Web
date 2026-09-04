@@ -32,6 +32,8 @@ def test_gerar_puzzle_salt_diferente_do_oficial():
 
 
 def test_iniciar_xonha_respeita_cota_de_3(client):
+    from src.grid_partidas import agora_iso
+
     part = _login(client, "Xonha Cota", "xonha.cota")
     ids = []
     for i in range(XONHA_LIVRE_POR_DIA):
@@ -41,7 +43,16 @@ def test_iniciar_xonha_respeita_cota_de_3(client):
         assert data["modo"] == "xonha"
         assert data["partida"]["puzzle_salt"]
         assert data["puzzle"]["modo"] == "xonha"
-        ids.append(data["partida"]["id"])
+        pid = data["partida"]["id"]
+        ids.append(pid)
+        # Consome a cota: marca início e finaliza para liberar slot de "aberta"
+        # (iniciar Contínuo retoma a aberta — sem isso, 3 POSTs = 1 partida).
+        dbmod.atualizar_grid_partida(
+            pid,
+            iniciado_em=agora_iso(),
+            finalizado=True,
+            celulas=[[{"ok": True, "clube": {"id": f"c{i}", "nome": "X", "rep": 1}}]],
+        )
     assert len(set(ids)) == XONHA_LIVRE_POR_DIA
 
     bloqueado = client.post("/grid/api/iniciar", json={"modo": "xonha"})
@@ -57,6 +68,16 @@ def test_iniciar_xonha_respeita_cota_de_3(client):
     )
     ok = client.post("/grid/api/iniciar", json={"modo": "xonha"})
     assert ok.status_code == 200, ok.text
+
+
+def test_iniciar_xonha_retoma_aberta(client):
+    _login(client, "Xonha Resume", "xonha.resume")
+    a = client.post("/grid/api/iniciar", json={"modo": "xonha"}).json()["partida"]["id"]
+    b = client.post("/grid/api/iniciar", json={"modo": "xonha"}).json()["partida"]["id"]
+    assert a == b
+    assert client.post("/grid/api/iniciar", json={"modo": "xonha"}).json()["cota_xonha"][
+        "usados"
+    ] == 0
 
 
 def test_dicas_contagem_e_matriz(client):
