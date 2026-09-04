@@ -3008,9 +3008,13 @@ def grid_page(request: Request):
     streak = 0
     share = None
     cota_xonha = None
+    pro_encerrado = False
     if voter:
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
+        raiz = db.get_grid_partida_raiz(int(voter["id"]), dia)
+        if raiz and (raiz.get("finalizado") or raiz.get("interrompido")):
+            pro_encerrado = True
         if progresso and progresso.get("finalizado"):
             # Legado: progresso sem partida → trata como Pro.
             share = texto_share(
@@ -3020,7 +3024,6 @@ def grid_page(request: Request):
                 pontos=None,
                 dicas_usadas=0,
             )
-            raiz = db.get_grid_partida_raiz(int(voter["id"]), dia)
             if raiz and (raiz.get("finalizado") or raiz.get("interrompido")):
                 from src.grid_partidas import texto_share_partida
 
@@ -3045,6 +3048,7 @@ def grid_page(request: Request):
         virada_rotulo=virada_rotulo,
         taxa_pix=os.environ.get("TAXA_PIX", TAXA_PIX),
         cota_xonha=cota_xonha,
+        pro_encerrado=pro_encerrado,
     )
 
 
@@ -3786,7 +3790,6 @@ async def grid_api_admin_regenerar(request: Request):
         date.fromisoformat(dia_s)
     except ValueError:
         return JSONResponse({"erro": "Dia inválido"}, status_code=400)
-    limpar = bool(body.get("limpar_progresso"))
     restaurar = bool(body.get("restaurar"))
     if restaurar:
         db.clear_grid_salt(dia_s)
@@ -3794,7 +3797,8 @@ async def grid_api_admin_regenerar(request: Request):
     else:
         salt = secrets.token_hex(8)
         db.set_grid_salt(dia_s, salt)
-    apagados = db.limpar_grid_progresso_dia(dia_s) if limpar else 0
+    # Puzzle mudou: progresso e partidas do dia (Pro incluso) ficam inválidos.
+    apagados = db.limpar_grid_progresso_dia(dia_s)
     try:
         puzzle = puzzle_publico(dia_s)
     except RuntimeError as exc:

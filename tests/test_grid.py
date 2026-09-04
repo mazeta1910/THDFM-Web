@@ -1001,6 +1001,26 @@ def test_grid_admin_so_mazeta(client: TestClient):
     client.post("/grid/api/admin/virada", json={"hora": "00:00"})
 
 
+def test_regenerar_sempre_apaga_partida_pro(client: TestClient):
+    """Regen limpa tentativa Pro mesmo sem limpar_progresso no payload."""
+    from src import db as dbmod
+    from src.grid_game import dia_grid
+
+    login_admin(client)
+    dia = dia_grid()
+    p = dbmod.criar_participante("Regen Pro", status="liberado", celular="11991119988")
+    dbmod.criar_grid_partida(p["id"], dia, modo="raiz", puzzle_salt="")
+    assert dbmod.get_grid_partida_raiz(p["id"], dia) is not None
+
+    r = client.post(
+        "/grid/api/admin/regenerar",
+        json={"dia": dia, "limpar_progresso": False},
+    )
+    assert r.status_code == 200
+    assert r.json()["progresso_apagado"] >= 1
+    assert dbmod.get_grid_partida_raiz(p["id"], dia) is None
+
+
 def test_grid_fluxo_logado(client: TestClient):
     login_admin(client)
     r = client.get("/grid")
@@ -1008,7 +1028,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=29" in r.text
+    assert "/static/grid.js?v=30" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1016,7 +1036,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=5" in r.text
+    assert "/static/grid-admin.js?v=6" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text
@@ -1046,12 +1066,19 @@ def test_grid_fluxo_logado(client: TestClient):
     assert 'data-grid-xonha-nova' in r.text
     assert "grid-chip-btn--destaque" in r.text
     assert 'data-grid-timer' in r.text
+    assert '"pro_encerrado"' in r.text
+    assert "Apaga respostas e tentativa Pro" in r.text
     assert "data-grid-chute" not in r.text
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".grid-cell.is-locked" in css
+    assert ".grid-cell-locked-label" in css
+    js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
+    assert "proEncerradoHoje" in js
+    assert "is-locked" in js
     assert "data-grid-suggestions" in r.text
     assert "~50%" in r.text or "50% do nome" in r.text
     assert "grid-modal-note" not in r.text
     assert "grid-modal-x" in r.text
-    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     modal_x = css.split(".grid-modal-x", 1)[1].split("}", 1)[0]
     assert "position: absolute" in modal_x
     assert "right:" in modal_x

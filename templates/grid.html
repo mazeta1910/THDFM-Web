@@ -272,8 +272,8 @@
           required
         />
         <label class="grid-admin-check">
-          <input type="checkbox" name="limpar_progresso" data-grid-admin-regen-limpar checked />
-          Apagar respostas desse dia
+          <input type="checkbox" name="limpar_progresso" data-grid-admin-regen-limpar checked disabled />
+          Apaga respostas e tentativa Pro desse dia (sempre)
         </label>
         <p class="grid-admin-status" data-grid-admin-regen-status hidden></p>
         <div class="grid-admin-actions">
@@ -479,13 +479,14 @@
   "pode_salvar": grid_pode_salvar,
   "taxa_pix": taxa_pix|default(''),
   "cota_xonha": cota_xonha|default(none),
-  "modo_default": "xonha"
+  "modo_default": "xonha",
+  "pro_encerrado": pro_encerrado|default(false)
 }|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=29" defer></script>
+<script src="/static/grid.js?v=30" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=5" defer></script>
+<script src="/static/grid-admin.js?v=6" defer></script>
 {% endif %}
 {% endblock %}
