@@ -38,5 +38,5 @@ def test_grid_assets_bump_raridade(client):
     login_admin(client)
     r = client.get("/grid")
     assert r.status_code == 200
-    assert "/static/grid.js?v=41" in r.text
-    assert "/static/style.css?v=334" in r.text
+    assert "/static/grid.js?v=43" in r.text
+    assert "/static/style.css?v=336" in r.text

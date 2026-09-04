@@ -131,4 +131,6 @@ def test_admin_page_tem_filtros_e_drawer(client):
     assert "data-grid-admin-busca" in r.text
     assert "data-grid-admin-drawer" in r.text
     assert "data-grid-admin-passe-revogar" in r.text
-    assert "/static/grid-admin.js?v=8" in r.text
+    assert "/static/grid-admin.js?v=10" in r.text
+    assert "data-grid-admin-eixo-modal" in r.text
+    assert "data-grid-admin-cfg-modal" in r.text

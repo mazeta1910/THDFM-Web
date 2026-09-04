@@ -1637,6 +1637,13 @@
     const histShare = document.querySelector("[data-grid-hist-share]");
     const histClose = document.querySelector("[data-grid-hist-close]");
 
+    function statusIcon(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "finalizado") return { icon: "✔️", label: "Finalizado" };
+      if (s === "interrompido") return { icon: "⛔", label: "Interrompido" };
+      return { icon: "⏱️", label: "Em andamento" };
+    }
+
     function miniHtml(celulas) {
       const rows = Array.isArray(celulas) ? celulas : [];
       return [0, 1, 2]
@@ -1663,16 +1670,17 @@
         .map((p) => {
           const id = p.id != null ? p.id : p.partida_id;
           const rotulo = escapeHtml(p.modo_rotulo || (p.modo === "xonha" ? "Contínuo" : "Pro"));
-          const status = escapeHtml(p.status || "—");
+          const st = statusIcon(p.status);
           const pts = Number(p.pontos) || 0;
-          const score = `${p.celulas_ok || 0}/${p.celulas_preenchidas || 0}`;
-          return `<button type="button" class="grid-minhas-item" data-partida-id="${escapeHtml(String(id))}">
-            <div class="grid-minhas-item-meta">
-              <strong>${rotulo}</strong>
-              <span>${status}</span>
-              <span>${score} · ${pts} pts</span>
-            </div>
+          const score = `${p.celulas_ok || 0}/9`;
+          const isPro = p.modo === "raiz";
+          return `<button type="button" class="grid-minhas-card${isPro ? " grid-minhas-card--pro" : ""}" data-partida-id="${escapeHtml(String(id))}">
+            <strong class="grid-minhas-card-title">${rotulo}</strong>
             <div class="grid-minhas-mini" aria-hidden="true">${miniHtml(p.celulas)}</div>
+            <span class="grid-minhas-card-meta" title="${escapeHtml(st.label)}">
+              <span aria-hidden="true">${st.icon}</span>
+              ${score} acertos · ${pts} pts
+            </span>
           </button>`;
         })
         .join("");
@@ -1702,8 +1710,8 @@
             const nome = escapeHtml(cell.clube.nome || "?");
             const emblema = escapeHtml(cell.clube.emblema || "");
             inner = emblema
-              ? `<img class="grid-cell-emblema" src="${emblema}" alt="" /><span class="grid-cell-nome">${nome}</span>`
-              : `<span class="grid-cell-nome">${nome}</span>`;
+              ? `<img class="grid-cell-embl" src="${emblema}" alt="" /><span class="grid-cell-nome">${nome}</span>`
+              : `<span class="grid-cell-embl grid-cell-embl--miss" aria-hidden="true">✕</span><span class="grid-cell-nome">${nome}</span>`;
           }
           html += `<div class="${cls}" data-possiveis="${escapeHtml(String(n))}">${inner}</div>`;
         }
@@ -1744,12 +1752,10 @@
         histTitulo.textContent = p.modo_rotulo || (p.modo === "xonha" ? "Contínuo" : "Pro");
       }
       if (histMeta) {
-        const bits = [
-          p.status || (p.finalizado ? "finalizado" : "em andamento"),
-          `${p.celulas_ok != null ? p.celulas_ok : "—"}/${p.celulas_preenchidas != null ? p.celulas_preenchidas : "—"}`,
-          `${Number(p.pontos) || 0} pts`,
-        ];
-        histMeta.textContent = bits.join(" · ");
+        const st = statusIcon(p.status || (p.finalizado ? "finalizado" : "em andamento"));
+        histMeta.innerHTML = `<span title="${escapeHtml(st.label)}">${st.icon}</span> ${
+          p.celulas_ok != null ? p.celulas_ok : "—"
+        }/9 acertos · ${Number(p.pontos) || 0} pts`;
       }
       renderHistBoard(data.puzzle, p.celulas);
       if (histShare) {
