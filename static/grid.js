@@ -32,6 +32,7 @@
   const xonhaActions = document.querySelector("[data-grid-xonha-actions]");
   const rotuloEl = document.querySelector("[data-grid-rotulo]");
   const warnModal = document.querySelector("[data-grid-warn-modal]");
+  const leaveProModal = document.querySelector("[data-grid-leave-pro-modal]");
   const dicaModal = document.querySelector("[data-grid-dica-modal]");
   const dicaHintEl = document.querySelector("[data-grid-dica-hint]");
   const dicaCelulaEl = document.querySelector("[data-grid-dica-celula]");
@@ -762,13 +763,13 @@
     applyPartidaState(data);
   }
 
-  function interromperRaiz() {
+  function interromperProBeacon() {
     if (modo !== "raiz" || !partidaId || finalizado || interrompido) return;
     interrompido = true;
     stopTimer();
     paintAll();
     updateXonhaActions();
-    setHint("Tentativa encerrada ao sair da página.");
+    setHint("Tentativa Pro encerrada ao sair da página.");
     const body = JSON.stringify({ partida_id: partidaId });
     const url = "/grid/api/interromper";
     try {
@@ -787,6 +788,32 @@
     }
   }
 
+  async function interromperProAwait() {
+    if (modo !== "raiz" || !partidaId || finalizado || interrompido) return false;
+    const pid = partidaId;
+    interrompido = true;
+    stopTimer();
+    paintAll();
+    updateXonhaActions();
+    setHint("Tentativa Pro encerrada ao mudar para Contínuo.");
+    try {
+      const r = await fetch("/grid/api/interromper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ partida_id: pid }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (data.partida) {
+        partida = data.partida;
+        interrompido = !!data.partida.interrompido;
+        if (typeof data.partida.pontos === "number") updateLiveScore(data.partida.pontos);
+      }
+    } catch (_) {
+      /* já marcamos localmente */
+    }
+    return true;
+  }
+
   function maybeInterromperAoSair() {
     if (
       modo === "raiz" &&
@@ -795,7 +822,7 @@
       !interrompido &&
       document.hidden
     ) {
-      interromperRaiz();
+      interromperProBeacon();
     }
   }
 
@@ -808,7 +835,11 @@
     maybeInterromperAoSair();
   });
 
-  // —— Modo Raiz / Xonha ——
+  function proAtivo() {
+    return modo === "raiz" && !!partidaId && !finalizado && !interrompido;
+  }
+
+  // —— Modo Pro / Contínuo ——
   root.querySelectorAll("[data-grid-mode]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const m = btn.getAttribute("data-grid-mode");
@@ -817,9 +848,7 @@
         return;
       }
       if (m === "raiz") {
-        if (warnAccepted && partidaId && modo === "raiz" && !interrompido && !finalizado) {
-          return;
-        }
+        if (proAtivo()) return;
         if (warnModal && typeof warnModal.showModal === "function") {
           warnModal.showModal();
         } else {
@@ -828,6 +857,19 @@
         return;
       }
       if (m === "xonha") {
+        if (modo === "xonha" && partidaId && !finalizado && !interrompido) {
+          return;
+        }
+        if (proAtivo()) {
+          if (leaveProModal && typeof leaveProModal.showModal === "function") {
+            leaveProModal.showModal();
+          } else {
+            interromperProAwait()
+              .then(() => iniciar("xonha"))
+              .catch(() => {});
+          }
+          return;
+        }
         iniciar("xonha").catch(() => {});
       }
     });
@@ -848,6 +890,25 @@
       if (warnModal.open) warnModal.close();
     });
   }
+
+  document.querySelector("[data-grid-leave-pro-ok]")?.addEventListener("click", () => {
+    if (leaveProModal && leaveProModal.open) leaveProModal.close();
+    interromperProAwait()
+      .then(() => iniciar("xonha"))
+      .catch(() => {});
+  });
+
+  document.querySelector("[data-grid-leave-pro-voltar]")?.addEventListener("click", () => {
+    if (leaveProModal && leaveProModal.open) leaveProModal.close();
+  });
+
+  if (leaveProModal) {
+    leaveProModal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      if (leaveProModal.open) leaveProModal.close();
+    });
+  }
+
   document.querySelector("[data-grid-xonha-nova]")?.addEventListener("click", () => {
     if (!finalizado) {
       setHint("Termine o grid atual antes de iniciar outro Contínuo.");

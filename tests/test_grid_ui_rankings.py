@@ -39,9 +39,12 @@ def test_grid_page_tem_modos_e_rankings(client):
     assert 'data-rank-modo="xonha"' in r.text
     assert "data-grid-rank-panel" in r.text
     assert "Detalhes" in r.text
-    assert "/static/grid.js?v=22" in r.text
+    assert "/static/grid.js?v=23" in r.text
     assert "Modo Pro" in r.text
     assert "Modo Raiz" not in r.text
+    assert "data-grid-leave-pro-modal" in r.text
+    assert "Sair do Pro?" in r.text
+    assert "data-grid-leave-pro-ok" in r.text
 
 def test_admin_libera_passe_xonha(client):
     part = dbmod.criar_participante("Passe UI", status="liberado")
