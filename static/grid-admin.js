@@ -13,8 +13,13 @@
   const filtroModo = root.querySelector("[data-grid-admin-filtro-modo]");
   const filtroStatus = root.querySelector("[data-grid-admin-filtro-status]");
   const drawer = root.querySelector("[data-grid-admin-drawer]");
+  const drawerBackdrop = root.querySelector("[data-grid-admin-drawer-backdrop]");
   const drawerBody = root.querySelector("[data-grid-admin-drawer-body]");
   const drawerTitulo = root.querySelector("[data-grid-admin-drawer-titulo]");
+  const drawerCoord = root.querySelector("[data-grid-admin-drawer-coord]");
+  const drawerFooter = root.querySelector("[data-grid-admin-drawer-footer]");
+  const overrideOkBtn = root.querySelector("[data-grid-admin-override-ok]");
+  const overrideErrBtn = root.querySelector("[data-grid-admin-override-err]");
   const eixoModal = root.querySelector("[data-grid-admin-eixo-modal]");
   const eixoForm = root.querySelector("[data-grid-admin-eixo-form]");
   const eixoSaltEl = root.querySelector("[data-grid-admin-eixo-salt]");
@@ -261,7 +266,34 @@
   }
 
   function fecharDrawer() {
-    if (drawer) drawer.hidden = true;
+    if (drawer) {
+      drawer.hidden = true;
+      drawer.setAttribute("aria-hidden", "true");
+    }
+    if (drawerBackdrop) drawerBackdrop.hidden = true;
+    if (drawerFooter) drawerFooter.hidden = true;
+    document.body.classList.remove("grid-admin-drawer-open");
+  }
+
+  function syncOverrideBtns(partidaId, linha, coluna) {
+    [overrideOkBtn, overrideErrBtn].forEach((btn) => {
+      if (!btn) return;
+      btn.setAttribute("data-partida-id", String(partidaId));
+      btn.setAttribute("data-linha", String(linha));
+      btn.setAttribute("data-coluna", String(coluna));
+    });
+  }
+
+  function checkItemHtml(ok, eixoLabel, rotulo) {
+    const cls = ok ? "is-ok" : "is-miss";
+    const ico = ok ? "✔️" : "❌";
+    return `<li class="grid-admin-check-item ${cls}">
+      <span class="grid-admin-check-ico" aria-hidden="true">${ico}</span>
+      <div class="grid-admin-check-copy">
+        <span class="grid-admin-check-label">${esc(eixoLabel)}</span>
+        <span class="grid-admin-check-rotulo">${esc(rotulo || "—")}</span>
+      </div>
+    </li>`;
   }
 
   function openCfgPartida(btn) {
@@ -299,7 +331,14 @@
   async function abrirCelula(partidaId, linha, coluna) {
     if (!drawer || !drawerBody) return;
     drawer.hidden = false;
-    if (drawerTitulo) drawerTitulo.textContent = coord(linha, coluna);
+    drawer.setAttribute("aria-hidden", "false");
+    if (drawerBackdrop) drawerBackdrop.hidden = false;
+    document.body.classList.add("grid-admin-drawer-open");
+    const c = coord(linha, coluna);
+    if (drawerCoord) drawerCoord.textContent = c;
+    if (drawerTitulo) drawerTitulo.textContent = "Carregando…";
+    if (drawerFooter) drawerFooter.hidden = true;
+    syncOverrideBtns(partidaId, linha, coluna);
     drawerBody.innerHTML = `<p class="grid-admin-muted">Carregando…</p>`;
     const r = await fetch(
       `/grid/api/admin/partida/${partidaId}/celula?linha=${linha}&coluna=${coluna}`,
@@ -307,6 +346,7 @@
     );
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
+      if (drawerTitulo) drawerTitulo.textContent = "Erro";
       drawerBody.innerHTML = `<p class="grid-admin-empty">${esc(
         data.erro || "Erro"
       )}</p>`;
@@ -314,25 +354,33 @@
     }
     const j = data.justificativa || {};
     const cell = data.celula || {};
+    const clubeNome =
+      (cell.clube && cell.clube.nome) ||
+      (j.clube && j.clube.nome) ||
+      "?";
+    if (drawerCoord) drawerCoord.textContent = j.coord || c;
+    if (drawerTitulo) drawerTitulo.textContent = clubeNome;
+
+    const okLinha = !!j.ok_linha;
+    const okColuna = !!j.ok_coluna;
+    const gravadoOk = !!data.ok_gravado;
+    const motivo = j.motivo || (gravadoOk ? "bate nas duas categorias" : "erro");
+    const bannerCls = gravadoOk ? "is-ok" : "is-erro";
+    const bannerTxt = gravadoOk
+      ? `Acerto · ${motivo}`
+      : `Erro · ${motivo}`;
     const justErro = data.justificativa_erro
       ? `<p class="grid-admin-muted">${esc(data.justificativa_erro)}</p>`
       : "";
+
     drawerBody.innerHTML = `
-      <p><strong>${esc((cell.clube && cell.clube.nome) || "?")}</strong></p>
-      <p class="grid-admin-muted">${esc(j.coord || coord(linha, coluna))}</p>
-      <p>Linha: ${esc((j.linha && j.linha.rotulo) || "—")}</p>
-      <p>Coluna: ${esc((j.coluna && j.coluna.rotulo) || "—")}</p>
-      <p>${esc(j.motivo || "")}</p>
-      ${justErro}
-      <p>Status gravado: ${data.ok_gravado ? "acerto" : "erro"}</p>
-      <div class="grid-admin-actions">
-        <button type="button" class="grid-admin-ico grid-admin-ico--accent"
-          data-override-ok="1" data-partida-id="${esc(partidaId)}"
-          data-linha="${linha}" data-coluna="${coluna}">Forçar acerto</button>
-        <button type="button" class="grid-admin-ico"
-          data-override-ok="0" data-partida-id="${esc(partidaId)}"
-          data-linha="${linha}" data-coluna="${coluna}">Forçar erro</button>
-      </div>`;
+      <ul class="grid-admin-check-list" aria-label="Validação da célula">
+        ${checkItemHtml(okLinha, "Linha", j.linha && j.linha.rotulo)}
+        ${checkItemHtml(okColuna, "Coluna", j.coluna && j.coluna.rotulo)}
+      </ul>
+      <p class="grid-admin-status-banner ${bannerCls}" role="status">${esc(bannerTxt)}</p>
+      ${justErro}`;
+    if (drawerFooter) drawerFooter.hidden = false;
   }
 
   async function carregar(dia) {
@@ -632,6 +680,11 @@
     }
     await carregar(diaAtual);
     abrirCelula(partidaId, linha, coluna);
+  });
+
+  drawerBackdrop?.addEventListener("click", () => fecharDrawer());
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && drawer && !drawer.hidden) fecharDrawer();
   });
 
   const passeForm = root.querySelector("[data-grid-admin-passe]");

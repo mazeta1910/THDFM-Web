@@ -1043,7 +1043,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=10" in r.text
+    assert "/static/grid-admin.js?v=11" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text

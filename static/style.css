@@ -14638,24 +14638,214 @@ button.grid-admin-dia-btn,
   font-size: 0.75rem;
   padding: 0.1rem 0.25rem;
 }
+.grid-admin-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 280;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+.grid-admin-drawer-backdrop[hidden] {
+  display: none !important;
+}
 .grid-admin-drawer {
   position: fixed;
   top: 0;
   right: 0;
-  width: min(22rem, 92vw);
+  width: min(22rem, 94vw);
   height: 100%;
-  z-index: 40;
+  z-index: 290;
+  display: flex;
+  flex-direction: column;
   background: var(--bg, #fff);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 24px rgb(0 0 0 / 12%);
-  padding: 0.85rem 1rem;
-  overflow: auto;
+  box-shadow: -10px 0 28px rgb(0 0 0 / 18%);
+  padding: 0;
+  overflow: hidden;
+}
+.grid-admin-drawer[hidden] {
+  display: none !important;
+}
+body.grid-admin-drawer-open {
+  overflow: hidden;
 }
 .grid-admin-drawer-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.55rem;
+  flex: 0 0 auto;
+  padding: 0.85rem 0.9rem 0.65rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.grid-admin-drawer-heading {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 0.75rem;
+  gap: 0.4rem 0.55rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.grid-admin-drawer-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 2rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg2, var(--card)) 70%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.grid-admin-drawer-clube {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.grid-admin-drawer-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0.85rem 0.9rem 1rem;
+  min-height: 0;
+}
+.grid-admin-drawer-footer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.9rem 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, var(--card));
+}
+.grid-admin-drawer-footer[hidden] {
+  display: none !important;
+}
+button.grid-admin-drawer-btn,
+.grid-admin-drawer-btn {
+  appearance: none !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0.42rem 0.55rem !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  font: inherit !important;
+  font-size: 0.78rem !important;
+  font-weight: 750 !important;
+  line-height: 1.2 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  text-align: center;
+  white-space: nowrap;
+}
+button.grid-admin-drawer-btn--ok,
+.grid-admin-drawer-btn--ok {
+  background: #1f8a4c !important;
+  border-color: #1a7340 !important;
+  color: #fff !important;
+}
+button.grid-admin-drawer-btn--ok:hover,
+.grid-admin-drawer-btn--ok:hover {
+  background: #187a42 !important;
+}
+button.grid-admin-drawer-btn--err,
+.grid-admin-drawer-btn--err {
+  background: #c62828 !important;
+  border-color: #a02121 !important;
+  color: #fff !important;
+}
+button.grid-admin-drawer-btn--err:hover,
+.grid-admin-drawer-btn--err:hover {
+  background: #b71c1c !important;
+}
+.grid-admin-check-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.grid-admin-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+.grid-admin-check-item.is-ok {
+  border-color: color-mix(in srgb, #1f8a4c 35%, var(--border));
+  background: color-mix(in srgb, #1f8a4c 10%, var(--card));
+}
+.grid-admin-check-item.is-miss {
+  border-color: color-mix(in srgb, #c62828 35%, var(--border));
+  background: color-mix(in srgb, #c62828 10%, var(--card));
+}
+.grid-admin-check-ico {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  width: 1.2rem;
+  text-align: center;
+}
+.grid-admin-check-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+.grid-admin-check-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.grid-admin-check-rotulo {
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.grid-admin-status-banner {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.3;
+  border: 1px solid transparent;
+}
+.grid-admin-status-banner.is-ok {
+  background: color-mix(in srgb, #1f8a4c 16%, var(--card));
+  border-color: color-mix(in srgb, #1f8a4c 40%, var(--border));
+  color: color-mix(in srgb, #1f8a4c 55%, var(--text));
+}
+.grid-admin-status-banner.is-erro {
+  background: color-mix(in srgb, #c62828 14%, var(--card));
+  border-color: color-mix(in srgb, #c62828 40%, var(--border));
+  color: color-mix(in srgb, #c62828 55%, var(--text));
 }
 .grid-admin-row--hist {
   display: flex;
