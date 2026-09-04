@@ -3428,8 +3428,20 @@ async def grid_api_interromper(request: Request):
     from src.grid_game import parse_celulas_progresso
 
     celulas = parse_celulas_progresso(partida.get("celulas"))
-    share = texto_share_partida(partida, celulas=celulas)
-    return JSONResponse({"partida": partida, "interrompido": True, "share": share})
+    ranking_pos = db.posicao_ranking_grid_modo(
+        int(voter["id"]), str(partida.get("modo") or "raiz")
+    )
+    share = texto_share_partida(
+        partida, celulas=celulas, ranking=ranking_pos
+    )
+    return JSONResponse(
+        {
+            "partida": partida,
+            "interrompido": True,
+            "share": share,
+            "ranking_posicao": ranking_pos,
+        }
+    )
 
 
 @app.post("/grid/api/chute")
