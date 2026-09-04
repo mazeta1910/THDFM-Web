@@ -6738,16 +6738,18 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
 }
 .participante-foto-label-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.45rem 0.65rem;
+  gap: 0.45rem 0.55rem;
   margin: 0.55rem 0 0.15rem;
   min-height: 32px;
 }
 .participante-foto-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text);
+  color: var(--muted);
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .participante-file-pick {
   margin: 0;
@@ -6755,18 +6757,22 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   min-width: 0;
 }
 .participante-file-pick-icon {
+  display: inline-flex !important;
   flex: 0 0 auto;
-  margin: 0;
+  margin: 0 !important;
   min-height: 0;
   padding: 0;
+  width: auto;
+  align-items: center;
 }
 .participante-file-pick-icon .file-pick-btn {
   width: 32px;
   height: 32px;
   border-radius: 999px;
 }
-.participante-remove-avatar {
-  flex: 0 0 auto;
+.participante-foto-label-row .participante-remove-avatar {
+  flex: 0 1 auto;
+  margin-top: 0 !important;
   font-size: 0.78rem;
 }
 .participante-create-check {
