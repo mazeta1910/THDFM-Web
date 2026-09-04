@@ -20,7 +20,7 @@ TEMPO_TETO_S = 600  # bônus zera a partir de 10 min
 P_STREAK_DIA = 50
 
 CUSTO_CONTAGEM = 10
-MATRIZ_BASE = 80  # 1ª matriz: 80; 2ª: 160; 3ª: 320; …
+MATRIZ_BASE = 80  # 1ª: 80; 2ª: 160; 3ª: 240; … (base × nº do uso)
 
 
 def custo_dica_contagem() -> int:
@@ -28,12 +28,13 @@ def custo_dica_contagem() -> int:
 
 
 def custo_dica_matriz(usos_anteriores: int) -> int:
-    """Custo da próxima matriz na partida (exponencial).
+    """Custo da próxima matriz na partida (linear, ilimitado).
 
     ``usos_anteriores`` = quantas matrizes já foram abertas (0 → primeira).
+    1ª = base×1, 2ª = base×2, 3ª = base×3, …
     """
     n = max(0, int(usos_anteriores))
-    return int(MATRIZ_BASE * (2**n))
+    return int(MATRIZ_BASE * (n + 1))
 
 
 def bonus_tempo(tempo_segundos: int | None, *, finalizado: bool) -> int:
