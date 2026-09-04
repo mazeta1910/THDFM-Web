@@ -1035,7 +1035,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=38" in r.text
+    assert "/static/grid.js?v=39" in r.text
     assert "data-virada-ms=" in r.text
     assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
     assert "grid-sub--lead" in r.text
@@ -1449,9 +1449,8 @@ def test_texto_share_usa_verde_e_vermelho():
     assert "🟩 🟥 ⬜" in text
     assert "⬜ 🟩 🟥" in text
     assert "⬛" not in text
-    assert "2/9" in text
+    assert "✅ 2/9 | 🎯 22%" in text
     assert "https://thdfm.com.br/grid" in text
-    # bytes UTF-8 corretos dos quadrados (não latin-1)
     raw = text.encode("utf-8")
     assert "🟩".encode("utf-8") in raw
     assert "🟥".encode("utf-8") in raw
@@ -1470,15 +1469,18 @@ def test_texto_share_pro_score_e_dicas():
         pontos=420,
         dicas_usadas=0,
         ranking=1,
+        tempo_segundos=195,
     )
     assert text.startswith("THDFM Grid Pro — 04/09/2026")
-    assert "1/9" in text
+    assert "✅ 1/9 | 🎯 11%" in text
     lines = text.splitlines()
     assert "🏆 Ranking: 1º" in lines
     assert "⭐ Pontos: 420" in lines
+    assert "⏱️ Tempo: 03:15" in lines
     assert "💡 Dicas Utilizadas: 0" in lines
     assert lines.index("🏆 Ranking: 1º") < lines.index("⭐ Pontos: 420")
-    assert lines.index("⭐ Pontos: 420") < lines.index("💡 Dicas Utilizadas: 0")
+    assert lines.index("⭐ Pontos: 420") < lines.index("⏱️ Tempo: 03:15")
+    assert lines.index("⏱️ Tempo: 03:15") < lines.index("💡 Dicas Utilizadas: 0")
     assert lines[-1] == "https://thdfm.com.br/grid"
 
 
@@ -1492,21 +1494,23 @@ def test_texto_share_continuo_indice():
         pontos=55,
         dicas_usadas=2,
         ranking=3,
+        tempo_segundos=60,
     )
     assert text.startswith("THDFM Grid 2 — 04/09/2026")
     assert "🎮 Só diversão" in text
     assert "🏆 Ranking:" not in text
     assert "⭐ Pontos: 55" in text
+    assert "⏱️ Tempo: 01:00" in text
     assert "💡 Dicas Utilizadas: 2" in text
-    assert "55" not in text.splitlines()  # pontos só na linha com ⭐
     expected = (
         "THDFM Grid 2 — 04/09/2026\n"
-        "0/9\n"
+        "✅ 0/9 | 🎯 0%\n"
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
         "🎮 Só diversão\n"
         "⭐ Pontos: 55\n"
+        "⏱️ Tempo: 01:00\n"
         "💡 Dicas Utilizadas: 2\n"
         "https://thdfm.com.br/grid"
     )

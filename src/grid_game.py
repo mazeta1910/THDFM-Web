@@ -1844,28 +1844,14 @@ def texto_share(
     pontos: int | None = None,
     dicas_usadas: int | None = None,
     ranking: int | None = None,
+    tempo_segundos: int | None = None,
 ) -> str:
-    """Texto estilo Wordle/Hoops para Twitter/WhatsApp.
-
-    Usa escapes explícitos dos quadrados coloridos (Unicode 12) para o
-    texto não depender de charset do arquivo-fonte no cliente.
-
-    Formato:
-      THDFM Grid 2 — dd/mm/aaaa
-      1/9
-      🟩 ⬜ ⬜
-      …
-      🏆 Ranking: 1º
-      ⭐ Pontos: 55
-      💡 Dicas Utilizadas: 2
-      https://thdfm.com.br/grid
-    """
-    sq_ok = "\U0001f7e9"  # 🟩
-    sq_miss = "\U0001f7e5"  # 🟥
-    sq_empty = "\u2b1c"  # ⬜
+    sq_ok = "\U0001f7e9"
+    sq_miss = "\U0001f7e5"
+    sq_empty = "\u2b1c"
+    total = GRID_SIZE * GRID_SIZE
     linhas_emoji: list[str] = []
     acertos = 0
-    tentadas = 0
     for r in range(GRID_SIZE):
         row_e = []
         for c in range(GRID_SIZE):
@@ -1873,13 +1859,11 @@ def texto_share(
             if not cell:
                 row_e.append(sq_empty)
                 continue
-            tentadas += 1
             if cell.get("ok"):
                 row_e.append(sq_ok)
                 acertos += 1
             else:
                 row_e.append(sq_miss)
-        # Espaço entre quadrados: alguns clientes WhatsApp renderizam melhor
         linhas_emoji.append(" ".join(row_e))
     try:
         d = date.fromisoformat(dia)
@@ -1888,31 +1872,34 @@ def texto_share(
         rotulo = dia
     tag = rotulo_grid_share(modo=modo, indice=indice)
     titulo = f"THDFM Grid {tag} — {rotulo}" if tag else f"THDFM Grid — {rotulo}"
+    pct = int(round(100 * acertos / total)) if total else 0
     partes = [
         titulo,
-        f"{acertos}/{GRID_SIZE * GRID_SIZE}",
+        f"\u2705 {acertos}/{total} | \U0001f3af {pct}%",
         *linhas_emoji,
     ]
-    # Bloco de stats: ranking / pontos / dicas (nessa ordem).
-    # Contínuo 2ª/3ª: só diversão — não entra no ranking.
-    if pontos is not None or ranking is not None:
+    if pontos is not None or ranking is not None or tempo_segundos is not None:
         so_diversao = (
             (modo or "").strip().lower() == "xonha"
             and indice is not None
             and int(indice) > 1
         )
         if so_diversao:
-            partes.append("🎮 Só diversão")
+            partes.append("\U0001f3ae Só diversão")
         elif ranking is not None and int(ranking) > 0:
-            partes.append(f"🏆 Ranking: {int(ranking)}º")
-        else:
-            partes.append("🏆 Ranking: —")
-        pts = int(pontos) if pontos is not None else 0
-        partes.append(f"⭐ Pontos: {pts}")
+            partes.append(f"\U0001f3c6 Ranking: {int(ranking)}\u00ba")
+        elif pontos is not None or ranking is not None:
+            partes.append("\U0001f3c6 Ranking: —")
+        if pontos is not None:
+            partes.append(f"\u2b50 Pontos: {int(pontos)}")
+        if tempo_segundos is not None:
+            segs = max(0, int(tempo_segundos))
+            mm, ss = divmod(segs, 60)
+            partes.append(f"\u23f1\ufe0f Tempo: {mm:02d}:{ss:02d}")
         dicas_n = int(dicas_usadas) if dicas_usadas is not None else 0
-        partes.append(f"💡 Dicas Utilizadas: {dicas_n}")
+        partes.append(f"\U0001f4a1 Dicas Utilizadas: {dicas_n}")
     elif dicas_usadas is not None:
-        partes.append(f"💡 Dicas Utilizadas: {int(dicas_usadas)}")
+        partes.append(f"\U0001f4a1 Dicas Utilizadas: {int(dicas_usadas)}")
     partes.append(url)
     return "\n".join(partes)
 

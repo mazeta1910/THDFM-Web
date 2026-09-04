@@ -542,19 +542,32 @@
     const rotulo =
       parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dia || "hoje";
     let modoTag = "";
+    let indiceContinuo = null;
     if (modo === "raiz") modoTag = " Pro";
     else if (modo === "xonha") {
       const idx =
         partida && partida.indice_dia != null
           ? Number(partida.indice_dia)
           : null;
-      modoTag = idx && !Number.isNaN(idx) ? ` ${idx}` : " Contínuo";
+      indiceContinuo = idx && !Number.isNaN(idx) ? idx : null;
+      modoTag = indiceContinuo ? ` ${indiceContinuo}` : " Contínuo";
     }
     const dicasN = ((partida && partida.dicas) || []).length;
     const pts =
       typeof scoreParcial === "number" && !Number.isNaN(scoreParcial)
         ? scoreParcial
         : 0;
+    const total = size * size;
+    const pct = total ? Math.round((100 * ok) / total) : 0;
+    let tempoSecs = null;
+    if (partida && partida.tempo_segundos != null) {
+      tempoSecs = Number(partida.tempo_segundos);
+    } else if (iniciadoEm) {
+      const startMs = parseIsoMs(iniciadoEm);
+      if (startMs != null) {
+        tempoSecs = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      }
+    }
     const stats = [];
     if (isContinuoDiversao()) {
       stats.push("🎮 Só diversão");
@@ -566,10 +579,13 @@
       stats.push(`🏆 Ranking: ${rankLabel}`);
     }
     stats.push(`⭐ Pontos: ${pts}`);
+    if (tempoSecs != null && !Number.isNaN(tempoSecs)) {
+      stats.push(`⏱️ Tempo: ${formatTimer(tempoSecs)}`);
+    }
     stats.push(`💡 Dicas Utilizadas: ${dicasN}`);
     return [
       `THDFM Grid${modoTag} — ${rotulo}`,
-      `${ok}/${size * size}`,
+      `✅ ${ok}/${total} | 🎯 ${pct}%`,
       ...lines,
       ...stats,
       "https://thdfm.com.br/grid",

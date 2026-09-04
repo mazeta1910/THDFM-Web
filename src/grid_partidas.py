@@ -396,6 +396,9 @@ def texto_share_partida(
     pos = ranking
     if pos is None and part.get("participante_id") is not None and modo in ("raiz", "xonha"):
         pos = db.posicao_ranking_grid_modo(int(part["participante_id"]), modo)
+    tempo = part.get("tempo_segundos")
+    if tempo is None and part.get("iniciado_em"):
+        tempo = tempo_decorrido_s(part.get("iniciado_em"), ate=part.get("encerrado_em"))
     return texto_share(
         dia=str(part.get("dia") or ""),
         celulas=cells,
@@ -404,6 +407,7 @@ def texto_share_partida(
         pontos=pts,
         dicas_usadas=len(dicas) if isinstance(dicas, list) else 0,
         ranking=pos,
+        tempo_segundos=int(tempo) if tempo is not None else None,
     )
 
 
