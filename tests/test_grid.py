@@ -1028,7 +1028,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=32" in r.text
+    assert "/static/grid.js?v=35" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1036,7 +1036,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=6" in r.text
+    assert "/static/grid-admin.js?v=7" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text
@@ -1057,6 +1057,9 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Matriz de clubes" in r.text
     assert 'data-dica-tipo="contagem"' not in r.text
     assert "Usar dica" in r.text
+    assert "Qual vértice você deseja selecionar?" in r.text
+    assert "data-grid-dica-picker" in r.text
+    assert "data-grid-dica-confirm" in r.text
     assert "data-grid-matriz-celula" in r.text
     assert "data-grid-dica-eixos" in r.text
     assert "data-grid-leave-matriz-modal" in r.text
@@ -1072,9 +1075,14 @@ def test_grid_fluxo_logado(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".grid-cell.is-locked" in css
     assert ".grid-cell-locked-label" in css
+    assert ".grid-dica-picker" in css
+    assert ".grid-dica-pick" in css
     js = (ROOT_DIR / "static" / "grid.js").read_text(encoding="utf-8")
     assert "proEncerradoHoje" in js
     assert "is-locked" in js
+    assert "selecionarVerticeDica" in js
+    assert "dicaTargetCell" in js
+    assert "resolveDicaCell" not in js
     assert "data-grid-suggestions" in r.text
     assert "~50%" in r.text or "50% do nome" in r.text
     assert "grid-modal-note" not in r.text

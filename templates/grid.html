@@ -197,19 +197,19 @@
         </div>
         <div class="grid-rank-controls">
           <div class="grid-mode-toggle grid-mode-toggle--rank" role="tablist" data-grid-rank-modo>
-            <button type="button" class="grid-mode-btn is-active" data-rank-modo="raiz" aria-selected="true">Pro</button>
-            <button type="button" class="grid-mode-btn" data-rank-modo="xonha" aria-selected="false">Contínuo</button>
+            <button type="button" class="grid-mode-btn" data-rank-modo="raiz" aria-selected="false">Pro</button>
+            <button type="button" class="grid-mode-btn is-active" data-rank-modo="xonha" aria-selected="true">Contínuo</button>
           </div>
           <button type="button" class="grid-chip-btn" data-grid-rank-vista-toggle aria-pressed="false">Detalhes</button>
         </div>
-        <p class="grid-sub" data-grid-rank-sub>Score único · acertos, tempo, raridade e streak · Pro zera ao sair da página</p>
+        <p class="grid-sub" data-grid-rank-sub>só a 1ª Contínuo/dia conta · acertos, tempo, raridade (média×índice) e streak</p>
       </div>
     </header>
-    <div data-grid-rank-raiz>
+    <div data-grid-rank-raiz hidden>
       {% set modo_rank = 'raiz' %}
       {% include "partials/grid_ranking_table.html" %}
     </div>
-    <div data-grid-rank-xonha hidden>
+    <div data-grid-rank-xonha>
       {% set modo_rank = 'xonha' %}
       {% set linhas = linhas_xonha|default([]) %}
       {% include "partials/grid_ranking_table.html" %}
@@ -425,13 +425,17 @@
   <div class="grid-modal-card">
     <button type="button" class="grid-modal-x" data-grid-dica-close aria-label="Fechar">×</button>
     <h2 class="grid-result-title">Usar dica</h2>
-    <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
-    <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
-    <div class="grid-dica-opcoes">
-      <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
-        <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
-        <small>Ilimitadas · 20 clubes (2 válidos) · 2ª ×2, 3ª ×3…</small>
-      </button>
+    <p class="grid-sub" data-grid-dica-passo>Qual vértice você deseja selecionar?</p>
+    <div class="grid-dica-picker" data-grid-dica-picker role="group" aria-label="Escolher célula da dica"></div>
+    <div class="grid-dica-confirm" data-grid-dica-confirm hidden>
+      <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
+      <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
+      <div class="grid-dica-opcoes">
+        <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
+          <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
+          <small>Ilimitadas · 20 clubes (2 válidos) · 2ª ×2, 3ª ×3…</small>
+        </button>
+      </div>
     </div>
     <p class="grid-modal-hint" data-grid-dica-hint hidden></p>
   </div>
@@ -485,8 +489,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=32" defer></script>
+<script src="/static/grid.js?v=35" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=6" defer></script>
+<script src="/static/grid-admin.js?v=7" defer></script>
 {% endif %}
 {% endblock %}
