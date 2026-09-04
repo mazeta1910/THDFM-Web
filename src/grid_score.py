@@ -1,8 +1,8 @@
 """Pontuação do THDFM Grid (Raiz / Xonha) — funções puras.
 
-Score de partida = acertos + bônus completo + tempo + raridade (Rep)
-               − custos de dicas.
+Score de partida = acertos + bônus completo + tempo − custos de dicas.
 Score de ranking = soma das partidas do modo + bônus de streak.
+Raridade (Rep) é só desempate no ranking — não entra no score.
 
 No Contínuo, só a primeira partida de cada dia entra no ranking;
 as demais (2ª/3ª) são só diversão (pontos locais, sem ranking).
@@ -109,13 +109,15 @@ def pontos_partida(
     tempo_segundos: int | None = None,
     dicas: Sequence[Mapping[str, Any]] | None = None,
 ) -> int:
-    """Pontuação de uma partida (número único, ≥ 0)."""
+    """Pontuação de uma partida (número único, ≥ 0).
+
+    Raridade (Rep) não entra aqui — só desempate em ``ranking_grid_modo``.
+    """
     ok, _filled = contar_acertos(celulas)
     pts = ok * P_ACERTO
     if finalizado and not interrompido:
         pts += P_COMPLETO
         pts += bonus_tempo(tempo_segundos, finalizado=True)
-    pts += pontos_rep_celulas(celulas)
     pts -= custo_dicas(dicas)
     return max(0, int(pts))
 

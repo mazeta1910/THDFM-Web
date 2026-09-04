@@ -14374,6 +14374,12 @@ button.grid-admin-dia-btn,
   color: var(--muted);
   font-size: 0.8rem;
 }
+.grid-admin-modo {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--text) !important;
+  font-size: 0.75rem !important;
+}
 .grid-admin-mini {
   display: grid;
   gap: 0.25rem;

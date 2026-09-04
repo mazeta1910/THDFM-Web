@@ -809,6 +809,13 @@
     await applyChuteResponse(data, linha, coluna);
   }
 
+  function hideResult() {
+    if (resultEl) resultEl.hidden = true;
+    shareText = "";
+    if (shareTextEl) shareTextEl.textContent = "";
+    if (scoreEl) scoreEl.textContent = "";
+  }
+
   function applyPartidaState(data) {
     modo = data.modo || (data.partida && data.partida.modo) || modo;
     partida = data.partida || null;
@@ -834,6 +841,8 @@
     applyCelulasFrom((partida && partida.celulas) || []);
     paintAll();
     updateModeButtons();
+    // Ranking acompanha o modo de jogo (não fica preso em Pro).
+    if (modo === "raiz" || modo === "xonha") setRankModo(modo);
     if (data.cota_xonha !== undefined) updateCota(data.cota_xonha);
     else updateXonhaActions();
     // Cronômetro atrelado a esta partida (zera se nova / finalizada).
@@ -841,10 +850,11 @@
 
     if (interrompido) {
       setHint("Tentativa encerrada — células vazias bloqueadas.");
-      showResult(null);
+      showResult(data.share || null);
     } else if (finalizado) {
-      showResult(boot.share || null);
+      showResult(data.share || null);
     } else {
+      hideResult();
       setHint("");
       hintContinuoDiversao();
     }
@@ -1394,8 +1404,8 @@
     if (sub) {
       sub.textContent =
         m === "xonha"
-          ? "só a 1ª partida Contínuo de cada dia conta no ranking · 2ª/3ª são só diversão"
-          : "Score único · acertos, tempo, raridade e streak · Pro zera ao sair da página";
+          ? "só a 1ª partida Contínuo de cada dia conta · acertos, tempo e streak · raridade só desempata"
+          : "acertos, tempo e streak · raridade só desempata · Pro zera ao sair da página";
     }
   }
 
@@ -1427,7 +1437,11 @@
         });
       });
     }
-    setRankModo("raiz");
+    setRankModo(
+      boot.modo_default === "raiz" || boot.modo_default === "xonha"
+        ? boot.modo_default
+        : "xonha"
+    );
 
     let savedVista = "compact";
     try {

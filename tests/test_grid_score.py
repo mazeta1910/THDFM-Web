@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from src.clubes_catalogo import pontos_rep_desempate
 from src.grid_score import (
     CUSTO_CONTAGEM,
     MATRIZ_BASE,
@@ -18,6 +17,7 @@ from src.grid_score import (
     pontos_partida,
     score_ranking,
 )
+from src.clubes_catalogo import pontos_rep_desempate
 
 
 def _cell(ok: bool, *, rep: int = 500, nome: str = "Clube") -> dict:
@@ -58,10 +58,9 @@ def test_contar_acertos():
 
 def test_pontos_partida_acertos_e_completo():
     celulas = [[_cell(True) for _ in range(3)] for _ in range(3)]
-    # 9 acertos + completo (sem tempo/rep extras além do rep de cada célula)
-    base_rep = 9 * pontos_rep_desempate(500)
+    # 9 acertos + completo — raridade NÃO entra no score
     pts = pontos_partida(celulas, finalizado=True, tempo_segundos=TEMPO_TETO_S)
-    assert pts == 9 * P_ACERTO + P_COMPLETO + 0 + base_rep
+    assert pts == 9 * P_ACERTO + P_COMPLETO
 
 
 def test_pontos_partida_interrompido_sem_bonus_completo_nem_tempo():
@@ -72,18 +71,38 @@ def test_pontos_partida_interrompido_sem_bonus_completo_nem_tempo():
         interrompido=True,
         tempo_segundos=30,
     )
-    assert pts == P_ACERTO + pontos_rep_desempate(500)
+    assert pts == P_ACERTO
 
 
 def test_pontos_partida_desconta_dicas_piso_zero():
     celulas = [[_cell(True, rep=7750), None, None], [None, None, None], [None, None, None]]
     dicas = [{"tipo": "matriz", "custo": custo_dica_matriz(0)}]
     pts = pontos_partida(celulas, dicas=dicas)
-    # acerto + rep mínima (~1) − 80 → pode ir a 21 ou similar, não negativo
-    assert pts == max(0, P_ACERTO + pontos_rep_desempate(7750) - 80)
+    assert pts == max(0, P_ACERTO - 80)
 
     dicas_caras = [{"custo": 10_000}]
     assert pontos_partida([[_cell(True, rep=7750)]], dicas=dicas_caras) == 0
+
+
+def test_pontos_partida_ignora_raridade():
+    """3 clubes obscuros não pontuam mais que 6 famosos só por Rep."""
+    obscure = [
+        [_cell(True, rep=200), _cell(True, rep=200), _cell(True, rep=200)],
+        [None, None, None],
+        [None, None, None],
+    ]
+    famosos = [
+        [_cell(True, rep=7750), _cell(True, rep=7750), _cell(True, rep=7750)],
+        [_cell(True, rep=7750), _cell(True, rep=7750), _cell(True, rep=7750)],
+        [None, None, None],
+    ]
+    pts3 = pontos_partida(obscure, finalizado=True, tempo_segundos=TEMPO_TETO_S)
+    pts6 = pontos_partida(famosos, finalizado=True, tempo_segundos=TEMPO_TETO_S)
+    assert pts6 > pts3
+    assert pts3 == 3 * P_ACERTO + P_COMPLETO
+    assert pts6 == 6 * P_ACERTO + P_COMPLETO
+    # rep ainda existe para desempate externo
+    assert pontos_rep_desempate(200) > pontos_rep_desempate(7750)
 
 
 def test_score_ranking_soma_e_streak():

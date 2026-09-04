@@ -3364,17 +3364,20 @@ async def grid_api_iniciar(request: Request):
     usos_matriz = sum(1 for d in (partida.get("dicas") or []) if d.get("tipo") == "matriz")
     _ok, cota = pode_iniciar_xonha(pid, dia)
     partida = anexar_indice_dia(partida)
-    return JSONResponse(
-        {
-            "dia": dia,
-            "modo": modo,
-            "partida": partida,
-            "puzzle": puzzle_da_partida(partida),
-            "score_parcial": score,
-            "cota_xonha": cota,
-            "proximo_custo_matriz": custo_dica_matriz(usos_matriz),
-        }
-    )
+    payload = {
+        "dia": dia,
+        "modo": modo,
+        "partida": partida,
+        "puzzle": puzzle_da_partida(partida),
+        "score_parcial": score,
+        "cota_xonha": cota,
+        "proximo_custo_matriz": custo_dica_matriz(usos_matriz),
+    }
+    if partida.get("finalizado") or partida.get("interrompido"):
+        from src.grid_partidas import texto_share_partida
+
+        payload["share"] = texto_share_partida(partida, pontos=score)
+    return JSONResponse(payload)
 
 
 @app.post("/grid/api/tocar")
@@ -3683,7 +3686,7 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
             "virada_rotulo": rotulo_hora_virada(h, mi),
             "puzzle": puzzle,
             "dias": db.listar_grid_dias(limite=90),
-            "respostas": db.listar_grid_progresso_dia(dia_s),
+            "respostas": db.listar_grid_partidas_dia(dia_s),
         }
     )
 
