@@ -141,12 +141,16 @@
   function updateCota(cota) {
     if (!cotaEl) return;
     if (!cota || modo !== "xonha") {
-      cotaEl.hidden = true;
-      cotaEl.textContent = "";
+      cotaEl.hidden = modo === "xonha" ? false : true;
+      if (modo !== "xonha") {
+        cotaEl.textContent = "";
+        return;
+      }
+      cotaEl.textContent = "Grids disponíveis: —";
       return;
     }
     if (cota.passe_ativo) {
-      cotaEl.textContent = "Passe Xonha ativo — partidas ilimitadas";
+      cotaEl.textContent = "Grids disponíveis: ilimitados (passe ativo)";
       cotaEl.hidden = false;
       return;
     }
@@ -154,7 +158,7 @@
     const limite = Number(cota.limite_livre) || 3;
     const restantes =
       cota.restantes != null ? Number(cota.restantes) : Math.max(0, limite - usados);
-    cotaEl.textContent = `Xonha livres hoje: ${restantes} de ${limite}`;
+    cotaEl.textContent = `Grids disponíveis: ${restantes}`;
     cotaEl.hidden = false;
   }
 
@@ -169,7 +173,16 @@
 
   function updateXonhaActions() {
     if (!xonhaActions) return;
-    xonhaActions.hidden = modo !== "xonha" || !partidaId || interrompido;
+    const show = modo === "xonha" && !!partidaId && !interrompido;
+    xonhaActions.hidden = !show;
+    const novaBtn = document.querySelector("[data-grid-xonha-nova]");
+    if (novaBtn) {
+      const podeOutro = show && finalizado;
+      novaBtn.disabled = !podeOutro;
+      novaBtn.title = podeOutro
+        ? "Iniciar outro grid Xonha"
+        : "Termine o grid atual para jogar outro";
+    }
   }
 
   function rarityFromRep(repRaw) {
@@ -366,6 +379,33 @@
     timerInterval = window.setInterval(tickTimer, 1000);
   }
 
+  /** Arranca o cronômetro só no 1º clique numa célula. */
+  function ensureTimerStarted() {
+    if (finalizado || interrompido) return;
+    if (!partidaId && podeSalvar) return;
+    if (iniciadoEm) {
+      if (timerInterval == null) startTimer();
+      return;
+    }
+    iniciadoEm = new Date().toISOString();
+    startTimer();
+    if (!podeSalvar || !partidaId) return;
+    fetch("/grid/api/tocar", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ partida_id: partidaId }),
+    })
+      .then((r) => r.json().catch(() => ({})))
+      .then((data) => {
+        if (data && data.partida && data.partida.iniciado_em) {
+          iniciadoEm = data.partida.iniciado_em;
+          partida = data.partida;
+          tickTimer();
+        }
+      })
+      .catch(() => {});
+  }
+
   function countScore() {
     let ok = 0;
     let filled = 0;
@@ -446,6 +486,7 @@
       );
       return;
     }
+    ensureTimerStarted();
     active = { linha, coluna };
     lastCell = { linha, coluna };
     const showDens =
@@ -653,7 +694,10 @@
     updateModeButtons();
     updateXonhaActions();
     updateCota(data.cota_xonha);
-    startTimer();
+    // Cronômetro só corre se já houve 1º clique (iniciado_em) ou partida já fechada.
+    stopTimer();
+    tickTimer();
+    if (iniciadoEm && !finalizado && !interrompido) startTimer();
 
     if (interrompido) {
       setHint("Tentativa encerrada — células vazias bloqueadas.");
@@ -786,6 +830,10 @@
   });
 
   document.querySelector("[data-grid-xonha-nova]")?.addEventListener("click", () => {
+    if (!finalizado) {
+      setHint("Termine o grid atual antes de iniciar outro Xonha.");
+      return;
+    }
     iniciar("xonha").catch(() => {});
   });
 
@@ -1090,7 +1138,7 @@
     if (toggle) {
       const detail = v === "detail";
       toggle.setAttribute("aria-pressed", detail ? "true" : "false");
-      toggle.textContent = detail ? "Vista compacta" : "Vista detalhada";
+      toggle.textContent = detail ? "Compacto" : "Detalhes";
     }
   }
 

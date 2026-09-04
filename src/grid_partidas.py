@@ -48,18 +48,34 @@ def _recalcular_pontos(partida: dict[str, Any]) -> int:
 
 
 def iniciar_raiz(participante_id: int, dia: str) -> dict[str, Any]:
-    """Idempotente: devolve a partida Raiz do dia ou cria uma nova."""
+    """Idempotente: devolve a partida Raiz do dia ou cria uma nova.
+
+    O cronômetro (iniciado_em) só arranca no 1º clique numa célula.
+    """
     existing = db.get_grid_partida_raiz(participante_id, dia)
     if existing:
         return existing
-    now = agora_iso()
     return db.criar_grid_partida(
         participante_id,
         dia,
         modo="raiz",
         puzzle_salt="",
-        iniciado_em=now,
+        iniciado_em=None,
     )
+
+
+def garantir_inicio_partida(
+    partida_id: int, *, participante_id: int
+) -> dict[str, Any]:
+    """Marca iniciado_em na 1ª interação com uma célula (idempotente)."""
+    part = db.get_grid_partida(partida_id)
+    if not part or int(part["participante_id"]) != int(participante_id):
+        raise LookupError("partida não encontrada")
+    if part.get("finalizado") or part.get("interrompido"):
+        return part
+    if part.get("iniciado_em"):
+        return part
+    return db.atualizar_grid_partida(partida_id, iniciado_em=agora_iso())
 
 
 def interromper_partida(partida_id: int, *, participante_id: int) -> dict[str, Any]:
@@ -108,6 +124,9 @@ def aplicar_chute_partida(
         raise PermissionError("tentativa encerrada — células vazias bloqueadas")
     if part.get("finalizado"):
         raise PermissionError("partida já finalizada")
+
+    if not part.get("iniciado_em"):
+        part = garantir_inicio_partida(partida_id, participante_id=participante_id)
 
     celulas = parse_celulas_progresso(part.get("celulas"))
     if celulas[linha][coluna] is not None:
@@ -176,13 +195,12 @@ def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
     salt = secrets.token_hex(8)
     # Garante que o puzzle existe (e cacheia) antes de gravar a partida.
     gerar_puzzle(dia, salt=salt)
-    now = agora_iso()
     return db.criar_grid_partida(
         participante_id,
         dia,
         modo="xonha",
         puzzle_salt=salt,
-        iniciado_em=now,
+        iniciado_em=None,
     )
 
 

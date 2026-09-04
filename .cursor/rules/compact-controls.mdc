@@ -1,0 +1,29 @@
+---
+description: Controles compactos no Grid e UI — nunca botões full-width enormes
+globs:
+  - templates/grid*.html
+  - static/grid*.js
+  - static/style.css
+  - templates/partials/grid*.html
+alwaysApply: false
+---
+
+# Controles compactos (anti-botões imensos)
+
+O CSS global define `button, .btn { width: 100%; padding: 0.9rem 1rem; }`.
+Qualquer `<button>` novo **sem** override vira um bloco enorme na tela.
+
+## Regras obrigatórias
+
+1. **Nunca** use as classes `.btn` / `.btn.secondary` para toggles, chips, filtros, Raiz/Xonha, Dica, Detalhes, ranking ou ações secundárias no Grid.
+2. Use controles compactos dedicados (ex.: `.grid-mode-btn`, `.grid-chip-btn`) com:
+   - `width: auto` (anula o global)
+   - `padding` ≤ `0.35rem 0.75rem`
+   - `font-size` ≈ `0.78rem`
+   - `border-radius` ≤ `8px` (não pill 999px em toggles de modo)
+   - `min-height: 0`
+3. Modo ativo (Raiz/Xonha) = **cinza muted** (como fases encerradas do bolão), **nunca** accent/laranja destacado.
+4. Toggle Raiz/Xonha: pequeno, alinhado à **direita**, os dois na **mesma linha** horizontal.
+5. Não invente cards com borda/sombra/padding grosso em torno de Score, Tempo, ranking compacto ou o board — layout flat.
+6. Cronômetro do Grid: só começa no **primeiro clique numa célula**, não ao escolher o modo.
+7. "Outro Xonha" só habilitado quando a partida atual estiver **finalizada**.

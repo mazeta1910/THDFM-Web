@@ -3348,6 +3348,33 @@ async def grid_api_iniciar(request: Request):
     )
 
 
+@app.post("/grid/api/tocar")
+async def grid_api_tocar(request: Request):
+    """Marca o início do cronômetro na 1ª interação com uma célula."""
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_partidas import garantir_inicio_partida
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    try:
+        partida_id = int((body or {}).get("partida_id"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "partida_id inválido"}, status_code=400)
+    voter = _grid_voter(request)
+    assert voter is not None
+    try:
+        partida = garantir_inicio_partida(
+            partida_id, participante_id=int(voter["id"])
+        )
+    except LookupError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=404)
+    return JSONResponse({"partida": partida})
+
+
 @app.post("/grid/api/interromper")
 async def grid_api_interromper(request: Request):
     neg = _grid_neg_json(request)
