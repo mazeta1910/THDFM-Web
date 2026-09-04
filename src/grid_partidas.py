@@ -217,6 +217,56 @@ def _puzzle_xonha_publico(dia: str, salt: str) -> dict[str, Any]:
     }
 
 
+def salt_convidado_continuo() -> str:
+    return salt_xonha_indice(1)
+
+
+def puzzle_ssr_convidado(dia: str) -> dict[str, Any]:
+    return _puzzle_xonha_publico(str(dia), salt_convidado_continuo())
+
+
+def validar_chute_convidado(
+    *,
+    dia: str,
+    linha: int,
+    coluna: int,
+    clube_id: str | None = None,
+    nome: str | None = None,
+) -> dict[str, Any]:
+    from src.grid_game import (
+        chute_nome_inexistente,
+        resolver_clube_por_nome,
+        validar_chute,
+    )
+
+    salt = salt_convidado_continuo()
+    resultado = None
+    cid = str(clube_id or "").strip()
+    rotulo = str(nome or "").strip()
+    if not cid and rotulo:
+        try:
+            cid = str(resolver_clube_por_nome(rotulo)["id"])
+        except ValueError as exc:
+            msg = str(exc)
+            if "não encontrado" in msg.casefold():
+                resultado = chute_nome_inexistente(
+                    linha=linha, coluna=coluna, nome=rotulo
+                )
+            else:
+                raise
+    if resultado is None:
+        if not cid:
+            raise ValueError("Digite o nome do clube")
+        resultado = validar_chute(
+            dia=dia,
+            linha=linha,
+            coluna=coluna,
+            clube_id=cid,
+            salt=salt,
+        )
+    return resultado
+
+
 def puzzle_ssr_continuo(
     participante_id: int, dia: str
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:

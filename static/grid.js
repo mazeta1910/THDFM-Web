@@ -591,6 +591,8 @@
     if (interrompido) setHint("Tentativa encerrada ao sair da página.");
     else if (isContinuoDiversao()) {
       setHint("Grade finalizada · só diversão (não conta no ranking).");
+    } else if (!podeSalvar) {
+      setHint("Grade finalizada · entre para salvar no ranking.");
     } else setHint("Grade do dia finalizada.");
   }
 
@@ -673,6 +675,7 @@
       q: query,
     });
     if (partidaId != null) params.set("partida_id", String(partidaId));
+    else if (modo === "xonha") params.set("modo", "xonha");
     if (searchAbort) searchAbort.abort();
     searchAbort = new AbortController();
     const r = await fetch(`/grid/api/buscar?${params}`, {
@@ -720,6 +723,9 @@
       if (data.partida.iniciado_em) iniciadoEm = data.partida.iniciado_em;
     } else if (data.finalizado) {
       finalizado = true;
+    } else if (!podeSalvar && modo === "xonha") {
+      const { filled, total } = countScore();
+      finalizado = filled >= total;
     }
     if (typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
     if (typeof data.ranking_posicao === "number" && data.ranking_posicao > 0) {
@@ -736,7 +742,6 @@
       showResult(data.share || null);
       updateXonhaActions();
     } else {
-      // Mantém o tick da partida atual.
       if (iniciadoEm && timerInterval == null) startTimer();
       else tickTimer();
       updateXonhaActions();
@@ -749,14 +754,16 @@
     return body;
   }
 
+  function podeChutarAgora() {
+    if (podeSalvar) return !!partidaId;
+    return modo === "xonha";
+  }
+
   async function submitGuessByName(nomeRaw) {
     if (!active) return;
-    if (!podeSalvar) {
-      pedirLogin();
-      return;
-    }
-    if (!partidaId) {
-      setModalHint("Escolha Pro ou Contínuo para começar.", true);
+    if (!podeChutarAgora()) {
+      if (!podeSalvar) pedirLogin("Entre para jogar o Pro.");
+      else setModalHint("Escolha Pro ou Contínuo para começar.", true);
       return;
     }
     const nome = String(nomeRaw || "").trim();
@@ -784,12 +791,9 @@
 
   async function submitGuessById(clubeId) {
     if (!active || !clubeId) return;
-    if (!podeSalvar) {
-      pedirLogin();
-      return;
-    }
-    if (!partidaId) {
-      setModalHint("Escolha Pro ou Contínuo para começar.", true);
+    if (!podeChutarAgora()) {
+      if (!podeSalvar) pedirLogin("Entre para jogar o Pro.");
+      else setModalHint("Escolha Pro ou Contínuo para começar.", true);
       return;
     }
     if (clubeJaUsado(clubeId)) {
@@ -990,7 +994,13 @@
     btn.addEventListener("click", () => {
       const m = btn.getAttribute("data-grid-mode");
       if (!podeSalvar) {
-        pedirLogin("Entre para jogar o Grid.");
+        if (m === "raiz") {
+          pedirLogin("Entre para jogar o Pro.");
+          return;
+        }
+        modo = "xonha";
+        updateModeButtons();
+        setHint("Contínuo · entre para salvar no ranking. Pro exige cadastro.");
         return;
       }
       if (m === "raiz") {
@@ -1565,7 +1575,11 @@
   updateCota(boot.cota_xonha || null);
 
   if (!podeSalvar) {
-    setHint("Explore o puzzle à vontade. Entre para registrar os chutes.");
+    modo = "xonha";
+    setHint("Contínuo · entre para salvar no ranking. Pro exige cadastro.");
+    updateModeButtons();
+    updateXonhaActions();
+    paintAll();
   } else if (boot.partida && boot.partida.id != null) {
     setHint("");
     applyPartidaState({

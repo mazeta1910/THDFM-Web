@@ -87,9 +87,9 @@
 
   {% if not grid_pode_salvar %}
   <p class="grid-login-banner" role="status">
-    Explore o puzzle à vontade.
+    Jogue o Contínuo à vontade.
     <a href="/?acesso=entrar" data-acesso-open="entrar">Entre</a>
-    para registrar os chutes e aparecer no ranking.
+    para salvar no ranking e liberar o Pro.
   </p>
   {% endif %}
 
@@ -490,7 +490,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=36" defer></script>
+<script src="/static/grid.js?v=37" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=7" defer></script>
 {% endif %}

@@ -3032,6 +3032,10 @@ def grid_page(request: Request):
 
         _ok, cota_xonha = pode_iniciar_xonha(int(voter["id"]), dia)
         puzzle, partida_boot = puzzle_ssr_continuo(int(voter["id"]), dia)
+    else:
+        from src.grid_partidas import puzzle_ssr_convidado
+
+        puzzle = puzzle_ssr_convidado(dia)
     return render(
         request,
         "grid.html",
@@ -3197,12 +3201,14 @@ def grid_api_hoje(request: Request):
     from src.grid_game import dia_grid, puzzle_publico
 
     dia = dia_grid()
-    puzzle = puzzle_publico(dia)
     voter = _grid_voter(request)
     progresso = None
     streak = 0
     share = None
     if voter:
+        from src.grid_partidas import puzzle_ssr_continuo
+
+        puzzle, _partida = puzzle_ssr_continuo(int(voter["id"]), dia)
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
         if progresso and progresso.get("finalizado"):
@@ -3219,6 +3225,10 @@ def grid_api_hoje(request: Request):
                 from src.grid_partidas import texto_share_partida
 
                 share = texto_share_partida(raiz)
+    else:
+        from src.grid_partidas import puzzle_ssr_convidado
+
+        puzzle = puzzle_ssr_convidado(dia)
     return JSONResponse(
         {
             "puzzle": puzzle,
@@ -3287,9 +3297,10 @@ def grid_api_buscar(
     coluna: int = 0,
     q: str = "",
     partida_id: int | None = None,
+    modo: str | None = None,
 ):
     from src.grid_game import buscar_celula, dia_grid
-    from src.grid_partidas import salt_da_partida
+    from src.grid_partidas import salt_convidado_continuo, salt_da_partida
 
     salt = None
     if partida_id is not None:
@@ -3298,6 +3309,8 @@ def grid_api_buscar(
         if not part or not voter or int(part["participante_id"]) != int(voter["id"]):
             return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
         salt = salt_da_partida(part)
+    elif str(modo or "").strip().lower() == "xonha":
+        salt = salt_convidado_continuo()
 
     try:
         data = buscar_celula(
@@ -3455,9 +3468,6 @@ async def grid_api_interromper(request: Request):
 
 @app.post("/grid/api/chute")
 async def grid_api_chute(request: Request):
-    neg = _grid_neg_json(request)
-    if neg:
-        return neg
     from src.grid_game import (
         celulas_completas,
         chute_nome_inexistente,
@@ -3468,7 +3478,11 @@ async def grid_api_chute(request: Request):
         texto_share,
         validar_chute,
     )
-    from src.grid_partidas import aplicar_chute_partida, salt_da_partida
+    from src.grid_partidas import (
+        aplicar_chute_partida,
+        salt_da_partida,
+        validar_chute_convidado,
+    )
     from src.grid_score import pontos_partida
 
     try:
@@ -3490,13 +3504,38 @@ async def grid_api_chute(request: Request):
     except (TypeError, ValueError):
         return JSONResponse({"erro": "partida_id inválido"}, status_code=400)
 
+    dia = dia_grid()
+    voter = _grid_voter(request)
+
+    if voter is None:
+        if partida_id is not None:
+            return JSONResponse(
+                {"erro": "Entre para registrar o chute."}, status_code=401
+            )
+        try:
+            resultado = validar_chute_convidado(
+                dia=dia,
+                linha=linha,
+                coluna=coluna,
+                clube_id=clube_id or None,
+                nome=nome or None,
+            )
+        except ValueError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=400)
+        return JSONResponse(
+            {
+                "resultado": resultado,
+                "modo": "xonha",
+                "convidado": True,
+            }
+        )
+
     resultado = None
     if not clube_id and nome:
         try:
             clube_id = str(resolver_clube_por_nome(nome)["id"])
         except ValueError as exc:
             msg = str(exc)
-            # Texto nada a ver / fora do catálogo: ainda conta como erro na célula
             if "não encontrado" in msg.casefold():
                 try:
                     resultado = chute_nome_inexistente(
@@ -3509,13 +3548,8 @@ async def grid_api_chute(request: Request):
     if resultado is None and not clube_id:
         return JSONResponse({"erro": "Digite o nome do clube"}, status_code=400)
 
-    dia = dia_grid()
-    voter = _grid_voter(request)
-
     # --- Fluxo novo: partida_id (Raiz/Xonha) ---
     if partida_id is not None:
-        if not voter:
-            return JSONResponse({"erro": "Entre para registrar o chute."}, status_code=401)
         part = db.get_grid_partida(partida_id)
         if not part or int(part["participante_id"]) != int(voter["id"]):
             return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
@@ -3609,7 +3643,6 @@ async def grid_api_chute(request: Request):
             if celulas[linha][coluna] is not None:
                 return JSONResponse({"erro": "Célula já jogada"}, status_code=409)
 
-    # Estilo HoopsGrid: time já usado não entra no quadro (sem miss); usuário tenta de novo.
     if clube_id and clube_ja_usado_no_grid(celulas, clube_id):
         return JSONResponse(
             {"erro": "Esse time já foi usado neste grid. Escolha outro."},

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src import db as dbmod
-from src.grid_game import dia_grid, gerar_puzzle, puzzle_publico
+from src.grid_game import dia_grid, gerar_puzzle
 from src.grid_partidas import (
     agora_iso,
     iniciar_raiz,
@@ -126,15 +126,46 @@ def test_grid_page_logado_ssr_eixos_continuo(client):
     assert rotulo in r.text
     assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
     assert "partida" in r.text
-    pro = puzzle_publico(dia)
-    if pro["linhas"][0]["rotulo"] != rotulo:
-        assert pro["linhas"][0]["rotulo"] not in r.text or rotulo in r.text
 
 
-def test_grid_page_convidado_mantem_pro(client):
+def test_grid_page_convidado_ssr_continuo(client):
     client.cookies.clear()
     dia = dia_grid()
-    pro = puzzle_publico(dia)
+    esperado = gerar_puzzle(dia, salt="xonha-1")
     r = client.get("/grid")
     assert r.status_code == 200
-    assert pro["linhas"][0]["rotulo"] in r.text
+    assert esperado["linhas"][0]["rotulo"] in r.text
+    assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
+    assert "Jogue o Contínuo" in r.text
+
+
+def test_convidado_chute_continuo_sem_login(client):
+    client.cookies.clear()
+    from src.grid_game import clubes_grid, validar_chute
+    from src.grid_partidas import salt_convidado_continuo
+
+    dia = dia_grid()
+    salt = salt_convidado_continuo()
+    alvo = None
+    for c in clubes_grid():
+        try:
+            r = validar_chute(
+                dia=dia, linha=0, coluna=0, clube_id=c["id"], salt=salt
+            )
+        except ValueError:
+            continue
+        if r["ok"]:
+            alvo = c
+            break
+    assert alvo is not None
+    chute = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "clube_id": alvo["id"]},
+    )
+    assert chute.status_code == 200, chute.text
+    body = chute.json()
+    assert body["convidado"] is True
+    assert body["modo"] == "xonha"
+    assert body["resultado"]["ok"] is True
+    assert body["resultado"]["clube"]["id"] == alvo["id"]
+    assert "partida" not in body or body.get("partida") is None
