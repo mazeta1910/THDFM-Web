@@ -41,33 +41,41 @@
           {% endif %}
         </a>
       </div>
-      <div class="grid-title-row">
+
+      <div class="grid-hero-block">
         <h1 class="grid-title">
           THDFM Grid
           <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
         </h1>
+        <p class="grid-sub grid-sub--lead" data-grid-sub>
+          Puzzle de <strong data-grid-rotulo>{{ puzzle.rotulo }}</strong>; Acerte um clube em cada célula.
+        </p>
+        <p class="grid-sub grid-sub--rule">Você tem uma tentativa por casa.</p>
+        <p class="grid-cota" data-grid-cota {% if not cota_xonha %}hidden{% endif %}>
+          {%- if cota_xonha and cota_xonha.passe_ativo -%}
+          Grids disponíveis: ilimitados (passe ativo)
+          {%- elif cota_xonha -%}
+          Grids disponíveis: {{ cota_xonha.restantes if cota_xonha.restantes is not none else cota_xonha.limite_livre }}
+          {%- else -%}
+          Grids disponíveis: —
+          {%- endif -%}
+        </p>
+        <div class="grid-live-stats" data-grid-live-stats>
+          <div class="grid-score-block">
+            <span class="grid-score-label">Score</span>
+            <strong class="grid-score-value" data-grid-live-score>0</strong>
+          </div>
+          <div class="grid-timer-block" title="Tempo da partida">
+            <span class="grid-timer-label">Tempo</span>
+            <strong class="grid-timer-value" data-grid-timer>00:00</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-toolbar" data-grid-toolbar>
         <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
           <button type="button" class="grid-mode-btn" data-grid-mode="raiz" role="tab" aria-selected="false">Raiz</button>
           <button type="button" class="grid-mode-btn is-active" data-grid-mode="xonha" role="tab" aria-selected="true">Contínuo</button>
-        </div>
-      </div>
-      <p class="grid-sub grid-sub--lead" data-grid-sub>
-        Puzzle de <strong data-grid-rotulo>{{ puzzle.rotulo }}</strong>; Acerte um clube em cada célula.
-      </p>
-      <p class="grid-sub grid-sub--rule">Você tem uma tentativa por casa.</p>
-      <p class="grid-cota" data-grid-cota {% if not cota_xonha %}hidden{% endif %}>
-        {%- if cota_xonha and cota_xonha.passe_ativo -%}
-        Grids disponíveis: ilimitados (passe ativo)
-        {%- elif cota_xonha -%}
-        Grids disponíveis: {{ cota_xonha.restantes if cota_xonha.restantes is not none else cota_xonha.limite_livre }}
-        {%- else -%}
-        Grids disponíveis: —
-        {%- endif -%}
-      </p>
-      <div class="grid-live-stats" data-grid-live-stats>
-        <div class="grid-timer-block" title="Tempo da partida">
-          <span class="grid-timer-label">Tempo</span>
-          <strong class="grid-timer-value" data-grid-timer>00:00</strong>
         </div>
         <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
           <button type="button" class="grid-chip-btn" data-grid-dica-open>Dica</button>
@@ -87,12 +95,7 @@
 
   <div class="grid-board-wrap" data-grid-board-wrap>
     <div class="grid-board" data-grid-board aria-label="Grade do dia">
-      <div class="grid-corner" data-grid-corner>
-        <div class="grid-corner-score">
-          <span class="grid-score-label">Score</span>
-          <strong class="grid-score-value" data-grid-live-score>0</strong>
-        </div>
-      </div>
+      <div class="grid-corner" aria-hidden="true" data-grid-corner></div>
       {% for col in puzzle.colunas %}
       <div class="grid-axis grid-axis--col" data-grid-axis-col title="{{ col.rotulo }}">{{ col.rotulo }}</div>
       {% endfor %}
@@ -116,7 +119,7 @@
       {% endfor %}
     </div>
     <div class="grid-board-footer">
-      <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
+      <p class="grid-hint" data-grid-hint hidden></p>
       <div class="grid-daltonismo" data-grid-daltonismo>
         <span class="grid-daltonismo-label" id="grid-daltonismo-label">Daltonismo</span>
         <div class="grid-daltonismo-toggles" role="radiogroup" aria-labelledby="grid-daltonismo-label">
@@ -438,7 +441,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=20" defer></script>
+<script src="/static/grid.js?v=21" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

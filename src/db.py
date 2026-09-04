@@ -5092,9 +5092,9 @@ def get_grid_partida_aberta(
 def contar_grid_partidas_dia(
     participante_id: int, dia: str, *, modo: str
 ) -> int:
-    """Conta partidas que de fato começaram (1º clique) ou foram encerradas.
+    """Conta só partidas encerradas (finalizadas ou interrompidas).
 
-    Partidas vazias abandonadas não queimam a cota Contínuo.
+    A partida Contínuo em andamento NÃO reduz "Grids disponíveis".
     """
     with get_db() as conn:
         row = conn.execute(
@@ -5102,10 +5102,8 @@ def contar_grid_partidas_dia(
             SELECT COUNT(*) AS n FROM grid_partida
             WHERE participante_id = ? AND dia = ? AND modo = ?
               AND (
-                iniciado_em IS NOT NULL
-                OR COALESCE(finalizado, 0) = 1
+                COALESCE(finalizado, 0) = 1
                 OR COALESCE(interrompido, 0) = 1
-                OR (celulas_json IS NOT NULL AND celulas_json NOT IN ('', '[]', 'null'))
               )
             """,
             (int(participante_id), str(dia), str(modo)),
