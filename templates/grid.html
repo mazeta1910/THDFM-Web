@@ -425,13 +425,17 @@
   <div class="grid-modal-card">
     <button type="button" class="grid-modal-x" data-grid-dica-close aria-label="Fechar">×</button>
     <h2 class="grid-result-title">Usar dica</h2>
-    <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
-    <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
-    <div class="grid-dica-opcoes">
-      <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
-        <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
-        <small>20 clubes (2 válidos) — custo sobe a cada uso</small>
-      </button>
+    <p class="grid-sub" data-grid-dica-passo>Qual vértice você deseja selecionar?</p>
+    <div class="grid-dica-picker" data-grid-dica-picker role="group" aria-label="Escolher célula da dica"></div>
+    <div class="grid-dica-confirm" data-grid-dica-confirm hidden>
+      <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
+      <p class="grid-dica-eixos" data-grid-dica-eixos hidden></p>
+      <div class="grid-dica-opcoes">
+        <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
+          <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
+          <small>20 clubes (2 válidos) — custo sobe a cada uso</small>
+        </button>
+      </div>
     </div>
     <p class="grid-modal-hint" data-grid-dica-hint hidden></p>
   </div>
@@ -485,7 +489,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=31" defer></script>
+<script src="/static/grid.js?v=32" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=6" defer></script>
 {% endif %}
