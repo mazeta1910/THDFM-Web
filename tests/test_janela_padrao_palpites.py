@@ -144,3 +144,43 @@ def test_quartas_ida_fechada_abre_volta_no_perfil_e_palpites(client):
     assert re.search(r'class="match-panel\s+hidden"\s*data-panel="ida"', mp.text)
     assert re.search(r'class="match-panel\s*"\s*data-panel="volta"', mp.text)
     assert "Ida encerrada — palpites só na Volta" in mp.text
+
+
+def test_r4_ao_vivo_nao_pula_quartas_volta_se_fase_avancou(client):
+    """Se admin avançar para Semis cedo, R4 ao vivo continua Quartas (Volta)."""
+    a = db.criar_participante("R4 Quartas", status="liberado")
+    login_admin(client)
+
+    _palpite_exato(a["id"], "oitavas", "ida")
+    _fechar_perna("oitavas", "ida")
+    confirmar_rodada()
+
+    _palpite_exato(a["id"], "oitavas", "volta", gm=0, gv=0)
+    _fechar_perna("oitavas", "volta", gm=0, gv=0)
+    confirmar_rodada()
+
+    _montar_quartas(client)
+    _palpite_exato(a["id"], "quartas", "ida")
+    _fechar_perna("quartas", "ida")
+    confirmar_rodada()
+    assert db.get_janela() == "volta"
+    assert db.get_fase_atual() == "quartas"
+
+    # Avanço precoce: fase vira Semis/Ida, mas a próxima rodada lógica é Quartas Volta.
+    db.set_fase_atual("semis")
+    db.set_janela("ida")
+
+    entradas = resumo_pontuacao_por_participante()[a["id"]]
+    ao_vivo = entradas[-1]
+    assert ao_vivo["ao_vivo"] is True
+    assert ao_vivo["rotulo_curto"] == "R4"
+    assert ao_vivo["fase"] == "quartas"
+    assert ao_vivo["fase_label"] == "Quartas"
+    assert ao_vivo["janela"] == "volta"
+    assert ao_vivo["janela_label"] == "Volta"
+
+    _login_participante(client, a, "r4quartas1")
+    rp = client.get("/meu-perfil")
+    assert rp.status_code == 200
+    assert "R4 · Quartas (Volta)" in rp.text
+    assert "R4 · Semis (Ida)" not in rp.text

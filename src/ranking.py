@@ -428,6 +428,36 @@ _JANELA_LABEL = {
     "ida": "Ida",
     "volta": "Volta",
 }
+# Ordem das fases eliminatórias (Oitavas permite pular Volta ao avançar).
+_ORDEM_FASES: tuple[str, ...] = ("oitavas", "quartas", "semis", "final")
+
+
+def _fase_janela_ao_vivo_corrigida(
+    fase_atual: str,
+    janela_atual: str,
+    concluidas: set[tuple[str, str]],
+) -> tuple[str, str]:
+    """Fase/perna do ao vivo: meta atual, com correção se pulou Volta intermediária.
+
+    Em geral respeita ``fase_atual``/``janela`` do meta (ex.: avanço Oitavas→Quartas
+    sem Volta das Oitavas). Se o admin avançou para Semis/Final sem confirmar a
+    Volta de uma fase já iniciada (Ida confirmada), força essa Volta — evita R4
+    como «Semis (Ida)» quando ainda falta «Quartas (Volta)».
+    """
+    fase = (fase_atual or "oitavas").lower()
+    janela = janela_atual if janela_atual in ("ida", "volta") else "ida"
+    try:
+        idx = _ORDEM_FASES.index(fase)
+    except ValueError:
+        return fase, janela
+    for i in range(idx):
+        f = _ORDEM_FASES[i]
+        # Oitavas: avanço precoce para Quartas é intencional (não forçar Volta).
+        if f == "oitavas":
+            continue
+        if (f, "ida") in concluidas and (f, "volta") not in concluidas:
+            return f, "volta"
+    return fase, janela
 
 
 def _linha_do_participante(
@@ -672,6 +702,9 @@ def resumo_pontuacao_por_participante(
     janela_atual = get_janela()
     if janela_atual not in ("ida", "volta"):
         janela_atual = "ida"
+    fase_ao_vivo, janela_ao_vivo = _fase_janela_ao_vivo_corrigida(
+        fase_atual, janela_atual, vistos
+    )
 
     out: dict[int, list[dict]] = {}
 
@@ -705,13 +738,13 @@ def resumo_pontuacao_por_participante(
         entradas.append(
             _entrada_resumo_rodada(
                 rotulo=f"Rodada {n_ao_vivo}",
-                fase=fase_atual,
-                janela=janela_atual,
+                fase=fase_ao_vivo,
+                janela=janela_ao_vivo,
                 linha=row,
                 ao_vivo=True,
                 numero=n_ao_vivo,
                 jogos=_jogos_detalhe_participante(
-                    pid, fase=fase_atual, perna=janela_atual
+                    pid, fase=fase_ao_vivo, perna=janela_ao_vivo
                 ),
             )
         )
