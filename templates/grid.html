@@ -428,11 +428,11 @@
     <p class="grid-sub">Célula <span data-grid-dica-celula></span></p>
     <div class="grid-dica-opcoes">
       <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="contagem">
-        Contagem (−10)
+        <span class="grid-dica-opt-title">Contagem (−10)</span>
         <small>Revela quantos clubes cabem na célula</small>
       </button>
       <button type="button" class="btn secondary grid-dica-opt" data-dica-tipo="matriz">
-        Matriz de clubes (<span data-grid-matriz-custo>−80</span>)
+        <span class="grid-dica-opt-title">Matriz de clubes (<span data-grid-matriz-custo>−80</span>)</span>
         <small>20 clubes (2 válidos) — custo sobe a cada uso</small>
       </button>
     </div>
@@ -462,7 +462,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=23" defer></script>
+<script src="/static/grid.js?v=24" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}

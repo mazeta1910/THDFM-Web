@@ -15270,9 +15270,19 @@ button.grid-chip-btn-ghost:hover:not(:disabled),
   text-align: left;
   width: 100%;
 }
+.grid-dica-opt-title {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--text);
+}
 .grid-dica-opt small {
   font-weight: 500;
   opacity: 0.8;
+  white-space: normal;
 }
 .grid-modal-card--wide {
   max-width: min(36rem, 96vw);
@@ -15283,23 +15293,53 @@ button.grid-chip-btn-ghost:hover:not(:disabled),
   gap: 0.45rem;
   margin-top: 0.75rem;
 }
-.grid-matriz-item {
+.grid-matriz-item,
+button.grid-matriz-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem;
+  justify-content: flex-start;
+  gap: 0.3rem;
+  padding: 0.4rem 0.3rem;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--card) 90%, #000);
+  color: var(--text) !important;
   font-size: 0.68rem;
+  font-weight: 600;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
+  width: 100%;
+  min-height: 5.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.grid-matriz-item:hover,
+.grid-matriz-item:focus-visible,
+button.grid-matriz-item:hover,
+button.grid-matriz-item:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  background: color-mix(in srgb, var(--accent) 18%, var(--card));
+  outline: none;
+  transform: translateY(-1px);
 }
 .grid-matriz-item img {
   width: 36px;
   height: 36px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+.grid-matriz-nome {
+  display: block;
+  width: 100%;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
 }
 .grid-rank-controls {
   display: flex;

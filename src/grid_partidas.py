@@ -242,6 +242,45 @@ def salt_da_partida(partida: dict[str, Any]) -> str | None:
     return None
 
 
+def anexar_indice_dia(partida: dict[str, Any]) -> dict[str, Any]:
+    """Inclui indice_dia (1-based) para rótulo do share Contínuo 1/2/3."""
+    if not partida or partida.get("id") is None:
+        return partida
+    out = dict(partida)
+    out["indice_dia"] = db.indice_grid_partida_dia(
+        int(partida["participante_id"]),
+        str(partida["dia"]),
+        modo=str(partida.get("modo") or "raiz"),
+        partida_id=int(partida["id"]),
+    )
+    return out
+
+
+def texto_share_partida(
+    partida: dict[str, Any],
+    *,
+    celulas: list | None = None,
+    pontos: int | None = None,
+) -> str:
+    """Monta texto de share WhatsApp a partir de uma partida (Pro / 1 / 2 / 3)."""
+    from src.grid_game import parse_celulas_progresso, texto_share
+
+    part = anexar_indice_dia(partida)
+    cells = celulas if celulas is not None else parse_celulas_progresso(part.get("celulas"))
+    modo = str(part.get("modo") or "")
+    indice = int(part["indice_dia"]) if modo == "xonha" else None
+    pts = pontos if pontos is not None else int(part.get("pontos") or 0)
+    dicas = part.get("dicas") or []
+    return texto_share(
+        dia=str(part.get("dia") or ""),
+        celulas=cells,
+        modo=modo,
+        indice=indice,
+        pontos=pts,
+        dicas_usadas=len(dicas) if isinstance(dicas, list) else 0,
+    )
+
+
 def _celula_key(linha: int, coluna: int) -> str:
     return f"{int(linha)},{int(coluna)}"
 

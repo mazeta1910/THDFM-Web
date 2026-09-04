@@ -1822,16 +1822,41 @@ def validar_chute(
     }
 
 
+def rotulo_grid_share(*, modo: str | None = None, indice: int | None = None) -> str:
+    """Rótulo curto do grid no share: 'Pro', '1'/'2'/'3', ou ''."""
+    m = (modo or "").strip().lower()
+    if m == "raiz":
+        return "Pro"
+    if m == "xonha":
+        if indice is not None and int(indice) > 0:
+            return str(int(indice))
+        return "Contínuo"
+    return ""
+
+
 def texto_share(
     *,
     dia: str,
     celulas: list[list[dict[str, Any] | None]],
     url: str = "https://thdfm.com.br/grid",
+    modo: str | None = None,
+    indice: int | None = None,
+    pontos: int | None = None,
+    dicas_usadas: int | None = None,
 ) -> str:
     """Texto estilo Wordle/Hoops para Twitter/WhatsApp.
 
     Usa escapes explícitos dos quadrados coloridos (Unicode 12) para o
     texto não depender de charset do arquivo-fonte no cliente.
+
+    Formato:
+      THDFM Grid Pro — dd/mm/aaaa
+      2/9
+      🟩 🟥 ⬜
+      …
+      1234
+      💡Dicas Utilizadas: 3
+      https://thdfm.com.br/grid
     """
     sq_ok = "\U0001f7e9"  # 🟩
     sq_miss = "\U0001f7e5"  # 🟥
@@ -1859,12 +1884,19 @@ def texto_share(
         rotulo = d.strftime("%d/%m/%Y")
     except ValueError:
         rotulo = dia
-    return (
-        f"THDFM Grid — {rotulo}\n"
-        f"{acertos}/{GRID_SIZE * GRID_SIZE}\n"
-        + "\n".join(linhas_emoji)
-        + f"\n{url}"
-    )
+    tag = rotulo_grid_share(modo=modo, indice=indice)
+    titulo = f"THDFM Grid {tag} — {rotulo}" if tag else f"THDFM Grid — {rotulo}"
+    partes = [
+        titulo,
+        f"{acertos}/{GRID_SIZE * GRID_SIZE}",
+        *linhas_emoji,
+    ]
+    if pontos is not None:
+        partes.append(str(int(pontos)))
+    if dicas_usadas is not None:
+        partes.append(f"💡Dicas Utilizadas: {int(dicas_usadas)}")
+    partes.append(url)
+    return "\n".join(partes)
 
 
 def parse_celulas_progresso(raw: Any) -> list[list[dict[str, Any] | None]]:

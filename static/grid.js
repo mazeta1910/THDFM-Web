@@ -450,8 +450,28 @@
     const parts = (dia || "").split("-");
     const rotulo =
       parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dia || "hoje";
-    const modoTag = modo === "xonha" ? " Contínuo" : modo === "raiz" ? " Pro" : "";
-    return `THDFM Grid${modoTag} — ${rotulo}\n${ok}/${size * size}\n${lines.join("\n")}\nhttps://thdfm.com.br/grid`;
+    let modoTag = "";
+    if (modo === "raiz") modoTag = " Pro";
+    else if (modo === "xonha") {
+      const idx =
+        partida && partida.indice_dia != null
+          ? Number(partida.indice_dia)
+          : null;
+      modoTag = idx && !Number.isNaN(idx) ? ` ${idx}` : " Contínuo";
+    }
+    const dicasN = ((partida && partida.dicas) || []).length;
+    const scoreLine =
+      typeof scoreParcial === "number" && !Number.isNaN(scoreParcial)
+        ? String(scoreParcial)
+        : "";
+    return [
+      `THDFM Grid${modoTag} — ${rotulo}`,
+      `${ok}/${size * size}`,
+      ...lines,
+      ...(scoreLine ? [scoreLine] : []),
+      `💡Dicas Utilizadas: ${dicasN}`,
+      "https://thdfm.com.br/grid",
+    ].join("\n");
   }
 
   function showResult(serverShare) {
@@ -1019,7 +1039,7 @@
             c.id
           )}">
             <img src="${escapeHtml(c.emblema || "")}" alt="" />
-            <span>${escapeHtml(c.nome || "")}</span>
+            <span class="grid-matriz-nome">${escapeHtml(c.nome || "")}</span>
           </button>`
           )
           .join("");
