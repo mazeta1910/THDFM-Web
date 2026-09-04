@@ -37,6 +37,9 @@
   const dicaHintEl = document.querySelector("[data-grid-dica-hint]");
   const dicaCelulaEl = document.querySelector("[data-grid-dica-celula]");
   const dicaEixosEl = document.querySelector("[data-grid-dica-eixos]");
+  const dicaPickerEl = document.querySelector("[data-grid-dica-picker]");
+  const dicaConfirmEl = document.querySelector("[data-grid-dica-confirm]");
+  const dicaPassoEl = document.querySelector("[data-grid-dica-passo]");
   const matrizModal = document.querySelector("[data-grid-matriz-modal]");
   const matrizGridEl = document.querySelector("[data-grid-matriz-grid]");
   const matrizCustoEl = document.querySelector("[data-grid-matriz-custo]");
@@ -88,6 +91,8 @@
   let active = null; // {linha, coluna}
   /** @type {{linha:number, coluna:number}|null} */
   let lastCell = null;
+  /** Célula escolhida no fluxo da dica (após selecionar o vértice). */
+  let dicaTargetCell = null;
   /** Permite fechar a matriz sem o aviso (chute ou confirmação de saída). */
   let matrizAllowClose = false;
   let shareText = "";
@@ -1093,32 +1098,98 @@
     }
   }
 
-  function resolveDicaCell() {
-    if (active && !celulas[active.linha][active.coluna]) return active;
-    if (lastCell && celulas[lastCell.linha] && !celulas[lastCell.linha][lastCell.coluna]) {
-      return lastCell;
-    }
+  function celulasVazias() {
+    const out = [];
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-        if (!celulas[r][c]) return { linha: r, coluna: c };
+        if (!celulas[r][c]) out.push({ linha: r, coluna: c });
       }
     }
-    return null;
+    return out;
   }
 
-  document.querySelector("[data-grid-dica-open]")?.addEventListener("click", () => {
+  function renderDicaPicker(selected) {
+    if (!dicaPickerEl) return;
+    const sel =
+      selected && selected.linha != null
+        ? `${selected.linha},${selected.coluna}`
+        : "";
+    const parts = [];
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const filled = !!(celulas[r] && celulas[r][c]);
+        const key = `${r},${c}`;
+        const { coords, eixos } = descricaoCelula({ linha: r, coluna: c });
+        const on = !filled && key === sel;
+        parts.push(`
+          <button
+            type="button"
+            class="grid-dica-pick${filled ? " is-filled" : ""}${on ? " is-selected" : ""}"
+            data-dica-pick-linha="${r}"
+            data-dica-pick-coluna="${c}"
+            ${filled ? "disabled" : ""}
+            title="${escapeHtml(eixos || coords)}"
+            aria-pressed="${on ? "true" : "false"}"
+          >
+            <span class="grid-dica-pick-coords">${escapeHtml(coords)}</span>
+            <span class="grid-dica-pick-eixos">${escapeHtml(eixos || (filled ? "ocupada" : "vazia"))}</span>
+          </button>`);
+      }
+    }
+    dicaPickerEl.innerHTML = parts.join("");
+  }
+
+  function selecionarVerticeDica(cell) {
+    if (!cell || celulas[cell.linha][cell.coluna]) {
+      setDicaHint("Escolha um vértice ainda vazio.", true);
+      return;
+    }
+    dicaTargetCell = { linha: cell.linha, coluna: cell.coluna };
+    lastCell = { ...dicaTargetCell };
+    renderDicaPicker(dicaTargetCell);
+    preencherInfoCelulaDica(dicaTargetCell, dicaCelulaEl, dicaEixosEl);
+    if (dicaConfirmEl) dicaConfirmEl.hidden = false;
+    if (dicaPassoEl) {
+      dicaPassoEl.textContent = "Vértice selecionado. Confirme a dica abaixo.";
+    }
+    setDicaHint("");
+    updateMatrizCusto(proximoCustoMatriz);
+  }
+
+  function abrirModalDica() {
     if (modo !== "xonha" || !partidaId || interrompido || finalizado) return;
-    const cell = resolveDicaCell();
-    if (!cell) {
+    const vazias = celulasVazias();
+    if (!vazias.length) {
       setHint("Não há células vazias para dica.");
       return;
     }
-    lastCell = cell;
-    preencherInfoCelulaDica(cell, dicaCelulaEl, dicaEixosEl);
+    dicaTargetCell = null;
+    if (dicaConfirmEl) dicaConfirmEl.hidden = true;
+    if (dicaPassoEl) {
+      dicaPassoEl.textContent = "Qual vértice você deseja selecionar?";
+    }
     setDicaHint("");
     updateMatrizCusto(proximoCustoMatriz);
+    renderDicaPicker(null);
     if (dicaModal && typeof dicaModal.showModal === "function") dicaModal.showModal();
+  }
+
+  document.querySelector("[data-grid-dica-open]")?.addEventListener("click", () => {
+    abrirModalDica();
   });
+
+  if (dicaPickerEl) {
+    dicaPickerEl.addEventListener("click", (ev) => {
+      const btn = ev.target && ev.target.closest
+        ? ev.target.closest("[data-dica-pick-linha]")
+        : null;
+      if (!btn || btn.disabled) return;
+      const linha = Number(btn.getAttribute("data-dica-pick-linha"));
+      const coluna = Number(btn.getAttribute("data-dica-pick-coluna"));
+      if (Number.isNaN(linha) || Number.isNaN(coluna)) return;
+      selecionarVerticeDica({ linha, coluna });
+    });
+  }
 
   document.querySelector("[data-grid-dica-close]")?.addEventListener("click", () => {
     if (dicaModal && dicaModal.open) dicaModal.close();
@@ -1173,9 +1244,13 @@
   }
 
   async function pedirDica(tipo) {
-    const cell = resolveDicaCell();
+    const cell = dicaTargetCell;
     if (!cell || !partidaId) {
-      setDicaHint("Selecione uma célula vazia.", true);
+      setDicaHint("Selecione um vértice vazio primeiro.", true);
+      return;
+    }
+    if (celulas[cell.linha] && celulas[cell.linha][cell.coluna]) {
+      setDicaHint("Esse vértice já foi preenchido. Escolha outro.", true);
       return;
     }
     // Só matriz permanece na UI; contagem legado ignorada.
@@ -1250,7 +1325,7 @@
     matrizGridEl.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-clube-id]");
       if (!btn) return;
-      const cell = resolveDicaCell();
+      const cell = dicaTargetCell;
       if (!cell) return;
       active = { ...cell };
       forceCloseMatriz();
