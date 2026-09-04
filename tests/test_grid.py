@@ -972,7 +972,8 @@ def test_grid_admin_so_mazeta(client: TestClient):
     assert dbmod.get_grid_virada_hm() == (18, 30)
 
     dia = data["dia"]
-    antes = gerar_puzzle(dia)
+    salt_antes = dbmod.get_grid_salt(dia) or ""
+    antes = gerar_puzzle(dia, salt=salt_antes)
     regen = client.post(
         "/grid/api/admin/regenerar",
         json={"dia": dia, "limpar_progresso": True},
@@ -981,7 +982,19 @@ def test_grid_admin_so_mazeta(client: TestClient):
     body = regen.json()
     assert body["ok"] is True
     assert body["salt"]
+    # Regenerar aplica salt do dia: eixos da API = gerar_puzzle com esse salt.
+    esperado_salt = gerar_puzzle(dia, salt=body["salt"])
+    assert [c["id"] for c in body["puzzle"]["linhas"]] == [
+        c["id"] for c in esperado_salt["linhas"]
+    ]
+    assert [c["id"] for c in body["puzzle"]["colunas"]] == [
+        c["id"] for c in esperado_salt["colunas"]
+    ]
+    assert dbmod.get_grid_salt(dia) == body["salt"]
     depois = gerar_puzzle(dia)
+    assert [c["id"] for c in depois["linhas"]] == [
+        c["id"] for c in esperado_salt["linhas"]
+    ]
     assert depois["linhas"] != antes["linhas"] or depois["colunas"] != antes["colunas"]
 
     full = [
@@ -1003,7 +1016,13 @@ def test_grid_admin_so_mazeta(client: TestClient):
     )
     assert rest.status_code == 200
     assert rest.json()["restaurado"] is True
-    assert gerar_puzzle(dia) == antes
+    assert dbmod.get_grid_salt(dia) is None
+    # Sem salt do dia: volta ao puzzle canônico (salt=""), não ao salt prévio do init.
+    oficial = gerar_puzzle(dia, salt="")
+    assert gerar_puzzle(dia) == oficial
+    assert [c["id"] for c in rest.json()["puzzle"]["linhas"]] == [
+        c["id"] for c in oficial["linhas"]
+    ]
     assert dbmod.get_grid_virada_hm() == (18, 30)
     client.post("/grid/api/admin/virada", json={"hora": "00:00"})
 
@@ -1360,25 +1379,37 @@ def test_listar_grid_dias_so_com_jogos():
 
 def test_grid_ranking_barras_e_streak_positivo(client: TestClient):
     from src import db as dbmod
+    from src.grid_partidas import agora_iso, iniciar_raiz
 
     part = dbmod.criar_participante("Rank Barras", status="liberado", celular="11991112299")
-    # 4 acertos em 9 células, dia finalizado
+    # 4 acertos em 9 células, partida Pro finalizada (ranking lê grid_partida).
     cells = [[_celula_ok(str(i * 3 + j)) for j in range(3)] for i in range(3)]
     for i in range(3):
         for j in range(3):
             if i * 3 + j >= 4:
-                cells[i][j] = {"clube": str(i * 3 + j), "ok": False, "rep": 50}
-    dbmod.salvar_grid_progresso(part["id"], dia_grid(), cells, finalizado=True)
+                cells[i][j] = {"clube": {"id": str(i * 3 + j), "nome": "X", "rep": 50}, "ok": False}
+    partida = iniciar_raiz(part["id"], dia_grid())
+    dbmod.atualizar_grid_partida(
+        partida["id"],
+        finalizado=True,
+        iniciado_em=agora_iso(),
+        celulas=cells,
+    )
     dbmod.definir_credenciais(part["id"], "rank.barras.user", "senha12345")
     client.get(f"/p/{part['token']}")
     r = client.get("/grid")
     assert r.status_code == 200
-    assert "grid-rank-meter" in r.text
-    assert "4/9" in r.text
-    assert "grid-rank-streak-pos" in r.text
-    assert f'+{dbmod.grid_streak(part["id"])}' in r.text or "+1" in r.text
-    tot = dias_totais_grid(dia_grid())
-    assert f"1/{tot}" in r.text
+    assert "Rank Barras" in r.text
+    # Compacto: score na faixa; detalhe: colunas de acertos/streak (sem meter antigo).
+    assert "grid-rank-band-score" in r.text
+    assert 'data-sort-key="acertos"' in r.text
+    assert 'data-sort-key="streak"' in r.text
+    assert 'data-sort-value="4"' in r.text  # 4 acertos
+    streak = dbmod.grid_streak_modo(part["id"], "raiz")
+    assert streak >= 1
+    assert f'data-sort-value="{streak}"' in r.text
+    assert "data-grid-streak" in r.text
+    assert f"🔥 {streak}" in r.text or f">{streak}" in r.text
 
 
 def test_chute_errado_marca_miss():
@@ -1711,17 +1742,26 @@ def test_grid_ranking_inline_e_redirect(client: TestClient):
     assert "#ranking" in loc
 
     full = [[_celula_ok("1") for _ in range(3)] for _ in range(3)]
-    dbmod.salvar_grid_progresso(part["id"], "2026-08-12", full, finalizado=True)
+    from src.grid_partidas import agora_iso, iniciar_raiz
+
+    partida = iniciar_raiz(part["id"], "2026-08-12")
+    dbmod.atualizar_grid_partida(
+        partida["id"],
+        finalizado=True,
+        iniciado_em=agora_iso(),
+        celulas=full,
+    )
 
     r = client.get("/grid")
     assert r.status_code == 200
     assert 'id="ranking"' in r.text
     assert "Rank Viewer" in r.text
-    assert "Dias" in r.text
+    # Layout condensado: métrica de dias/partidas via coluna sortável (não o rótulo solto "Dias").
+    assert 'data-sort-key="dias"' in r.text
+    assert "grid-rank-band" in r.text or "grid-rank-table" in r.text
     assert 'href="#ranking"' not in r.text
     assert "data-grid-streak" in r.text
     assert "grid-share-actions" in r.text
-    assert "grid-rank-crown" in r.text
     assert "zona-campeao" in r.text
 
 
@@ -1773,23 +1813,30 @@ def test_letra_ignora_prefixo_juridico_fc_sc_ec():
 
 def test_grid_ranking_top5_ver_mais(client: TestClient):
     from src import db as dbmod
+    from src.grid_partidas import agora_iso, iniciar_xonha
 
     login_admin(client)
-    full = [[_celula_ok("1") for _ in range(3)] for _ in range(3)]
+    full = [[_celula_ok(str(i)) for i in range(3)] for _ in range(3)]
     for i in range(7):
         p = dbmod.criar_participante(
             f"Rank Top {i}", status="liberado", celular=f"1199222000{i}"
         )
-        # Dias diferentes para ordenar estável (a partir do ranking oficial)
+        # Contínuo: 1ª partida/dia conta; dias distintos para ordenar estável.
         for d in range(i + 1):
-            dbmod.salvar_grid_progresso(
-                p["id"], f"2026-08-{12 + d:02d}", full, finalizado=True
+            part = iniciar_xonha(p["id"], f"2026-08-{12 + d:02d}")
+            dbmod.atualizar_grid_partida(
+                part["id"],
+                finalizado=True,
+                iniciado_em=agora_iso(),
+                celulas=full,
             )
 
     r = client.get("/grid")
     assert r.status_code == 200
+    # Expansor do ranking (>5) no painel Contínuo / lista com extras ocultos.
     assert "data-grid-rank-mais" in r.text
     assert "Ver mais" in r.text
     assert "grid-rank-extra" in r.text
     assert r.text.count("grid-rank-extra") >= 2
-    assert "grid-rank-crown" in r.text
+    assert "grid-rank-ver-mais" in r.text
+    assert "zona-campeao" in r.text
