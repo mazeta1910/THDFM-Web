@@ -3021,13 +3021,15 @@ def grid_page(request: Request):
         progresso=progresso,
         streak=streak,
         share=share,
-        linhas=db.ranking_grid(limite=100),
+        linhas=db.ranking_grid_modo("raiz", limite=100),
+        linhas_xonha=db.ranking_grid_modo("xonha", limite=100),
         dias_totais=dias_totais_grid(dia),
         grid_privado=False,
         grid_pode_salvar=bool(voter),
         virada_hora=virada_hora,
         virada_minuto=virada_minuto,
         virada_rotulo=virada_rotulo,
+        taxa_pix=os.environ.get("TAXA_PIX", TAXA_PIX),
     )
 
 
@@ -3635,6 +3637,38 @@ async def grid_api_admin_zerar_ranking(request: Request):
         return neg
     apagados = db.limpar_grid_progresso()
     return JSONResponse({"ok": True, "apagados": apagados})
+
+
+@app.post("/grid/api/admin/xonha-passe")
+async def grid_api_admin_xonha_passe(request: Request):
+    """Libera passe Xonha 30 dias para um participante — só Mazeta."""
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from datetime import date, timedelta
+
+    from src.grid_game import dia_grid
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    try:
+        pid = int(body.get("participante_id"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "participante_id inválido"}, status_code=400)
+    part = db.get_participante(pid)
+    if not part:
+        return JSONResponse({"erro": "participante não encontrado"}, status_code=404)
+    dias = int(body.get("dias") or 30)
+    dias = max(1, min(dias, 366))
+    base = date.fromisoformat(dia_grid())
+    valido_ate = (base + timedelta(days=dias)).isoformat()
+    out = db.liberar_grid_xonha_passe(
+        pid, valido_ate=valido_ate, liberado_por="mazeta"
+    )
+    return JSONResponse({"ok": True, "passe": out})
 
 
 @app.post("/grid/api/admin/regenerar")

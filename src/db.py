@@ -4597,7 +4597,9 @@ def limpar_grid_progresso() -> int:
     """Apaga todo o progresso do Grid (ranking/streak)."""
     with get_db() as conn:
         cur = conn.execute("DELETE FROM grid_progresso")
-        return int(cur.rowcount or 0)
+        n = int(cur.rowcount or 0)
+        conn.execute("DELETE FROM grid_partida")
+        return n
 
 
 def limpar_grid_progresso_dia(dia: str) -> int:
@@ -5368,6 +5370,156 @@ def ranking_grid(*, limite: int = 50) -> list[dict[str, Any]]:
         item["posicao"] = i
         item["zona"] = _zona_classificacao(i, total)
     return anexar_hall_borda(limited)
+
+
+def grid_streak_modo(
+    participante_id: int,
+    modo: str,
+    *,
+    ate_dia: str | None = None,
+) -> int:
+    """Dias consecutivos com ≥1 partida finalizada no modo."""
+    from datetime import date, timedelta
+
+    from src.grid_game import GRID_RANKING_DESDE, dia_grid
+
+    if modo not in ("raiz", "xonha"):
+        return 0
+    pid = int(participante_id)
+    fim = date.fromisoformat(ate_dia or dia_grid())
+    ini = date.fromisoformat(GRID_RANKING_DESDE)
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT dia FROM grid_partida
+            WHERE participante_id = ? AND modo = ? AND finalizado = 1
+              AND dia <= ? AND dia >= ?
+            ORDER BY dia DESC
+            """,
+            (pid, modo, fim.isoformat(), GRID_RANKING_DESDE),
+        ).fetchall()
+    feitos = {r["dia"] for r in rows}
+    streak = 0
+    cursor = fim
+    while cursor >= ini and cursor.isoformat() in feitos:
+        streak += 1
+        cursor = cursor - timedelta(days=1)
+    return streak
+
+
+def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
+    """Ranking por score único (Raiz ou Xonha) a partir de grid_partida."""
+    from src.grid_game import GRID_RANKING_DESDE, dia_grid
+    from src.grid_score import score_ranking
+
+    if modo not in ("raiz", "xonha"):
+        raise ValueError("modo inválido")
+    lim = max(1, min(int(limite), 200))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.id AS participante_id, p.nome, p.avatar_path,
+                   g.dia, g.celulas_json, g.finalizado, g.pontos, g.tempo_segundos
+            FROM grid_partida g
+            JOIN participantes p ON p.id = g.participante_id
+            WHERE p.status = 'liberado' AND g.modo = ? AND g.dia >= ?
+            ORDER BY p.id ASC, g.dia DESC, g.id DESC
+            """,
+            (modo, GRID_RANKING_DESDE),
+        ).fetchall()
+    agg: dict[int, dict[str, Any]] = {}
+    hoje = dia_grid()
+    for row in rows:
+        pid = int(row["participante_id"])
+        item = agg.setdefault(
+            pid,
+            {
+                "participante_id": pid,
+                "nome": (row["nome"] or "").strip() or "alguém",
+                "avatar_path": row["avatar_path"],
+                "dias_finalizados": 0,
+                "partidas_finalizadas": 0,
+                "celulas_ok": 0,
+                "celulas_preenchidas": 0,
+                "pontos_partidas": [],
+                "tempos": [],
+            },
+        )
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        ok, filled = _contar_celulas_ok(celulas)
+        item["celulas_ok"] += ok
+        item["celulas_preenchidas"] += filled
+        item["pontos_partidas"].append(int(row["pontos"] or 0))
+        if row["finalizado"]:
+            item["partidas_finalizadas"] += 1
+            if modo == "raiz":
+                item["dias_finalizados"] += 1
+            if row["tempo_segundos"] is not None:
+                try:
+                    item["tempos"].append(int(row["tempo_segundos"]))
+                except (TypeError, ValueError):
+                    pass
+        elif modo == "raiz" and filled > 0:
+            # partida raiz iniciada conta dia jogado parcial? não — só finalizados
+            pass
+    # dias_finalizados no xonha = dias distintos com finalizado
+    if modo == "xonha":
+        with get_db() as conn:
+            for pid in list(agg.keys()):
+                n = conn.execute(
+                    """
+                    SELECT COUNT(DISTINCT dia) AS n FROM grid_partida
+                    WHERE participante_id = ? AND modo = 'xonha' AND finalizado = 1
+                      AND dia >= ?
+                    """,
+                    (pid, GRID_RANKING_DESDE),
+                ).fetchone()
+                agg[pid]["dias_finalizados"] = int(n["n"] or 0) if n else 0
+
+    out: list[dict[str, Any]] = []
+    for pid, item in agg.items():
+        if item["celulas_preenchidas"] <= 0 and item["partidas_finalizadas"] <= 0:
+            continue
+        streak = grid_streak_modo(pid, modo, ate_dia=hoje)
+        item["streak"] = streak
+        item["score"] = score_ranking(item.pop("pontos_partidas"), streak=streak)
+        item["taxa"] = (
+            round(100.0 * item["celulas_ok"] / item["celulas_preenchidas"])
+            if item["celulas_preenchidas"]
+            else 0
+        )
+        tempos = item.pop("tempos")
+        item["tempo_medio"] = (
+            int(round(sum(tempos) / len(tempos))) if tempos else None
+        )
+        out.append(item)
+    out.sort(
+        key=lambda r: (
+            -int(r["score"]),
+            -int(r["dias_finalizados"]),
+            -int(r["celulas_ok"]),
+            (r["nome"] or "").casefold(),
+        )
+    )
+    from src.ranking import _zona_classificacao
+
+    total = len(out)
+    limited = out[:lim]
+    for i, item in enumerate(limited, start=1):
+        item["posicao"] = i
+        item["zona"] = _zona_classificacao(i, total)
+        item["modo"] = modo
+    return anexar_hall_borda(limited)
+
+
+def limpar_grid_partidas() -> int:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM grid_partida")
+        return int(cur.rowcount or 0)
+
 
 def grid_stats_participante(participante_id: int) -> dict[str, Any]:
     """Agregados do Grid para o bloco do perfil."""

@@ -238,6 +238,30 @@
     if (histDia) histDia.value = dia;
     carregar(dia);
   });
+
+  const passeForm = root.querySelector("[data-grid-admin-passe]");
+  passeForm?.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const pidEl = root.querySelector("[data-grid-admin-passe-pid]");
+    const st = statusEl("[data-grid-admin-passe-status]");
+    const pid = Number(pidEl && pidEl.value);
+    if (!pid) {
+      setStatus(st, "Informe o ID do participante", false);
+      return;
+    }
+    try {
+      const res = await fetch("/grid/api/admin/xonha-passe", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ participante_id: pid, dias: 30 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.erro || "Falha ao liberar passe");
+      setStatus(st, `Passe até ${data.passe?.valido_ate || "?"}`, true);
+    } catch (err) {
+      setStatus(st, err.message || "Erro", false);
+    }
+  });
 })();
 
 (() => {

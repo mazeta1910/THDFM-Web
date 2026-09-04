@@ -1,91 +1,82 @@
-{# Ranking do THDFM Grid (tabela reutilizável). #}
+{# Ranking compacto estilo HoopsGrid + vista detalhada. #}
 {% from "macros/avatar.html" import avatar %}
+{% set modo_rank = modo_rank|default('raiz') %}
 {% set dias_totais = dias_totais|default(1) %}
 {% set celulas_dia = 9 %}
-<div class="card grid-rank-card">
+<div class="grid-rank-panel" data-grid-rank-panel data-modo="{{ modo_rank }}">
   {% if linhas %}
-  <div class="table-wrap">
-    <table class="grid-rank-table" data-classificacao-sort data-grid-rank-table>
-      <thead>
-        <tr>
-          <th class="col-pos">#</th>
-          <th>Jogador</th>
-          <th class="num" data-sort-key="dias">Dias</th>
-          <th class="num" data-sort-key="acertos">Acertos</th>
-          <th class="num" data-sort-key="taxa">%</th>
-          <th class="num" data-sort-key="streak">Streak</th>
-          <th class="num" data-sort-key="rep" title="Desempate: menos reputação FM = mais pontos">Rep+</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in linhas %}
-        {% set dias_jogados = r.dias_finalizados or 0 %}
-        {% set celulas_ok = r.celulas_ok or 0 %}
-        {% set celulas_max = (dias_jogados * celulas_dia) if dias_jogados else celulas_dia %}
-        {% set dias_pct_raw = ((100 * dias_jogados) // dias_totais) if dias_totais else 0 %}
-        {% set dias_pct = 100 if dias_pct_raw > 100 else dias_pct_raw %}
-        {% set acertos_pct_raw = ((100 * celulas_ok) // celulas_max) if celulas_max else 0 %}
-        {% set acertos_pct = 100 if acertos_pct_raw > 100 else acertos_pct_raw %}
-        <tr
-          class="zona-{{ r.zona or 'meio' }}{% if r.posicao > 5 %} grid-rank-extra{% endif %}"
-          {% if r.posicao > 5 %}hidden{% endif %}
-          data-grid-rank-row
-        >
-          <td class="col-pos">{{ r.posicao }}º</td>
-          <td>
-            <a class="grid-rank-player" href="/perfil/{{ r.participante_id }}">
-              {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar", borda=r.hall_borda) }}
-              {% if r.posicao == 1 %}
-              <span class="grid-rank-crown" title="Líder" aria-label="Líder">
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <path fill="currentColor" d="M3 7l4 5 5-8 5 8 4-5v11H3V7zm2 9h14v2H5v-2z"/>
-                </svg>
-              </span>
-              {% endif %}
-              <span class="grid-rank-nome">{{ r.nome }}</span>
-            </a>
-          </td>
-          <td class="num" data-sort-value="{{ dias_jogados }}">
-            <span class="grid-rank-meter" title="{{ dias_jogados }} de {{ dias_totais }} dias">
-              <span class="grid-rank-meter-label">{{ dias_jogados }}/{{ dias_totais }}</span>
-              <span class="grid-rank-meter-bar" aria-hidden="true">
-                <span class="grid-rank-meter-fill" style="width: {{ dias_pct }}%"></span>
-              </span>
-            </span>
-          </td>
-          <td class="num" data-sort-value="{{ celulas_ok }}">
-            <span class="grid-rank-meter" title="{{ celulas_ok }} de {{ celulas_max }} células">
-              <span class="grid-rank-meter-label">{{ celulas_ok }}/{{ celulas_max }}</span>
-              <span class="grid-rank-meter-bar" aria-hidden="true">
-                <span class="grid-rank-meter-fill" style="width: {{ acertos_pct }}%"></span>
-              </span>
-            </span>
-          </td>
-          <td class="num" data-sort-value="{{ r.taxa }}">{{ r.taxa }}%</td>
-          <td class="num" data-sort-value="{{ r.streak }}">
-            {% if r.streak and r.streak > 0 %}
-            <span class="grid-rank-streak-pos" title="Streak positivo">+{{ r.streak }}</span>
-            {% else %}
-            {{ r.streak or 0 }}
+  <div class="grid-rank-compact" data-grid-rank-vista="compact">
+    <div class="grid-rank-compact-head">
+      <span>Nome</span>
+      <span>Score</span>
+    </div>
+    <ol class="grid-rank-compact-list">
+      {% for r in linhas %}
+      <li
+        class="grid-rank-band grid-rank-band--{{ r.posicao if r.posicao <= 4 else 'rest' }}{% if r.posicao > 5 %} grid-rank-extra{% endif %}"
+        {% if r.posicao > 5 %}hidden{% endif %}
+        data-grid-rank-row
+      >
+        <span class="grid-rank-band-pos">{{ r.posicao }}</span>
+        <a class="grid-rank-band-player" href="/perfil/{{ r.participante_id }}">
+          {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar", borda=r.hall_borda) }}
+          <span class="grid-rank-band-nome">{{ r.nome }}</span>
+        </a>
+        <span class="grid-rank-band-score">{{ r.score|default(0) }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div class="grid-rank-detail card grid-rank-card" data-grid-rank-vista="detail" hidden>
+    <div class="table-wrap">
+      <table class="grid-rank-table" data-classificacao-sort data-grid-rank-table>
+        <thead>
+          <tr>
+            <th class="col-pos">#</th>
+            <th>Jogador</th>
+            <th class="num" data-sort-key="score">Score</th>
+            <th class="num" data-sort-key="dias">{% if modo_rank == 'xonha' %}Partidas{% else %}Dias{% endif %}</th>
+            <th class="num" data-sort-key="acertos">Acertos</th>
+            <th class="num" data-sort-key="streak">Streak</th>
+            {% if modo_rank == 'raiz' %}
+            <th class="num" data-sort-key="tempo">Tempo</th>
             {% endif %}
-          </td>
-          <td class="num" data-sort-value="{{ r.pontos_rep or 0 }}">{{ r.pontos_rep or 0 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in linhas %}
+          {% set dias_jogados = r.dias_finalizados if modo_rank == 'raiz' else (r.partidas_finalizadas or 0) %}
+          <tr
+            class="zona-{{ r.zona or 'meio' }}{% if r.posicao > 5 %} grid-rank-extra{% endif %}"
+            {% if r.posicao > 5 %}hidden{% endif %}
+            data-grid-rank-row
+          >
+            <td class="col-pos">{{ r.posicao }}º</td>
+            <td>
+              <a class="grid-rank-player" href="/perfil/{{ r.participante_id }}">
+                {{ avatar(r.avatar_path, r.nome, class_prefix="planilha-avatar", borda=r.hall_borda) }}
+                <span class="grid-rank-nome">{{ r.nome }}</span>
+              </a>
+            </td>
+            <td class="num" data-sort-value="{{ r.score|default(0) }}">{{ r.score|default(0) }}</td>
+            <td class="num" data-sort-value="{{ dias_jogados }}">{{ dias_jogados }}</td>
+            <td class="num" data-sort-value="{{ r.celulas_ok or 0 }}">{{ r.celulas_ok or 0 }}</td>
+            <td class="num" data-sort-value="{{ r.streak or 0 }}">{{ r.streak or 0 }}</td>
+            {% if modo_rank == 'raiz' %}
+            <td class="num" data-sort-value="{{ r.tempo_medio or 0 }}">{% if r.tempo_medio is not none %}{{ r.tempo_medio }}s{% else %}—{% endif %}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
   {% if linhas|length > 5 %}
   <div class="grid-rank-mais-wrap">
-    <button
-      type="button"
-      class="btn secondary grid-rank-ver-mais"
-      data-grid-rank-mais
-      aria-expanded="false"
-    >Ver mais</button>
+    <button type="button" class="btn secondary grid-rank-ver-mais" data-grid-rank-mais aria-expanded="false">Ver mais</button>
   </div>
   {% endif %}
   {% else %}
-  <p class="proto-steam-empty">Ninguém zerou o Grid ainda. Seja o primeiro!</p>
+  <p class="proto-steam-empty">Ninguém no ranking {{ 'Xonha' if modo_rank == 'xonha' else 'Raiz' }} ainda.</p>
   {% endif %}
 </div>
