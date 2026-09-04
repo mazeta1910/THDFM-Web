@@ -3572,6 +3572,11 @@ async def grid_api_chute(request: Request):
             if finalizado
             else None
         )
+        cota_xonha = None
+        if str(partida.get("modo") or "") == "xonha":
+            from src.grid_partidas import pode_iniciar_xonha
+
+            _ok, cota_xonha = pode_iniciar_xonha(int(voter["id"]), dia)
         return JSONResponse(
             {
                 "resultado": resultado,
@@ -3582,6 +3587,7 @@ async def grid_api_chute(request: Request):
                 "streak": db.grid_streak(int(voter["id"]), ate_dia=dia),
                 "share": share,
                 "ranking_posicao": ranking_pos,
+                "cota_xonha": cota_xonha,
             }
         )
 

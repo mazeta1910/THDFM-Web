@@ -48,6 +48,18 @@ def test_atualizar_partida_pontos_e_dicas(client):
     assert out["celulas"][0][0]["ok"] is True
 
 
+def test_limpar_progresso_dia_apaga_partidas(client):
+    p = db.criar_participante("Limpa Dia", status="liberado")
+    db.criar_grid_partida(p["id"], "2026-09-04", modo="xonha", puzzle_salt="a")
+    db.criar_grid_partida(p["id"], "2026-09-04", modo="raiz", puzzle_salt="")
+    db.salvar_grid_progresso(p["id"], "2026-09-04", [[]], finalizado=False)
+    n = db.limpar_grid_progresso_dia("2026-09-04")
+    assert n >= 2
+    assert db.contar_grid_partidas_dia(p["id"], "2026-09-04", modo="xonha") == 0
+    assert db.contar_grid_partidas_dia(p["id"], "2026-09-04", modo="raiz") == 0
+    assert db.get_grid_progresso(p["id"], "2026-09-04") is None
+
+
 def test_passe_xonha_ativo_por_data(client):
     p = db.criar_participante("Passe", status="liberado")
     assert db.grid_xonha_passe_ativo(p["id"], hoje="2026-09-04") is False

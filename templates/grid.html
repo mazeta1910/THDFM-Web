@@ -78,8 +78,8 @@
           <button type="button" class="grid-mode-btn is-active" data-grid-mode="xonha" role="tab" aria-selected="true">Contínuo</button>
         </div>
         <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
-          <button type="button" class="grid-chip-btn" data-grid-dica-open>Dica</button>
-          <button type="button" class="grid-chip-btn" data-grid-xonha-nova hidden disabled title="Termine o grid atual para jogar outro">Outro Grid</button>
+          <button type="button" class="grid-chip-btn" data-grid-dica-open hidden>Dica</button>
+          <button type="button" class="grid-chip-btn grid-chip-btn--destaque" data-grid-xonha-nova hidden disabled title="Iniciar outro grid Contínuo">Outro Grid</button>
         </div>
       </div>
     </div>
@@ -484,7 +484,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=28" defer></script>
+<script src="/static/grid.js?v=29" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}
