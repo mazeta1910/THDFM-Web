@@ -6736,13 +6736,38 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   align-items: center;
   gap: 0.55rem 0.75rem;
 }
+.participante-foto-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin: 0.55rem 0 0.15rem;
+  min-height: 32px;
+}
+.participante-foto-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
 .participante-file-pick {
   margin: 0;
   flex: 1 1 auto;
   min-width: 0;
 }
+.participante-file-pick-icon {
+  flex: 0 0 auto;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+}
+.participante-file-pick-icon .file-pick-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+}
 .participante-remove-avatar {
   flex: 0 0 auto;
+  font-size: 0.78rem;
 }
 .participante-create-check {
   margin-top: 0.85rem;
@@ -6750,17 +6775,49 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
 .participante-edit-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
   margin-top: auto;
   padding-top: 0.85rem;
 }
-.participante-create-card .participante-edit-actions button {
-  width: auto;
-  min-width: 5.5rem;
+.participante-create-card .participante-edit-actions {
+  justify-content: flex-end;
+}
+.participante-create-card .participante-edit-actions .btn-save-icon {
+  margin: 0;
+  width: 40px !important;
+  height: 40px;
+  border-radius: 999px;
+}
+.participante-edit-card .btn-save-icon {
+  margin: 0;
+  width: 40px !important;
+  height: 40px;
+  border-radius: 999px;
 }
 .participante-create-spacer {
   flex: 1;
+}
+.participante-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+  color: var(--muted);
+  text-decoration: none;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.participante-icon-btn:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
 }
 .participante-link-btn {
   padding: 0.4rem 0.75rem;
