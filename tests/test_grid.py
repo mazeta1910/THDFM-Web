@@ -1028,11 +1028,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-<<<<<<< HEAD
-    assert "/static/grid.js?v=32" in r.text
-=======
-    assert "/static/grid.js?v=33" in r.text
->>>>>>> origin/master
+    assert "/static/grid.js?v=34" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
