@@ -138,3 +138,223 @@ def aplicar_chute_partida(
             finalizado=finalizado,
         )
     return part
+
+
+XONHA_LIVRE_POR_DIA = 3
+MATRIZ_TAMANHO = 20
+MATRIZ_VALIDOS = 2  # ~1 válido a cada 10 → 2 em 20
+
+
+class CotaXonhaEsgotada(Exception):
+    """Sem cota livre e sem passe Xonha."""
+
+
+def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, Any]]:
+    usados = db.contar_grid_partidas_dia(participante_id, dia, modo="xonha")
+    passe = db.grid_xonha_passe_ativo(participante_id, hoje=dia)
+    info = {
+        "usados": usados,
+        "limite_livre": XONHA_LIVRE_POR_DIA,
+        "passe_ativo": passe,
+        "restantes": None if passe else max(0, XONHA_LIVRE_POR_DIA - usados),
+    }
+    ok = passe or usados < XONHA_LIVRE_POR_DIA
+    return ok, info
+
+
+def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
+    """Cria nova partida Xonha (puzzle com salt próprio). Não retoma aberta."""
+    import secrets
+
+    from src.grid_game import gerar_puzzle
+
+    ok, info = pode_iniciar_xonha(participante_id, dia)
+    if not ok:
+        raise CotaXonhaEsgotada(
+            "Limite de 3 grids Xonha por dia. Passe ilimitado: R$ 1,65 / 30 dias."
+        )
+    salt = secrets.token_hex(8)
+    # Garante que o puzzle existe (e cacheia) antes de gravar a partida.
+    gerar_puzzle(dia, salt=salt)
+    now = agora_iso()
+    return db.criar_grid_partida(
+        participante_id,
+        dia,
+        modo="xonha",
+        puzzle_salt=salt,
+        iniciado_em=now,
+    )
+
+
+def puzzle_da_partida(partida: dict[str, Any]) -> dict[str, Any]:
+    from src.grid_game import gerar_puzzle, puzzle_publico
+
+    dia = partida["dia"]
+    if partida.get("modo") == "xonha" and partida.get("puzzle_salt"):
+        p = gerar_puzzle(dia, salt=str(partida["puzzle_salt"]))
+        from src.grid_game import get_virada_hm, ms_ate_proxima_virada, rotulo_dia, rotulo_hora_virada
+
+        h, mi = get_virada_hm()
+        return {
+            **p,
+            "rotulo": rotulo_dia(dia),
+            "virada_em_ms": ms_ate_proxima_virada(),
+            "virada_hora": h,
+            "virada_minuto": mi,
+            "virada_rotulo": rotulo_hora_virada(h, mi),
+            "tz": "America/Sao_Paulo",
+            "regenerado": True,
+            "modo": "xonha",
+        }
+    return {**puzzle_publico(dia), "modo": "raiz"}
+
+
+def salt_da_partida(partida: dict[str, Any]) -> str | None:
+    if partida.get("modo") == "xonha":
+        return str(partida.get("puzzle_salt") or "") or None
+    return None
+
+
+def _celula_key(linha: int, coluna: int) -> str:
+    return f"{int(linha)},{int(coluna)}"
+
+
+def aplicar_dica_contagem(
+    partida_id: int,
+    *,
+    participante_id: int,
+    linha: int,
+    coluna: int,
+) -> dict[str, Any]:
+    """Revela densidade da célula (−10). 1× por célula."""
+    from src.grid_game import GRID_SIZE
+    from src.grid_score import custo_dica_contagem
+
+    part = db.get_grid_partida(partida_id)
+    if not part or int(part["participante_id"]) != int(participante_id):
+        raise LookupError("partida não encontrada")
+    if part.get("modo") != "xonha":
+        raise ValueError("dicas só no modo Xonha")
+    if part.get("finalizado") or part.get("interrompido"):
+        raise PermissionError("partida encerrada")
+    if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
+        raise ValueError("célula inválida")
+
+    dicas = list(part.get("dicas") or [])
+    key = _celula_key(linha, coluna)
+    if any(d.get("tipo") == "contagem" and d.get("celula") == key for d in dicas):
+        raise ValueError("contagem já revelada nesta célula")
+
+    puzzle = puzzle_da_partida(part)
+    try:
+        dens = int(puzzle["densidades"][linha][coluna])
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise ValueError("densidade indisponível") from exc
+
+    custo = custo_dica_contagem()
+    dicas.append(
+        {
+            "tipo": "contagem",
+            "celula": key,
+            "linha": linha,
+            "coluna": coluna,
+            "custo": custo,
+            "payload": {"densidade": dens},
+        }
+    )
+    part = db.atualizar_grid_partida(partida_id, dicas=dicas)
+    pts = _recalcular_pontos(part)
+    part = db.atualizar_grid_partida(partida_id, pontos=pts)
+    return {
+        "partida": part,
+        "dica": dicas[-1],
+        "score_parcial": pts,
+    }
+
+
+def aplicar_dica_matriz(
+    partida_id: int,
+    *,
+    participante_id: int,
+    linha: int,
+    coluna: int,
+) -> dict[str, Any]:
+    """Matriz 20 clubes (2 válidos + 18 inválidos); custo exponencial ilimitado."""
+    import random
+
+    from src.grid_game import (
+        GRID_SIZE,
+        categoria_por_id,
+        clubes_grid,
+        clubes_por_id,
+        pool_celula,
+    )
+    from src.grid_score import custo_dica_matriz
+
+    part = db.get_grid_partida(partida_id)
+    if not part or int(part["participante_id"]) != int(participante_id):
+        raise LookupError("partida não encontrada")
+    if part.get("modo") != "xonha":
+        raise ValueError("dicas só no modo Xonha")
+    if part.get("finalizado") or part.get("interrompido"):
+        raise PermissionError("partida encerrada")
+    if not (0 <= linha < GRID_SIZE and 0 <= coluna < GRID_SIZE):
+        raise ValueError("célula inválida")
+
+    puzzle = puzzle_da_partida(part)
+    row = categoria_por_id(puzzle["linhas"][linha]["id"], part["dia"])
+    col = categoria_por_id(puzzle["colunas"][coluna]["id"], part["dia"])
+    if not row or not col:
+        raise ValueError("categoria inválida")
+    validos = pool_celula(row, col)
+    if len(validos) < MATRIZ_VALIDOS:
+        raise ValueError("pool insuficiente para matriz")
+
+    ids_validos = {str(c["id"]) for c in validos}
+    invalidos = [c for c in clubes_grid() if str(c["id"]) not in ids_validos]
+    if len(invalidos) < MATRIZ_TAMANHO - MATRIZ_VALIDOS:
+        raise ValueError("catálogo insuficiente para matriz")
+
+    dicas = list(part.get("dicas") or [])
+    usos_matriz = sum(1 for d in dicas if d.get("tipo") == "matriz")
+    custo = custo_dica_matriz(usos_matriz)
+
+    rng = random.Random(
+        f"{part.get('puzzle_salt')}|{partida_id}|{linha}|{coluna}|{usos_matriz}"
+    )
+    escolhidos_v = rng.sample(validos, MATRIZ_VALIDOS)
+    escolhidos_i = rng.sample(invalidos, MATRIZ_TAMANHO - MATRIZ_VALIDOS)
+    misturados = escolhidos_v + escolhidos_i
+    rng.shuffle(misturados)
+
+    def _pub(c: dict[str, Any]) -> dict[str, Any]:
+        full = clubes_por_id().get(str(c["id"])) or c
+        return {
+            "id": str(full.get("id") or c["id"]),
+            "nome": full.get("nome") or c.get("nome") or "?",
+            "emblema": full.get("emblema") or c.get("emblema") or "",
+            "uf": full.get("uf") or c.get("uf") or "",
+        }
+
+    itens = [_pub(c) for c in misturados]
+    key = _celula_key(linha, coluna)
+    dicas.append(
+        {
+            "tipo": "matriz",
+            "celula": key,
+            "linha": linha,
+            "coluna": coluna,
+            "custo": custo,
+            "indice_uso": usos_matriz,
+            "payload": {"clubes": itens},
+        }
+    )
+    part = db.atualizar_grid_partida(partida_id, dicas=dicas)
+    pts = _recalcular_pontos(part)
+    part = db.atualizar_grid_partida(partida_id, pontos=pts)
+    return {
+        "partida": part,
+        "dica": dicas[-1],
+        "score_parcial": pts,
+        "proximo_custo_matriz": custo_dica_matriz(usos_matriz + 1),
+    }

@@ -42,10 +42,12 @@ def test_iniciar_raiz_idempotente(client):
     assert r2.json()["partida"]["id"] == pid
 
 
-def test_iniciar_xonha_ainda_bloqueado_na_fase3(client):
-    _login_grid(client, "Xonha Cedo", "xonha.cedo")
-    r = client.post("/grid/api/iniciar", json={"modo": "xonha"})
-    assert r.status_code == 400
+def test_iniciar_raiz_nao_confunde_com_xonha(client):
+    _login_grid(client, "Raiz Only", "raiz.only")
+    r = client.post("/grid/api/iniciar", json={"modo": "raiz"})
+    assert r.status_code == 200
+    assert r.json()["modo"] == "raiz"
+    assert r.json()["partida"]["modo"] == "raiz"
 
 
 def test_chute_com_partida_e_interromper_bloqueia(client):

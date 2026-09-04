@@ -3199,17 +3199,83 @@ def grid_api_hoje(request: Request):
     )
 
 
+@app.post("/grid/api/dica")
+async def grid_api_dica(request: Request):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_partidas import aplicar_dica_contagem, aplicar_dica_matriz
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    try:
+        partida_id = int(body.get("partida_id"))
+        linha = int(body.get("linha"))
+        coluna = int(body.get("coluna"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+    tipo = str(body.get("tipo") or "").strip().lower()
+    voter = _grid_voter(request)
+    assert voter is not None
+    try:
+        if tipo == "contagem":
+            out = aplicar_dica_contagem(
+                partida_id,
+                participante_id=int(voter["id"]),
+                linha=linha,
+                coluna=coluna,
+            )
+        elif tipo == "matriz":
+            out = aplicar_dica_matriz(
+                partida_id,
+                participante_id=int(voter["id"]),
+                linha=linha,
+                coluna=coluna,
+            )
+        else:
+            return JSONResponse(
+                {"erro": "tipo inválido (use contagem ou matriz)"},
+                status_code=400,
+            )
+    except LookupError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=404)
+    except PermissionError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=409)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(out)
+
+
 @app.get("/grid/api/buscar")
 def grid_api_buscar(
     request: Request,
     linha: int = 0,
     coluna: int = 0,
     q: str = "",
+    partida_id: int | None = None,
 ):
     from src.grid_game import buscar_celula, dia_grid
+    from src.grid_partidas import salt_da_partida
+
+    salt = None
+    if partida_id is not None:
+        part = db.get_grid_partida(int(partida_id))
+        voter = _grid_voter(request)
+        if not part or not voter or int(part["participante_id"]) != int(voter["id"]):
+            return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+        salt = salt_da_partida(part)
 
     try:
-        data = buscar_celula(dia=dia_grid(), linha=int(linha), coluna=int(coluna), q=q)
+        data = buscar_celula(
+            dia=dia_grid(),
+            linha=int(linha),
+            coluna=int(coluna),
+            q=q,
+            salt=salt,
+        )
     except ValueError as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
     return JSONResponse(data)
@@ -3217,28 +3283,47 @@ def grid_api_buscar(
 
 @app.post("/grid/api/iniciar")
 async def grid_api_iniciar(request: Request):
-    """Inicia (ou retoma) partida do dia. Fase 3: modo raiz."""
+    """Inicia partida do dia (Raiz idempotente; Xonha cria nova se houver cota)."""
     neg = _grid_neg_json(request)
     if neg:
         return neg
-    from src.grid_game import dia_grid, puzzle_publico
-    from src.grid_partidas import iniciar_raiz
-    from src.grid_score import pontos_partida
+    from src.grid_game import dia_grid
+    from src.grid_partidas import (
+        CotaXonhaEsgotada,
+        iniciar_raiz,
+        iniciar_xonha,
+        pode_iniciar_xonha,
+        puzzle_da_partida,
+    )
+    from src.grid_score import custo_dica_matriz, pontos_partida
 
     try:
         body = await request.json()
     except Exception:
         body = {}
     modo = str((body or {}).get("modo") or "raiz").strip().lower()
-    if modo != "raiz":
-        return JSONResponse(
-            {"erro": "Modo ainda não disponível nesta fase", "modo": modo},
-            status_code=400,
-        )
+    if modo not in ("raiz", "xonha"):
+        return JSONResponse({"erro": "modo inválido"}, status_code=400)
     voter = _grid_voter(request)
     assert voter is not None
     dia = dia_grid()
-    partida = iniciar_raiz(int(voter["id"]), dia)
+    pid = int(voter["id"])
+    try:
+        if modo == "raiz":
+            partida = iniciar_raiz(pid, dia)
+        else:
+            partida = iniciar_xonha(pid, dia)
+    except CotaXonhaEsgotada as exc:
+        _ok, info = pode_iniciar_xonha(pid, dia)
+        return JSONResponse(
+            {
+                "erro": str(exc),
+                "cota": info,
+                "pix_valor": "R$ 1,65",
+                "pix_chave": os.environ.get("TAXA_PIX", TAXA_PIX),
+            },
+            status_code=402,
+        )
     score = pontos_partida(
         partida.get("celulas"),
         finalizado=bool(partida.get("finalizado")),
@@ -3246,13 +3331,17 @@ async def grid_api_iniciar(request: Request):
         tempo_segundos=partida.get("tempo_segundos"),
         dicas=partida.get("dicas") or [],
     )
+    usos_matriz = sum(1 for d in (partida.get("dicas") or []) if d.get("tipo") == "matriz")
+    _ok, cota = pode_iniciar_xonha(pid, dia)
     return JSONResponse(
         {
             "dia": dia,
-            "modo": "raiz",
+            "modo": modo,
             "partida": partida,
-            "puzzle": puzzle_publico(dia),
+            "puzzle": puzzle_da_partida(partida),
             "score_parcial": score,
+            "cota_xonha": cota,
+            "proximo_custo_matriz": custo_dica_matriz(usos_matriz),
         }
     )
 
@@ -3298,7 +3387,7 @@ async def grid_api_chute(request: Request):
         texto_share,
         validar_chute,
     )
-    from src.grid_partidas import aplicar_chute_partida
+    from src.grid_partidas import aplicar_chute_partida, salt_da_partida
     from src.grid_score import pontos_partida
 
     try:
@@ -3365,7 +3454,11 @@ async def grid_api_chute(request: Request):
         if resultado is None:
             try:
                 resultado = validar_chute(
-                    dia=dia, linha=linha, coluna=coluna, clube_id=clube_id
+                    dia=dia,
+                    linha=linha,
+                    coluna=coluna,
+                    clube_id=clube_id,
+                    salt=salt_da_partida(part),
                 )
             except ValueError as exc:
                 return JSONResponse({"erro": str(exc)}, status_code=400)
