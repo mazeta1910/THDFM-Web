@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/emblema.html" import emblema %}
+{% from "macros/avatar.html" import avatar_camera %}
 {% block title %}Painel de Admin — Bolão THDFM{% endblock %}
 {% block admin_topbar %}
 {% set _titulo_sec = 'Inscrições' if admin_sec == 'inscricoes' else 'Resultados' %}
@@ -32,14 +33,27 @@
 >
   <input type="hidden" name="participante_id" value="{{ p.id }}" />
   <div class="participante-edit-top">
-    <div class="participante-edit-avatar">
+    <label
+      class="participante-edit-avatar avatar-edit-trigger"
+      title="Trocar foto de {{ p.nome }}"
+      aria-label="Trocar foto de {{ p.nome }}"
+    >
+      <input
+        type="file"
+        name="avatar"
+        accept=".jpg,.jpeg,.png,.webp,image/*"
+        hidden
+        data-avatar-input
+      />
       {% set av = avatar_url(p.avatar_path) %}
       {% if av %}
       <img src="{{ av }}" alt="" data-avatar-preview />
       {% else %}
       <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
       {% endif %}
-    </div>
+      {{ avatar_camera(16) }}
+      <span class="sr-only" data-avatar-name>Trocar foto</span>
+    </label>
     <div class="participante-edit-meta">
       <div class="participante-status-row">
         {% if p.admin_login %}
@@ -70,25 +84,6 @@
 
   <label>Celular</label>
   <input type="tel" name="celular" value="{{ p.celular|celular_fmt if p.celular else '' }}" placeholder="(11) 99999-9999" autocomplete="off" />
-
-  <div class="participante-foto-label-row">
-    <span class="participante-foto-label">Foto de perfil</span>
-    <label class="file-pick conta-file-pick participante-file-pick-icon" title="Trocar foto">
-      <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden data-avatar-input />
-      <span class="file-pick-btn" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-        </svg>
-      </span>
-      <span class="sr-only" data-avatar-name>Trocar foto</span>
-    </label>
-    {% if p.avatar_path %}
-    <label class="participantes-check participante-remove-avatar">
-      <input type="checkbox" name="remover_avatar" value="1" />
-      Remover
-    </label>
-    {% endif %}
-  </div>
 
   <div class="participante-edit-actions">
     <a
@@ -122,7 +117,7 @@
     title="Marcar inativo — some da classificação e do Quem palpitou"
     aria-label="Marcar {{ p.nome }} como inativo"
   >
-    {# vetor atual: user-x — troque se preferir outra opção #}
+    {# vetor atual: user-x #}
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
@@ -822,7 +817,7 @@
       <div class="participantes-dash inscricoes-gestao-block">
         <h2 class="participantes-gestao-title">Gestão de Participantes</h2>
         <div class="participantes-toolbar">
-          <p class="participantes-lead">Edite nome na tabela, celular e foto. Quem saiu do bolão pode ficar <strong>inativo</strong> (some da classificação e do aviso na lateral).</p>
+          <p class="participantes-lead">Edite nome e celular. Clique na foto do card para trocar. Quem saiu do bolão pode ficar <strong>inativo</strong> (some da classificação e do aviso na lateral).</p>
         </div>
 
         <form method="post" action="/admin/avatar-padrao" enctype="multipart/form-data" class="card avatar-padrao-card">
@@ -1948,9 +1943,10 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
 setTimeout(() => {
   document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
     const card = input.closest(".participante-edit-card");
+    const preview = card?.querySelector(".participante-edit-avatar");
     if (!window.thdfmBindAvatarCrop) return;
     window.thdfmBindAvatarCrop(input, {
-      preview: card?.querySelector(".participante-edit-avatar"),
+      preview,
       nameEl: card?.querySelector("[data-avatar-name]"),
       nameEmpty: "Trocar foto",
       previewAttr: "data-avatar-preview",

@@ -192,7 +192,7 @@
         let el = preview.querySelector("img");
         if (!el) {
           const cam = preview.querySelector(".avatar-edit-camera");
-          preview.querySelectorAll("img, .avatar-placeholder").forEach((n) => n.remove());
+          preview.querySelectorAll("img, .avatar-placeholder, [data-avatar-fallback]").forEach((n) => n.remove());
           el = document.createElement("img");
           el.alt = "Prévia da foto";
           if (previewAttr) el.setAttribute(previewAttr, "");
