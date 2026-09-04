@@ -3240,6 +3240,36 @@ def grid_api_hoje(request: Request):
     )
 
 
+@app.get("/grid/api/minhas-partidas")
+def grid_api_minhas_partidas(request: Request, dia: str = ""):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid
+
+    voter = _grid_voter(request)
+    assert voter is not None
+    dia_s = str(dia or "").strip() or dia_grid()
+    partidas = db.listar_grid_partidas_participante(int(voter["id"]), dia_s)
+    dias = db.listar_grid_dias_participante(int(voter["id"]))
+    return JSONResponse({"dia": dia_s, "partidas": partidas, "dias": dias})
+
+
+@app.get("/grid/api/partida/{partida_id}")
+def grid_api_partida_dono(request: Request, partida_id: int):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_partidas import detalhe_partida_dono
+
+    voter = _grid_voter(request)
+    assert voter is not None
+    part = db.get_grid_partida(int(partida_id))
+    if not part or int(part["participante_id"]) != int(voter["id"]):
+        return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+    return JSONResponse(detalhe_partida_dono(part))
+
+
 @app.post("/grid/api/dica")
 async def grid_api_dica(request: Request):
     neg = _grid_neg_json(request)

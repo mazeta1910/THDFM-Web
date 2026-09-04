@@ -332,6 +332,51 @@ def anexar_indice_dia(partida: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def modo_rotulo_partida(partida: dict[str, Any]) -> str:
+    modo = str(partida.get("modo") or "")
+    if modo == "raiz":
+        return "Pro"
+    if modo == "xonha":
+        indice = partida.get("indice_dia")
+        if indice is None and partida.get("id") is not None:
+            part = anexar_indice_dia(partida)
+            indice = part.get("indice_dia")
+        if indice is not None and int(indice) > 0:
+            return f"Contínuo {int(indice)}"
+        return "Contínuo"
+    return modo or "—"
+
+
+def detalhe_partida_dono(partida: dict[str, Any]) -> dict[str, Any]:
+    part = anexar_indice_dia(partida)
+    part["modo_rotulo"] = modo_rotulo_partida(part)
+    celulas = part.get("celulas") or []
+    ok = 0
+    filled = 0
+    if isinstance(celulas, list):
+        for row in celulas:
+            if not isinstance(row, list):
+                continue
+            for cell in row:
+                if isinstance(cell, dict) and cell.get("clube"):
+                    filled += 1
+                    if cell.get("ok"):
+                        ok += 1
+    part["celulas_ok"] = ok
+    part["celulas_preenchidas"] = filled
+    if part.get("interrompido"):
+        part["status"] = "interrompido"
+    elif part.get("finalizado"):
+        part["status"] = "finalizado"
+    else:
+        part["status"] = "em andamento"
+    puzzle = puzzle_da_partida(part)
+    share = None
+    if part.get("finalizado") or part.get("interrompido"):
+        share = texto_share_partida(part)
+    return {"partida": part, "puzzle": puzzle, "share": share}
+
+
 def texto_share_partida(
     partida: dict[str, Any],
     *,

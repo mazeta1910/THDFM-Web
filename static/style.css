@@ -14413,6 +14413,128 @@ button.grid-admin-dia-btn,
   }
 }
 
+.grid-minhas {
+  margin: 1rem 0 1.25rem;
+  padding: 0.85rem 1rem 1rem;
+}
+.grid-minhas-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.grid-minhas-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.grid-minhas-dia {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+.grid-minhas-lista {
+  display: grid;
+  gap: 0.55rem;
+}
+.grid-minhas-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.grid-minhas-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.grid-minhas-item:hover,
+.grid-minhas-item:focus-visible {
+  border-color: color-mix(in srgb, var(--accent, #2b6cb0) 45%, var(--border));
+  outline: none;
+}
+.grid-minhas-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.65rem;
+  align-items: baseline;
+}
+.grid-minhas-item-meta strong {
+  font-size: 0.9rem;
+}
+.grid-minhas-item-meta span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.grid-minhas-mini {
+  display: grid;
+  gap: 0.12rem;
+  width: 3.6rem;
+}
+.grid-minhas-mini-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.12rem;
+}
+.grid-minhas-mini-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--bg) 88%, var(--muted));
+  border: 1px solid var(--border);
+}
+.grid-minhas-mini-cell.is-ok {
+  background: color-mix(in srgb, #38a169 55%, var(--bg));
+  border-color: color-mix(in srgb, #38a169 60%, var(--border));
+}
+.grid-minhas-mini-cell.is-miss {
+  background: color-mix(in srgb, #c53030 50%, var(--bg));
+  border-color: color-mix(in srgb, #c53030 55%, var(--border));
+}
+.grid-hist-board {
+  display: grid;
+  grid-template-columns: minmax(0, 4.5rem) repeat(3, minmax(0, 1fr));
+  gap: 0.2rem;
+  margin: 0.75rem 0;
+}
+.grid-hist-board .grid-axis,
+.grid-hist-board .grid-cell {
+  pointer-events: none;
+}
+.grid-hist-board .grid-cell {
+  min-height: 3.2rem;
+  font-size: 0.72rem;
+}
+.grid-modal--hist .grid-modal-card {
+  max-width: min(28rem, 96vw);
+}
+.grid-hist-modal-head {
+  margin-bottom: 0.35rem;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* —— Hall das Lendas —— */
 .hall-lendas-page {

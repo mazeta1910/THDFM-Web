@@ -4908,6 +4908,110 @@ def listar_grid_partidas_dia(dia: str) -> list[dict[str, Any]]:
     return out
 
 
+def listar_grid_partidas_participante(
+    participante_id: int,
+    dia: str | None = None,
+    *,
+    limite: int = 60,
+) -> list[dict[str, Any]]:
+    pid = int(participante_id)
+    lim = max(1, min(int(limite), 200))
+    with get_db() as conn:
+        if dia:
+            rows = conn.execute(
+                """
+                SELECT * FROM grid_partida
+                WHERE participante_id = ? AND dia = ?
+                ORDER BY criado_em ASC, id ASC
+                """,
+                (pid, str(dia)),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT * FROM grid_partida
+                WHERE participante_id = ?
+                ORDER BY dia DESC, criado_em ASC, id ASC
+                LIMIT ?
+                """,
+                (pid, lim),
+            ).fetchall()
+    contagem_xonha: dict[str, int] = {}
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        part = _row_grid_partida(row)
+        modo = str(part.get("modo") or "raiz")
+        dia_s = str(part.get("dia") or "")
+        ok, filled = _contar_celulas_ok(part.get("celulas"))
+        if modo == "xonha":
+            contagem_xonha[dia_s] = contagem_xonha.get(dia_s, 0) + 1
+            indice = contagem_xonha[dia_s]
+            modo_rotulo = f"Contínuo {indice}"
+        else:
+            indice = 1
+            modo_rotulo = "Pro"
+        status = "finalizado"
+        if part.get("interrompido"):
+            status = "interrompido"
+        elif not part.get("finalizado"):
+            status = "em andamento"
+        out.append(
+            {
+                "id": int(part["id"]),
+                "partida_id": int(part["id"]),
+                "participante_id": pid,
+                "dia": dia_s,
+                "modo": modo,
+                "modo_rotulo": modo_rotulo,
+                "indice_dia": indice,
+                "puzzle_salt": part.get("puzzle_salt") or "",
+                "celulas": part.get("celulas") or [],
+                "finalizado": bool(part.get("finalizado")),
+                "interrompido": bool(part.get("interrompido")),
+                "status": status,
+                "pontos": int(part.get("pontos") or 0),
+                "tempo_segundos": part.get("tempo_segundos"),
+                "iniciado_em": part.get("iniciado_em"),
+                "encerrado_em": part.get("encerrado_em"),
+                "celulas_ok": ok,
+                "celulas_preenchidas": filled,
+                "dicas": part.get("dicas") or [],
+                "criado_em": part.get("criado_em"),
+                "atualizado_em": part.get("atualizado_em"),
+            }
+        )
+    return out
+
+
+def listar_grid_dias_participante(
+    participante_id: int, *, limite: int = 60
+) -> list[dict[str, Any]]:
+    pid = int(participante_id)
+    lim = max(1, min(int(limite), 366))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia,
+                   COUNT(*) AS tentativas,
+                   SUM(CASE WHEN COALESCE(finalizado, 0) = 1 THEN 1 ELSE 0 END) AS finalizados
+            FROM grid_partida
+            WHERE participante_id = ?
+            GROUP BY dia
+            ORDER BY dia DESC
+            LIMIT ?
+            """,
+            (pid, lim),
+        ).fetchall()
+    return [
+        {
+            "dia": str(r["dia"]),
+            "tentativas": int(r["tentativas"] or 0),
+            "finalizados": int(r["finalizados"] or 0),
+        }
+        for r in rows
+    ]
+
+
 def _apagar_recados_e_midias(
     conn: sqlite3.Connection, rows: list[sqlite3.Row]
 ) -> list[str]:

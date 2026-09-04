@@ -132,6 +132,24 @@
     </div>
   </div>
 
+  {% if grid_pode_salvar %}
+  <section class="card grid-minhas" data-grid-minhas aria-label="Minhas tentativas">
+    <header class="grid-minhas-head">
+      <div>
+        <h2 class="grid-minhas-title">Minhas tentativas</h2>
+        <p class="grid-sub">Suas grades deste dia (somente leitura)</p>
+      </div>
+      <label class="grid-minhas-dia-label">
+        <span class="visually-hidden">Dia</span>
+        <input type="date" class="grid-minhas-dia" data-grid-minhas-dia value="{{ puzzle.dia }}" />
+      </label>
+    </header>
+    <div class="grid-minhas-lista" data-grid-minhas-lista>
+      <p class="grid-minhas-empty">Carregando…</p>
+    </div>
+  </section>
+  {% endif %}
+
   <div class="grid-result card" data-grid-result hidden>
     <div class="grid-result-top">
       <div>
@@ -475,6 +493,18 @@
   </div>
 </dialog>
 
+<dialog class="grid-modal grid-modal--hist" data-grid-hist-modal>
+  <div class="grid-modal-card">
+    <button type="button" class="grid-modal-x" data-grid-hist-close aria-label="Fechar">×</button>
+    <header class="grid-hist-modal-head">
+      <strong data-grid-hist-titulo>Tentativa</strong>
+      <p class="grid-sub" data-grid-hist-meta></p>
+    </header>
+    <div class="grid-hist-board" data-grid-hist-board aria-label="Grade somente leitura"></div>
+    <pre class="grid-share-text" data-grid-hist-share hidden></pre>
+  </div>
+</dialog>
+
 <script type="application/json" id="grid-boot">{{ {
   "puzzle": puzzle,
   "progresso": progresso,
@@ -490,7 +520,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=37" defer></script>
+<script src="/static/grid.js?v=38" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=7" defer></script>
 {% endif %}

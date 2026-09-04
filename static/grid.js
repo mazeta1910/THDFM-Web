@@ -741,6 +741,9 @@
       syncTimerFromPartida();
       showResult(data.share || null);
       updateXonhaActions();
+      if (typeof window.__gridRefreshMinhas === "function") {
+        window.__gridRefreshMinhas();
+      }
     } else {
       if (iniciadoEm && timerInterval == null) startTimer();
       else tickTimer();
@@ -1513,6 +1516,171 @@
     }
   }
 
+  function initMinhasTentativas() {
+    const box = document.querySelector("[data-grid-minhas]");
+    if (!box || !podeSalvar) return;
+    const listaEl = box.querySelector("[data-grid-minhas-lista]");
+    const diaInput = box.querySelector("[data-grid-minhas-dia]");
+    const histModal = document.querySelector("[data-grid-hist-modal]");
+    const histBoard = document.querySelector("[data-grid-hist-board]");
+    const histTitulo = document.querySelector("[data-grid-hist-titulo]");
+    const histMeta = document.querySelector("[data-grid-hist-meta]");
+    const histShare = document.querySelector("[data-grid-hist-share]");
+    const histClose = document.querySelector("[data-grid-hist-close]");
+
+    function miniHtml(celulas) {
+      const rows = Array.isArray(celulas) ? celulas : [];
+      return [0, 1, 2]
+        .map((ri) => {
+          const line = [0, 1, 2]
+            .map((ci) => {
+              const cell = rows[ri] && rows[ri][ci];
+              const cls = !cell ? "" : cell.ok ? " is-ok" : " is-miss";
+              return `<span class="grid-minhas-mini-cell${cls}"></span>`;
+            })
+            .join("");
+          return `<div class="grid-minhas-mini-row">${line}</div>`;
+        })
+        .join("");
+    }
+
+    function renderLista(partidas) {
+      if (!listaEl) return;
+      if (!partidas || !partidas.length) {
+        listaEl.innerHTML = `<p class="grid-minhas-empty">Nenhuma tentativa neste dia.</p>`;
+        return;
+      }
+      listaEl.innerHTML = partidas
+        .map((p) => {
+          const id = p.id != null ? p.id : p.partida_id;
+          const rotulo = escapeHtml(p.modo_rotulo || (p.modo === "xonha" ? "Contínuo" : "Pro"));
+          const status = escapeHtml(p.status || "—");
+          const pts = Number(p.pontos) || 0;
+          const score = `${p.celulas_ok || 0}/${p.celulas_preenchidas || 0}`;
+          return `<button type="button" class="grid-minhas-item" data-partida-id="${escapeHtml(String(id))}">
+            <div class="grid-minhas-item-meta">
+              <strong>${rotulo}</strong>
+              <span>${status}</span>
+              <span>${score} · ${pts} pts</span>
+            </div>
+            <div class="grid-minhas-mini" aria-hidden="true">${miniHtml(p.celulas)}</div>
+          </button>`;
+        })
+        .join("");
+    }
+
+    function renderHistBoard(puzzle, celulas) {
+      if (!histBoard) return;
+      const linhas = (puzzle && puzzle.linhas) || [];
+      const cols = (puzzle && puzzle.colunas) || [];
+      const dens = (puzzle && puzzle.densidades) || [];
+      const cells = Array.isArray(celulas) ? celulas : [];
+      let html = `<div class="grid-corner" aria-hidden="true"></div>`;
+      for (let c = 0; c < 3; c++) {
+        const col = cols[c] || {};
+        html += `<div class="grid-axis grid-axis--col" title="${escapeHtml(col.rotulo || "")}">${escapeHtml(col.rotulo || "—")}</div>`;
+      }
+      for (let r = 0; r < 3; r++) {
+        const row = linhas[r] || {};
+        html += `<div class="grid-axis grid-axis--row" title="${escapeHtml(row.rotulo || "")}">${escapeHtml(row.rotulo || "—")}</div>`;
+        for (let c = 0; c < 3; c++) {
+          const cell = cells[r] && cells[r][c];
+          const n = dens[r] && dens[r][c] != null ? dens[r][c] : "";
+          let inner = `<span class="grid-cell-empty">+</span>`;
+          let cls = "grid-cell";
+          if (cell && cell.clube) {
+            cls += cell.ok ? " is-ok" : " is-miss";
+            const nome = escapeHtml(cell.clube.nome || "?");
+            const emblema = escapeHtml(cell.clube.emblema || "");
+            inner = emblema
+              ? `<img class="grid-cell-emblema" src="${emblema}" alt="" /><span class="grid-cell-nome">${nome}</span>`
+              : `<span class="grid-cell-nome">${nome}</span>`;
+          }
+          html += `<div class="${cls}" data-possiveis="${escapeHtml(String(n))}">${inner}</div>`;
+        }
+      }
+      histBoard.innerHTML = html;
+    }
+
+    async function carregar(diaSel) {
+      if (!listaEl) return;
+      listaEl.innerHTML = `<p class="grid-minhas-empty">Carregando…</p>`;
+      const params = new URLSearchParams();
+      if (diaSel) params.set("dia", diaSel);
+      const r = await fetch(`/grid/api/minhas-partidas?${params}`, {
+        headers: { Accept: "application/json" },
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        listaEl.innerHTML = `<p class="grid-minhas-empty">${escapeHtml(data.erro || "Não foi possível carregar.")}</p>`;
+        return;
+      }
+      if (diaInput && data.dia && diaInput.value !== data.dia) {
+        diaInput.value = data.dia;
+      }
+      renderLista(data.partidas || []);
+    }
+
+    async function abrirPartida(partidaId) {
+      const r = await fetch(`/grid/api/partida/${partidaId}`, {
+        headers: { Accept: "application/json" },
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setHint(data.erro || "Tentativa não encontrada.");
+        return;
+      }
+      const p = data.partida || {};
+      if (histTitulo) {
+        histTitulo.textContent = p.modo_rotulo || (p.modo === "xonha" ? "Contínuo" : "Pro");
+      }
+      if (histMeta) {
+        const bits = [
+          p.status || (p.finalizado ? "finalizado" : "em andamento"),
+          `${p.celulas_ok != null ? p.celulas_ok : "—"}/${p.celulas_preenchidas != null ? p.celulas_preenchidas : "—"}`,
+          `${Number(p.pontos) || 0} pts`,
+        ];
+        histMeta.textContent = bits.join(" · ");
+      }
+      renderHistBoard(data.puzzle, p.celulas);
+      if (histShare) {
+        if (data.share) {
+          histShare.hidden = false;
+          histShare.textContent = data.share;
+        } else {
+          histShare.hidden = true;
+          histShare.textContent = "";
+        }
+      }
+      if (histModal && typeof histModal.showModal === "function") {
+        histModal.showModal();
+      }
+    }
+
+    window.__gridRefreshMinhas = () => {
+      const d = diaInput ? diaInput.value : dia;
+      carregar(d || dia);
+    };
+
+    if (diaInput) {
+      diaInput.addEventListener("change", () => carregar(diaInput.value));
+    }
+    if (listaEl) {
+      listaEl.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("[data-partida-id]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-partida-id");
+        if (id) abrirPartida(id);
+      });
+    }
+    if (histClose) {
+      histClose.addEventListener("click", () => {
+        if (histModal && histModal.open) histModal.close();
+      });
+    }
+    carregar(diaInput ? diaInput.value : dia);
+  }
+
   function initRanking() {
     const modoBox = document.querySelector("[data-grid-rank-modo]");
     if (modoBox) {
@@ -1573,6 +1741,7 @@
   agendarVirada();
   updateModeButtons();
   updateCota(boot.cota_xonha || null);
+  initMinhasTentativas();
 
   if (!podeSalvar) {
     modo = "xonha";
