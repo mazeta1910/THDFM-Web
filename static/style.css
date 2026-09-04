@@ -15150,6 +15150,18 @@ button.grid-chip-btn:disabled,
   opacity: 0.45;
   cursor: not-allowed;
 }
+button.grid-chip-btn--destaque,
+.grid-chip-btn--destaque {
+  background: color-mix(in srgb, var(--accent) 22%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border)) !important;
+  color: var(--text) !important;
+  font-weight: 800 !important;
+}
+button.grid-chip-btn--destaque:hover:not(:disabled),
+.grid-chip-btn--destaque:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 32%, transparent) !important;
+  border-color: var(--accent) !important;
+}
 button.grid-chip-btn[aria-pressed="true"],
 .grid-chip-btn[aria-pressed="true"] {
   background: color-mix(in srgb, var(--bg2, var(--card)) 85%, transparent) !important;

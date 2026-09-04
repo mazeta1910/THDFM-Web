@@ -69,10 +69,14 @@
   let interrompido = false;
   /** @type {number|null} */
   let rankingPosicao = null;
+  /** @type {object|null} */
+  let cotaAtual = boot.cota_xonha || null;
   /** @type {string|null} */
   let iniciadoEm = null;
   /** @type {number|null} */
   let timerInterval = null;
+  /** Partida cujo cronômetro está ativo (evita misturar tempos entre grids). */
+  let timerPartidaId = null;
   /** @type {Set<string>} */
   let densidadesReveladas = new Set();
   let warnAccepted = false;
@@ -151,29 +155,46 @@
   }
 
   function updateCota(cota) {
-    if (!cotaEl) return;
+    if (cota !== undefined) cotaAtual = cota || null;
+    if (!cotaEl) {
+      updateXonhaActions();
+      return;
+    }
     const continuo = modo === "xonha" || (!modo && boot.modo_default === "xonha");
     if (!continuo) {
       cotaEl.hidden = true;
       cotaEl.textContent = "";
+      updateXonhaActions();
       return;
     }
-    if (!cota) {
+    if (!cotaAtual) {
       cotaEl.textContent = "Grids disponíveis: —";
       cotaEl.hidden = false;
+      updateXonhaActions();
       return;
     }
-    if (cota.passe_ativo) {
+    if (cotaAtual.passe_ativo) {
       cotaEl.textContent = "Grids disponíveis: ilimitados (passe ativo)";
       cotaEl.hidden = false;
+      updateXonhaActions();
       return;
     }
-    const usados = Number(cota.usados) || 0;
-    const limite = Number(cota.limite_livre) || 3;
+    const usados = Number(cotaAtual.usados) || 0;
+    const limite = Number(cotaAtual.limite_livre) || 3;
     const restantes =
-      cota.restantes != null ? Number(cota.restantes) : Math.max(0, limite - usados);
+      cotaAtual.restantes != null
+        ? Number(cotaAtual.restantes)
+        : Math.max(0, limite - usados);
     cotaEl.textContent = `Grids disponíveis: ${restantes}`;
     cotaEl.hidden = false;
+    updateXonhaActions();
+  }
+
+  function temCotaOutroGrid() {
+    if (!cotaAtual) return true;
+    if (cotaAtual.passe_ativo) return true;
+    if (cotaAtual.restantes == null) return true;
+    return Number(cotaAtual.restantes) > 0;
   }
 
   function updateModeButtons() {
@@ -188,21 +209,26 @@
 
   function updateXonhaActions() {
     if (!xonhaActions) return;
-    const showBar = modo === "xonha" && !!partidaId && !interrompido;
-    xonhaActions.hidden = !showBar;
+    const emContinuo = modo === "xonha" && !!partidaId && !interrompido;
     const dicaBtn = document.querySelector("[data-grid-dica-open]");
-    if (dicaBtn) {
-      dicaBtn.hidden = !showBar || finalizado;
-    }
     const novaBtn = document.querySelector("[data-grid-xonha-nova]");
+    const podeDica = emContinuo && !finalizado;
+    const podeOutro = emContinuo && finalizado && temCotaOutroGrid();
+
+    if (dicaBtn) {
+      dicaBtn.hidden = !podeDica;
+      dicaBtn.disabled = !podeDica;
+    }
     if (novaBtn) {
-      const podeOutro = showBar && finalizado;
       novaBtn.hidden = !podeOutro;
       novaBtn.disabled = !podeOutro;
+      novaBtn.classList.toggle("grid-chip-btn--destaque", podeOutro);
       novaBtn.title = podeOutro
         ? "Iniciar outro grid Contínuo"
-        : "Termine o grid atual para jogar outro";
+        : "Indisponível";
     }
+    // Barra só aparece se há algum botão útil (Dica ou Outro Grid).
+    xonhaActions.hidden = !(podeDica || podeOutro);
   }
 
   function rarityFromRep(repRaw) {
@@ -375,12 +401,33 @@
     }
   }
 
+  function zerarTimerUi() {
+    stopTimer();
+    if (timerEl) timerEl.textContent = "00:00";
+  }
+
+  /** Sincroniza o cronômetro com a partida atual (atrelado ao grid). */
+  function syncTimerFromPartida() {
+    stopTimer();
+    const pid = partidaId;
+    // Mudou de grid → recomeça do zero até o 1º clique desta partida.
+    if (pid == null || pid !== timerPartidaId) {
+      timerPartidaId = pid;
+    }
+    iniciadoEm = (partida && partida.iniciado_em) || null;
+
+    // Terminou / interrompeu / ainda não tocou: UI em 00:00.
+    if (finalizado || interrompido || !iniciadoEm || pid == null) {
+      zerarTimerUi();
+      return;
+    }
+    startTimer();
+  }
+
   function tickTimer() {
     if (!timerEl) return;
-    if (!iniciadoEm || finalizado || interrompido) {
-      if (partida && partida.tempo_segundos != null) {
-        timerEl.textContent = formatTimer(partida.tempo_segundos);
-      }
+    if (finalizado || interrompido || !iniciadoEm || !partidaId) {
+      timerEl.textContent = "00:00";
       return;
     }
     const startMs = parseIsoMs(iniciadoEm);
@@ -395,14 +442,15 @@
   function startTimer() {
     stopTimer();
     tickTimer();
-    if (!iniciadoEm || finalizado || interrompido) return;
+    if (!iniciadoEm || finalizado || interrompido || !partidaId) return;
     timerInterval = window.setInterval(tickTimer, 1000);
   }
 
-  /** Arranca o cronômetro só no 1º clique numa célula. */
+  /** Arranca o cronômetro só no 1º clique numa célula desta partida. */
   function ensureTimerStarted() {
     if (finalizado || interrompido) return;
     if (!partidaId && podeSalvar) return;
+    timerPartidaId = partidaId;
     if (iniciadoEm) {
       if (timerInterval == null) startTimer();
       return;
@@ -418,9 +466,13 @@
       .then((r) => r.json().catch(() => ({})))
       .then((data) => {
         if (data && data.partida && data.partida.iniciado_em) {
-          iniciadoEm = data.partida.iniciado_em;
-          partida = data.partida;
-          tickTimer();
+          // Só aplica se ainda for a mesma partida.
+          if (partidaId != null && Number(data.partida.id) === Number(partidaId)) {
+            iniciadoEm = data.partida.iniciado_em;
+            partida = data.partida;
+            timerPartidaId = partidaId;
+            tickTimer();
+          }
         }
       })
       .catch(() => {});
@@ -634,15 +686,20 @@
     if (typeof data.ranking_posicao === "number" && data.ranking_posicao > 0) {
       rankingPosicao = data.ranking_posicao;
     }
+    if (data.cota_xonha !== undefined) updateCota(data.cota_xonha);
     paintAll();
     if (typeof data.streak === "number" && streakEl) {
       streakEl.textContent = `🔥 ${data.streak}`;
     }
     closeModal();
     if (finalizado || interrompido) {
-      stopTimer();
-      tickTimer();
+      syncTimerFromPartida();
       showResult(data.share || null);
+      updateXonhaActions();
+    } else {
+      // Mantém o tick da partida atual.
+      if (iniciadoEm && timerInterval == null) startTimer();
+      else tickTimer();
       updateXonhaActions();
     }
   }
@@ -740,12 +797,10 @@
     applyCelulasFrom((partida && partida.celulas) || []);
     paintAll();
     updateModeButtons();
-    updateXonhaActions();
-    updateCota(data.cota_xonha);
-    // Cronômetro só corre se já houve 1º clique (iniciado_em) ou partida já fechada.
-    stopTimer();
-    tickTimer();
-    if (iniciadoEm && !finalizado && !interrompido) startTimer();
+    if (data.cota_xonha !== undefined) updateCota(data.cota_xonha);
+    else updateXonhaActions();
+    // Cronômetro atrelado a esta partida (zera se nova / finalizada).
+    syncTimerFromPartida();
 
     if (interrompido) {
       setHint("Tentativa encerrada — células vazias bloqueadas.");

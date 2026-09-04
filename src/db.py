@@ -4644,13 +4644,19 @@ def limpar_grid_progresso() -> int:
 
 
 def limpar_grid_progresso_dia(dia: str) -> int:
-    """Apaga o progresso do Grid de um dia específico."""
+    """Apaga progresso e partidas do Grid de um dia (restore/regen com limpar)."""
     with get_db() as conn:
         cur = conn.execute(
             "DELETE FROM grid_progresso WHERE dia = ?",
             (str(dia),),
         )
-        return int(cur.rowcount or 0)
+        n = int(cur.rowcount or 0)
+        cur2 = conn.execute(
+            "DELETE FROM grid_partida WHERE dia = ?",
+            (str(dia),),
+        )
+        n += int(cur2.rowcount or 0)
+        return n
 
 
 def parse_grid_virada(valor: str | int | None) -> tuple[int, int]:
