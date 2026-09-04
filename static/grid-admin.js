@@ -15,6 +15,12 @@
   const drawer = root.querySelector("[data-grid-admin-drawer]");
   const drawerBody = root.querySelector("[data-grid-admin-drawer-body]");
   const drawerTitulo = root.querySelector("[data-grid-admin-drawer-titulo]");
+  const eixoModal = root.querySelector("[data-grid-admin-eixo-modal]");
+  const eixoForm = root.querySelector("[data-grid-admin-eixo-form]");
+  const eixoSaltEl = root.querySelector("[data-grid-admin-eixo-salt]");
+  const cfgModal = root.querySelector("[data-grid-admin-cfg-modal]");
+  const cfgBody = root.querySelector("[data-grid-admin-cfg-body]");
+  const cfgTitulo = root.querySelector("[data-grid-admin-cfg-titulo]");
   let histLoaded = false;
   let respostasRaw = [];
   let puzzlesBySalt = {};
@@ -52,6 +58,13 @@
     return puzzlesBySalt[key] || puzzlesBySalt[""] || null;
   }
 
+  function statusIcon(status) {
+    const s = String(status || "").toLowerCase();
+    if (s === "finalizado") return { icon: "✔️", label: "Finalizado" };
+    if (s === "interrompido") return { icon: "⛔", label: "Interrompido" };
+    return { icon: "⏱️", label: "Em andamento" };
+  }
+
   function renderDias(dias, ativo) {
     if (!diasEl) return;
     if (!dias || !dias.length) {
@@ -83,6 +96,26 @@
     return categoriasCache;
   }
 
+  function denseAxesHtml(puzzle, salt) {
+    const linhas = puzzle.linhas || [];
+    const cols = puzzle.colunas || [];
+    const rows = [0, 1, 2]
+      .map((i) => `${String.fromCharCode(65 + i)}: ${esc((linhas[i] && linhas[i].rotulo) || "—")}`)
+      .join(" · ");
+    const colTxt = [0, 1, 2]
+      .map((i) => `${i + 1}: ${esc((cols[i] && cols[i].rotulo) || "—")}`)
+      .join(" · ");
+    return `
+      <div class="grid-admin-axes-bar">
+        <div class="grid-admin-axes-dense">
+          <span class="grid-admin-axes-salt">${esc(salt || "Pro")}</span>
+          <span><strong>Linhas</strong> ${rows}</span>
+          <span><strong>Colunas</strong> ${colTxt}</span>
+        </div>
+        <button type="button" class="grid-admin-ico" data-eixo-edit-open data-salt="${esc(salt || "")}" title="Editar eixos" aria-label="Editar eixos">✏️</button>
+      </div>`;
+  }
+
   async function renderAxes(puzzle, salt) {
     if (!axesEl) return;
     activeSalt = salt || "";
@@ -90,45 +123,48 @@
       axesEl.innerHTML = `<p class="grid-admin-empty">Sem puzzle.</p>`;
       return;
     }
+    axesEl.innerHTML = denseAxesHtml(puzzle, activeSalt);
+  }
+
+  async function openEixoModal(salt) {
+    if (!eixoModal || !eixoForm) return;
+    activeSalt = salt || "";
+    const puzzle = puzzleFor(activeSalt);
+    if (!puzzle) return;
     const cats = await loadCategorias();
     const opts = cats
-      .map(
-        (c) =>
-          `<option value="${esc(c.id)}">${esc(c.rotulo)} (${esc(c.id)})</option>`
-      )
+      .map((c) => `<option value="${esc(c.id)}">${esc(c.rotulo)}</option>`)
       .join("");
     const linhas = puzzle.linhas || [];
     const cols = puzzle.colunas || [];
+    if (eixoSaltEl) {
+      eixoSaltEl.textContent = `Salt: ${activeSalt || "Pro"}`;
+    }
     const rowHtml = [0, 1, 2]
       .map((i) => {
         const cat = linhas[i] || {};
-        return `<div class="grid-admin-eixo-edit">
-          <span class="grid-admin-coord">Linha ${String.fromCharCode(65 + i)}</span>
-          <span class="grid-admin-eixo-rotulo">${esc(cat.rotulo || "—")}</span>
+        return `<label class="grid-admin-eixo-field">Linha ${String.fromCharCode(65 + i)}
           <select data-eixo="linha" data-indice="${i}" data-salt="${esc(activeSalt)}">
-            <option value="">Trocar…</option>${opts}
+            <option value="${esc(cat.id || "")}">${esc(cat.rotulo || "—")}</option>
+            ${opts}
           </select>
-        </div>`;
+        </label>`;
       })
       .join("");
     const colHtml = [0, 1, 2]
       .map((i) => {
         const cat = cols[i] || {};
-        return `<div class="grid-admin-eixo-edit">
-          <span class="grid-admin-coord">Coluna ${i + 1}</span>
-          <span class="grid-admin-eixo-rotulo">${esc(cat.rotulo || "—")}</span>
+        return `<label class="grid-admin-eixo-field">Coluna ${i + 1}
           <select data-eixo="coluna" data-indice="${i}" data-salt="${esc(activeSalt)}">
-            <option value="">Trocar…</option>${opts}
+            <option value="${esc(cat.id || "")}">${esc(cat.rotulo || "—")}</option>
+            ${opts}
           </select>
-        </div>`;
+        </label>`;
       })
       .join("");
-    axesEl.innerHTML = `
-      <p class="grid-admin-muted">Salt: ${esc(activeSalt || "Pro")}</p>
-      <div class="grid-admin-eixos-grid">
-        <div><strong>A B C</strong>${rowHtml}</div>
-        <div><strong>1 2 3</strong>${colHtml}</div>
-      </div>`;
+    eixoForm.innerHTML = `<div class="grid-admin-eixo-form-grid">${rowHtml}${colHtml}</div>
+      <p class="grid-admin-muted">Trocar um eixo aplica na hora (sem regenerar o dia).</p>`;
+    if (typeof eixoModal.showModal === "function") eixoModal.showModal();
   }
 
   function filtrarLista(lista) {
@@ -158,7 +194,7 @@
             const title = cell && cell.clube ? cell.clube.nome : "vazia";
             return `<button type="button" class="grid-admin-mini-cell${cls}"
               data-partida-id="${esc(pid)}" data-linha="${ri}" data-coluna="${ci}"
-              title="${esc(label + " · " + title)}">${esc(label)}</button>`;
+              title="${esc(label + " · " + title)}" aria-label="${esc(label)}"></button>`;
           })
           .join("");
         return `<div class="grid-admin-mini-row">${line}</div>`;
@@ -191,42 +227,32 @@
           .map((r) => {
             const pid = r.partida_id != null ? r.partida_id : r.id;
             const salt = r.puzzle_salt || "";
-            return `<article class="grid-admin-resposta" data-salt="${esc(salt)}" data-partida-id="${esc(pid)}">
+            const st = statusIcon(r.status);
+            const isPro = r.modo === "raiz";
+            return `<article class="grid-admin-resposta${isPro ? " grid-admin-resposta--pro" : ""}" data-salt="${esc(salt)}" data-partida-id="${esc(pid)}">
               <header>
                 <span class="grid-admin-modo">${esc(
                   r.modo_rotulo || (r.modo === "xonha" ? "Contínuo" : "Pro")
                 )}</span>
-                <span>${esc(r.status || "—")} · ${r.celulas_ok}/${r.celulas_preenchidas}</span>
-                <label class="grid-admin-score-edit">Score
-                  <input type="number" data-score-partida="${esc(pid)}" value="${esc(
-                    r.pontos || 0
-                  )}" />
-                </label>
-                <button type="button" class="grid-admin-ico" data-apagar-partida="${esc(
-                  pid
-                )}" title="Apagar partida" aria-label="Apagar partida">×</button>
-                <button type="button" class="grid-admin-ico" data-focar-salt="${esc(
-                  salt
-                )}" title="Ver eixos deste grid">Eixos</button>
+                <span class="grid-admin-status-ico" title="${esc(st.label)}">${st.icon} ${r.celulas_ok}/${r.celulas_preenchidas}</span>
+                <button type="button" class="grid-admin-ico" data-cfg-partida="${esc(pid)}"
+                  data-cfg-salt="${esc(salt)}" data-cfg-pontos="${esc(r.pontos || 0)}"
+                  data-cfg-pid="${esc(g.participante_id)}"
+                  title="Configurar" aria-label="Configurar">⚙️</button>
               </header>
               <div class="grid-admin-mini">${miniGridHtml(r)}</div>
             </article>`;
           })
           .join("");
-        return `<details class="grid-admin-user" open>
+        return `<details class="grid-admin-user">
           <summary>
             <strong>${esc(g.nome)}</strong>
             <span class="grid-admin-muted">ID ${esc(g.participante_id)} · ${
               g.partidas.length
-            } tentativa(s)</span>
-            <button type="button" class="grid-admin-ico" data-apagar-dia-user="${esc(
+            }</span>
+            <button type="button" class="grid-admin-ico" data-cfg-user="${esc(
               g.participante_id
-            )}" title="Apagar todas do dia">Apagar dia</button>
-            <label class="grid-admin-score-edit">Streak Contínuo
-              <input type="number" min="0" data-streak-pid="${esc(
-                g.participante_id
-              )}" data-streak-modo="xonha" placeholder="auto" />
-            </label>
+            )}" title="Configurar jogador" aria-label="Configurar jogador">⚙️</button>
           </summary>
           <div class="grid-admin-user-body">${tentativas}</div>
         </details>`;
@@ -236,6 +262,38 @@
 
   function fecharDrawer() {
     if (drawer) drawer.hidden = true;
+  }
+
+  function openCfgPartida(btn) {
+    if (!cfgModal || !cfgBody) return;
+    const pid = btn.getAttribute("data-cfg-partida");
+    const salt = btn.getAttribute("data-cfg-salt") || "";
+    const pontos = btn.getAttribute("data-cfg-pontos") || "0";
+    if (cfgTitulo) cfgTitulo.textContent = `Partida #${pid}`;
+    cfgBody.innerHTML = `
+      <label class="grid-admin-eixo-field">Score
+        <input type="number" data-cfg-score-input value="${esc(pontos)}" />
+      </label>
+      <div class="grid-admin-actions">
+        <button type="button" class="grid-admin-ico grid-admin-ico--accent" data-cfg-save-score="${esc(pid)}">Salvar score</button>
+        <button type="button" class="grid-admin-ico" data-focar-salt="${esc(salt)}" data-cfg-close>Ver eixos</button>
+        <button type="button" class="grid-admin-ico" data-apagar-partida="${esc(pid)}" data-cfg-close title="Apagar partida">Apagar</button>
+      </div>`;
+    if (typeof cfgModal.showModal === "function") cfgModal.showModal();
+  }
+
+  function openCfgUser(pid) {
+    if (!cfgModal || !cfgBody) return;
+    if (cfgTitulo) cfgTitulo.textContent = `Jogador #${pid}`;
+    cfgBody.innerHTML = `
+      <label class="grid-admin-eixo-field">Streak Contínuo
+        <input type="number" min="0" data-cfg-streak-input data-streak-pid="${esc(pid)}" data-streak-modo="xonha" placeholder="auto" />
+      </label>
+      <div class="grid-admin-actions">
+        <button type="button" class="grid-admin-ico grid-admin-ico--accent" data-cfg-save-streak="${esc(pid)}">Salvar streak</button>
+        <button type="button" class="grid-admin-ico" data-apagar-dia-user="${esc(pid)}" data-cfg-close>Apagar dia</button>
+      </div>`;
+    if (typeof cfgModal.showModal === "function") cfgModal.showModal();
   }
 
   async function abrirCelula(partidaId, linha, coluna) {
@@ -256,12 +314,16 @@
     }
     const j = data.justificativa || {};
     const cell = data.celula || {};
+    const justErro = data.justificativa_erro
+      ? `<p class="grid-admin-muted">${esc(data.justificativa_erro)}</p>`
+      : "";
     drawerBody.innerHTML = `
       <p><strong>${esc((cell.clube && cell.clube.nome) || "?")}</strong></p>
       <p class="grid-admin-muted">${esc(j.coord || coord(linha, coluna))}</p>
       <p>Linha: ${esc((j.linha && j.linha.rotulo) || "—")}</p>
       <p>Coluna: ${esc((j.coluna && j.coluna.rotulo) || "—")}</p>
       <p>${esc(j.motivo || "")}</p>
+      ${justErro}
       <p>Status gravado: ${data.ok_gravado ? "acerto" : "erro"}</p>
       <div class="grid-admin-actions">
         <button type="button" class="grid-admin-ico grid-admin-ico--accent"
@@ -400,7 +462,13 @@
     el?.addEventListener("change", () => renderRespostas(respostasRaw));
   });
 
-  axesEl?.addEventListener("change", async (ev) => {
+  axesEl?.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-eixo-edit-open]");
+    if (!btn) return;
+    openEixoModal(btn.getAttribute("data-salt") || "");
+  });
+
+  eixoForm?.addEventListener("change", async (ev) => {
     const sel = ev.target.closest("select[data-eixo]");
     if (!sel || !sel.value) return;
     const r = await fetch("/grid/api/admin/eixo", {
@@ -424,7 +492,14 @@
     await renderAxes(data.puzzle, salt);
   });
 
-  respEl?.addEventListener("click", async (ev) => {
+  root.querySelector("[data-grid-admin-eixo-fechar]")?.addEventListener("click", () => {
+    if (eixoModal && eixoModal.open) eixoModal.close();
+  });
+  root.querySelector("[data-grid-admin-cfg-fechar]")?.addEventListener("click", () => {
+    if (cfgModal && cfgModal.open) cfgModal.close();
+  });
+
+  async function handleAdminAction(ev) {
     const t = ev.target;
     const cellBtn = t.closest(".grid-admin-mini-cell[data-partida-id]");
     if (cellBtn) {
@@ -436,11 +511,66 @@
       );
       return;
     }
+    const cfgP = t.closest("[data-cfg-partida]");
+    if (cfgP) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openCfgPartida(cfgP);
+      return;
+    }
+    const cfgU = t.closest("[data-cfg-user]");
+    if (cfgU) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openCfgUser(cfgU.getAttribute("data-cfg-user"));
+      return;
+    }
     const focar = t.closest("[data-focar-salt]");
     if (focar) {
       ev.preventDefault();
       const salt = focar.getAttribute("data-focar-salt") || "";
       await renderAxes(puzzleFor(salt), salt);
+      if (cfgModal && cfgModal.open) cfgModal.close();
+      return;
+    }
+    const saveScore = t.closest("[data-cfg-save-score]");
+    if (saveScore) {
+      ev.preventDefault();
+      const id = Number(saveScore.getAttribute("data-cfg-save-score"));
+      const inp = cfgBody && cfgBody.querySelector("[data-cfg-score-input]");
+      const pontos = Number(inp && inp.value);
+      const r = await fetch(`/grid/api/admin/partida/${id}/pontos`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ pontos }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        window.alert(data.erro || "Erro ao salvar score");
+        return;
+      }
+      if (cfgModal && cfgModal.open) cfgModal.close();
+      carregar(diaAtual);
+      return;
+    }
+    const saveStreak = t.closest("[data-cfg-save-streak]");
+    if (saveStreak) {
+      ev.preventDefault();
+      const pid = Number(saveStreak.getAttribute("data-cfg-save-streak"));
+      const inp = cfgBody && cfgBody.querySelector("[data-cfg-streak-input]");
+      const raw = ((inp && inp.value) || "").trim();
+      const valor = raw === "" ? null : Number(raw);
+      const r = await fetch("/grid/api/admin/streak-override", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ participante_id: pid, modo: "xonha", valor }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        window.alert(data.erro || "Erro ao salvar streak");
+        return;
+      }
+      if (cfgModal && cfgModal.open) cfgModal.close();
       return;
     }
     const apagar = t.closest("[data-apagar-partida]");
@@ -451,7 +581,10 @@
       const r = await fetch(`/grid/api/admin/partida/${id}`, { method: "DELETE" });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) window.alert(data.erro || "Erro");
-      else carregar(diaAtual);
+      else {
+        if (cfgModal && cfgModal.open) cfgModal.close();
+        carregar(diaAtual);
+      }
       return;
     }
     const apagarDia = t.closest("[data-apagar-dia-user]");
@@ -466,43 +599,15 @@
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) window.alert(data.erro || "Erro");
-      else carregar(diaAtual);
+      else {
+        if (cfgModal && cfgModal.open) cfgModal.close();
+        carregar(diaAtual);
+      }
     }
-  });
+  }
 
-  respEl?.addEventListener("change", async (ev) => {
-    const scoreInp = ev.target.closest("[data-score-partida]");
-    if (scoreInp) {
-      const id = Number(scoreInp.getAttribute("data-score-partida"));
-      const pontos = Number(scoreInp.value);
-      const r = await fetch(`/grid/api/admin/partida/${id}/pontos`, {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ pontos }),
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        window.alert(data.erro || "Erro ao salvar score");
-      }
-      return;
-    }
-    const streakInp = ev.target.closest("[data-streak-pid]");
-    if (streakInp) {
-      const pid = Number(streakInp.getAttribute("data-streak-pid"));
-      const modo = streakInp.getAttribute("data-streak-modo") || "xonha";
-      const raw = streakInp.value.trim();
-      const valor = raw === "" ? null : Number(raw);
-      const r = await fetch("/grid/api/admin/streak-override", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ participante_id: pid, modo, valor }),
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        window.alert(data.erro || "Erro ao salvar streak");
-      }
-    }
-  });
+  respEl?.addEventListener("click", handleAdminAction);
+  cfgBody?.addEventListener("click", handleAdminAction);
 
   drawer?.addEventListener("click", async (ev) => {
     if (ev.target.closest("[data-grid-admin-drawer-fechar]")) {

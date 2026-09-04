@@ -144,21 +144,26 @@
   </div>
 
   {% if grid_pode_salvar %}
-  <section class="card grid-minhas" data-grid-minhas aria-label="Minhas tentativas">
-    <header class="grid-minhas-head">
-      <div>
-        <h2 class="grid-minhas-title">Minhas tentativas</h2>
-        <p class="grid-sub">Suas grades deste dia (somente leitura)</p>
-      </div>
-      <label class="grid-minhas-dia-label">
+  <details class="card grid-minhas" data-grid-minhas aria-label="Minhas tentativas">
+    <summary class="grid-minhas-summary">
+      <span class="grid-minhas-summary-text">
+        <strong class="grid-minhas-title">Minhas tentativas</strong>
+        <span class="grid-sub">Suas grades deste dia (somente leitura)</span>
+      </span>
+      <label class="grid-minhas-dia-label" onclick="event.stopPropagation()">
         <span class="visually-hidden">Dia</span>
         <input type="date" class="grid-minhas-dia" data-grid-minhas-dia value="{{ puzzle.dia }}" />
       </label>
-    </header>
-    <div class="grid-minhas-lista" data-grid-minhas-lista>
-      <p class="grid-minhas-empty">Carregando…</p>
+      <svg class="grid-minhas-chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </summary>
+    <div class="grid-minhas-body">
+      <div class="grid-minhas-lista" data-grid-minhas-lista>
+        <p class="grid-minhas-empty">Carregando…</p>
+      </div>
     </div>
-  </section>
+  </details>
   {% endif %}
 
   <div class="grid-result card" data-grid-result hidden>
@@ -255,7 +260,7 @@
       </div>
     </header>
 
-    <div class="grid-admin-grid">
+    <div class="grid-admin-grid grid-admin-grid--tools">
       <form class="grid-admin-panel" data-grid-admin-virada>
         <h3 class="grid-admin-h">Hora da virada</h3>
         <p class="grid-admin-help">Horário de Brasília (HH:MM). Na virada entra o puzzle do dia seguinte (00:00 = dia civil).</p>
@@ -417,6 +422,23 @@
       </header>
       <div class="grid-admin-drawer-body" data-grid-admin-drawer-body></div>
     </aside>
+
+    <dialog class="grid-modal" data-grid-admin-eixo-modal>
+      <div class="grid-modal-card">
+        <button type="button" class="grid-modal-x" data-grid-admin-eixo-fechar aria-label="Fechar">×</button>
+        <h2 class="grid-result-title">Editar eixos</h2>
+        <p class="grid-sub" data-grid-admin-eixo-salt></p>
+        <div data-grid-admin-eixo-form></div>
+      </div>
+    </dialog>
+
+    <dialog class="grid-modal" data-grid-admin-cfg-modal>
+      <div class="grid-modal-card">
+        <button type="button" class="grid-modal-x" data-grid-admin-cfg-fechar aria-label="Fechar">×</button>
+        <h2 class="grid-result-title" data-grid-admin-cfg-titulo>Configurar</h2>
+        <div data-grid-admin-cfg-body></div>
+      </div>
+    </dialog>
   </section>
   {% endif %}
 </section>
@@ -567,8 +589,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=42" defer></script>
+<script src="/static/grid.js?v=43" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=8" defer></script>
+<script src="/static/grid-admin.js?v=10" defer></script>
 {% endif %}
 {% endblock %}

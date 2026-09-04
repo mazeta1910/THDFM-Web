@@ -82,4 +82,6 @@ def test_grid_page_tem_minhas_tentativas(client):
     assert "data-grid-minhas" in r.text
     assert "Minhas tentativas" in r.text
     assert "data-grid-hist-modal" in r.text
-    assert "/static/grid.js?v=41" in r.text
+    assert "<details" in r.text and "data-grid-minhas" in r.text
+    assert "/static/grid.js?v=43" in r.text
+    assert "grid-minhas-summary" in r.text
