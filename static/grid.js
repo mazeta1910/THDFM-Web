@@ -125,7 +125,10 @@
   }
 
   function setHint(msg) {
-    if (hintEl) hintEl.textContent = msg || "";
+    if (!hintEl) return;
+    const text = msg || "";
+    hintEl.textContent = text;
+    hintEl.hidden = !text;
   }
 
   function updateLiveScore(val) {
@@ -712,10 +715,8 @@
       showResult(null);
     } else if (finalizado) {
       showResult(boot.share || null);
-    } else if (modo === "xonha") {
-      setHint("Contínuo: densidades ocultas. Use Dica para revelar contagem ou matriz.");
     } else {
-      setHint("Toque numa célula vazia para buscar o clube.");
+      setHint("");
     }
   }
 
@@ -1221,7 +1222,7 @@
     setHint("Explore o puzzle à vontade. Entre para registrar os chutes.");
   } else {
     // Contínuo é o default: inicia (ou retoma) automaticamente.
-    setHint("Iniciando Contínuo…");
+    setHint("");
     iniciar("xonha").catch(() => {
       setHint("Escolha Raiz ou Contínuo para começar.");
     });
