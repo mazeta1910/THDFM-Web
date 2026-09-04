@@ -15503,30 +15503,32 @@ button.grid-chip-btn-ghost:hover:not(:disabled),
   display: none !important;
 }
 .grid-cell.is-ok {
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, #7ef9ff calc(var(--grid-rarity, 0.2) * 100%), #c8cdd5),
-    color-mix(in srgb, #ff4fd8 calc(var(--grid-rarity, 0.2) * 90%), #9aa3ad)
-  );
   position: relative;
   overflow: hidden;
+  /* Tier 5 (Comum) — fallback */
+  background: linear-gradient(145deg, #708090, #d3d3d3);
 }
-.grid-cell.is-ok[data-rarity="0"],
 .grid-cell.is-ok[data-rarity="1"] {
-  background: linear-gradient(160deg, #d7dbe2, #9ea6b2);
+  /* Lendário · 95–100% */
+  background: linear-gradient(145deg, #ffd700, #ff8c00);
 }
 .grid-cell.is-ok[data-rarity="2"] {
-  background: linear-gradient(160deg, #b9c7d6, #7f95ad);
+  /* Épico · 75–94.9% */
+  background: linear-gradient(145deg, #8a2be2, #ff00ff);
 }
 .grid-cell.is-ok[data-rarity="3"] {
-  background: linear-gradient(150deg, #6fd6c8, #3a9bb5);
+  /* Raro · 50–74.9% */
+  background: linear-gradient(145deg, #0000cd, #00ffff);
 }
 .grid-cell.is-ok[data-rarity="4"] {
-  background: linear-gradient(145deg, #4de0ff, #7a5cff);
+  /* Incomum · 20–49.9% */
+  background: linear-gradient(145deg, #228b22, #32cd32);
 }
 .grid-cell.is-ok[data-rarity="5"] {
-  background: linear-gradient(140deg, #2bfff3, #ff3db5 70%);
+  /* Comum · < 20% */
+  background: linear-gradient(145deg, #708090, #d3d3d3);
 }
+.grid-cell-badge,
 .grid-cell-rarity-badge {
   position: absolute;
   top: 0.3rem;

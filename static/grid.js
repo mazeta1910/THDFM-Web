@@ -257,9 +257,25 @@
     } catch (_) {
       rep = 0;
     }
-    const t = Math.min(1, Math.max(0, (REP_TETO - rep) / REP_TETO));
-    const pct = ((REP_TETO - rep) / 80).toFixed(1) + "%";
-    return { t, pct, rep };
+    const score = Math.min(1, Math.max(0, (REP_TETO - rep) / REP_TETO));
+    const pctNum = score * 100;
+    const pct = `${pctNum.toFixed(1)}%`;
+    let tier = 5;
+    let rotulo = "Comum";
+    if (pctNum >= 95) {
+      tier = 1;
+      rotulo = "Lendário";
+    } else if (pctNum >= 75) {
+      tier = 2;
+      rotulo = "Épico";
+    } else if (pctNum >= 50) {
+      tier = 3;
+      rotulo = "Raro";
+    } else if (pctNum >= 20) {
+      tier = 4;
+      rotulo = "Incomum";
+    }
+    return { t: score, pct, pctNum, tier, rotulo, rep };
   }
 
   function paintCell(r, c) {
@@ -304,13 +320,12 @@
       : `<span class="grid-cell-embl grid-cell-embl--miss" aria-hidden="true">✕</span>`;
 
     if (data.ok) {
-      const { t, pct } = rarityFromRep(clube.rep);
-      btn.style.setProperty("--grid-rarity", String(t));
-      btn.setAttribute("data-rarity", pct);
+      const { tier, pct, rotulo } = rarityFromRep(clube.rep);
+      btn.setAttribute("data-rarity", String(tier));
       btn.innerHTML = `
         ${embl}
         <span class="grid-cell-nome">${escapeHtml(clube.nome || "")}</span>
-        <span class="grid-cell-badge" title="Raridade">${escapeHtml(pct)}</span>`;
+        <span class="grid-cell-badge" title="${escapeHtml(rotulo)} · ${escapeHtml(pct)}">${escapeHtml(pct)}</span>`;
     } else {
       btn.innerHTML = `
         ${embl}
