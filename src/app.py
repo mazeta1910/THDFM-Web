@@ -3726,6 +3726,7 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
 
     from src.grid_game import (
         dia_grid,
+        gerar_puzzle,
         get_virada_hm,
         puzzle_publico,
         rotulo_dia,
@@ -3741,6 +3742,15 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
         puzzle = puzzle_publico(dia_s)
     except RuntimeError as exc:
         return JSONResponse({"erro": str(exc)}, status_code=400)
+    respostas = db.listar_grid_partidas_dia(dia_s)
+    puzzles: dict[str, Any] = {"": puzzle}
+    for r in respostas:
+        salt = str(r.get("puzzle_salt") or "")
+        if salt and salt not in puzzles:
+            try:
+                puzzles[salt] = gerar_puzzle(dia_s, salt=salt)
+            except RuntimeError:
+                continue
     h, mi = get_virada_hm()
     return JSONResponse(
         {
@@ -3750,8 +3760,9 @@ def grid_api_admin_resumo(request: Request, dia: str = ""):
             "virada_minuto": mi,
             "virada_rotulo": rotulo_hora_virada(h, mi),
             "puzzle": puzzle,
+            "puzzles": puzzles,
             "dias": db.listar_grid_dias(limite=90),
-            "respostas": db.listar_grid_partidas_dia(dia_s),
+            "respostas": respostas,
         }
     )
 
@@ -3838,6 +3849,282 @@ async def grid_api_admin_xonha_passe(request: Request):
     return JSONResponse({"ok": True, "passe": out})
 
 
+@app.get("/grid/api/admin/xonha-passe")
+def grid_api_admin_xonha_passe_get(request: Request, participante_id: int = 0):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid
+
+    try:
+        pid = int(participante_id)
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "participante_id inválido"}, status_code=400)
+    if pid <= 0:
+        return JSONResponse({"erro": "participante_id inválido"}, status_code=400)
+    part = db.get_participante(pid)
+    if not part:
+        return JSONResponse({"erro": "participante não encontrado"}, status_code=404)
+    passe = db.get_grid_xonha_passe(pid)
+    ativo = db.grid_xonha_passe_ativo(pid, hoje=dia_grid())
+    return JSONResponse(
+        {
+            "participante_id": pid,
+            "nome": (part.get("nome") or "").strip(),
+            "ativo": ativo,
+            "passe": passe,
+        }
+    )
+
+
+@app.delete("/grid/api/admin/xonha-passe")
+async def grid_api_admin_xonha_passe_delete(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    try:
+        pid = int((body or {}).get("participante_id"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "participante_id inválido"}, status_code=400)
+    ok = db.revogar_grid_xonha_passe(pid)
+    return JSONResponse({"ok": ok, "participante_id": pid})
+
+
+@app.post("/grid/api/admin/partida/{partida_id}/celula")
+async def grid_api_admin_celula(request: Request, partida_id: int):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_partidas import justificativa_celula, override_celula_admin
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    try:
+        linha = int(body.get("linha"))
+        coluna = int(body.get("coluna"))
+        ok = bool(body.get("ok"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+    try:
+        part = override_celula_admin(
+            int(partida_id), linha=linha, coluna=coluna, ok=ok
+        )
+    except LookupError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=404)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    just = None
+    cell = None
+    try:
+        from src.grid_game import parse_celulas_progresso
+
+        cells = parse_celulas_progresso(part.get("celulas"))
+        cell = cells[linha][coluna]
+        cid = (cell or {}).get("clube", {}).get("id") if cell else None
+        salt = str(part.get("puzzle_salt") or "") or None
+        if part.get("modo") != "xonha":
+            salt = None
+        if cid:
+            just = justificativa_celula(
+                dia=str(part["dia"]),
+                salt=salt if part.get("modo") == "xonha" else None,
+                linha=linha,
+                coluna=coluna,
+                clube_id=str(cid),
+            )
+    except Exception:
+        just = None
+    return JSONResponse({"ok": True, "partida": part, "justificativa": just})
+
+
+@app.get("/grid/api/admin/partida/{partida_id}/celula")
+def grid_api_admin_celula_get(
+    request: Request,
+    partida_id: int,
+    linha: int = 0,
+    coluna: int = 0,
+):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import parse_celulas_progresso
+    from src.grid_partidas import justificativa_celula
+
+    part = db.get_grid_partida(int(partida_id))
+    if not part:
+        return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+    cells = parse_celulas_progresso(part.get("celulas"))
+    try:
+        cell = cells[int(linha)][int(coluna)]
+    except (IndexError, TypeError, ValueError):
+        return JSONResponse({"erro": "célula inválida"}, status_code=400)
+    if not cell or not cell.get("clube"):
+        return JSONResponse({"erro": "célula vazia"}, status_code=400)
+    salt = str(part.get("puzzle_salt") or "") or None
+    try:
+        just = justificativa_celula(
+            dia=str(part["dia"]),
+            salt=salt if part.get("modo") == "xonha" else None,
+            linha=int(linha),
+            coluna=int(coluna),
+            clube_id=str(cell["clube"]["id"]),
+        )
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "partida_id": int(partida_id),
+            "celula": cell,
+            "justificativa": just,
+            "ok_gravado": bool(cell.get("ok")),
+        }
+    )
+
+
+@app.delete("/grid/api/admin/partida/{partida_id}")
+def grid_api_admin_apagar_partida(request: Request, partida_id: int):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    part = db.get_grid_partida(int(partida_id))
+    if not part:
+        return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+    ok = db.apagar_grid_partida(int(partida_id))
+    if ok and part.get("modo") == "raiz":
+        with db.get_db() as conn:
+            conn.execute(
+                "DELETE FROM grid_progresso WHERE participante_id = ? AND dia = ?",
+                (int(part["participante_id"]), str(part["dia"])),
+            )
+    return JSONResponse({"ok": ok, "partida_id": int(partida_id)})
+
+
+@app.delete("/grid/api/admin/partidas-dia")
+async def grid_api_admin_apagar_partidas_dia(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        pid = int((body or {}).get("participante_id"))
+        dia_s = str((body or {}).get("dia") or "").strip()
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+    if not dia_s:
+        return JSONResponse({"erro": "dia obrigatório"}, status_code=400)
+    n = db.apagar_grid_partidas_participante_dia(pid, dia_s)
+    return JSONResponse({"ok": True, "apagados": n})
+
+
+@app.post("/grid/api/admin/partida/{partida_id}/pontos")
+async def grid_api_admin_pontos(request: Request, partida_id: int):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        pontos = int((body or {}).get("pontos"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "pontos inválidos"}, status_code=400)
+    part = db.get_grid_partida(int(partida_id))
+    if not part:
+        return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+    out = db.atualizar_grid_partida(int(partida_id), pontos=pontos)
+    return JSONResponse({"ok": True, "partida": out})
+
+
+@app.post("/grid/api/admin/streak-override")
+async def grid_api_admin_streak(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    try:
+        pid = int(body.get("participante_id"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "participante_id inválido"}, status_code=400)
+    modo = str(body.get("modo") or "").strip().lower()
+    if modo not in ("raiz", "xonha"):
+        return JSONResponse({"erro": "modo inválido"}, status_code=400)
+    raw = body.get("valor", body.get("streak"))
+    try:
+        valor = None if raw is None else int(raw)
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "valor inválido"}, status_code=400)
+    try:
+        out = db.set_grid_streak_override(pid, modo, valor)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse({"ok": True, "streak": out, "participante_id": pid, "modo": modo})
+
+
+@app.get("/grid/api/admin/categorias")
+def grid_api_admin_categorias(request: Request, dia: str = ""):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import categorias_disponiveis, dia_grid
+
+    dia_s = (dia or "").strip() or dia_grid()
+    cats = [c.to_public() for c in categorias_disponiveis(dia_s)]
+    return JSONResponse({"dia": dia_s, "categorias": cats})
+
+
+@app.post("/grid/api/admin/eixo")
+async def grid_api_admin_eixo(request: Request):
+    neg = _grid_mazeta_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import categoria_por_id, dia_grid, gerar_puzzle
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    body = body or {}
+    dia_s = str(body.get("dia") or "").strip() or dia_grid()
+    salt = str(body.get("salt") or "")
+    eixo = str(body.get("eixo") or "").strip().lower()
+    try:
+        indice = int(body.get("indice"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "índice inválido"}, status_code=400)
+    cat_id = str(body.get("categoria_id") or "").strip()
+    if not categoria_por_id(cat_id, dia_s):
+        return JSONResponse({"erro": "categoria inválida"}, status_code=400)
+    try:
+        ov = db.upsert_grid_eixo_override(
+            dia=dia_s,
+            salt=salt,
+            eixo=eixo,
+            indice=indice,
+            categoria_id=cat_id,
+        )
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    puzzle = (
+        gerar_puzzle(dia_s, salt=salt) if salt else gerar_puzzle(dia_s)
+    )
+    return JSONResponse({"ok": True, "override": ov, "puzzle": puzzle})
+
+
 @app.post("/grid/api/admin/regenerar")
 async def grid_api_admin_regenerar(request: Request):
     neg = _grid_mazeta_neg_json(request)
@@ -3865,7 +4152,8 @@ async def grid_api_admin_regenerar(request: Request):
     else:
         salt = secrets.token_hex(8)
         db.set_grid_salt(dia_s, salt)
-    # Puzzle mudou: progresso e partidas do dia (Pro incluso) ficam inválidos.
+    # Puzzle mudou: progresso, partidas e overrides de eixo do dia ficam inválidos.
+    db.apagar_grid_eixo_overrides_dia(dia_s)
     apagados = db.limpar_grid_progresso_dia(dia_s)
     try:
         puzzle = puzzle_publico(dia_s)

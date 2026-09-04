@@ -554,3 +554,93 @@ def aplicar_dica_matriz(
         "score_parcial": pts,
         "proximo_custo_matriz": custo_dica_matriz(usos_matriz + 1),
     }
+
+
+def override_celula_admin(
+    partida_id: int,
+    *,
+    linha: int,
+    coluna: int,
+    ok: bool,
+) -> dict[str, Any]:
+    from src.grid_game import GRID_SIZE, parse_celulas_progresso
+
+    part = db.get_grid_partida(int(partida_id))
+    if not part:
+        raise LookupError("partida não encontrada")
+    if not (0 <= int(linha) < GRID_SIZE and 0 <= int(coluna) < GRID_SIZE):
+        raise ValueError("célula inválida")
+    celulas = parse_celulas_progresso(part.get("celulas"))
+    cell = celulas[int(linha)][int(coluna)]
+    if not cell or not cell.get("clube"):
+        raise ValueError("célula vazia")
+    cell = dict(cell)
+    cell["ok"] = bool(ok)
+    celulas[int(linha)][int(coluna)] = cell
+    part = db.atualizar_grid_partida(int(partida_id), celulas=celulas)
+    pts = _recalcular_pontos(part)
+    part = db.atualizar_grid_partida(int(partida_id), pontos=pts)
+    if part.get("modo") == "raiz":
+        db.salvar_grid_progresso(
+            int(part["participante_id"]),
+            str(part["dia"]),
+            celulas,
+            finalizado=bool(part.get("finalizado")),
+        )
+    return part
+
+
+def justificativa_celula(
+    *,
+    dia: str,
+    salt: str | None,
+    linha: int,
+    coluna: int,
+    clube_id: str,
+) -> dict[str, Any]:
+    from src.grid_game import (
+        GRID_SIZE,
+        categoria_por_id,
+        clube_bate_categoria,
+        clubes_por_id,
+        gerar_puzzle,
+    )
+
+    if not (0 <= int(linha) < GRID_SIZE and 0 <= int(coluna) < GRID_SIZE):
+        raise ValueError("célula inválida")
+    puzzle = (
+        gerar_puzzle(dia, salt=salt) if salt is not None else gerar_puzzle(dia)
+    )
+    row = categoria_por_id(puzzle["linhas"][int(linha)]["id"], dia)
+    col = categoria_por_id(puzzle["colunas"][int(coluna)]["id"], dia)
+    clube = clubes_por_id().get(str(clube_id))
+    if not row or not col:
+        raise ValueError("categoria inválida")
+    if not clube:
+        raise ValueError("clube inválido")
+    ok_linha = clube_bate_categoria(clube, row)
+    ok_coluna = clube_bate_categoria(clube, col)
+    if ok_linha and ok_coluna:
+        motivo = "bate nas duas categorias"
+    elif not ok_linha and not ok_coluna:
+        motivo = "falha na linha e na coluna"
+    elif not ok_linha:
+        motivo = "falha na linha"
+    else:
+        motivo = "falha na coluna"
+    return {
+        "ok_linha": ok_linha,
+        "ok_coluna": ok_coluna,
+        "ok": ok_linha and ok_coluna,
+        "motivo": motivo,
+        "linha": row.to_public(),
+        "coluna": col.to_public(),
+        "clube": {
+            "id": clube["id"],
+            "nome": clube["nome"],
+            "uf": clube.get("uf") or "",
+            "emblema": clube.get("emblema") or "",
+            "rep": int(clube.get("rep") or 0),
+        },
+        "coord": f"{chr(65 + int(linha))}{int(coluna) + 1}",
+    }

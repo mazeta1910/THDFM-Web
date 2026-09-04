@@ -803,17 +803,61 @@ def categorias_disponiveis(dia: str | None = None) -> tuple[Categoria, ...]:
 
 
 def gerar_puzzle(dia: str | None = None, *, salt: str | None = None) -> dict[str, Any]:
-    """Gera grade 3×3 determinística para o dia; cada célula com ≥ DENSIDADE_MIN clubes.
-
-    Nunca deixa o /grid quebrar: se o gerador principal falhar, tenta o outro
-    e por fim uma busca ampla garantida. Cacheia por (dia, salt) — regeneração
-    admin muda o salt e invalida o cache automaticamente.
-
-    ``salt`` explícito (Xonha) ignora o salt do admin no DB.
-    """
     dia_s = dia or dia_grid()
     salt_s = salt if salt is not None else _salt_dia(dia_s)
-    return _gerar_puzzle_cached(dia_s, salt_s)
+    base = _gerar_puzzle_cached(dia_s, salt_s)
+    return aplicar_eixos_override(dict(base), dia_s, salt_s or "")
+
+
+def aplicar_eixos_override(
+    puzzle: dict[str, Any], dia: str, salt: str = ""
+) -> dict[str, Any]:
+    from src import db as dbmod
+
+    try:
+        overrides = dbmod.listar_grid_eixo_overrides(str(dia), str(salt or ""))
+    except Exception:
+        # Sem migração / DB (ex.: testes unitários de gerar_puzzle).
+        return puzzle
+    if not overrides:
+        return puzzle
+    linhas = [dict(x) for x in (puzzle.get("linhas") or [])]
+    colunas = [dict(x) for x in (puzzle.get("colunas") or [])]
+    while len(linhas) < GRID_SIZE:
+        linhas.append({"id": "", "tipo": "", "valor": "", "rotulo": "—"})
+    while len(colunas) < GRID_SIZE:
+        colunas.append({"id": "", "tipo": "", "valor": "", "rotulo": "—"})
+    mudou = False
+    for o in overrides:
+        cat = categoria_por_id(str(o["categoria_id"]), dia)
+        if not cat:
+            continue
+        pub = cat.to_public()
+        idx = int(o["indice"])
+        if o["eixo"] == "linha" and 0 <= idx < GRID_SIZE:
+            linhas[idx] = pub
+            mudou = True
+        elif o["eixo"] == "coluna" and 0 <= idx < GRID_SIZE:
+            colunas[idx] = pub
+            mudou = True
+    if not mudou:
+        return puzzle
+    dens: list[list[int]] = []
+    for r in range(GRID_SIZE):
+        row_cat = categoria_por_id(str(linhas[r].get("id") or ""), dia)
+        linha_d: list[int] = []
+        for c in range(GRID_SIZE):
+            col_cat = categoria_por_id(str(colunas[c].get("id") or ""), dia)
+            if not row_cat or not col_cat:
+                linha_d.append(0)
+            else:
+                linha_d.append(len(pool_celula(row_cat, col_cat)))
+        dens.append(linha_d)
+    out = dict(puzzle)
+    out["linhas"] = linhas
+    out["colunas"] = colunas
+    out["densidades"] = dens
+    return out
 
 
 @lru_cache(maxsize=64)

@@ -14406,6 +14406,112 @@ button.grid-admin-dia-btn,
   border-color: color-mix(in srgb, #c53030 50%, var(--border));
   background: color-mix(in srgb, #c53030 12%, var(--bg));
 }
+.grid-admin-hist-main {
+  min-width: 0;
+}
+.grid-admin-axes-sticky {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+  background: var(--bg, #fff);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.grid-admin-eixos-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+}
+.grid-admin-eixo-edit {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.45rem;
+  align-items: center;
+  margin: 0.35rem 0;
+  font-size: 0.8rem;
+}
+.grid-admin-eixo-edit select {
+  grid-column: 1 / -1;
+  font: inherit;
+  font-size: 0.75rem;
+}
+.grid-admin-coord {
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+.grid-admin-user {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem 0.55rem;
+  margin-bottom: 0.55rem;
+  background: var(--bg);
+}
+.grid-admin-user > summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.grid-admin-user > summary::-webkit-details-marker { display: none; }
+.grid-admin-user-body {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+.grid-admin-mini-cell {
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.68rem;
+  min-height: 1.6rem;
+  padding: 0.2rem;
+}
+.grid-admin-score-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.grid-admin-score-edit input {
+  width: 4.2rem;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.25rem;
+}
+.grid-admin-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(22rem, 92vw);
+  height: 100%;
+  z-index: 40;
+  background: var(--bg, #fff);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 12%);
+  padding: 0.85rem 1rem;
+  overflow: auto;
+}
+.grid-admin-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.grid-admin-row--hist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+.grid-admin-row--hist .grid-admin-input {
+  min-width: 8rem;
+  flex: 1 1 8rem;
+}
+
 @media (max-width: 820px) {
   .grid-admin-grid,
   .grid-admin-hist-layout {

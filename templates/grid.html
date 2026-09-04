@@ -312,14 +312,24 @@
       </form>
       <form class="grid-admin-panel" data-grid-admin-passe>
         <h3 class="grid-admin-h">Passe Contínuo</h3>
-        <p class="grid-admin-help">Libera 30 dias de Contínuo ilimitado (PIX R$ 1,65).</p>
+        <p class="grid-admin-help">Busca status, libera 30 dias ou revoga.</p>
         <label class="grid-admin-label" for="grid-admin-passe-pid">ID do participante</label>
         <input id="grid-admin-passe-pid" class="grid-admin-input" type="number" min="1" data-grid-admin-passe-pid required />
         <p class="grid-admin-status" data-grid-admin-passe-status hidden></p>
         <div class="grid-admin-actions">
+          <button type="button" class="grid-admin-ico" data-grid-admin-passe-buscar title="Buscar status" aria-label="Buscar status">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
           <button type="submit" class="grid-admin-ico grid-admin-ico--accent" title="Liberar passe" aria-label="Liberar passe">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 6 9 17l-5-5"/>
+            </svg>
+          </button>
+          <button type="button" class="grid-admin-ico" data-grid-admin-passe-revogar title="Revogar passe" aria-label="Revogar passe">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
@@ -346,6 +356,23 @@
             value="{{ puzzle.dia }}"
             data-grid-admin-hist-dia
           />
+          <input
+            class="grid-admin-input"
+            type="search"
+            placeholder="Buscar nome ou ID"
+            data-grid-admin-busca
+          />
+          <select class="grid-admin-input" data-grid-admin-filtro-modo>
+            <option value="">Todos os modos</option>
+            <option value="raiz">Pro</option>
+            <option value="xonha">Contínuo</option>
+          </select>
+          <select class="grid-admin-input" data-grid-admin-filtro-status>
+            <option value="">Todos os status</option>
+            <option value="finalizado">Finalizado</option>
+            <option value="em andamento">Em andamento</option>
+            <option value="interrompido">Interrompido</option>
+          </select>
         </div>
         <p class="grid-admin-status" data-grid-admin-hist-status hidden></p>
         <div class="grid-admin-hist-layout">
@@ -353,9 +380,11 @@
             <h4 class="grid-admin-h4">Dias com atividade</h4>
             <ul class="grid-admin-dias" data-grid-admin-dias></ul>
           </div>
-          <div>
-            <h4 class="grid-admin-h4">Eixos do puzzle</h4>
-            <div class="grid-admin-axes" data-grid-admin-axes></div>
+          <div class="grid-admin-hist-main">
+            <div class="grid-admin-axes-sticky" data-grid-admin-axes-wrap>
+              <h4 class="grid-admin-h4">Eixos do puzzle</h4>
+              <div class="grid-admin-axes" data-grid-admin-axes></div>
+            </div>
             <h4 class="grid-admin-h4">Respostas</h4>
             <div class="grid-admin-respostas" data-grid-admin-respostas></div>
           </div>
@@ -370,6 +399,13 @@
         </div>
       </div>
     </details>
+    <aside class="grid-admin-drawer" data-grid-admin-drawer hidden>
+      <header class="grid-admin-drawer-head">
+        <strong data-grid-admin-drawer-titulo>Célula</strong>
+        <button type="button" class="grid-admin-ico" data-grid-admin-drawer-fechar aria-label="Fechar">×</button>
+      </header>
+      <div class="grid-admin-drawer-body" data-grid-admin-drawer-body></div>
+    </aside>
   </section>
   {% endif %}
 </section>
@@ -522,6 +558,6 @@
 {% block scripts %}
 <script src="/static/grid.js?v=39" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=7" defer></script>
+<script src="/static/grid-admin.js?v=8" defer></script>
 {% endif %}
 {% endblock %}
