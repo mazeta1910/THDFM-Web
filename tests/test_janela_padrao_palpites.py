@@ -184,3 +184,61 @@ def test_r4_ao_vivo_nao_pula_quartas_volta_se_fase_avancou(client):
     assert rp.status_code == 200
     assert "R4 · Quartas (Volta)" in rp.text
     assert "R4 · Semis (Ida)" not in rp.text
+
+
+def test_confirmacao_em_semis_cedo_vira_r4_quartas_volta(client):
+    """Confirmar rodada já em Semis (sem Quartas Volta) → R4 Quartas Volta, R5 Semis.
+
+    Reproduz o caso em que a confirmação grava fase=semis e o perfil mostrava
+    R4 · Semis (Ida) e R5 · Quartas (Volta) invertidos.
+    """
+    a = db.criar_participante("R4 Hist Quartas", status="liberado")
+    login_admin(client)
+
+    _palpite_exato(a["id"], "oitavas", "ida")
+    _fechar_perna("oitavas", "ida")
+    confirmar_rodada()
+
+    _palpite_exato(a["id"], "oitavas", "volta", gm=0, gv=0)
+    _fechar_perna("oitavas", "volta", gm=0, gv=0)
+    confirmar_rodada()
+
+    _montar_quartas(client)
+    _palpite_exato(a["id"], "quartas", "ida")
+    _fechar_perna("quartas", "ida")
+    confirmar_rodada()
+
+    # Pontos da Volta das Quartas acumulam ao vivo; admin avança e confirma cedo.
+    _palpite_exato(a["id"], "quartas", "volta", gm=0, gv=0)
+    _fechar_perna("quartas", "volta", gm=0, gv=0)
+    db.set_fase_atual("semis")
+    db.set_janela("ida")
+    hist = confirmar_rodada()
+    assert hist["fase"] == "semis"
+
+    entradas = resumo_pontuacao_por_participante()[a["id"]]
+    assert len(entradas) == 5
+    r4 = entradas[3]
+    assert r4["ao_vivo"] is False
+    assert r4["rotulo_curto"] == "R4"
+    assert r4["fase"] == "quartas"
+    assert r4["fase_label"] == "Quartas"
+    assert r4["janela"] == "volta"
+    assert r4["janela_label"] == "Volta"
+    assert r4["rod"] > 0
+    assert r4["jogos"], "jogos da Quartas Volta devem aparecer sob R4"
+
+    ao_vivo = entradas[4]
+    assert ao_vivo["ao_vivo"] is True
+    assert ao_vivo["rotulo_curto"] == "R5"
+    assert ao_vivo["fase"] == "semis"
+    assert ao_vivo["fase_label"] == "Semis"
+    assert ao_vivo["janela"] == "ida"
+
+    _login_participante(client, a, "r4hist1")
+    rp = client.get("/meu-perfil")
+    assert rp.status_code == 200
+    assert "R4 · Quartas (Volta)" in rp.text
+    assert "R5 · Semis (Ida)" in rp.text
+    assert "R4 · Semis (Ida)" not in rp.text
+    assert "R5 · Quartas (Volta)" not in rp.text
