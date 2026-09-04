@@ -173,11 +173,13 @@ def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, 
         participante_id, dia, modo="xonha", so_encerradas=True
     )
     passe = db.grid_xonha_passe_ativo(participante_id, hoje=dia)
+    restantes = None if passe else max(0, XONHA_LIVRE_POR_DIA - usados)
     info = {
         "usados": usados,
         "limite_livre": XONHA_LIVRE_POR_DIA,
         "passe_ativo": passe,
-        "restantes": None if passe else max(0, XONHA_LIVRE_POR_DIA - usados),
+        "restantes": restantes,
+        "grids_disponiveis": restantes,
     }
     ok = passe or usados < XONHA_LIVRE_POR_DIA
     return ok, info
@@ -267,6 +269,35 @@ def validar_chute_convidado(
     return resultado
 
 
+def puzzle_bloqueado_cota(dia: str) -> dict[str, Any]:
+    """Placeholder sem seed/eixos reais quando a cota Contínuo está esgotada."""
+    from src.grid_game import (
+        get_virada_hm,
+        ms_ate_proxima_virada,
+        rotulo_dia,
+        rotulo_hora_virada,
+    )
+
+    h, mi = get_virada_hm()
+    eixo = {"id": "", "rotulo": "—", "tipo": "bloqueado"}
+    return {
+        "dia": str(dia),
+        "tamanho": 3,
+        "linhas": [dict(eixo), dict(eixo), dict(eixo)],
+        "colunas": [dict(eixo), dict(eixo), dict(eixo)],
+        "densidades": [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+        "rotulo": rotulo_dia(dia),
+        "virada_em_ms": ms_ate_proxima_virada(),
+        "virada_hora": h,
+        "virada_minuto": mi,
+        "virada_rotulo": rotulo_hora_virada(h, mi),
+        "tz": "America/Sao_Paulo",
+        "regenerado": False,
+        "modo": "xonha",
+        "cota_esgotada": True,
+    }
+
+
 def puzzle_ssr_continuo(
     participante_id: int, dia: str
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
@@ -274,6 +305,10 @@ def puzzle_ssr_continuo(
     if aberta:
         part = anexar_indice_dia(aberta)
         return puzzle_da_partida(part), part
+    ok, _info = pode_iniciar_xonha(int(participante_id), str(dia))
+    if not ok:
+        # Não vazar seed/eixos do próximo Contínuo com cota zerada.
+        return puzzle_bloqueado_cota(str(dia)), None
     indice = indice_proximo_xonha(participante_id, dia)
     salt = salt_xonha_indice(indice)
     return _puzzle_xonha_publico(dia, salt), None
