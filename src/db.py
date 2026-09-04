@@ -578,6 +578,54 @@ def _migrate_grid_progresso(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_grid_partida(conn: sqlite3.Connection) -> None:
+    """Partidas Raiz/Xonha (substitui progresso único no ranking novo)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_partida (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+          dia TEXT NOT NULL,
+          modo TEXT NOT NULL CHECK (modo IN ('raiz', 'xonha')),
+          puzzle_salt TEXT NOT NULL DEFAULT '',
+          celulas_json TEXT NOT NULL DEFAULT '[]',
+          finalizado INTEGER NOT NULL DEFAULT 0,
+          interrompido INTEGER NOT NULL DEFAULT 0,
+          iniciado_em TEXT,
+          encerrado_em TEXT,
+          tempo_segundos INTEGER,
+          pontos INTEGER NOT NULL DEFAULT 0,
+          dicas_json TEXT NOT NULL DEFAULT '[]',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_grid_partida_part_dia_modo "
+        "ON grid_partida(participante_id, dia, modo)"
+    )
+    # No máx. 1 Raiz por participante/dia (parcial único via índice).
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_grid_partida_raiz_unica "
+        "ON grid_partida(participante_id, dia) WHERE modo = 'raiz'"
+    )
+
+
+def _migrate_grid_xonha_passe(conn: sqlite3.Connection) -> None:
+    """Passe mensal: Xonha ilimitado até valido_ate."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_xonha_passe (
+          participante_id INTEGER PRIMARY KEY REFERENCES participantes(id) ON DELETE CASCADE,
+          valido_ate TEXT NOT NULL,
+          liberado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          liberado_por TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+
+
 def _migrate_grid_puzzle_salt(conn: sqlite3.Connection) -> None:
     """Salt por dia para regenerar eixos do puzzle sem mudar o algoritmo global."""
     conn.execute(
@@ -720,6 +768,18 @@ def _purge_grid_progresso_pre_ranking(conn: sqlite3.Connection) -> None:
     )
 
 
+def _cutover_grid_raiz_xonha_v1(conn: sqlite3.Connection) -> None:
+    """Lança Raiz/Xonha: zera ranking antigo (progresso) uma vez."""
+    chave = "grid_raiz_xonha_cutover_v1"
+    if conn.execute("SELECT 1 FROM meta WHERE chave = ?", (chave,)).fetchone():
+        return
+    conn.execute("DELETE FROM grid_progresso")
+    conn.execute(
+        "INSERT INTO meta (chave, valor) VALUES (?, ?)",
+        (chave, "1"),
+    )
+
+
 def init_db() -> None:
     with get_db() as conn:
         conn.executescript(SCHEMA)
@@ -734,12 +794,15 @@ def init_db() -> None:
         _migrate_perfil_recados(conn)
         _migrate_perfil_recado_reacoes(conn)
         _migrate_grid_progresso(conn)
+        _migrate_grid_partida(conn)
+        _migrate_grid_xonha_passe(conn)
         _migrate_grid_puzzle_salt(conn)
         _migrate_hall_lendas(conn)
         _migrate_bug_reports(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
         _purge_grid_progresso_pre_ranking(conn)
+        _cutover_grid_raiz_xonha_v1(conn)
         row = conn.execute("SELECT valor FROM meta WHERE chave = 'janela'").fetchone()
         if not row:
             conn.execute(
@@ -4952,6 +5015,199 @@ def salvar_grid_progresso(
             (pid, dia_s, payload, 1 if finalizado else 0),
         )
     out = get_grid_progresso(pid, dia_s)
+    assert out is not None
+    return out
+
+
+def _row_grid_partida(row: sqlite3.Row) -> dict[str, Any]:
+    try:
+        celulas = json.loads(row["celulas_json"] or "[]")
+    except json.JSONDecodeError:
+        celulas = []
+    try:
+        dicas = json.loads(row["dicas_json"] or "[]")
+    except json.JSONDecodeError:
+        dicas = []
+    return {
+        "id": int(row["id"]),
+        "participante_id": int(row["participante_id"]),
+        "dia": row["dia"],
+        "modo": row["modo"],
+        "puzzle_salt": row["puzzle_salt"] or "",
+        "celulas": celulas,
+        "finalizado": bool(row["finalizado"]),
+        "interrompido": bool(row["interrompido"]),
+        "iniciado_em": row["iniciado_em"],
+        "encerrado_em": row["encerrado_em"],
+        "tempo_segundos": row["tempo_segundos"],
+        "pontos": int(row["pontos"] or 0),
+        "dicas": dicas if isinstance(dicas, list) else [],
+        "criado_em": row["criado_em"],
+        "atualizado_em": row["atualizado_em"],
+    }
+
+
+def get_grid_partida(partida_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM grid_partida WHERE id = ?",
+            (int(partida_id),),
+        ).fetchone()
+        return _row_grid_partida(row) if row else None
+
+
+def get_grid_partida_raiz(participante_id: int, dia: str) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM grid_partida
+            WHERE participante_id = ? AND dia = ? AND modo = 'raiz'
+            """,
+            (int(participante_id), str(dia)),
+        ).fetchone()
+        return _row_grid_partida(row) if row else None
+
+
+def contar_grid_partidas_dia(
+    participante_id: int, dia: str, *, modo: str
+) -> int:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM grid_partida
+            WHERE participante_id = ? AND dia = ? AND modo = ?
+            """,
+            (int(participante_id), str(dia), str(modo)),
+        ).fetchone()
+        return int(row["n"] or 0) if row else 0
+
+
+def criar_grid_partida(
+    participante_id: int,
+    dia: str,
+    *,
+    modo: str,
+    puzzle_salt: str = "",
+    iniciado_em: str | None = None,
+) -> dict[str, Any]:
+    if modo not in ("raiz", "xonha"):
+        raise ValueError("modo inválido")
+    pid = int(participante_id)
+    dia_s = str(dia)
+    with get_db() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO grid_partida (
+              participante_id, dia, modo, puzzle_salt, celulas_json,
+              iniciado_em, criado_em, atualizado_em
+            ) VALUES (?, ?, ?, ?, '[]', ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
+            """,
+            (pid, dia_s, modo, str(puzzle_salt or ""), iniciado_em),
+        )
+        pid_row = int(cur.lastrowid)
+    out = get_grid_partida(pid_row)
+    assert out is not None
+    return out
+
+
+def atualizar_grid_partida(
+    partida_id: int,
+    *,
+    celulas: list | None = None,
+    finalizado: bool | None = None,
+    interrompido: bool | None = None,
+    iniciado_em: str | None = None,
+    encerrado_em: str | None = None,
+    tempo_segundos: int | None = None,
+    pontos: int | None = None,
+    dicas: list | None = None,
+) -> dict[str, Any]:
+    sets: list[str] = ["atualizado_em = datetime('now', 'localtime')"]
+    args: list[Any] = []
+    if celulas is not None:
+        sets.append("celulas_json = ?")
+        args.append(json.dumps(celulas, ensure_ascii=False))
+    if finalizado is not None:
+        sets.append("finalizado = ?")
+        args.append(1 if finalizado else 0)
+    if interrompido is not None:
+        sets.append("interrompido = ?")
+        args.append(1 if interrompido else 0)
+    if iniciado_em is not None:
+        sets.append("iniciado_em = ?")
+        args.append(iniciado_em)
+    if encerrado_em is not None:
+        sets.append("encerrado_em = ?")
+        args.append(encerrado_em)
+    if tempo_segundos is not None:
+        sets.append("tempo_segundos = ?")
+        args.append(int(tempo_segundos))
+    if pontos is not None:
+        sets.append("pontos = ?")
+        args.append(int(pontos))
+    if dicas is not None:
+        sets.append("dicas_json = ?")
+        args.append(json.dumps(dicas, ensure_ascii=False))
+    args.append(int(partida_id))
+    with get_db() as conn:
+        conn.execute(
+            f"UPDATE grid_partida SET {', '.join(sets)} WHERE id = ?",
+            tuple(args),
+        )
+    out = get_grid_partida(int(partida_id))
+    assert out is not None
+    return out
+
+
+def get_grid_xonha_passe(participante_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT participante_id, valido_ate, liberado_em, liberado_por
+            FROM grid_xonha_passe WHERE participante_id = ?
+            """,
+            (int(participante_id),),
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "participante_id": int(row["participante_id"]),
+            "valido_ate": row["valido_ate"],
+            "liberado_em": row["liberado_em"],
+            "liberado_por": row["liberado_por"] or "",
+        }
+
+
+def grid_xonha_passe_ativo(participante_id: int, *, hoje: str | None = None) -> bool:
+    from src.grid_game import dia_grid
+
+    row = get_grid_xonha_passe(participante_id)
+    if not row:
+        return False
+    ref = hoje or dia_grid()
+    return str(row["valido_ate"]) >= str(ref)
+
+
+def liberar_grid_xonha_passe(
+    participante_id: int,
+    *,
+    valido_ate: str,
+    liberado_por: str = "",
+) -> dict[str, Any]:
+    pid = int(participante_id)
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO grid_xonha_passe (participante_id, valido_ate, liberado_em, liberado_por)
+            VALUES (?, ?, datetime('now', 'localtime'), ?)
+            ON CONFLICT(participante_id) DO UPDATE SET
+              valido_ate = excluded.valido_ate,
+              liberado_em = datetime('now', 'localtime'),
+              liberado_por = excluded.liberado_por
+            """,
+            (pid, str(valido_ate), str(liberado_por or "")),
+        )
+    out = get_grid_xonha_passe(pid)
     assert out is not None
     return out
 
