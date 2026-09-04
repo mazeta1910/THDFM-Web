@@ -34,12 +34,28 @@ def test_iniciar_raiz_idempotente(client):
     data1 = r1.json()
     assert data1["modo"] == "raiz"
     assert data1["partida"]["modo"] == "raiz"
-    assert data1["partida"]["iniciado_em"]
+    assert data1["partida"]["iniciado_em"] is None
     pid = data1["partida"]["id"]
 
     r2 = client.post("/grid/api/iniciar", json={"modo": "raiz"})
     assert r2.status_code == 200
     assert r2.json()["partida"]["id"] == pid
+
+
+def test_cronometro_so_no_primeiro_tocar(client):
+    _login_grid(client, "Raiz Timer", "raiz.timer")
+    ini = client.post("/grid/api/iniciar", json={"modo": "raiz"}).json()
+    partida_id = ini["partida"]["id"]
+    assert ini["partida"]["iniciado_em"] is None
+
+    t1 = client.post("/grid/api/tocar", json={"partida_id": partida_id})
+    assert t1.status_code == 200, t1.text
+    assert t1.json()["partida"]["iniciado_em"]
+    started = t1.json()["partida"]["iniciado_em"]
+
+    t2 = client.post("/grid/api/tocar", json={"partida_id": partida_id})
+    assert t2.status_code == 200
+    assert t2.json()["partida"]["iniciado_em"] == started
 
 
 def test_iniciar_raiz_nao_confunde_com_xonha(client):

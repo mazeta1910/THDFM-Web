@@ -22,12 +22,8 @@
 >
   <header class="grid-head">
     <div class="grid-head-main">
-      <p class="grid-kicker">Puzzle diário</p>
-      <div class="grid-head-title-row">
-        <h1 class="grid-title">
-          THDFM Grid
-          <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
-        </h1>
+      <div class="grid-kicker-row">
+        <p class="grid-kicker">Puzzle diário</p>
         <a class="grid-report-btn" href="/grid/bugs" title="Reportar bugs do Grid">
           <svg class="grid-report-ico" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 7.5V6a4 4 0 0 1 8 0v1.5"/>
@@ -45,15 +41,21 @@
           {% endif %}
         </a>
       </div>
-      <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
-        <button type="button" class="grid-mode-btn is-active" data-grid-mode="raiz" role="tab" aria-selected="true">Raiz</button>
-        <button type="button" class="grid-mode-btn" data-grid-mode="xonha" role="tab" aria-selected="false">Xonha</button>
-      </div>
-      <p class="grid-sub" data-grid-sub>
-        Acerte um clube em cada célula · 1 tentativa por casa ·
-        <strong class="grid-sub-emphasis">Não vale repetir!</strong><br />
-        Puzzle de <strong data-grid-rotulo>{{ puzzle.rotulo }}</strong> - Vira às {{ virada_rotulo|default(puzzle.virada_rotulo|default('00:00')) }} (Brasília)
+      <h1 class="grid-title">
+        THDFM Grid
+        <span class="grid-streak" data-grid-streak title="Sequência de dias finalizados">🔥 {{ streak }}</span>
+      </h1>
+      <p class="grid-sub grid-sub--lead" data-grid-sub>
+        Puzzle de <strong data-grid-rotulo>{{ puzzle.rotulo }}</strong>; Acerte um clube em cada célula.
       </p>
+      <p class="grid-sub grid-sub--rule">Você tem uma tentativa por casa.</p>
+      <div class="grid-mode-row">
+        <div class="grid-mode-toggle" role="tablist" aria-label="Modo do Grid" data-grid-mode-toggle>
+          <button type="button" class="grid-mode-btn is-active" data-grid-mode="raiz" role="tab" aria-selected="true">Raiz</button>
+          <button type="button" class="grid-mode-btn" data-grid-mode="xonha" role="tab" aria-selected="false">Xonha</button>
+        </div>
+      </div>
+      <p class="grid-cota" data-grid-cota hidden>Grids disponíveis: —</p>
       <div class="grid-live-stats" data-grid-live-stats>
         <div class="grid-score-block">
           <span class="grid-score-label">Score</span>
@@ -63,7 +65,6 @@
           <span class="grid-timer-label">Tempo</span>
           <strong class="grid-timer-value" data-grid-timer>00:00</strong>
         </div>
-        <p class="grid-cota" data-grid-cota hidden></p>
       </div>
     </div>
   </header>
@@ -104,8 +105,8 @@
     <div class="grid-board-footer">
       <p class="grid-hint" data-grid-hint>Toque numa célula vazia para buscar o clube.</p>
       <div class="grid-xonha-actions" data-grid-xonha-actions hidden>
-        <button type="button" class="btn secondary" data-grid-dica-open>Dica</button>
-        <button type="button" class="btn secondary" data-grid-xonha-nova>Outro Xonha</button>
+        <button type="button" class="grid-chip-btn" data-grid-dica-open>Dica</button>
+        <button type="button" class="grid-chip-btn" data-grid-xonha-nova disabled title="Termine o grid atual para jogar outro">Outro Xonha</button>
       </div>
       <div class="grid-daltonismo" data-grid-daltonismo>
         <span class="grid-daltonismo-label" id="grid-daltonismo-label">Daltonismo</span>
@@ -187,7 +188,7 @@
             <button type="button" class="grid-mode-btn is-active" data-rank-modo="raiz" aria-selected="true">Raiz</button>
             <button type="button" class="grid-mode-btn" data-rank-modo="xonha" aria-selected="false">Xonha</button>
           </div>
-          <button type="button" class="btn secondary grid-rank-vista-btn" data-grid-rank-vista-toggle aria-pressed="false">Vista detalhada</button>
+          <button type="button" class="grid-chip-btn" data-grid-rank-vista-toggle aria-pressed="false">Detalhes</button>
         </div>
         <p class="grid-sub" data-grid-rank-sub>Score único · acertos, tempo, raridade e streak · Raiz zera ao sair da página</p>
       </div>
@@ -370,7 +371,20 @@
   <div class="grid-modal-card">
     <h2 class="grid-result-title">Modo Raiz</h2>
     <p class="grid-sub">Se você sair desta página (outra aba, outro app ou fechar), sua tentativa do dia será encerrada e você não poderá preencher as casas restantes.</p>
-    <button type="button" class="btn" data-grid-warn-ok>Entendi — começar</button>
+    <div class="grid-modal-actions">
+      <button type="button" class="grid-chip-btn grid-chip-btn-ghost" data-grid-warn-voltar title="Voltar">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        <span>Voltar</span>
+      </button>
+      <button type="button" class="grid-chip-btn" data-grid-warn-ok title="Ok">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12l5 5L20 7"/>
+        </svg>
+        <span>Ok</span>
+      </button>
+    </div>
   </div>
 </dialog>
 
@@ -413,7 +427,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/grid.js?v=16" defer></script>
+<script src="/static/grid.js?v=19" defer></script>
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=5" defer></script>
 {% endif %}
