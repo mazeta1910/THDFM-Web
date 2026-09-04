@@ -872,16 +872,23 @@ def test_grid_publico_chute_exige_login(client: TestClient):
     assert 'data-pode-salvar="0"' in r.text
     assert "grid-login-banner" in r.text
     assert 'href="/?acesso=entrar"' in r.text
+    assert "Jogue o Contínuo" in r.text
     api = client.get("/grid/api/hoje", follow_redirects=False)
     assert api.status_code == 200
     assert api.json()["pode_salvar"] is False
-    chute = client.post(
-        "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "nome": "Flamengo"},
+    assert api.json()["puzzle"]["modo"] == "xonha"
+    iniciar = client.post(
+        "/grid/api/iniciar",
+        json={"modo": "raiz"},
         follow_redirects=False,
     )
-    assert chute.status_code == 401
-    assert "Entre" in (chute.json().get("erro") or "")
+    assert iniciar.status_code == 401
+    chute_com_partida = client.post(
+        "/grid/api/chute",
+        json={"linha": 0, "coluna": 0, "nome": "Flamengo", "partida_id": 1},
+        follow_redirects=False,
+    )
+    assert chute_com_partida.status_code == 401
 
 
 def test_grid_og_preview_para_bot_whatsapp(client: TestClient):
@@ -1028,15 +1035,15 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=35" in r.text
+    assert "/static/grid.js?v=39" in r.text
     assert "data-virada-ms=" in r.text
-    assert "Não vale repetir!" in r.text
-    assert "grid-sub-emphasis" in r.text
-    assert "Vira às 00:00 (Brasília)" in r.text
+    assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
+    assert "grid-sub--lead" in r.text
+    assert "vira às 00:00 (Brasília)" in r.text
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=7" in r.text
+    assert "/static/grid-admin.js?v=8" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text
@@ -1104,7 +1111,7 @@ def test_grid_fluxo_logado(client: TestClient):
     board_mobile = css.split("Board cabe na largura útil do wrap", 1)[1].split("/* —— Grid admin", 1)[0]
     assert "margin-inline: 0" in board_mobile
     assert "width: 100%" in board_mobile
-    assert "minmax(0, 5rem)" in board_mobile
+    assert "minmax(0, 4.4rem)" in board_mobile
     assert "margin-inline: -1rem" not in board_mobile
     assert "overflow-x: clip" not in css.split(".grid-page", 1)[1].split(".grid-head", 1)[0]
     # Não pode herdar width:100% do button global
@@ -1159,8 +1166,13 @@ def test_grid_fluxo_logado(client: TestClient):
     assert data["puzzle"]["rotulo"]
     assert isinstance(data["puzzle"]["virada_em_ms"], int)
     assert data["pode_salvar"] is True
+    assert data["puzzle"].get("modo") == "xonha"
 
-    puzzle = data["puzzle"]
+    iniciado = client.post("/grid/api/iniciar", json={"modo": "xonha"})
+    assert iniciado.status_code == 200, iniciado.text
+    partida = iniciado.json()
+    puzzle = partida["puzzle"]
+    partida_id = partida["partida"]["id"]
     row = categoria_por_id(puzzle["linhas"][0]["id"])
     col = categoria_por_id(puzzle["colunas"][0]["id"])
     assert row and col
@@ -1170,22 +1182,30 @@ def test_grid_fluxo_logado(client: TestClient):
     core = nome_core_norm(clube["nome_norm"])
     precisa = min_chars_sugestao(clube["nome_norm"])
 
-    # Poucas letras: ainda sem sugestão (abaixo de 50%)
     curto_q = core[: max(1, precisa - 1)]
     curto = client.get(
         "/grid/api/buscar",
-        params={"linha": 0, "coluna": 0, "q": curto_q},
+        params={
+            "linha": 0,
+            "coluna": 0,
+            "q": curto_q,
+            "partida_id": partida_id,
+        },
     )
     assert curto.status_code == 200
     assert curto.json()["itens"] == [] or not any(
         x["id"] == clube["id"] for x in curto.json()["itens"]
     )
 
-    # ~50% do nome: aparece no catálogo completo
     q50 = core[:precisa]
     busca = client.get(
         "/grid/api/buscar",
-        params={"linha": 0, "coluna": 0, "q": q50},
+        params={
+            "linha": 0,
+            "coluna": 0,
+            "q": q50,
+            "partida_id": partida_id,
+        },
     )
     assert busca.status_code == 200
     assert busca.json()["pronto"] is True
@@ -1195,7 +1215,12 @@ def test_grid_fluxo_logado(client: TestClient):
 
     chute = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
+        json={
+            "linha": 0,
+            "coluna": 0,
+            "clube_id": clube["id"],
+            "partida_id": partida_id,
+        },
     )
     assert chute.status_code == 200
     body = chute.json()
@@ -1204,7 +1229,12 @@ def test_grid_fluxo_logado(client: TestClient):
 
     chute2 = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "clube_id": clube["id"]},
+        json={
+            "linha": 0,
+            "coluna": 0,
+            "clube_id": clube["id"],
+            "partida_id": partida_id,
+        },
     )
     assert chute2.status_code == 409
 
@@ -1419,9 +1449,8 @@ def test_texto_share_usa_verde_e_vermelho():
     assert "🟩 🟥 ⬜" in text
     assert "⬜ 🟩 🟥" in text
     assert "⬛" not in text
-    assert "2/9" in text
+    assert "✅ 2/9 | 🎯 22%" in text
     assert "https://thdfm.com.br/grid" in text
-    # bytes UTF-8 corretos dos quadrados (não latin-1)
     raw = text.encode("utf-8")
     assert "🟩".encode("utf-8") in raw
     assert "🟥".encode("utf-8") in raw
@@ -1440,15 +1469,18 @@ def test_texto_share_pro_score_e_dicas():
         pontos=420,
         dicas_usadas=0,
         ranking=1,
+        tempo_segundos=195,
     )
     assert text.startswith("THDFM Grid Pro — 04/09/2026")
-    assert "1/9" in text
+    assert "✅ 1/9 | 🎯 11%" in text
     lines = text.splitlines()
     assert "🏆 Ranking: 1º" in lines
     assert "⭐ Pontos: 420" in lines
+    assert "⏱️ Tempo: 03:15" in lines
     assert "💡 Dicas Utilizadas: 0" in lines
     assert lines.index("🏆 Ranking: 1º") < lines.index("⭐ Pontos: 420")
-    assert lines.index("⭐ Pontos: 420") < lines.index("💡 Dicas Utilizadas: 0")
+    assert lines.index("⭐ Pontos: 420") < lines.index("⏱️ Tempo: 03:15")
+    assert lines.index("⏱️ Tempo: 03:15") < lines.index("💡 Dicas Utilizadas: 0")
     assert lines[-1] == "https://thdfm.com.br/grid"
 
 
@@ -1462,21 +1494,23 @@ def test_texto_share_continuo_indice():
         pontos=55,
         dicas_usadas=2,
         ranking=3,
+        tempo_segundos=60,
     )
     assert text.startswith("THDFM Grid 2 — 04/09/2026")
     assert "🎮 Só diversão" in text
     assert "🏆 Ranking:" not in text
     assert "⭐ Pontos: 55" in text
+    assert "⏱️ Tempo: 01:00" in text
     assert "💡 Dicas Utilizadas: 2" in text
-    assert "55" not in text.splitlines()  # pontos só na linha com ⭐
     expected = (
         "THDFM Grid 2 — 04/09/2026\n"
-        "0/9\n"
+        "✅ 0/9 | 🎯 0%\n"
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
         "🎮 Só diversão\n"
         "⭐ Pontos: 55\n"
+        "⏱️ Tempo: 01:00\n"
         "💡 Dicas Utilizadas: 2\n"
         "https://thdfm.com.br/grid"
     )

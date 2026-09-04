@@ -183,26 +183,116 @@ def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, 
     return ok, info
 
 
+def salt_xonha_indice(indice: int) -> str:
+    return f"xonha-{max(1, int(indice))}"
+
+
+def indice_proximo_xonha(participante_id: int, dia: str) -> int:
+    return (
+        db.contar_grid_partidas_dia(int(participante_id), str(dia), modo="xonha") + 1
+    )
+
+
+def _puzzle_xonha_publico(dia: str, salt: str) -> dict[str, Any]:
+    from src.grid_game import (
+        gerar_puzzle,
+        get_virada_hm,
+        ms_ate_proxima_virada,
+        rotulo_dia,
+        rotulo_hora_virada,
+    )
+
+    p = gerar_puzzle(dia, salt=str(salt))
+    h, mi = get_virada_hm()
+    return {
+        **p,
+        "rotulo": rotulo_dia(dia),
+        "virada_em_ms": ms_ate_proxima_virada(),
+        "virada_hora": h,
+        "virada_minuto": mi,
+        "virada_rotulo": rotulo_hora_virada(h, mi),
+        "tz": "America/Sao_Paulo",
+        "regenerado": True,
+        "modo": "xonha",
+    }
+
+
+def salt_convidado_continuo() -> str:
+    return salt_xonha_indice(1)
+
+
+def puzzle_ssr_convidado(dia: str) -> dict[str, Any]:
+    return _puzzle_xonha_publico(str(dia), salt_convidado_continuo())
+
+
+def validar_chute_convidado(
+    *,
+    dia: str,
+    linha: int,
+    coluna: int,
+    clube_id: str | None = None,
+    nome: str | None = None,
+) -> dict[str, Any]:
+    from src.grid_game import (
+        chute_nome_inexistente,
+        resolver_clube_por_nome,
+        validar_chute,
+    )
+
+    salt = salt_convidado_continuo()
+    resultado = None
+    cid = str(clube_id or "").strip()
+    rotulo = str(nome or "").strip()
+    if not cid and rotulo:
+        try:
+            cid = str(resolver_clube_por_nome(rotulo)["id"])
+        except ValueError as exc:
+            msg = str(exc)
+            if "não encontrado" in msg.casefold():
+                resultado = chute_nome_inexistente(
+                    linha=linha, coluna=coluna, nome=rotulo
+                )
+            else:
+                raise
+    if resultado is None:
+        if not cid:
+            raise ValueError("Digite o nome do clube")
+        resultado = validar_chute(
+            dia=dia,
+            linha=linha,
+            coluna=coluna,
+            clube_id=cid,
+            salt=salt,
+        )
+    return resultado
+
+
+def puzzle_ssr_continuo(
+    participante_id: int, dia: str
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    aberta = db.get_grid_partida_aberta(int(participante_id), str(dia), modo="xonha")
+    if aberta:
+        part = anexar_indice_dia(aberta)
+        return puzzle_da_partida(part), part
+    indice = indice_proximo_xonha(participante_id, dia)
+    salt = salt_xonha_indice(indice)
+    return _puzzle_xonha_publico(dia, salt), None
+
+
 def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
-    """Cria partida Contínuo (salt próprio) ou retoma a aberta do dia.
-
-    Retomar evita queimar a cota a cada refresh/clique no modo.
-    """
-    import secrets
-
     from src.grid_game import gerar_puzzle
 
     aberta = db.get_grid_partida_aberta(participante_id, dia, modo="xonha")
     if aberta:
         return aberta
 
-    ok, info = pode_iniciar_xonha(participante_id, dia)
+    ok, _info = pode_iniciar_xonha(participante_id, dia)
     if not ok:
         raise CotaXonhaEsgotada(
             "Limite de 3 grids Contínuo por dia. Passe ilimitado: R$ 1,65 / 30 dias."
         )
-    salt = secrets.token_hex(8)
-    # Garante que o puzzle existe (e cacheia) antes de gravar a partida.
+    indice = indice_proximo_xonha(participante_id, dia)
+    salt = salt_xonha_indice(indice)
     gerar_puzzle(dia, salt=salt)
     return db.criar_grid_partida(
         participante_id,
@@ -214,25 +304,11 @@ def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
 
 
 def puzzle_da_partida(partida: dict[str, Any]) -> dict[str, Any]:
-    from src.grid_game import gerar_puzzle, puzzle_publico
+    from src.grid_game import puzzle_publico
 
     dia = partida["dia"]
     if partida.get("modo") == "xonha" and partida.get("puzzle_salt"):
-        p = gerar_puzzle(dia, salt=str(partida["puzzle_salt"]))
-        from src.grid_game import get_virada_hm, ms_ate_proxima_virada, rotulo_dia, rotulo_hora_virada
-
-        h, mi = get_virada_hm()
-        return {
-            **p,
-            "rotulo": rotulo_dia(dia),
-            "virada_em_ms": ms_ate_proxima_virada(),
-            "virada_hora": h,
-            "virada_minuto": mi,
-            "virada_rotulo": rotulo_hora_virada(h, mi),
-            "tz": "America/Sao_Paulo",
-            "regenerado": True,
-            "modo": "xonha",
-        }
+        return _puzzle_xonha_publico(dia, str(partida["puzzle_salt"]))
     return {**puzzle_publico(dia), "modo": "raiz"}
 
 
@@ -256,6 +332,51 @@ def anexar_indice_dia(partida: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def modo_rotulo_partida(partida: dict[str, Any]) -> str:
+    modo = str(partida.get("modo") or "")
+    if modo == "raiz":
+        return "Pro"
+    if modo == "xonha":
+        indice = partida.get("indice_dia")
+        if indice is None and partida.get("id") is not None:
+            part = anexar_indice_dia(partida)
+            indice = part.get("indice_dia")
+        if indice is not None and int(indice) > 0:
+            return f"Contínuo {int(indice)}"
+        return "Contínuo"
+    return modo or "—"
+
+
+def detalhe_partida_dono(partida: dict[str, Any]) -> dict[str, Any]:
+    part = anexar_indice_dia(partida)
+    part["modo_rotulo"] = modo_rotulo_partida(part)
+    celulas = part.get("celulas") or []
+    ok = 0
+    filled = 0
+    if isinstance(celulas, list):
+        for row in celulas:
+            if not isinstance(row, list):
+                continue
+            for cell in row:
+                if isinstance(cell, dict) and cell.get("clube"):
+                    filled += 1
+                    if cell.get("ok"):
+                        ok += 1
+    part["celulas_ok"] = ok
+    part["celulas_preenchidas"] = filled
+    if part.get("interrompido"):
+        part["status"] = "interrompido"
+    elif part.get("finalizado"):
+        part["status"] = "finalizado"
+    else:
+        part["status"] = "em andamento"
+    puzzle = puzzle_da_partida(part)
+    share = None
+    if part.get("finalizado") or part.get("interrompido"):
+        share = texto_share_partida(part)
+    return {"partida": part, "puzzle": puzzle, "share": share}
+
+
 def texto_share_partida(
     partida: dict[str, Any],
     *,
@@ -275,6 +396,9 @@ def texto_share_partida(
     pos = ranking
     if pos is None and part.get("participante_id") is not None and modo in ("raiz", "xonha"):
         pos = db.posicao_ranking_grid_modo(int(part["participante_id"]), modo)
+    tempo = part.get("tempo_segundos")
+    if tempo is None and part.get("iniciado_em"):
+        tempo = tempo_decorrido_s(part.get("iniciado_em"), ate=part.get("encerrado_em"))
     return texto_share(
         dia=str(part.get("dia") or ""),
         celulas=cells,
@@ -283,6 +407,7 @@ def texto_share_partida(
         pontos=pts,
         dicas_usadas=len(dicas) if isinstance(dicas, list) else 0,
         ranking=pos,
+        tempo_segundos=int(tempo) if tempo is not None else None,
     )
 
 
@@ -428,4 +553,94 @@ def aplicar_dica_matriz(
         "dica": dicas[-1],
         "score_parcial": pts,
         "proximo_custo_matriz": custo_dica_matriz(usos_matriz + 1),
+    }
+
+
+def override_celula_admin(
+    partida_id: int,
+    *,
+    linha: int,
+    coluna: int,
+    ok: bool,
+) -> dict[str, Any]:
+    from src.grid_game import GRID_SIZE, parse_celulas_progresso
+
+    part = db.get_grid_partida(int(partida_id))
+    if not part:
+        raise LookupError("partida não encontrada")
+    if not (0 <= int(linha) < GRID_SIZE and 0 <= int(coluna) < GRID_SIZE):
+        raise ValueError("célula inválida")
+    celulas = parse_celulas_progresso(part.get("celulas"))
+    cell = celulas[int(linha)][int(coluna)]
+    if not cell or not cell.get("clube"):
+        raise ValueError("célula vazia")
+    cell = dict(cell)
+    cell["ok"] = bool(ok)
+    celulas[int(linha)][int(coluna)] = cell
+    part = db.atualizar_grid_partida(int(partida_id), celulas=celulas)
+    pts = _recalcular_pontos(part)
+    part = db.atualizar_grid_partida(int(partida_id), pontos=pts)
+    if part.get("modo") == "raiz":
+        db.salvar_grid_progresso(
+            int(part["participante_id"]),
+            str(part["dia"]),
+            celulas,
+            finalizado=bool(part.get("finalizado")),
+        )
+    return part
+
+
+def justificativa_celula(
+    *,
+    dia: str,
+    salt: str | None,
+    linha: int,
+    coluna: int,
+    clube_id: str,
+) -> dict[str, Any]:
+    from src.grid_game import (
+        GRID_SIZE,
+        categoria_por_id,
+        clube_bate_categoria,
+        clubes_por_id,
+        gerar_puzzle,
+    )
+
+    if not (0 <= int(linha) < GRID_SIZE and 0 <= int(coluna) < GRID_SIZE):
+        raise ValueError("célula inválida")
+    puzzle = (
+        gerar_puzzle(dia, salt=salt) if salt is not None else gerar_puzzle(dia)
+    )
+    row = categoria_por_id(puzzle["linhas"][int(linha)]["id"], dia)
+    col = categoria_por_id(puzzle["colunas"][int(coluna)]["id"], dia)
+    clube = clubes_por_id().get(str(clube_id))
+    if not row or not col:
+        raise ValueError("categoria inválida")
+    if not clube:
+        raise ValueError("clube inválido")
+    ok_linha = clube_bate_categoria(clube, row)
+    ok_coluna = clube_bate_categoria(clube, col)
+    if ok_linha and ok_coluna:
+        motivo = "bate nas duas categorias"
+    elif not ok_linha and not ok_coluna:
+        motivo = "falha na linha e na coluna"
+    elif not ok_linha:
+        motivo = "falha na linha"
+    else:
+        motivo = "falha na coluna"
+    return {
+        "ok_linha": ok_linha,
+        "ok_coluna": ok_coluna,
+        "ok": ok_linha and ok_coluna,
+        "motivo": motivo,
+        "linha": row.to_public(),
+        "coluna": col.to_public(),
+        "clube": {
+            "id": clube["id"],
+            "nome": clube["nome"],
+            "uf": clube.get("uf") or "",
+            "emblema": clube.get("emblema") or "",
+            "rep": int(clube.get("rep") or 0),
+        },
+        "coord": f"{chr(65 + int(linha))}{int(coluna) + 1}",
     }

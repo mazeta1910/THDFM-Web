@@ -639,6 +639,35 @@ def _migrate_grid_puzzle_salt(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_grid_eixo_override(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_eixo_override (
+          dia TEXT NOT NULL,
+          salt TEXT NOT NULL DEFAULT '',
+          eixo TEXT NOT NULL CHECK (eixo IN ('linha', 'coluna')),
+          indice INTEGER NOT NULL CHECK (indice >= 0 AND indice <= 2),
+          categoria_id TEXT NOT NULL,
+          PRIMARY KEY (dia, salt, eixo, indice)
+        )
+        """
+    )
+
+
+def _migrate_grid_streak_override(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grid_streak_override (
+          participante_id INTEGER NOT NULL
+            REFERENCES participantes(id) ON DELETE CASCADE,
+          modo TEXT NOT NULL CHECK (modo IN ('raiz', 'xonha')),
+          streak INTEGER NOT NULL,
+          PRIMARY KEY (participante_id, modo)
+        )
+        """
+    )
+
+
 def _migrate_hall_lendas(conn: sqlite3.Connection) -> None:
     """Hall das Lendas — uma ficha por participante (total doado + recado + moldura)."""
     conn.execute(
@@ -830,6 +859,8 @@ def init_db() -> None:
         _migrate_grid_partida(conn)
         _migrate_grid_xonha_passe(conn)
         _migrate_grid_puzzle_salt(conn)
+        _migrate_grid_eixo_override(conn)
+        _migrate_grid_streak_override(conn)
         _migrate_hall_lendas(conn)
         _migrate_bug_reports(conn)
         _migrate_quartas_ordem_casa(conn)
@@ -4659,6 +4690,32 @@ def limpar_grid_progresso_dia(dia: str) -> int:
         return n
 
 
+def apagar_grid_partida(partida_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_partida WHERE id = ?",
+            (int(partida_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def apagar_grid_partidas_participante_dia(participante_id: int, dia: str) -> int:
+    pid = int(participante_id)
+    dia_s = str(dia)
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_partida WHERE participante_id = ? AND dia = ?",
+            (pid, dia_s),
+        )
+        n = int(cur.rowcount or 0)
+        cur2 = conn.execute(
+            "DELETE FROM grid_progresso WHERE participante_id = ? AND dia = ?",
+            (pid, dia_s),
+        )
+        n += int(cur2.rowcount or 0)
+        return n
+
+
 def parse_grid_virada(valor: str | int | None) -> tuple[int, int]:
     """Aceita 'HH:MM', 'H:MM', 'HH' ou int → (hora, minuto)."""
     if valor is None:
@@ -4755,10 +4812,6 @@ def clear_grid_salt(dia: str) -> bool:
 
 
 def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
-    """Dias com pelo menos um jogo (progresso), no período do ranking; mais recentes primeiro.
-
-    Dias só com salt/regen e sem jogadores não entram em “Dias com atividade”.
-    """
     from src.grid_game import GRID_RANKING_DESDE
 
     lim = max(1, min(int(limite), 366))
@@ -4766,16 +4819,21 @@ def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT dia,
-                   COUNT(*) AS jogadores,
+                   COUNT(DISTINCT participante_id) AS jogadores,
                    SUM(CASE WHEN finalizado = 1 THEN 1 ELSE 0 END) AS finalizados
-            FROM grid_progresso
-            WHERE dia >= ?
+            FROM (
+              SELECT participante_id, dia, finalizado FROM grid_progresso
+              WHERE dia >= ?
+              UNION ALL
+              SELECT participante_id, dia, finalizado FROM grid_partida
+              WHERE dia >= ?
+            )
             GROUP BY dia
-            HAVING COUNT(*) > 0
+            HAVING COUNT(DISTINCT participante_id) > 0
             ORDER BY dia DESC
             LIMIT ?
             """,
-            (GRID_RANKING_DESDE, lim),
+            (GRID_RANKING_DESDE, GRID_RANKING_DESDE, lim),
         ).fetchall()
         salts = {
             str(r["dia"]): str(r["salt"])
@@ -4850,7 +4908,7 @@ def listar_grid_partidas_dia(dia: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT g.id, g.participante_id, p.nome, p.avatar_path, p.username,
-                   g.modo, g.celulas_json, g.finalizado, g.interrompido,
+                   g.modo, g.puzzle_salt, g.celulas_json, g.finalizado, g.interrompido,
                    g.pontos, g.atualizado_em, g.criado_em
             FROM grid_partida g
             JOIN participantes p ON p.id = g.participante_id
@@ -4900,12 +4958,117 @@ def listar_grid_partidas_dia(dia: str) -> list[dict[str, Any]]:
                 "modo": modo,
                 "modo_rotulo": modo_rotulo,
                 "indice_dia": indice,
+                "puzzle_salt": str(row["puzzle_salt"] or "") if "puzzle_salt" in row.keys() else "",
             }
         )
     # Legado: progresso sem partida correspondente
     if not out:
         return listar_grid_progresso_dia(dia_s)
     return out
+
+
+def listar_grid_partidas_participante(
+    participante_id: int,
+    dia: str | None = None,
+    *,
+    limite: int = 60,
+) -> list[dict[str, Any]]:
+    pid = int(participante_id)
+    lim = max(1, min(int(limite), 200))
+    with get_db() as conn:
+        if dia:
+            rows = conn.execute(
+                """
+                SELECT * FROM grid_partida
+                WHERE participante_id = ? AND dia = ?
+                ORDER BY criado_em ASC, id ASC
+                """,
+                (pid, str(dia)),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT * FROM grid_partida
+                WHERE participante_id = ?
+                ORDER BY dia DESC, criado_em ASC, id ASC
+                LIMIT ?
+                """,
+                (pid, lim),
+            ).fetchall()
+    contagem_xonha: dict[str, int] = {}
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        part = _row_grid_partida(row)
+        modo = str(part.get("modo") or "raiz")
+        dia_s = str(part.get("dia") or "")
+        ok, filled = _contar_celulas_ok(part.get("celulas"))
+        if modo == "xonha":
+            contagem_xonha[dia_s] = contagem_xonha.get(dia_s, 0) + 1
+            indice = contagem_xonha[dia_s]
+            modo_rotulo = f"Contínuo {indice}"
+        else:
+            indice = 1
+            modo_rotulo = "Pro"
+        status = "finalizado"
+        if part.get("interrompido"):
+            status = "interrompido"
+        elif not part.get("finalizado"):
+            status = "em andamento"
+        out.append(
+            {
+                "id": int(part["id"]),
+                "partida_id": int(part["id"]),
+                "participante_id": pid,
+                "dia": dia_s,
+                "modo": modo,
+                "modo_rotulo": modo_rotulo,
+                "indice_dia": indice,
+                "puzzle_salt": part.get("puzzle_salt") or "",
+                "celulas": part.get("celulas") or [],
+                "finalizado": bool(part.get("finalizado")),
+                "interrompido": bool(part.get("interrompido")),
+                "status": status,
+                "pontos": int(part.get("pontos") or 0),
+                "tempo_segundos": part.get("tempo_segundos"),
+                "iniciado_em": part.get("iniciado_em"),
+                "encerrado_em": part.get("encerrado_em"),
+                "celulas_ok": ok,
+                "celulas_preenchidas": filled,
+                "dicas": part.get("dicas") or [],
+                "criado_em": part.get("criado_em"),
+                "atualizado_em": part.get("atualizado_em"),
+            }
+        )
+    return out
+
+
+def listar_grid_dias_participante(
+    participante_id: int, *, limite: int = 60
+) -> list[dict[str, Any]]:
+    pid = int(participante_id)
+    lim = max(1, min(int(limite), 366))
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia,
+                   COUNT(*) AS tentativas,
+                   SUM(CASE WHEN COALESCE(finalizado, 0) = 1 THEN 1 ELSE 0 END) AS finalizados
+            FROM grid_partida
+            WHERE participante_id = ?
+            GROUP BY dia
+            ORDER BY dia DESC
+            LIMIT ?
+            """,
+            (pid, lim),
+        ).fetchall()
+    return [
+        {
+            "dia": str(r["dia"]),
+            "tentativas": int(r["tentativas"] or 0),
+            "finalizados": int(r["finalizados"] or 0),
+        }
+        for r in rows
+    ]
 
 
 def _apagar_recados_e_midias(
@@ -5384,6 +5547,126 @@ def liberar_grid_xonha_passe(
     return out
 
 
+def revogar_grid_xonha_passe(participante_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_xonha_passe WHERE participante_id = ?",
+            (int(participante_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def listar_grid_eixo_overrides(dia: str, salt: str = "") -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT dia, salt, eixo, indice, categoria_id
+            FROM grid_eixo_override
+            WHERE dia = ? AND salt = ?
+            ORDER BY eixo, indice
+            """,
+            (str(dia), str(salt or "")),
+        ).fetchall()
+    return [
+        {
+            "dia": str(r["dia"]),
+            "salt": str(r["salt"] or ""),
+            "eixo": str(r["eixo"]),
+            "indice": int(r["indice"]),
+            "categoria_id": str(r["categoria_id"]),
+        }
+        for r in rows
+    ]
+
+
+def upsert_grid_eixo_override(
+    *,
+    dia: str,
+    salt: str,
+    eixo: str,
+    indice: int,
+    categoria_id: str,
+) -> dict[str, Any]:
+    eixo_s = str(eixo).strip().lower()
+    if eixo_s not in ("linha", "coluna"):
+        raise ValueError("eixo inválido")
+    idx = int(indice)
+    if not 0 <= idx <= 2:
+        raise ValueError("índice inválido")
+    cat_id = str(categoria_id or "").strip()
+    if not cat_id:
+        raise ValueError("categoria_id vazio")
+    dia_s = str(dia)
+    salt_s = str(salt or "")
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO grid_eixo_override (dia, salt, eixo, indice, categoria_id)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(dia, salt, eixo, indice) DO UPDATE SET
+              categoria_id = excluded.categoria_id
+            """,
+            (dia_s, salt_s, eixo_s, idx, cat_id),
+        )
+    return {
+        "dia": dia_s,
+        "salt": salt_s,
+        "eixo": eixo_s,
+        "indice": idx,
+        "categoria_id": cat_id,
+    }
+
+
+def apagar_grid_eixo_overrides_dia(dia: str) -> int:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM grid_eixo_override WHERE dia = ?",
+            (str(dia),),
+        )
+        return int(cur.rowcount or 0)
+
+
+def get_grid_streak_override(participante_id: int, modo: str) -> int | None:
+    if modo not in ("raiz", "xonha"):
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT streak FROM grid_streak_override
+            WHERE participante_id = ? AND modo = ?
+            """,
+            (int(participante_id), str(modo)),
+        ).fetchone()
+        if not row:
+            return None
+        return int(row["streak"])
+
+
+def set_grid_streak_override(
+    participante_id: int, modo: str, streak: int | None
+) -> int | None:
+    if modo not in ("raiz", "xonha"):
+        raise ValueError("modo inválido")
+    pid = int(participante_id)
+    with get_db() as conn:
+        if streak is None:
+            conn.execute(
+                "DELETE FROM grid_streak_override WHERE participante_id = ? AND modo = ?",
+                (pid, modo),
+            )
+            return None
+        val = max(0, int(streak))
+        conn.execute(
+            """
+            INSERT INTO grid_streak_override (participante_id, modo, streak)
+            VALUES (?, ?, ?)
+            ON CONFLICT(participante_id, modo) DO UPDATE SET streak = excluded.streak
+            """,
+            (pid, modo, val),
+        )
+        return val
+
+
 def grid_streak(participante_id: int, *, ate_dia: str | None = None) -> int:
     """Dias consecutivos finalizados até ate_dia (inclusive), contando para trás."""
     from datetime import date, timedelta
@@ -5558,6 +5841,9 @@ def grid_streak_modo(
 
     if modo not in ("raiz", "xonha"):
         return 0
+    ov = get_grid_streak_override(int(participante_id), modo)
+    if ov is not None:
+        return int(ov)
     pid = int(participante_id)
     fim = date.fromisoformat(ate_dia or dia_grid())
     ini = date.fromisoformat(GRID_RANKING_DESDE)
