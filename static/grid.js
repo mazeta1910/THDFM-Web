@@ -829,6 +829,16 @@
     iniciar("raiz").catch(() => {});
   });
 
+  document.querySelector("[data-grid-warn-voltar]")?.addEventListener("click", () => {
+    if (warnModal && warnModal.open) warnModal.close();
+  });
+
+  if (warnModal) {
+    warnModal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      if (warnModal.open) warnModal.close();
+    });
+  }
   document.querySelector("[data-grid-xonha-nova]")?.addEventListener("click", () => {
     if (!finalizado) {
       setHint("Termine o grid atual antes de iniciar outro Xonha.");

@@ -35,11 +35,14 @@ def test_grid_page_tem_modos_e_rankings(client):
     assert 'data-rank-modo="xonha"' in r.text
     assert "data-grid-rank-panel" in r.text
     assert "Detalhes" in r.text
-    assert "/static/grid.js?v=18" in r.text
+    assert "/static/grid.js?v=19" in r.text
     assert "grid-chip-btn" in r.text
     assert "Grids disponíveis" in r.text
     assert 'data-grid-xonha-nova' in r.text
     assert "disabled" in r.text
+    assert 'data-grid-warn-ok' in r.text
+    assert 'data-grid-warn-voltar' in r.text
+    assert "Entendi — começar" not in r.text
 
 def test_admin_libera_passe_xonha(client):
     part = dbmod.criar_participante("Passe UI", status="liberado")

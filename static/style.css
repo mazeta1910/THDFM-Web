@@ -13693,10 +13693,16 @@ button.grid-daltonismo-btn:hover,
 .grid-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
 }
-.grid-modal-actions .btn {
-  min-width: 7rem;
+.grid-modal-actions .grid-chip-btn {
+  gap: 0.3rem;
+}
+.grid-modal-actions .grid-chip-btn svg {
+  flex: 0 0 auto;
+  display: block;
 }
 .grid-suggestions {
   list-style: none;

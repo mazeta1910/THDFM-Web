@@ -27,3 +27,4 @@ Qualquer `<button>` novo **sem** override vira um bloco enorme na tela.
 5. Não invente cards com borda/sombra/padding grosso em torno de Score, Tempo, ranking compacto ou o board — layout flat.
 6. Cronômetro do Grid: só começa no **primeiro clique numa célula**, não ao escolher o modo.
 7. "Outro Xonha" só habilitado quando a partida atual estiver **finalizada**.
+8. Modais (ex. aviso do Raiz): ações com `.grid-chip-btn` + ícone SVG, alinhadas à **direita inferior** — nunca `.btn` full-width.
