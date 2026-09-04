@@ -3215,6 +3215,74 @@ def grid_api_buscar(
     return JSONResponse(data)
 
 
+@app.post("/grid/api/iniciar")
+async def grid_api_iniciar(request: Request):
+    """Inicia (ou retoma) partida do dia. Fase 3: modo raiz."""
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_game import dia_grid, puzzle_publico
+    from src.grid_partidas import iniciar_raiz
+    from src.grid_score import pontos_partida
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    modo = str((body or {}).get("modo") or "raiz").strip().lower()
+    if modo != "raiz":
+        return JSONResponse(
+            {"erro": "Modo ainda não disponível nesta fase", "modo": modo},
+            status_code=400,
+        )
+    voter = _grid_voter(request)
+    assert voter is not None
+    dia = dia_grid()
+    partida = iniciar_raiz(int(voter["id"]), dia)
+    score = pontos_partida(
+        partida.get("celulas"),
+        finalizado=bool(partida.get("finalizado")),
+        interrompido=bool(partida.get("interrompido")),
+        tempo_segundos=partida.get("tempo_segundos"),
+        dicas=partida.get("dicas") or [],
+    )
+    return JSONResponse(
+        {
+            "dia": dia,
+            "modo": "raiz",
+            "partida": partida,
+            "puzzle": puzzle_publico(dia),
+            "score_parcial": score,
+        }
+    )
+
+
+@app.post("/grid/api/interromper")
+async def grid_api_interromper(request: Request):
+    neg = _grid_neg_json(request)
+    if neg:
+        return neg
+    from src.grid_partidas import interromper_partida
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "JSON inválido"}, status_code=400)
+    try:
+        partida_id = int((body or {}).get("partida_id"))
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "partida_id inválido"}, status_code=400)
+    voter = _grid_voter(request)
+    assert voter is not None
+    try:
+        partida = interromper_partida(partida_id, participante_id=int(voter["id"]))
+    except LookupError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=404)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, status_code=400)
+    return JSONResponse({"partida": partida, "interrompido": True})
+
+
 @app.post("/grid/api/chute")
 async def grid_api_chute(request: Request):
     neg = _grid_neg_json(request)
@@ -3230,6 +3298,8 @@ async def grid_api_chute(request: Request):
         texto_share,
         validar_chute,
     )
+    from src.grid_partidas import aplicar_chute_partida
+    from src.grid_score import pontos_partida
 
     try:
         body = await request.json()
@@ -3242,6 +3312,13 @@ async def grid_api_chute(request: Request):
         nome = str((body or {}).get("nome") or "").strip()
     except (TypeError, ValueError):
         return JSONResponse({"erro": "Payload inválido"}, status_code=400)
+
+    partida_id_raw = (body or {}).get("partida_id")
+    partida_id: int | None
+    try:
+        partida_id = int(partida_id_raw) if partida_id_raw is not None else None
+    except (TypeError, ValueError):
+        return JSONResponse({"erro": "partida_id inválido"}, status_code=400)
 
     resultado = None
     if not clube_id and nome:
@@ -3264,6 +3341,71 @@ async def grid_api_chute(request: Request):
 
     dia = dia_grid()
     voter = _grid_voter(request)
+
+    # --- Fluxo novo: partida_id (Raiz/Xonha) ---
+    if partida_id is not None:
+        if not voter:
+            return JSONResponse({"erro": "Entre para registrar o chute."}, status_code=401)
+        part = db.get_grid_partida(partida_id)
+        if not part or int(part["participante_id"]) != int(voter["id"]):
+            return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
+        if part.get("interrompido"):
+            return JSONResponse(
+                {"erro": "tentativa encerrada — células vazias bloqueadas"},
+                status_code=409,
+            )
+        celulas = parse_celulas_progresso(part.get("celulas"))
+        if celulas[linha][coluna] is not None:
+            return JSONResponse({"erro": "Célula já jogada"}, status_code=409)
+        if clube_id and clube_ja_usado_no_grid(celulas, clube_id):
+            return JSONResponse(
+                {"erro": "Esse time já foi usado neste grid. Escolha outro."},
+                status_code=400,
+            )
+        if resultado is None:
+            try:
+                resultado = validar_chute(
+                    dia=dia, linha=linha, coluna=coluna, clube_id=clube_id
+                )
+            except ValueError as exc:
+                return JSONResponse({"erro": str(exc)}, status_code=400)
+        try:
+            partida = aplicar_chute_partida(
+                partida_id,
+                participante_id=int(voter["id"]),
+                linha=linha,
+                coluna=coluna,
+                resultado=resultado,
+            )
+        except PermissionError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=409)
+        except ValueError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=409)
+        except LookupError as exc:
+            return JSONResponse({"erro": str(exc)}, status_code=404)
+        finalizado = bool(partida.get("finalizado"))
+        celulas = parse_celulas_progresso(partida.get("celulas"))
+        share = texto_share(dia=dia, celulas=celulas) if finalizado else None
+        score = pontos_partida(
+            celulas,
+            finalizado=finalizado,
+            interrompido=bool(partida.get("interrompido")),
+            tempo_segundos=partida.get("tempo_segundos"),
+            dicas=partida.get("dicas") or [],
+        )
+        return JSONResponse(
+            {
+                "resultado": resultado,
+                "celulas": celulas,
+                "finalizado": finalizado,
+                "partida": partida,
+                "score_parcial": score,
+                "streak": db.grid_streak(int(voter["id"]), ate_dia=dia),
+                "share": share,
+            }
+        )
+
+    # --- Fluxo legado (sem partida_id): grid_progresso ---
     celulas = [[None for _ in range(3)] for _ in range(3)]
     if voter:
         prog = db.get_grid_progresso(voter["id"], dia)
