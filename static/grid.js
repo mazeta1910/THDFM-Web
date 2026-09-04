@@ -449,7 +449,7 @@
     const parts = (dia || "").split("-");
     const rotulo =
       parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dia || "hoje";
-    const modoTag = modo === "xonha" ? " Contínuo" : modo === "raiz" ? " Raiz" : "";
+    const modoTag = modo === "xonha" ? " Contínuo" : modo === "raiz" ? " Pro" : "";
     return `THDFM Grid${modoTag} — ${rotulo}\n${ok}/${size * size}\n${lines.join("\n")}\nhttps://thdfm.com.br/grid`;
   }
 
@@ -493,7 +493,7 @@
       setHint(
         modo
           ? "Aguarde o início da partida…"
-          : "Escolha Raiz ou Contínuo para começar."
+          : "Escolha Pro ou Contínuo para começar."
       );
       return;
     }
@@ -623,7 +623,7 @@
       return;
     }
     if (!partidaId) {
-      setModalHint("Escolha Raiz ou Contínuo para começar.", true);
+      setModalHint("Escolha Pro ou Contínuo para começar.", true);
       return;
     }
     const nome = String(nomeRaw || "").trim();
@@ -656,7 +656,7 @@
       return;
     }
     if (!partidaId) {
-      setModalHint("Escolha Raiz ou Contínuo para começar.", true);
+      setModalHint("Escolha Pro ou Contínuo para começar.", true);
       return;
     }
     if (clubeJaUsado(clubeId)) {
@@ -728,7 +728,7 @@
     const m = nextModo === "xonha" ? "xonha" : "raiz";
     if (m === "raiz") warnAccepted = true;
 
-    setHint(m === "xonha" ? "Iniciando Contínuo…" : "Iniciando Raiz…");
+    setHint(m === "xonha" ? "Iniciando Contínuo…" : "Iniciando Pro…");
     const r = await fetch("/grid/api/iniciar", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -1138,7 +1138,7 @@
       sub.textContent =
         m === "xonha"
           ? "Score único · acertos, raridade, dicas e streak · várias partidas/dia (Contínuo)"
-          : "Score único · acertos, tempo, raridade e streak · Raiz zera ao sair da página";
+          : "Score único · acertos, tempo, raridade e streak · Pro zera ao sair da página";
     }
   }
 
@@ -1224,7 +1224,7 @@
     // Contínuo é o default: inicia (ou retoma) automaticamente.
     setHint("");
     iniciar("xonha").catch(() => {
-      setHint("Escolha Raiz ou Contínuo para começar.");
+      setHint("Escolha Pro ou Contínuo para começar.");
     });
   }
 })();

@@ -169,7 +169,9 @@ class CotaXonhaEsgotada(Exception):
 
 
 def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, Any]]:
-    usados = db.contar_grid_partidas_dia(participante_id, dia, modo="xonha")
+    usados = db.contar_grid_partidas_dia(
+        participante_id, dia, modo="xonha", so_encerradas=True
+    )
     passe = db.grid_xonha_passe_ativo(participante_id, hoje=dia)
     info = {
         "usados": usados,
