@@ -5070,19 +5070,47 @@ def get_grid_partida_raiz(participante_id: int, dia: str) -> dict[str, Any] | No
         return _row_grid_partida(row) if row else None
 
 
+def get_grid_partida_aberta(
+    participante_id: int, dia: str, *, modo: str
+) -> dict[str, Any] | None:
+    """Última partida do modo ainda em andamento (não finalizada/interrompida)."""
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM grid_partida
+            WHERE participante_id = ? AND dia = ? AND modo = ?
+              AND COALESCE(finalizado, 0) = 0
+              AND COALESCE(interrompido, 0) = 0
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (int(participante_id), str(dia), str(modo)),
+        ).fetchone()
+        return _row_grid_partida(row) if row else None
+
+
 def contar_grid_partidas_dia(
     participante_id: int, dia: str, *, modo: str
 ) -> int:
+    """Conta partidas que de fato começaram (1º clique) ou foram encerradas.
+
+    Partidas vazias abandonadas não queimam a cota Contínuo.
+    """
     with get_db() as conn:
         row = conn.execute(
             """
             SELECT COUNT(*) AS n FROM grid_partida
             WHERE participante_id = ? AND dia = ? AND modo = ?
+              AND (
+                iniciado_em IS NOT NULL
+                OR COALESCE(finalizado, 0) = 1
+                OR COALESCE(interrompido, 0) = 1
+                OR (celulas_json IS NOT NULL AND celulas_json NOT IN ('', '[]', 'null'))
+              )
             """,
             (int(participante_id), str(dia), str(modo)),
         ).fetchone()
         return int(row["n"] or 0) if row else 0
-
 
 def criar_grid_partida(
     participante_id: int,

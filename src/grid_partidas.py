@@ -182,15 +182,22 @@ def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, 
 
 
 def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
-    """Cria nova partida Xonha (puzzle com salt próprio). Não retoma aberta."""
+    """Cria partida Contínuo (salt próprio) ou retoma a aberta do dia.
+
+    Retomar evita queimar a cota a cada refresh/clique no modo.
+    """
     import secrets
 
     from src.grid_game import gerar_puzzle
 
+    aberta = db.get_grid_partida_aberta(participante_id, dia, modo="xonha")
+    if aberta:
+        return aberta
+
     ok, info = pode_iniciar_xonha(participante_id, dia)
     if not ok:
         raise CotaXonhaEsgotada(
-            "Limite de 3 grids Xonha por dia. Passe ilimitado: R$ 1,65 / 30 dias."
+            "Limite de 3 grids Contínuo por dia. Passe ilimitado: R$ 1,65 / 30 dias."
         )
     salt = secrets.token_hex(8)
     # Garante que o puzzle existe (e cacheia) antes de gravar a partida.
