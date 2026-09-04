@@ -415,13 +415,31 @@
         </div>
       </div>
     </details>
-    <aside class="grid-admin-drawer" data-grid-admin-drawer hidden>
+    <aside class="grid-admin-drawer" data-grid-admin-drawer hidden aria-hidden="true">
       <header class="grid-admin-drawer-head">
-        <strong data-grid-admin-drawer-titulo>Célula</strong>
+        <div class="grid-admin-drawer-heading">
+          <span class="grid-admin-drawer-badge" data-grid-admin-drawer-coord>——</span>
+          <h2 class="grid-admin-drawer-clube" data-grid-admin-drawer-titulo>Célula</h2>
+        </div>
         <button type="button" class="grid-admin-ico" data-grid-admin-drawer-fechar aria-label="Fechar">×</button>
       </header>
       <div class="grid-admin-drawer-body" data-grid-admin-drawer-body></div>
+      <footer class="grid-admin-drawer-footer" data-grid-admin-drawer-footer hidden>
+        <button
+          type="button"
+          class="grid-admin-drawer-btn grid-admin-drawer-btn--ok"
+          data-override-ok="1"
+          data-grid-admin-override-ok
+        >Forçar acerto</button>
+        <button
+          type="button"
+          class="grid-admin-drawer-btn grid-admin-drawer-btn--err"
+          data-override-ok="0"
+          data-grid-admin-override-err
+        >Forçar erro</button>
+      </footer>
     </aside>
+    <div class="grid-admin-drawer-backdrop" data-grid-admin-drawer-backdrop hidden></div>
 
     <dialog class="grid-modal" data-grid-admin-eixo-modal>
       <div class="grid-modal-card">
@@ -591,6 +609,6 @@
 {% block scripts %}
 <script src="/static/grid.js?v=43" defer></script>
 {% if is_mazeta %}
-<script src="/static/grid-admin.js?v=10" defer></script>
+<script src="/static/grid-admin.js?v=11" defer></script>
 {% endif %}
 {% endblock %}
