@@ -56,11 +56,15 @@ def test_iniciar_xonha_respeita_cota_de_3(client):
     assert len(set(ids)) == XONHA_LIVRE_POR_DIA
 
     bloqueado = client.post("/grid/api/iniciar", json={"modo": "xonha"})
-    assert bloqueado.status_code == 402
+    assert bloqueado.status_code == 403
     body = bloqueado.json()
     assert "1,65" in body["erro"] or "1,65" in body.get("pix_valor", "")
     assert body["cota"]["usados"] == 3
     assert body["cota"]["passe_ativo"] is False
+    assert body["cota"]["grids_disponiveis"] == 0
+    assert body["cota"]["restantes"] == 0
+    assert "puzzle" not in body or body.get("puzzle") is None
+    assert "partida" not in body or body.get("partida") is None
 
     # Com passe, libera
     dbmod.liberar_grid_xonha_passe(

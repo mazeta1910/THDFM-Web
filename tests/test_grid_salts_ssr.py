@@ -116,6 +116,43 @@ def test_ssr_continuo_retoma_aberta(client):
     ]
 
 
+def test_ssr_continuo_sem_seed_quando_cota_esgotada(client):
+    part = _login(client, "SSR Cota Zero", "ssr.cota0")
+    dia = dia_grid()
+    for i in range(3):
+        p = iniciar_xonha(part["id"], dia)
+        dbmod.atualizar_grid_partida(
+            p["id"],
+            finalizado=True,
+            iniciado_em=agora_iso(),
+            celulas=[[{"ok": True, "clube": {"id": f"c{i}", "nome": "X", "rep": 1}}]],
+        )
+    esperado_proximo = gerar_puzzle(dia, salt="xonha-4")
+    puzzle, partida = puzzle_ssr_continuo(part["id"], dia)
+    assert partida is None
+    assert puzzle.get("cota_esgotada") is True
+    assert "puzzle_salt" not in puzzle
+    assert "salt" not in puzzle
+    assert all(e.get("rotulo") == "—" for e in puzzle["linhas"])
+    assert all(e.get("rotulo") == "—" for e in puzzle["colunas"])
+    assert [c["id"] for c in puzzle["linhas"]] != [
+        c["id"] for c in esperado_proximo["linhas"]
+    ]
+
+    page = client.get("/grid")
+    assert page.status_code == 200
+    assert esperado_proximo["linhas"][0]["rotulo"] not in page.text
+    assert "grid-locked" in page.text
+    assert "Passe Contínuo" in page.text
+    assert "Copiar Chave PIX" in page.text
+
+    hoje = client.get("/grid/api/hoje")
+    assert hoje.status_code == 200
+    body = hoje.json()
+    assert body["puzzle"].get("cota_esgotada") is True
+    assert all(e.get("rotulo") == "—" for e in body["puzzle"]["linhas"])
+
+
 def test_grid_page_logado_ssr_eixos_continuo(client):
     _login(client, "SSR Page", "ssr.page")
     dia = dia_grid()
@@ -126,6 +163,9 @@ def test_grid_page_logado_ssr_eixos_continuo(client):
     assert rotulo in r.text
     assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
     assert "partida" in r.text
+    assert "grid-status-line" in r.text or "data-grid-status-line" in r.text
+    assert "Score" in r.text
+    assert "Tempo" in r.text
 
 
 def test_grid_page_convidado_ssr_continuo(client):

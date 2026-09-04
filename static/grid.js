@@ -28,6 +28,10 @@
   const streakEl = document.querySelector("[data-grid-streak]");
   const liveScoreEl = document.querySelector("[data-grid-live-score]");
   const timerEl = document.querySelector("[data-grid-timer]");
+  const statusModoEl = document.querySelector("[data-grid-status-modo]");
+  const boardWrapEl = document.querySelector("[data-grid-board-wrap]");
+  const lockedOverlayEl = document.querySelector("[data-grid-locked-overlay]");
+  const pixCopyBtn = document.querySelector("[data-grid-pix-copy]");
   const cotaEl = document.querySelector("[data-grid-cota]");
   const xonhaActions = document.querySelector("[data-grid-xonha-actions]");
   const rotuloEl = document.querySelector("[data-grid-rotulo]");
@@ -154,6 +158,64 @@
   function updateLiveScore(val) {
     if (typeof val === "number" && !Number.isNaN(val)) scoreParcial = val;
     if (liveScoreEl) liveScoreEl.textContent = String(scoreParcial);
+    updateStatusLine();
+  }
+
+  function gridsDisponiveis() {
+    if (!cotaAtual) return null;
+    if (cotaAtual.passe_ativo) return null;
+    if (cotaAtual.grids_disponiveis != null) return Number(cotaAtual.grids_disponiveis);
+    if (cotaAtual.restantes != null) return Number(cotaAtual.restantes);
+    const usados = Number(cotaAtual.usados) || 0;
+    const limite = Number(cotaAtual.limite_livre) || 3;
+    return Math.max(0, limite - usados);
+  }
+
+  function cotaEsgotada() {
+    if (!podeSalvar) return false;
+    if (!cotaAtual || cotaAtual.passe_ativo) return false;
+    const disp = gridsDisponiveis();
+    return disp != null && disp <= 0;
+  }
+
+  function tentativaAtiva() {
+    return !!partidaId && !finalizado && !interrompido;
+  }
+
+  function deveBloquearGrid() {
+    const continuo =
+      modo === "xonha" || (!modo && (boot.modo_default || "xonha") === "xonha");
+    return continuo && cotaEsgotada() && !tentativaAtiva();
+  }
+
+  function updateStatusLine() {
+    if (!statusModoEl) return;
+    const m = modo || boot.modo_default || "xonha";
+    if (m === "raiz") {
+      statusModoEl.textContent = "Grid Pro";
+      return;
+    }
+    const idx =
+      partida && partida.indice_dia != null
+        ? Number(partida.indice_dia)
+        : null;
+    statusModoEl.textContent =
+      idx != null && !Number.isNaN(idx)
+        ? `Grid Contínuo ${idx}`
+        : "Grid Contínuo";
+  }
+
+  function updateGridLock() {
+    const locked = deveBloquearGrid();
+    if (boardWrapEl) boardWrapEl.classList.toggle("grid-locked", locked);
+    if (lockedOverlayEl) lockedOverlayEl.hidden = !locked;
+    updateStatusLine();
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        if (!(celulas[r] && celulas[r][c])) paintCell(r, c);
+      }
+    }
+    updateXonhaActions();
   }
 
   function updateMatrizCusto(custo) {
@@ -164,44 +226,47 @@
   function updateCota(cota) {
     if (cota !== undefined) cotaAtual = cota || null;
     if (!cotaEl) {
-      updateXonhaActions();
+      updateGridLock();
       return;
     }
     const continuo = modo === "xonha" || (!modo && boot.modo_default === "xonha");
     if (!continuo) {
       cotaEl.hidden = true;
       cotaEl.textContent = "";
-      updateXonhaActions();
+      updateGridLock();
       return;
     }
     if (!cotaAtual) {
       cotaEl.textContent = "Grids disponíveis: —";
       cotaEl.hidden = false;
-      updateXonhaActions();
+      updateGridLock();
       return;
     }
     if (cotaAtual.passe_ativo) {
       cotaEl.textContent = "Grids disponíveis: ilimitados (passe ativo)";
       cotaEl.hidden = false;
-      updateXonhaActions();
+      updateGridLock();
       return;
     }
     const usados = Number(cotaAtual.usados) || 0;
     const limite = Number(cotaAtual.limite_livre) || 3;
     const restantes =
-      cotaAtual.restantes != null
-        ? Number(cotaAtual.restantes)
-        : Math.max(0, limite - usados);
+      cotaAtual.grids_disponiveis != null
+        ? Number(cotaAtual.grids_disponiveis)
+        : cotaAtual.restantes != null
+          ? Number(cotaAtual.restantes)
+          : Math.max(0, limite - usados);
     cotaEl.textContent = `Grids disponíveis: ${restantes}`;
     cotaEl.hidden = false;
-    updateXonhaActions();
+    updateGridLock();
   }
 
   function temCotaOutroGrid() {
     if (!cotaAtual) return true;
     if (cotaAtual.passe_ativo) return true;
-    if (cotaAtual.restantes == null) return true;
-    return Number(cotaAtual.restantes) > 0;
+    const disp = gridsDisponiveis();
+    if (disp == null) return true;
+    return disp > 0;
   }
 
   function updateModeButtons() {
@@ -212,6 +277,7 @@
       btn.classList.toggle("is-active", on);
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
+    updateStatusLine();
   }
 
   function updateXonhaActions() {
@@ -287,7 +353,8 @@
     btn.style.removeProperty("--grid-rarity");
 
     if (!data) {
-      const bloqueada = interrompido || finalizado;
+      const gridLocked = deveBloquearGrid();
+      const bloqueada = interrompido || finalizado || gridLocked;
       btn.disabled = bloqueada;
       if (interrompido) {
         btn.classList.add("is-locked");
@@ -299,6 +366,10 @@
             </svg>
           </span>
           <span class="grid-cell-locked-label">Encerrada</span>`;
+        return;
+      }
+      if (gridLocked) {
+        btn.innerHTML = "";
         return;
       }
       const showDens =
@@ -642,6 +713,11 @@
 
   function openModal(linha, coluna) {
     if (celulas[linha] && celulas[linha][coluna]) return;
+    if (deveBloquearGrid()) {
+      updateGridLock();
+      setHint("Cota Contínuo esgotada — use o Passe Contínuo para continuar.");
+      return;
+    }
     if (interrompido) {
       setHint("Tentativa encerrada — células vazias bloqueadas.");
       return;
@@ -887,7 +963,7 @@
     // Ranking acompanha o modo de jogo (não fica preso em Pro).
     if (modo === "raiz" || modo === "xonha") setRankModo(modo);
     if (data.cota_xonha !== undefined) updateCota(data.cota_xonha);
-    else updateXonhaActions();
+    else updateGridLock();
     // Cronômetro atrelado a esta partida (zera se nova / finalizada).
     syncTimerFromPartida();
 
@@ -923,7 +999,7 @@
         pedirLogin(data.erro);
         return;
       }
-      if (r.status === 402) {
+      if (r.status === 402 || r.status === 403) {
         updateCota(data.cota);
         const pix = data.pix_valor || "R$ 1,65";
         const chave = data.pix_chave || boot.taxa_pix || "";
@@ -934,9 +1010,11 @@
         if (cotaEl) {
           cotaEl.hidden = false;
           cotaEl.textContent = chave
-            ? `Cota esgotada · Pix ${pix} · chave ${chave}`
+            ? `Cota esgotada · Pix ${pix}`
             : `Cota esgotada · Pix ${pix}`;
         }
+        updateGridLock();
+        paintAll();
         return;
       }
       setHint(data.erro || "Não foi possível iniciar a partida.");
@@ -1763,6 +1841,40 @@
   }
 
   // —— Boot ——
+  if (pixCopyBtn) {
+    let pixCopyTimer = 0;
+    pixCopyBtn.addEventListener("click", async () => {
+      const chave =
+        (boot.taxa_pix && String(boot.taxa_pix).trim()) ||
+        "matheuscps110@gmail.com";
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(chave);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = chave;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      const label = "Copiar Chave PIX";
+      pixCopyBtn.textContent = "Chave Copiada";
+      pixCopyBtn.classList.add("is-copied");
+      if (pixCopyTimer) window.clearTimeout(pixCopyTimer);
+      pixCopyTimer = window.setTimeout(() => {
+        pixCopyBtn.textContent = label;
+        pixCopyBtn.classList.remove("is-copied");
+      }, 2000);
+    });
+  }
+
   bindCellClicks();
   paintAll();
   updateLiveScore(0);
@@ -1772,13 +1884,14 @@
   agendarVirada();
   updateModeButtons();
   updateCota(boot.cota_xonha || null);
+  updateStatusLine();
   initMinhasTentativas();
 
   if (!podeSalvar) {
     modo = "xonha";
     setHint("Contínuo · entre para salvar no ranking. Pro exige cadastro.");
     updateModeButtons();
-    updateXonhaActions();
+    updateGridLock();
     paintAll();
   } else if (boot.partida && boot.partida.id != null) {
     setHint("");
@@ -1791,6 +1904,11 @@
         typeof boot.partida.pontos === "number" ? boot.partida.pontos : 0,
       share: boot.share || null,
     });
+  } else if (cotaEsgotada()) {
+    modo = "xonha";
+    setHint("Cota Contínuo esgotada — Passe Contínuo para jogar sem limites.");
+    updateModeButtons();
+    updateGridLock();
   } else {
     setHint("");
     iniciar("xonha").catch(() => {

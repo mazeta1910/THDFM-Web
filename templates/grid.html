@@ -61,14 +61,13 @@
           {%- endif -%}
         </p>
         <div class="grid-live-stats" data-grid-live-stats>
-          <div class="grid-score-block">
-            <span class="grid-score-label">Score</span>
-            <strong class="grid-score-value" data-grid-live-score>0</strong>
-          </div>
-          <div class="grid-timer-block" title="Tempo da partida">
-            <span class="grid-timer-label">Tempo</span>
-            <strong class="grid-timer-value" data-grid-timer>00:00</strong>
-          </div>
+          <p class="grid-status-line" data-grid-status-line aria-live="polite">
+            Score <strong class="grid-score-value" data-grid-live-score>0</strong>
+            <span class="grid-status-sep" aria-hidden="true">•</span>
+            Tempo <strong class="grid-timer-value" data-grid-timer>00:00</strong>
+            <span class="grid-status-sep" aria-hidden="true">•</span>
+            <span class="grid-status-modo" data-grid-status-modo>Grid Contínuo</span>
+          </p>
         </div>
       </div>
 
@@ -93,7 +92,8 @@
   </p>
   {% endif %}
 
-  <div class="grid-board-wrap" data-grid-board-wrap>
+  {% set grid_bloqueado = cota_xonha and not cota_xonha.passe_ativo and (cota_xonha.restantes == 0 or cota_xonha.grids_disponiveis == 0) and not partida_boot %}
+  <div class="grid-board-wrap{% if grid_bloqueado %} grid-locked{% endif %}" data-grid-board-wrap>
     <div class="grid-board" data-grid-board aria-label="Grade do dia">
       <div class="grid-corner" aria-hidden="true" data-grid-corner></div>
       {% for col in puzzle.colunas %}
@@ -112,11 +112,22 @@
         data-coluna="{{ ci }}"
         data-possiveis="{{ puzzle.densidades[ri][ci] }}"
         aria-label="Célula linha {{ ri + 1 }}, coluna {{ ci + 1 }}"
+        {% if grid_bloqueado %}disabled{% endif %}
       >
+        {%- if not grid_bloqueado -%}
         <span class="grid-cell-empty">+</span>
+        {%- endif -%}
       </button>
       {% endfor %}
       {% endfor %}
+    </div>
+    <div class="grid-locked-overlay" data-grid-locked-overlay {% if not grid_bloqueado %}hidden{% endif %}>
+      <div class="grid-passe-cta" data-grid-passe-cta>
+        <h3 class="grid-passe-title">Passe Contínuo</h3>
+        <p class="grid-passe-desc">Jogue sem limites por 30 dias.</p>
+        <span class="grid-passe-valor">PIX R$ 1,65</span>
+        <button type="button" class="grid-passe-copy" data-grid-pix-copy>Copiar Chave PIX</button>
+      </div>
     </div>
     <div class="grid-board-footer">
       <p class="grid-hint" data-grid-hint hidden></p>
@@ -556,7 +567,11 @@
 {% endblock %}
 
 {% block scripts %}
+<<<<<<< HEAD
 <script src="/static/grid.js?v=41" defer></script>
+=======
+<script src="/static/grid.js?v=40" defer></script>
+>>>>>>> cc4b564 (feat(grid): cota esgotada com CTA Passe e status consolidado)
 {% if is_mazeta %}
 <script src="/static/grid-admin.js?v=8" defer></script>
 {% endif %}

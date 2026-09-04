@@ -3397,7 +3397,7 @@ async def grid_api_iniciar(request: Request):
                 "pix_valor": "R$ 1,65",
                 "pix_chave": os.environ.get("TAXA_PIX", TAXA_PIX),
             },
-            status_code=402,
+            status_code=403,
         )
     score = pontos_partida(
         partida.get("celulas"),
@@ -3582,6 +3582,19 @@ async def grid_api_chute(request: Request):
     if partida_id is not None:
         part = db.get_grid_partida(partida_id)
         if not part or int(part["participante_id"]) != int(voter["id"]):
+            from src.grid_partidas import pode_iniciar_xonha
+
+            ok_cota, info_cota = pode_iniciar_xonha(int(voter["id"]), dia)
+            if not ok_cota:
+                return JSONResponse(
+                    {
+                        "erro": "Limite de 3 grids Contínuo por dia. Passe ilimitado: R$ 1,65 / 30 dias.",
+                        "cota": info_cota,
+                        "pix_valor": "R$ 1,65",
+                        "pix_chave": os.environ.get("TAXA_PIX", TAXA_PIX),
+                    },
+                    status_code=403,
+                )
             return JSONResponse({"erro": "partida não encontrada"}, status_code=404)
         if part.get("interrompido"):
             return JSONResponse(
