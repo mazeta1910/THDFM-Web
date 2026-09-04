@@ -1028,7 +1028,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=30" in r.text
+    assert "/static/grid.js?v=31" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1456,7 +1456,8 @@ def test_texto_share_continuo_indice():
         ranking=3,
     )
     assert text.startswith("THDFM Grid 2 — 04/09/2026")
-    assert "🏆 Ranking: 3º" in text
+    assert "🎮 Só diversão" in text
+    assert "🏆 Ranking:" not in text
     assert "⭐ Pontos: 55" in text
     assert "💡 Dicas Utilizadas: 2" in text
     assert "55" not in text.splitlines()  # pontos só na linha com ⭐
@@ -1466,12 +1467,27 @@ def test_texto_share_continuo_indice():
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
         "⬜ ⬜ ⬜\n"
-        "🏆 Ranking: 3º\n"
+        "🎮 Só diversão\n"
         "⭐ Pontos: 55\n"
         "💡 Dicas Utilizadas: 2\n"
         "https://thdfm.com.br/grid"
     )
     assert text == expected
+
+
+def test_texto_share_continuo_primeiro_mantem_ranking():
+    celulas = [[None, None, None], [None, None, None], [None, None, None]]
+    text = texto_share(
+        dia="2026-09-04",
+        celulas=celulas,
+        modo="xonha",
+        indice=1,
+        pontos=120,
+        dicas_usadas=0,
+        ranking=2,
+    )
+    assert "🏆 Ranking: 2º" in text
+    assert "🎮 Só diversão" not in text
 
 
 def test_sugestao_exige_cerca_de_50_por_cento_do_nome():

@@ -226,11 +226,23 @@
       novaBtn.disabled = !podeOutro;
       novaBtn.classList.toggle("grid-chip-btn--destaque", podeOutro);
       novaBtn.title = podeOutro
-        ? "Iniciar outro grid Contínuo"
+        ? "Outro grid só por diversão — não conta no ranking"
         : "Indisponível";
     }
     // Barra só aparece se há algum botão útil (Dica ou Outro Grid).
     xonhaActions.hidden = !(podeDica || podeOutro);
+  }
+
+  function isContinuoDiversao() {
+    if (modo !== "xonha" || !partida) return false;
+    const idx = Number(partida.indice_dia);
+    return Number.isFinite(idx) && idx > 1;
+  }
+
+  function hintContinuoDiversao() {
+    if (!isContinuoDiversao()) return;
+    if (finalizado || interrompido) return;
+    setHint("Só diversão — este grid não conta no ranking.");
   }
 
   function rarityFromRep(repRaw) {
@@ -538,17 +550,23 @@
       typeof scoreParcial === "number" && !Number.isNaN(scoreParcial)
         ? scoreParcial
         : 0;
-    let rankLabel = "—";
-    if (typeof rankingPosicao === "number" && rankingPosicao > 0) {
-      rankLabel = `${rankingPosicao}º`;
+    const stats = [];
+    if (isContinuoDiversao()) {
+      stats.push("🎮 Só diversão");
+    } else {
+      let rankLabel = "—";
+      if (typeof rankingPosicao === "number" && rankingPosicao > 0) {
+        rankLabel = `${rankingPosicao}º`;
+      }
+      stats.push(`🏆 Ranking: ${rankLabel}`);
     }
+    stats.push(`⭐ Pontos: ${pts}`);
+    stats.push(`💡 Dicas Utilizadas: ${dicasN}`);
     return [
       `THDFM Grid${modoTag} — ${rotulo}`,
       `${ok}/${size * size}`,
       ...lines,
-      `🏆 Ranking: ${rankLabel}`,
-      `⭐ Pontos: ${pts}`,
-      `💡 Dicas Utilizadas: ${dicasN}`,
+      ...stats,
       "https://thdfm.com.br/grid",
     ].join("\n");
   }
@@ -566,7 +584,9 @@
     }
     if (shareTextEl) shareTextEl.textContent = shareText;
     if (interrompido) setHint("Tentativa encerrada ao sair da página.");
-    else setHint("Grade do dia finalizada.");
+    else if (isContinuoDiversao()) {
+      setHint("Grade finalizada · só diversão (não conta no ranking).");
+    } else setHint("Grade do dia finalizada.");
   }
 
   function clubeJaUsado(clubeId) {
@@ -826,6 +846,7 @@
       showResult(boot.share || null);
     } else {
       setHint("");
+      hintContinuoDiversao();
     }
   }
 
@@ -1373,7 +1394,7 @@
     if (sub) {
       sub.textContent =
         m === "xonha"
-          ? "Score único · acertos, raridade, dicas e streak · várias partidas/dia (Contínuo)"
+          ? "só a 1ª partida Contínuo de cada dia conta no ranking · 2ª/3ª são só diversão"
           : "Score único · acertos, tempo, raridade e streak · Pro zera ao sair da página";
     }
   }

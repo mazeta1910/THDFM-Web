@@ -39,7 +39,7 @@ def test_grid_page_tem_modos_e_rankings(client):
     assert 'data-rank-modo="xonha"' in r.text
     assert "data-grid-rank-panel" in r.text
     assert "Detalhes" in r.text
-    assert "/static/grid.js?v=30" in r.text
+    assert "/static/grid.js?v=31" in r.text
     assert "Modo Pro" in r.text
     assert "Modo Raiz" not in r.text
     assert "data-grid-leave-pro-modal" in r.text
@@ -72,3 +72,58 @@ def test_xonha_ranking_separado(client):
     rr = dbmod.ranking_grid_modo("raiz")
     assert any(x["participante_id"] == p["id"] for x in rx)
     assert not any(x["participante_id"] == p["id"] for x in rr)
+
+
+def test_xonha_ranking_so_primeira_partida_do_dia(client):
+    """2ª/3ª Contínuo do dia não somam no ranking (só diversão)."""
+    from src.grid_score import score_ranking
+
+    p = dbmod.criar_participante("Xonha Diversao", status="liberado")
+    dia = dia_grid()
+    p1 = iniciar_xonha(p["id"], dia)
+    dbmod.atualizar_grid_partida(
+        p1["id"],
+        pontos=100,
+        finalizado=True,
+        celulas=[[{"ok": True, "clube": {"id": "1", "nome": "A", "rep": 50}}]],
+    )
+    p2 = iniciar_xonha(p["id"], dia)
+    dbmod.atualizar_grid_partida(
+        p2["id"],
+        pontos=900,
+        finalizado=True,
+        celulas=[[{"ok": True, "clube": {"id": "2", "nome": "B", "rep": 50}}]],
+    )
+    rank = dbmod.ranking_grid_modo("xonha")
+    me = next(x for x in rank if x["participante_id"] == p["id"])
+    assert me["partidas_finalizadas"] == 1
+    assert me["dias_finalizados"] == 1
+    assert me["score"] == score_ranking([100], streak=me["streak"])
+    assert me["streak"] >= 1
+
+
+def test_xonha_streak_exige_primeira_finalizada(client):
+    p = dbmod.criar_participante("Xonha Streak 1ª", status="liberado")
+    dia = dia_grid()
+    p1 = iniciar_xonha(p["id"], dia)
+    # 1ª abandonada (interrompida, não finalizada); 2ª finalizada com muitos pontos
+    dbmod.atualizar_grid_partida(
+        p1["id"],
+        pontos=10,
+        finalizado=False,
+        interrompido=True,
+        celulas=[[{"ok": True, "clube": {"id": "1", "nome": "A", "rep": 1}}]],
+    )
+    p2 = iniciar_xonha(p["id"], dia)
+    assert p2["id"] != p1["id"]
+    dbmod.atualizar_grid_partida(
+        p2["id"],
+        pontos=500,
+        finalizado=True,
+        celulas=[[{"ok": True, "clube": {"id": "2", "nome": "B", "rep": 1}}]],
+    )
+    assert dbmod.grid_streak_modo(p["id"], "xonha", ate_dia=dia) == 0
+    rank = dbmod.ranking_grid_modo("xonha")
+    me = next(x for x in rank if x["participante_id"] == p["id"])
+    assert me["dias_finalizados"] == 0
+    assert me["partidas_finalizadas"] == 0

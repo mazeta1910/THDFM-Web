@@ -5480,7 +5480,10 @@ def grid_streak_modo(
     *,
     ate_dia: str | None = None,
 ) -> int:
-    """Dias consecutivos com ≥1 partida finalizada no modo."""
+    """Dias consecutivos com ≥1 partida finalizada no modo.
+
+    No Contínuo, só a **primeira** partida do dia (menor id) conta para o streak.
+    """
     from datetime import date, timedelta
 
     from src.grid_game import GRID_RANKING_DESDE, dia_grid
@@ -5491,15 +5494,32 @@ def grid_streak_modo(
     fim = date.fromisoformat(ate_dia or dia_grid())
     ini = date.fromisoformat(GRID_RANKING_DESDE)
     with get_db() as conn:
-        rows = conn.execute(
-            """
-            SELECT DISTINCT dia FROM grid_partida
-            WHERE participante_id = ? AND modo = ? AND finalizado = 1
-              AND dia <= ? AND dia >= ?
-            ORDER BY dia DESC
-            """,
-            (pid, modo, fim.isoformat(), GRID_RANKING_DESDE),
-        ).fetchall()
+        if modo == "xonha":
+            rows = conn.execute(
+                """
+                SELECT g.dia FROM (
+                  SELECT MIN(id) AS primeira_id
+                  FROM grid_partida
+                  WHERE participante_id = ? AND modo = 'xonha'
+                    AND dia <= ? AND dia >= ?
+                  GROUP BY dia
+                ) p
+                JOIN grid_partida g ON g.id = p.primeira_id
+                WHERE g.finalizado = 1
+                ORDER BY g.dia DESC
+                """,
+                (pid, fim.isoformat(), GRID_RANKING_DESDE),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT DISTINCT dia FROM grid_partida
+                WHERE participante_id = ? AND modo = ? AND finalizado = 1
+                  AND dia <= ? AND dia >= ?
+                ORDER BY dia DESC
+                """,
+                (pid, modo, fim.isoformat(), GRID_RANKING_DESDE),
+            ).fetchall()
     feitos = {r["dia"] for r in rows}
     streak = 0
     cursor = fim
@@ -5510,7 +5530,11 @@ def grid_streak_modo(
 
 
 def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
-    """Ranking por score único (Raiz ou Xonha) a partir de grid_partida."""
+    """Ranking por score único (Raiz ou Xonha) a partir de grid_partida.
+
+    No Contínuo (xonha), só a **primeira** partida de cada dia conta no score
+    (as demais são só diversão).
+    """
     from src.grid_game import GRID_RANKING_DESDE, dia_grid
     from src.grid_score import score_ranking
 
@@ -5521,18 +5545,27 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT p.id AS participante_id, p.nome, p.avatar_path,
-                   g.dia, g.celulas_json, g.finalizado, g.pontos, g.tempo_segundos
+                   g.id AS partida_id, g.dia, g.celulas_json, g.finalizado,
+                   g.pontos, g.tempo_segundos
             FROM grid_partida g
             JOIN participantes p ON p.id = g.participante_id
             WHERE p.status = 'liberado' AND g.modo = ? AND g.dia >= ?
-            ORDER BY p.id ASC, g.dia DESC, g.id DESC
+            ORDER BY p.id ASC, g.dia ASC, g.id ASC
             """,
             (modo, GRID_RANKING_DESDE),
         ).fetchall()
     agg: dict[int, dict[str, Any]] = {}
+    # Contínuo: (participante_id, dia) já contabilizado = só a 1ª partida
+    xonha_primeiro_dia: set[tuple[int, str]] = set()
     hoje = dia_grid()
     for row in rows:
         pid = int(row["participante_id"])
+        dia = str(row["dia"])
+        if modo == "xonha":
+            chave = (pid, dia)
+            if chave in xonha_primeiro_dia:
+                continue
+            xonha_primeiro_dia.add(chave)
         item = agg.setdefault(
             pid,
             {
@@ -5567,15 +5600,20 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
         elif modo == "raiz" and filled > 0:
             # partida raiz iniciada conta dia jogado parcial? não — só finalizados
             pass
-    # dias_finalizados no xonha = dias distintos com finalizado
+    # dias_finalizados no xonha = dias distintos com a 1ª partida finalizada
     if modo == "xonha":
         with get_db() as conn:
             for pid in list(agg.keys()):
                 n = conn.execute(
                     """
-                    SELECT COUNT(DISTINCT dia) AS n FROM grid_partida
-                    WHERE participante_id = ? AND modo = 'xonha' AND finalizado = 1
-                      AND dia >= ?
+                    SELECT COUNT(*) AS n FROM (
+                      SELECT MIN(id) AS primeira_id
+                      FROM grid_partida
+                      WHERE participante_id = ? AND modo = 'xonha' AND dia >= ?
+                      GROUP BY dia
+                    ) p
+                    JOIN grid_partida g ON g.id = p.primeira_id
+                    WHERE g.finalizado = 1
                     """,
                     (pid, GRID_RANKING_DESDE),
                 ).fetchone()
