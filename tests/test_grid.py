@@ -1028,7 +1028,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=31" in r.text
+    assert "/static/grid.js?v=33" in r.text
     assert "data-virada-ms=" in r.text
     assert "Não vale repetir!" in r.text
     assert "grid-sub-emphasis" in r.text
@@ -1036,7 +1036,7 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
-    assert "/static/grid-admin.js?v=6" in r.text
+    assert "/static/grid-admin.js?v=7" in r.text
     assert "Painel do Grid" in r.text
     assert 'data-grid-admin-hist' in r.text
     assert "grid-admin-ico" in r.text
