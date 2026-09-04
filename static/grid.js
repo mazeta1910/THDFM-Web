@@ -1566,8 +1566,18 @@
 
   if (!podeSalvar) {
     setHint("Explore o puzzle à vontade. Entre para registrar os chutes.");
+  } else if (boot.partida && boot.partida.id != null) {
+    setHint("");
+    applyPartidaState({
+      modo: boot.partida.modo || "xonha",
+      partida: boot.partida,
+      puzzle: boot.puzzle,
+      cota_xonha: boot.cota_xonha,
+      score_parcial:
+        typeof boot.partida.pontos === "number" ? boot.partida.pontos : 0,
+      share: boot.share || null,
+    });
   } else {
-    // Contínuo é o default: inicia (ou retoma) automaticamente.
     setHint("");
     iniciar("xonha").catch(() => {
       setHint("Escolha Pro ou Contínuo para começar.");

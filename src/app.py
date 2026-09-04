@@ -3009,6 +3009,7 @@ def grid_page(request: Request):
     share = None
     cota_xonha = None
     pro_encerrado = False
+    partida_boot = None
     if voter:
         progresso = db.get_grid_progresso(voter["id"], dia)
         streak = db.grid_streak(voter["id"], ate_dia=dia)
@@ -3016,7 +3017,6 @@ def grid_page(request: Request):
         if raiz and (raiz.get("finalizado") or raiz.get("interrompido")):
             pro_encerrado = True
         if progresso and progresso.get("finalizado"):
-            # Legado: progresso sem partida → trata como Pro.
             share = texto_share(
                 dia=dia,
                 celulas=parse_celulas_progresso(progresso.get("celulas")),
@@ -3028,9 +3028,10 @@ def grid_page(request: Request):
                 from src.grid_partidas import texto_share_partida
 
                 share = texto_share_partida(raiz)
-        from src.grid_partidas import pode_iniciar_xonha
+        from src.grid_partidas import pode_iniciar_xonha, puzzle_ssr_continuo
 
         _ok, cota_xonha = pode_iniciar_xonha(int(voter["id"]), dia)
+        puzzle, partida_boot = puzzle_ssr_continuo(int(voter["id"]), dia)
     return render(
         request,
         "grid.html",
@@ -3049,6 +3050,7 @@ def grid_page(request: Request):
         taxa_pix=os.environ.get("TAXA_PIX", TAXA_PIX),
         cota_xonha=cota_xonha,
         pro_encerrado=pro_encerrado,
+        partida_boot=partida_boot,
     )
 
 

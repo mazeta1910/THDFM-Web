@@ -1028,11 +1028,11 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "THDFM Grid" in r.text
     assert "Puzzle diário" in r.text
     assert 'id="thdfm-grid"' in r.text
-    assert "/static/grid.js?v=35" in r.text
+    assert "/static/grid.js?v=36" in r.text
     assert "data-virada-ms=" in r.text
-    assert "Não vale repetir!" in r.text
-    assert "grid-sub-emphasis" in r.text
-    assert "Vira às 00:00 (Brasília)" in r.text
+    assert '"modo": "xonha"' in r.text or '"modo":"xonha"' in r.text
+    assert "grid-sub--lead" in r.text
+    assert "vira às 00:00 (Brasília)" in r.text
     assert "Puzzle de" in r.text
     assert 'id="grid-admin"' in r.text
     assert 'data-grid-admin' in r.text
@@ -1104,7 +1104,7 @@ def test_grid_fluxo_logado(client: TestClient):
     board_mobile = css.split("Board cabe na largura útil do wrap", 1)[1].split("/* —— Grid admin", 1)[0]
     assert "margin-inline: 0" in board_mobile
     assert "width: 100%" in board_mobile
-    assert "minmax(0, 5rem)" in board_mobile
+    assert "minmax(0, 4.4rem)" in board_mobile
     assert "margin-inline: -1rem" not in board_mobile
     assert "overflow-x: clip" not in css.split(".grid-page", 1)[1].split(".grid-head", 1)[0]
     # Não pode herdar width:100% do button global

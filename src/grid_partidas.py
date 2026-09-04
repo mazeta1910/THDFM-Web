@@ -183,26 +183,66 @@ def pode_iniciar_xonha(participante_id: int, dia: str) -> tuple[bool, dict[str, 
     return ok, info
 
 
+def salt_xonha_indice(indice: int) -> str:
+    return f"xonha-{max(1, int(indice))}"
+
+
+def indice_proximo_xonha(participante_id: int, dia: str) -> int:
+    return (
+        db.contar_grid_partidas_dia(int(participante_id), str(dia), modo="xonha") + 1
+    )
+
+
+def _puzzle_xonha_publico(dia: str, salt: str) -> dict[str, Any]:
+    from src.grid_game import (
+        gerar_puzzle,
+        get_virada_hm,
+        ms_ate_proxima_virada,
+        rotulo_dia,
+        rotulo_hora_virada,
+    )
+
+    p = gerar_puzzle(dia, salt=str(salt))
+    h, mi = get_virada_hm()
+    return {
+        **p,
+        "rotulo": rotulo_dia(dia),
+        "virada_em_ms": ms_ate_proxima_virada(),
+        "virada_hora": h,
+        "virada_minuto": mi,
+        "virada_rotulo": rotulo_hora_virada(h, mi),
+        "tz": "America/Sao_Paulo",
+        "regenerado": True,
+        "modo": "xonha",
+    }
+
+
+def puzzle_ssr_continuo(
+    participante_id: int, dia: str
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    aberta = db.get_grid_partida_aberta(int(participante_id), str(dia), modo="xonha")
+    if aberta:
+        part = anexar_indice_dia(aberta)
+        return puzzle_da_partida(part), part
+    indice = indice_proximo_xonha(participante_id, dia)
+    salt = salt_xonha_indice(indice)
+    return _puzzle_xonha_publico(dia, salt), None
+
+
 def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
-    """Cria partida Contínuo (salt próprio) ou retoma a aberta do dia.
-
-    Retomar evita queimar a cota a cada refresh/clique no modo.
-    """
-    import secrets
-
     from src.grid_game import gerar_puzzle
 
     aberta = db.get_grid_partida_aberta(participante_id, dia, modo="xonha")
     if aberta:
         return aberta
 
-    ok, info = pode_iniciar_xonha(participante_id, dia)
+    ok, _info = pode_iniciar_xonha(participante_id, dia)
     if not ok:
         raise CotaXonhaEsgotada(
             "Limite de 3 grids Contínuo por dia. Passe ilimitado: R$ 1,65 / 30 dias."
         )
-    salt = secrets.token_hex(8)
-    # Garante que o puzzle existe (e cacheia) antes de gravar a partida.
+    indice = indice_proximo_xonha(participante_id, dia)
+    salt = salt_xonha_indice(indice)
     gerar_puzzle(dia, salt=salt)
     return db.criar_grid_partida(
         participante_id,
@@ -214,25 +254,11 @@ def iniciar_xonha(participante_id: int, dia: str) -> dict[str, Any]:
 
 
 def puzzle_da_partida(partida: dict[str, Any]) -> dict[str, Any]:
-    from src.grid_game import gerar_puzzle, puzzle_publico
+    from src.grid_game import puzzle_publico
 
     dia = partida["dia"]
     if partida.get("modo") == "xonha" and partida.get("puzzle_salt"):
-        p = gerar_puzzle(dia, salt=str(partida["puzzle_salt"]))
-        from src.grid_game import get_virada_hm, ms_ate_proxima_virada, rotulo_dia, rotulo_hora_virada
-
-        h, mi = get_virada_hm()
-        return {
-            **p,
-            "rotulo": rotulo_dia(dia),
-            "virada_em_ms": ms_ate_proxima_virada(),
-            "virada_hora": h,
-            "virada_minuto": mi,
-            "virada_rotulo": rotulo_hora_virada(h, mi),
-            "tz": "America/Sao_Paulo",
-            "regenerado": True,
-            "modo": "xonha",
-        }
+        return _puzzle_xonha_publico(dia, str(partida["puzzle_salt"]))
     return {**puzzle_publico(dia), "modo": "raiz"}
 
 
