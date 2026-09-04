@@ -4803,7 +4803,7 @@ def listar_grid_dias(*, limite: int = 60) -> list[dict[str, Any]]:
 
 
 def listar_grid_progresso_dia(dia: str) -> list[dict[str, Any]]:
-    """Respostas de todos os participantes em um dia (painel Mazeta)."""
+    """Respostas legadas (grid_progresso) de um dia — preferir partidas."""
     dia_s = str(dia)
     with get_db() as conn:
         rows = conn.execute(
@@ -4835,8 +4835,76 @@ def listar_grid_progresso_dia(dia: str) -> list[dict[str, Any]]:
                 "atualizado_em": row["atualizado_em"],
                 "celulas_ok": ok,
                 "celulas_preenchidas": filled,
+                "modo": "raiz",
+                "modo_rotulo": "Pro",
+                "indice_dia": 1,
             }
         )
+    return out
+
+
+def listar_grid_partidas_dia(dia: str) -> list[dict[str, Any]]:
+    """Tentativas do dia (Pro + Contínuo) para o painel Mazeta, com tipo."""
+    dia_s = str(dia)
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT g.id, g.participante_id, p.nome, p.avatar_path, p.username,
+                   g.modo, g.celulas_json, g.finalizado, g.interrompido,
+                   g.pontos, g.atualizado_em, g.criado_em
+            FROM grid_partida g
+            JOIN participantes p ON p.id = g.participante_id
+            WHERE g.dia = ?
+            ORDER BY g.criado_em ASC, g.id ASC
+            """,
+            (dia_s,),
+        ).fetchall()
+    # índice Contínuo por participante (ordem de criação no dia)
+    contagem_xonha: dict[int, int] = {}
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            celulas = json.loads(row["celulas_json"] or "[]")
+        except json.JSONDecodeError:
+            celulas = []
+        ok, filled = _contar_celulas_ok(celulas)
+        modo = str(row["modo"] or "raiz")
+        pid = int(row["participante_id"])
+        if modo == "xonha":
+            contagem_xonha[pid] = contagem_xonha.get(pid, 0) + 1
+            indice = contagem_xonha[pid]
+            modo_rotulo = f"Contínuo {indice}"
+        else:
+            indice = 1
+            modo_rotulo = "Pro"
+        status = "finalizado"
+        if row["interrompido"]:
+            status = "interrompido"
+        elif not row["finalizado"]:
+            status = "em andamento"
+        out.append(
+            {
+                "partida_id": int(row["id"]),
+                "participante_id": pid,
+                "nome": (row["nome"] or "").strip() or "alguém",
+                "username": row["username"],
+                "avatar_path": row["avatar_path"],
+                "celulas": celulas,
+                "finalizado": bool(row["finalizado"]),
+                "interrompido": bool(row["interrompido"]),
+                "status": status,
+                "atualizado_em": row["atualizado_em"],
+                "celulas_ok": ok,
+                "celulas_preenchidas": filled,
+                "pontos": int(row["pontos"] or 0),
+                "modo": modo,
+                "modo_rotulo": modo_rotulo,
+                "indice_dia": indice,
+            }
+        )
+    # Legado: progresso sem partida correspondente
+    if not out:
+        return listar_grid_progresso_dia(dia_s)
     return out
 
 
@@ -5534,9 +5602,13 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
 
     No Contínuo (xonha), só a **primeira** partida de cada dia conta no score
     (as demais são só diversão).
+
+    Score = acertos + completo + tempo + raridade(média×índice) − dicas (+ streak).
+    Raridade ajuda quem joga times obscuros, sem reverter um déficit grande
+    de acertos; ainda desempatam via pontos_rep bruto.
     """
     from src.grid_game import GRID_RANKING_DESDE, dia_grid
-    from src.grid_score import score_ranking
+    from src.grid_score import pontos_partida, pontos_rep_celulas, score_ranking
 
     if modo not in ("raiz", "xonha"):
         raise ValueError("modo inválido")
@@ -5546,7 +5618,7 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
             """
             SELECT p.id AS participante_id, p.nome, p.avatar_path,
                    g.id AS partida_id, g.dia, g.celulas_json, g.finalizado,
-                   g.pontos, g.tempo_segundos
+                   g.interrompido, g.pontos, g.tempo_segundos, g.dicas_json
             FROM grid_partida g
             JOIN participantes p ON p.id = g.participante_id
             WHERE p.status = 'liberado' AND g.modo = ? AND g.dia >= ?
@@ -5577,6 +5649,7 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
                 "celulas_ok": 0,
                 "celulas_preenchidas": 0,
                 "pontos_partidas": [],
+                "pontos_rep": 0,
                 "tempos": [],
             },
         )
@@ -5584,19 +5657,38 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
             celulas = json.loads(row["celulas_json"] or "[]")
         except json.JSONDecodeError:
             celulas = []
+        try:
+            dicas = json.loads(row["dicas_json"] or "[]")
+        except (json.JSONDecodeError, TypeError):
+            dicas = []
+        if not isinstance(dicas, list):
+            dicas = []
         ok, filled = _contar_celulas_ok(celulas)
         item["celulas_ok"] += ok
         item["celulas_preenchidas"] += filled
-        item["pontos_partidas"].append(int(row["pontos"] or 0))
-        if row["finalizado"]:
+        item["pontos_rep"] += pontos_rep_celulas(celulas)
+        finalizado = bool(row["finalizado"])
+        interrompido = bool(row["interrompido"])
+        tempo = row["tempo_segundos"]
+        try:
+            tempo_i = int(tempo) if tempo is not None else None
+        except (TypeError, ValueError):
+            tempo_i = None
+        # Recalcula sem raridade (pontos gravados antigos ainda incluíam Rep).
+        pts = pontos_partida(
+            celulas,
+            finalizado=finalizado,
+            interrompido=interrompido,
+            tempo_segundos=tempo_i,
+            dicas=dicas,
+        )
+        item["pontos_partidas"].append(pts)
+        if finalizado:
             item["partidas_finalizadas"] += 1
             if modo == "raiz":
                 item["dias_finalizados"] += 1
-            if row["tempo_segundos"] is not None:
-                try:
-                    item["tempos"].append(int(row["tempo_segundos"]))
-                except (TypeError, ValueError):
-                    pass
+            if tempo_i is not None:
+                item["tempos"].append(tempo_i)
         elif modo == "raiz" and filled > 0:
             # partida raiz iniciada conta dia jogado parcial? não — só finalizados
             pass
@@ -5641,6 +5733,7 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
             -int(r["score"]),
             -int(r["dias_finalizados"]),
             -int(r["celulas_ok"]),
+            -int(r.get("pontos_rep") or 0),
             (r["nome"] or "").casefold(),
         )
     )

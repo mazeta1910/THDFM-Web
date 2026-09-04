@@ -1,8 +1,12 @@
 """Pontuação do THDFM Grid (Raiz / Xonha) — funções puras.
 
-Score de partida = acertos + bônus completo + tempo + raridade (Rep)
-               − custos de dicas.
+Score de partida = acertos + bônus completo + tempo + raridade − dicas.
 Score de ranking = soma das partidas do modo + bônus de streak.
+
+Raridade = média(pontos_rep das células corretas) × (acertos / 9) × fator.
+Assim times raros pesam no score, mas um déficit grande de acertos
+(ex.: 3 vs 6) não é revertido só por Rep; um déficit pequeno
+(6–7 vs 8 “safe”) pode ser.
 
 No Contínuo, só a primeira partida de cada dia entra no ranking;
 as demais (2ª/3ª) são só diversão (pontos locais, sem ranking).
@@ -21,6 +25,11 @@ P_STREAK_DIA = 50
 
 CUSTO_CONTAGEM = 10
 MATRIZ_BASE = 80  # 1ª matriz: 80; 2ª: 160; 3ª: 320; …
+
+# média(rep) × (ok/GRID) × fator — calibração: 6–7 raros podem passar 8 safe;
+# 3 raros não passam 6 safe.
+RARIDADE_FATOR = 0.045
+GRID_CELULAS = 9
 
 
 def custo_dica_contagem() -> int:
@@ -67,11 +76,11 @@ def contar_acertos(celulas: Any) -> tuple[int, int]:
     return ok, filled
 
 
-def pontos_rep_celulas(celulas: Any) -> int:
-    """Soma pontos_rep_desempate das células corretas."""
+def _reps_corretas(celulas: Any) -> list[int]:
+    """pontos_rep_desempate de cada célula correta."""
     from src.clubes_catalogo import pontos_rep_desempate
 
-    total = 0
+    out: list[int] = []
     for cell in _celulas_iter(celulas):
         if not cell.get("ok") or not cell.get("clube"):
             continue
@@ -82,8 +91,37 @@ def pontos_rep_celulas(celulas: Any) -> int:
                 rep = max(0, int(clube.get("rep") or 0))
             except (TypeError, ValueError):
                 rep = 0
-        total += pontos_rep_desempate(rep)
-    return total
+        out.append(pontos_rep_desempate(rep))
+    return out
+
+
+def pontos_rep_celulas(celulas: Any) -> int:
+    """Soma bruta de pontos_rep (desempate / métricas)."""
+    return int(sum(_reps_corretas(celulas)))
+
+
+def media_raridade(celulas: Any) -> float:
+    """Média dos pontos_rep das células corretas (0 se nenhuma)."""
+    reps = _reps_corretas(celulas)
+    if not reps:
+        return 0.0
+    return float(sum(reps)) / len(reps)
+
+
+def bonus_raridade(celulas: Any) -> int:
+    """Média de raridade × índice de acertos × fator.
+
+    ``indice`` = acertos / 9. Quanto mais casas certas *e* mais raros os
+    times, maior o bônus — sem deixar um board quase vazio superar um
+    board bem preenchido.
+    """
+    reps = _reps_corretas(celulas)
+    ok = len(reps)
+    if ok <= 0:
+        return 0
+    media = float(sum(reps)) / ok
+    indice = ok / float(GRID_CELULAS)
+    return int(round(media * indice * RARIDADE_FATOR))
 
 
 def custo_dicas(dicas: Sequence[Mapping[str, Any]] | None) -> int:
@@ -115,7 +153,7 @@ def pontos_partida(
     if finalizado and not interrompido:
         pts += P_COMPLETO
         pts += bonus_tempo(tempo_segundos, finalizado=True)
-    pts += pontos_rep_celulas(celulas)
+    pts += bonus_raridade(celulas)
     pts -= custo_dicas(dicas)
     return max(0, int(pts))
 

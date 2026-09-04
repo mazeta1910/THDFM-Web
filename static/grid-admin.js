@@ -104,7 +104,8 @@
         return `<article class="grid-admin-resposta">
           <header>
             <strong>${esc(r.nome)}</strong>
-            <span>${r.finalizado ? "finalizado" : "em andamento"} · ${
+            <span class="grid-admin-modo">${esc(r.modo_rotulo || (r.modo === "xonha" ? "Contínuo" : "Pro"))}</span>
+            <span>${esc(r.status || (r.finalizado ? "finalizado" : "em andamento"))} · ${
               r.celulas_ok
             }/${r.celulas_preenchidas}</span>
           </header>
