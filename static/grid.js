@@ -630,7 +630,7 @@
     } else if (data.finalizado) {
       finalizado = true;
     }
-    if typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
+    if (typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
     if (typeof data.ranking_posicao === "number" && data.ranking_posicao > 0) {
       rankingPosicao = data.ranking_posicao;
     }
