@@ -1893,9 +1893,17 @@ def texto_share(
         f"{acertos}/{GRID_SIZE * GRID_SIZE}",
         *linhas_emoji,
     ]
-    # Bloco de stats: ranking / pontos / dicas (nessa ordem)
+    # Bloco de stats: ranking / pontos / dicas (nessa ordem).
+    # Contínuo 2ª/3ª: só diversão — não entra no ranking.
     if pontos is not None or ranking is not None:
-        if ranking is not None and int(ranking) > 0:
+        so_diversao = (
+            (modo or "").strip().lower() == "xonha"
+            and indice is not None
+            and int(indice) > 1
+        )
+        if so_diversao:
+            partes.append("🎮 Só diversão")
+        elif ranking is not None and int(ranking) > 0:
             partes.append(f"🏆 Ranking: {int(ranking)}º")
         else:
             partes.append("🏆 Ranking: —")

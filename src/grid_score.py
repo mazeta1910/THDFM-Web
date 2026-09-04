@@ -3,6 +3,9 @@
 Score de partida = acertos + bônus completo + tempo + raridade (Rep)
                − custos de dicas.
 Score de ranking = soma das partidas do modo + bônus de streak.
+
+No Contínuo, só a primeira partida de cada dia entra no ranking;
+as demais (2ª/3ª) são só diversão (pontos locais, sem ranking).
 """
 
 from __future__ import annotations
