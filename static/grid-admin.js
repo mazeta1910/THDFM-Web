@@ -256,12 +256,16 @@
     }
     const j = data.justificativa || {};
     const cell = data.celula || {};
+    const justErro = data.justificativa_erro
+      ? `<p class="grid-admin-muted">${esc(data.justificativa_erro)}</p>`
+      : "";
     drawerBody.innerHTML = `
       <p><strong>${esc((cell.clube && cell.clube.nome) || "?")}</strong></p>
       <p class="grid-admin-muted">${esc(j.coord || coord(linha, coluna))}</p>
       <p>Linha: ${esc((j.linha && j.linha.rotulo) || "—")}</p>
       <p>Coluna: ${esc((j.coluna && j.coluna.rotulo) || "—")}</p>
       <p>${esc(j.motivo || "")}</p>
+      ${justErro}
       <p>Status gravado: ${data.ok_gravado ? "acerto" : "erro"}</p>
       <div class="grid-admin-actions">
         <button type="button" class="grid-admin-ico grid-admin-ico--accent"

@@ -3968,6 +3968,8 @@ def grid_api_admin_celula_get(
     if not cell or not cell.get("clube"):
         return JSONResponse({"erro": "célula vazia"}, status_code=400)
     salt = str(part.get("puzzle_salt") or "") or None
+    just = None
+    just_erro = None
     try:
         just = justificativa_celula(
             dia=str(part["dia"]),
@@ -3977,13 +3979,16 @@ def grid_api_admin_celula_get(
             clube_id=str(cell["clube"]["id"]),
         )
     except ValueError as exc:
-        return JSONResponse({"erro": str(exc)}, status_code=400)
+        just_erro = str(exc)
     return JSONResponse(
         {
             "partida_id": int(partida_id),
             "celula": cell,
             "justificativa": just,
+            "justificativa_erro": just_erro,
             "ok_gravado": bool(cell.get("ok")),
+            "linha": int(linha),
+            "coluna": int(coluna),
         }
     )
 
