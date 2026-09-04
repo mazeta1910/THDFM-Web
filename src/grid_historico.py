@@ -889,7 +889,7 @@ HISTORICO_META_BASE: list[tuple[str, str, str, str]] = [
     ("titulo:nunca_campeao_cdb", "titulo", "nunca_campeao_cdb", "Nunca ganhou a Copa do Brasil"),
     ("titulo:nunca_final_cdb", "titulo", "nunca_final_cdb", "Nunca foi à final da Copa do Brasil"),
     ("titulo:campeao_cdb_sem_br", "titulo", "campeao_cdb_sem_br", "Campeão da Copa e nunca do Brasileirão"),
-    ("titulo:campeao_br_sem_cdb", "titulo", "campeao_br_sem_cdb", "Campeão do Brasileirão e nunca da Copa"),
+    ("titulo:campeao_br_sem_cdb", "titulo", "campeao_br_sem_cdb", "Campeão Brasileiro e Nunca da Copa do Brasil"),
     ("goleada:presente_cdb", "goleada", "presente_cdb", "Já esteve em uma das maiores goleadas da Copa do Brasil"),
     ("goleada:aplicou_cdb", "goleada", "aplicou_cdb", "Já aplicou uma das maiores goleadas da Copa do Brasil"),
     ("goleada:sofreu_cdb", "goleada", "sofreu_cdb", "Já sofreu uma das maiores goleadas da Copa do Brasil"),
