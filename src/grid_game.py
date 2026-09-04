@@ -1843,6 +1843,7 @@ def texto_share(
     indice: int | None = None,
     pontos: int | None = None,
     dicas_usadas: int | None = None,
+    ranking: int | None = None,
 ) -> str:
     """Texto estilo Wordle/Hoops para Twitter/WhatsApp.
 
@@ -1850,12 +1851,13 @@ def texto_share(
     texto não depender de charset do arquivo-fonte no cliente.
 
     Formato:
-      THDFM Grid Pro — dd/mm/aaaa
-      2/9
-      🟩 🟥 ⬜
+      THDFM Grid 2 — dd/mm/aaaa
+      1/9
+      🟩 ⬜ ⬜
       …
-      1234
-      💡Dicas Utilizadas: 3
+      🏆 Ranking: 1º
+      ⭐ Pontos: 55
+      💡 Dicas Utilizadas: 2
       https://thdfm.com.br/grid
     """
     sq_ok = "\U0001f7e9"  # 🟩
@@ -1891,10 +1893,18 @@ def texto_share(
         f"{acertos}/{GRID_SIZE * GRID_SIZE}",
         *linhas_emoji,
     ]
-    if pontos is not None:
-        partes.append(str(int(pontos)))
-    if dicas_usadas is not None:
-        partes.append(f"💡Dicas Utilizadas: {int(dicas_usadas)}")
+    # Bloco de stats: ranking / pontos / dicas (nessa ordem)
+    if pontos is not None or ranking is not None:
+        if ranking is not None and int(ranking) > 0:
+            partes.append(f"🏆 Ranking: {int(ranking)}º")
+        else:
+            partes.append("🏆 Ranking: —")
+        pts = int(pontos) if pontos is not None else 0
+        partes.append(f"⭐ Pontos: {pts}")
+        dicas_n = int(dicas_usadas) if dicas_usadas is not None else 0
+        partes.append(f"💡 Dicas Utilizadas: {dicas_n}")
+    elif dicas_usadas is not None:
+        partes.append(f"💡 Dicas Utilizadas: {int(dicas_usadas)}")
     partes.append(url)
     return "\n".join(partes)
 

@@ -3548,8 +3548,15 @@ async def grid_api_chute(request: Request):
         from src.grid_partidas import anexar_indice_dia, texto_share_partida
 
         partida = anexar_indice_dia(partida)
+        ranking_pos = None
+        if finalizado or partida.get("interrompido"):
+            ranking_pos = db.posicao_ranking_grid_modo(
+                int(voter["id"]), str(partida.get("modo") or "raiz")
+            )
         share = (
-            texto_share_partida(partida, celulas=celulas, pontos=score)
+            texto_share_partida(
+                partida, celulas=celulas, pontos=score, ranking=ranking_pos
+            )
             if finalizado
             else None
         )
@@ -3562,6 +3569,7 @@ async def grid_api_chute(request: Request):
                 "score_parcial": score,
                 "streak": db.grid_streak(int(voter["id"]), ate_dia=dia),
                 "share": share,
+                "ranking_posicao": ranking_pos,
             }
         )
 

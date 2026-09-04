@@ -5611,6 +5611,21 @@ def ranking_grid_modo(modo: str, *, limite: int = 50) -> list[dict[str, Any]]:
     return anexar_hall_borda(limited)
 
 
+def posicao_ranking_grid_modo(participante_id: int, modo: str) -> int | None:
+    """Posição 1-based do jogador no ranking do modo, ou None se ausente."""
+    if modo not in ("raiz", "xonha"):
+        return None
+    pid = int(participante_id)
+    for item in ranking_grid_modo(modo, limite=200):
+        if int(item.get("participante_id") or 0) == pid:
+            try:
+                pos = int(item.get("posicao") or 0)
+            except (TypeError, ValueError):
+                return None
+            return pos if pos > 0 else None
+    return None
+
+
 def limpar_grid_partidas() -> int:
     with get_db() as conn:
         cur = conn.execute("DELETE FROM grid_partida")

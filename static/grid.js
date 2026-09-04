@@ -67,6 +67,8 @@
   let scoreParcial = 0;
   let proximoCustoMatriz = 80;
   let interrompido = false;
+  /** @type {number|null} */
+  let rankingPosicao = null;
   /** @type {string|null} */
   let iniciadoEm = null;
   /** @type {number|null} */
@@ -466,16 +468,21 @@
       modoTag = idx && !Number.isNaN(idx) ? ` ${idx}` : " Contínuo";
     }
     const dicasN = ((partida && partida.dicas) || []).length;
-    const scoreLine =
+    const pts =
       typeof scoreParcial === "number" && !Number.isNaN(scoreParcial)
-        ? String(scoreParcial)
-        : "";
+        ? scoreParcial
+        : 0;
+    let rankLabel = "—";
+    if (typeof rankingPosicao === "number" && rankingPosicao > 0) {
+      rankLabel = `${rankingPosicao}º`;
+    }
     return [
       `THDFM Grid${modoTag} — ${rotulo}`,
       `${ok}/${size * size}`,
       ...lines,
-      ...(scoreLine ? [scoreLine] : []),
-      `💡Dicas Utilizadas: ${dicasN}`,
+      `🏆 Ranking: ${rankLabel}`,
+      `⭐ Pontos: ${pts}`,
+      `💡 Dicas Utilizadas: ${dicasN}`,
       "https://thdfm.com.br/grid",
     ].join("\n");
   }
@@ -623,7 +630,10 @@
     } else if (data.finalizado) {
       finalizado = true;
     }
-    if (typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
+    if typeof data.score_parcial === "number") updateLiveScore(data.score_parcial);
+    if (typeof data.ranking_posicao === "number" && data.ranking_posicao > 0) {
+      rankingPosicao = data.ranking_posicao;
+    }
     paintAll();
     if (typeof data.streak === "number" && streakEl) {
       streakEl.textContent = `🔥 ${data.streak}`;
