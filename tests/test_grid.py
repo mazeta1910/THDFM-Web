@@ -1039,6 +1039,10 @@ def test_grid_fluxo_logado(client: TestClient):
     assert "Usar dica" in r.text
     assert "data-grid-matriz-celula" in r.text
     assert "data-grid-dica-eixos" in r.text
+    assert "data-grid-leave-matriz-modal" in r.text
+    assert "Sair da matriz?" in r.text
+    assert "data-grid-leave-matriz-ok" in r.text
+    assert "data-grid-leave-matriz-voltar" in r.text
     assert "data-grid-chute" not in r.text
     assert "data-grid-suggestions" in r.text
     assert "~50%" in r.text or "50% do nome" in r.text

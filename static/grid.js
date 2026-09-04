@@ -42,6 +42,7 @@
   const matrizCustoEl = document.querySelector("[data-grid-matriz-custo]");
   const matrizCelulaEl = document.querySelector("[data-grid-matriz-celula]");
   const matrizEixosEl = document.querySelector("[data-grid-matriz-eixos]");
+  const leaveMatrizModal = document.querySelector("[data-grid-leave-matriz-modal]");
 
   const REP_TETO = 8000;
   const MIN_CHARS = 3;
@@ -79,6 +80,8 @@
   let active = null; // {linha, coluna}
   /** @type {{linha:number, coluna:number}|null} */
   let lastCell = null;
+  /** Permite fechar a matriz sem o aviso (chute ou confirmação de saída). */
+  let matrizAllowClose = false;
   let shareText = "";
   let searchTimer = 0;
   let searchAbort = null;
@@ -996,9 +999,53 @@
     if (dicaModal && dicaModal.open) dicaModal.close();
   });
 
-  document.querySelector("[data-grid-matriz-close]")?.addEventListener("click", () => {
+  function forceCloseMatriz() {
+    matrizAllowClose = true;
+    if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
     if (matrizModal && matrizModal.open) matrizModal.close();
+    matrizAllowClose = false;
+  }
+
+  function pedirConfirmacaoSaidaMatriz() {
+    if (!matrizModal || !matrizModal.open) return;
+    if (leaveMatrizModal && typeof leaveMatrizModal.showModal === "function") {
+      leaveMatrizModal.showModal();
+      return;
+    }
+    forceCloseMatriz();
+  }
+
+  document.querySelector("[data-grid-matriz-close]")?.addEventListener("click", () => {
+    pedirConfirmacaoSaidaMatriz();
   });
+
+  if (matrizModal) {
+    matrizModal.addEventListener("cancel", (e) => {
+      // Esc: intercepta e pede confirmação em vez de fechar direto.
+      e.preventDefault();
+      if (matrizAllowClose) return;
+      pedirConfirmacaoSaidaMatriz();
+    });
+    matrizModal.addEventListener("close", () => {
+      if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
+    });
+  }
+
+  document.querySelector("[data-grid-leave-matriz-voltar]")?.addEventListener("click", () => {
+    if (leaveMatrizModal && leaveMatrizModal.open) leaveMatrizModal.close();
+  });
+
+  document.querySelector("[data-grid-leave-matriz-ok]")?.addEventListener("click", () => {
+    forceCloseMatriz();
+    setHint("Matriz fechada. A dica e os pontos desta rodada já tinham sido consumidos.");
+  });
+
+  if (leaveMatrizModal) {
+    leaveMatrizModal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      if (leaveMatrizModal.open) leaveMatrizModal.close();
+    });
+  }
 
   async function pedirDica(tipo) {
     const cell = resolveDicaCell();
@@ -1081,7 +1128,7 @@
       const cell = resolveDicaCell();
       if (!cell) return;
       active = { ...cell };
-      if (matrizModal && matrizModal.open) matrizModal.close();
+      forceCloseMatriz();
       submitGuessById(btn.getAttribute("data-clube-id")).catch(() => {});
     });
   }
