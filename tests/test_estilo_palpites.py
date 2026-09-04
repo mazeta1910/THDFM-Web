@@ -145,7 +145,7 @@ def test_boquinha_e_donelli_e_casalzinho(client):
     assert "Estilo de palpites" not in r.text
     assert "perfis-estilo-json" not in r.text
     assert "Clique no nome para ver o estilo de palpites" not in r.text
-    assert "/static/style.css?v=324" in r.text
+    assert "/static/style.css?v=325" in r.text
     assert 'href="/perfil/' in r.text
     assert "classificacao-player-link" in r.text
     assert "classificacao-nome-btn" not in r.text
@@ -247,7 +247,7 @@ def test_resumo_rodadas_helper_e_sem_ficha_na_classificacao(client):
     assert "ficha-estilo-card" not in r.text
     assert "perfis-estilo-json" not in r.text
     assert "data-abrir-ficha" not in r.text
-    assert "/static/style.css?v=324" in r.text
+    assert "/static/style.css?v=325" in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     # Estilos compartilhados com o perfil (resumo de rodadas) permanecem
     assert ".ficha-rodada-rotulo-short" in css

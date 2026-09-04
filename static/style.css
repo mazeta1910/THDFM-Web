@@ -13696,13 +13696,20 @@ button.grid-daltonismo-btn:hover,
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.25rem;
+  width: 100%;
 }
+.grid-modal-actions button.grid-chip-btn,
 .grid-modal-actions .grid-chip-btn {
   gap: 0.3rem;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: max-content !important;
 }
 .grid-modal-actions .grid-chip-btn svg {
   flex: 0 0 auto;
   display: block;
+  width: 14px;
+  height: 14px;
 }
 .grid-suggestions {
   list-style: none;
@@ -14956,81 +14963,111 @@ button.grid-admin-dia-btn,
   gap: 0.3rem;
   margin: 0;
   width: auto;
+  flex: 0 0 auto;
 }
+/*
+  O seletor global `button, .btn { width:100%; padding:0.9rem; background:accent }`
+  transforma qualquer <button> num bloco laranja enorme. Precisa de
+  `button.classe` + !important (mesmo padrão de .xonha-motivo-mais / daltonismo).
+*/
+button.grid-mode-btn,
 .grid-mode-btn {
-  /* Anula o button global (width:100% + padding grande) */
-  display: inline-flex;
+  appearance: none !important;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: auto;
-  min-width: 0;
-  min-height: 0;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-weight: 650;
-  font-size: 0.78rem;
-  line-height: 1.2;
-  padding: 0.28rem 0.7rem;
-  border-radius: 6px;
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent) !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font: inherit !important;
+  font-weight: 650 !important;
+  font-size: 0.78rem !important;
+  line-height: 1.2 !important;
+  padding: 0.28rem 0.7rem !important;
+  border-radius: 6px !important;
   cursor: pointer;
   text-align: center;
+  box-shadow: none !important;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
+button.grid-mode-btn:hover:not(:disabled),
 .grid-mode-btn:hover:not(:disabled) {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--text) 22%, var(--border));
+  color: var(--text) !important;
+  border-color: color-mix(in srgb, var(--text) 22%, var(--border)) !important;
 }
+button.grid-mode-btn.is-active,
+button.grid-mode-btn[aria-selected="true"],
 .grid-mode-btn.is-active,
 .grid-mode-btn[aria-selected="true"] {
-  /* Cinza das fases encerradas do bolão — não accent */
-  background: color-mix(in srgb, var(--bg2, var(--card)) 90%, transparent);
-  border-color: color-mix(in srgb, var(--border) 90%, transparent);
-  color: color-mix(in srgb, var(--muted) 80%, var(--text));
+  background: color-mix(in srgb, var(--bg2, var(--card)) 90%, transparent) !important;
+  border-color: color-mix(in srgb, var(--border) 90%, transparent) !important;
+  color: color-mix(in srgb, var(--muted) 80%, var(--text)) !important;
   opacity: 0.78;
 }
+button.grid-mode-btn:disabled,
 .grid-mode-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+button.grid-chip-btn,
 .grid-chip-btn {
-  display: inline-flex;
+  appearance: none !important;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  width: auto;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0.28rem 0.65rem;
-  border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 650;
-  line-height: 1.2;
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0.28rem 0.65rem !important;
+  border-radius: 6px !important;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font: inherit !important;
+  font-size: 0.78rem !important;
+  font-weight: 650 !important;
+  line-height: 1.2 !important;
   cursor: pointer;
   text-align: center;
+  box-shadow: none !important;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
+button.grid-chip-btn:hover:not(:disabled),
 .grid-chip-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg2, var(--card)) 70%, transparent);
+  background: color-mix(in srgb, var(--bg2, var(--card)) 70%, transparent) !important;
 }
+button.grid-chip-btn:disabled,
 .grid-chip-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
+button.grid-chip-btn[aria-pressed="true"],
 .grid-chip-btn[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--bg2, var(--card)) 85%, transparent);
-  color: var(--muted);
+  background: color-mix(in srgb, var(--bg2, var(--card)) 85%, transparent) !important;
+  color: var(--muted) !important;
 }
+button.grid-chip-btn-ghost,
 .grid-chip-btn-ghost {
-  color: var(--muted);
-  border-color: color-mix(in srgb, var(--border) 65%, transparent);
+  color: var(--muted) !important;
+  border-color: color-mix(in srgb, var(--border) 65%, transparent) !important;
 }
+button.grid-chip-btn-ghost:hover:not(:disabled),
 .grid-chip-btn-ghost:hover:not(:disabled) {
-  color: var(--text);
+  color: var(--text) !important;
 }
 .grid-live-stats {
   display: flex;
