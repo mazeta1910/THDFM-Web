@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Privacidade — THDFM{% endblock %}
+{% block meta_description %}Política de privacidade do THDFM: dados da conta, bolão, cookies e anúncios.{% endblock %}
+{% block og_title %}Privacidade — THDFM{% endblock %}
+{% block content %}
+<article class="legal-page card">
+  <h1>Política de privacidade</h1>
+  <p class="legal-updated">Última atualização: setembro de 2026</p>
+
+  <h2>Quem somos</h2>
+  <p>
+    O THDFM (Técnicos Horríveis do Futebol Mundial) é um site da comunidade do grupo no WhatsApp,
+    com bolão, Grid e outros passatempos. Contato: via
+    {% if whatsapp_group_url or (social_links and social_links.whatsapp) %}
+    <a href="{{ whatsapp_group_url or social_links.whatsapp }}" target="_blank" rel="noopener noreferrer">grupo no WhatsApp</a>
+    {% else %}
+    redes sociais do rodapé
+    {% endif %}.
+  </p>
+
+  <h2>Dados que coletamos</h2>
+  <ul>
+    <li><strong>Conta do bolão:</strong> nome/apelido, celular (WhatsApp), comprovante de pagamento (PIX), username e senha (hash).</li>
+    <li><strong>Perfil:</strong> foto, banner, times do coração, recados e reações — quando você usa essas funções.</li>
+    <li><strong>Jogo:</strong> palpites, partidas do Grid, reports de bugs e preferências de interface.</li>
+    <li><strong>Cookies técnicos:</strong> sessão de login e modo de interface (admin/user), necessários para o site funcionar.</li>
+    <li><strong>Cookies/scripts de terceiros:</strong> Google AdSense (anúncios) e, se configurado, Google Analytics — só após o seu consentimento no banner de cookies.</li>
+  </ul>
+
+  <h2>Para que usamos</h2>
+  <ul>
+    <li>Operar o bolão, o Grid e as páginas da comunidade.</li>
+    <li>Autenticar participantes e administradores.</li>
+    <li>Exibir anúncios e medir audiência (quando você aceita).</li>
+    <li>Moderar conteúdo e investigar abuso.</li>
+  </ul>
+
+  <h2>Compartilhamento</h2>
+  <p>
+    Não vendemos seus dados. Compartilhamos o mínimo necessário com provedores de infraestrutura
+    (hospedagem) e, com consentimento, Google (AdSense/Analytics). Administradores do bolão veem
+    dados operacionais (inscrição, palpites, comprovantes) para rodar a competição.
+  </p>
+
+  <h2>Retenção e seus direitos</h2>
+  <p>
+    Mantemos os dados enquanto a conta/participação for necessária ao bolão e à comunidade.
+    Você pode pedir correção ou exclusão da conta pelos canais de contato acima (sujeito a
+    obrigações de transparência do bolão já publicado).
+  </p>
+
+  <h2>Base legal (LGPD)</h2>
+  <p>
+    Tratamos dados com base na execução do serviço que você solicita (conta, bolão, jogos) e,
+    para cookies de marketing/analytics, no consentimento.
+  </p>
+</article>
+{% endblock %}

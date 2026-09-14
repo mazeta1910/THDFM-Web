@@ -40,8 +40,12 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
     assert "loguin-drawer-root" in text
-    assert "pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" in text
+    assert 'name="thdfm-adsense-client"' in text
     assert "ca-pub-9141284700785025" in text
+    assert "cookie-consent.js" in text
+    assert "cookie-banner" in text
+    # Script do AdSense só carrega após consentimento
+    assert "pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" not in text
 
 
 def test_ads_txt_publico(client: TestClient):

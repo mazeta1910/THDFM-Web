@@ -41,6 +41,15 @@
       {% endif %}
     </nav>
     {% endif %}
-    <p class="site-footer-copy">© THDFM · Conteúdo e bolão da comunidade</p>
+        <nav class="site-footer-legal" aria-label="Legal e contato">
+      <a href="/privacidade">Privacidade</a>
+      <a href="/termos">Termos</a>
+      {% if whatsapp_group_url %}
+      <a href="{{ whatsapp_group_url }}" target="_blank" rel="noopener noreferrer">Grupo / Contato</a>
+      {% elif social.whatsapp %}
+      <a href="{{ social.whatsapp }}" target="_blank" rel="noopener noreferrer">Contato</a>
+      {% endif %}
+    </nav>
+<p class="site-footer-copy">© THDFM · Conteúdo e bolão da comunidade</p>
   </div>
 </footer>

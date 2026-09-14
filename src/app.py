@@ -21,6 +21,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.routing import Match
 
 from src import db
 from src.admins import autenticar_admin, get_admin, list_admins
@@ -54,6 +55,7 @@ from src.config import (
     FASES,
     FASE_IDS,
     ADSENSE_CLIENT,
+    GA_MEASUREMENT_ID,
     INSCRICAO_FECHA_EM,
     JANELAS,
     NOME_MAX_LEN,
@@ -93,7 +95,16 @@ app = FastAPI(title="Bolão THDFM — Copa do Brasil")
 def _path_publico(path: str, method: str = "GET") -> bool:
     """Rotas acessíveis sem sessão (home, leitura pública, login, assets)."""
     method = (method or "GET").upper()
-    if path in ("/", "/home", "/favicon.ico", "/ads.txt"):
+    if path in (
+        "/",
+        "/home",
+        "/favicon.ico",
+        "/ads.txt",
+        "/robots.txt",
+        "/sitemap.xml",
+        "/privacidade",
+        "/termos",
+    ):
         return True
     if path.startswith("/static/") or path.startswith("/emblemas/") or path.startswith("/emblemas-fm/") or path.startswith("/avatars/") or path.startswith("/bandeiras-uf/") or path.startswith("/hall-hero/") or path.startswith("/bug-reports/"):
         return True
@@ -136,6 +147,19 @@ def _path_publico(path: str, method: str = "GET") -> bool:
     return False
 
 
+def _rota_existe(request: Request) -> bool:
+    """True se algum route do app casa com o path (Match.FULL)."""
+    scope = request.scope
+    for route in request.app.router.routes:
+        try:
+            match, _child = route.matches(scope)
+        except Exception:
+            continue
+        if match == Match.FULL:
+            return True
+    return False
+
+
 @app.middleware("http")
 async def gate_login_middleware(request: Request, call_next):
     path = request.url.path
@@ -143,6 +167,9 @@ async def gate_login_middleware(request: Request, call_next):
         return await call_next(request)
     # Sessão de participante ou admin (SessionMiddleware roda por fora).
     if request.session.get("participante_token") or request.session.get("admin_login"):
+        return await call_next(request)
+    # URL inexistente: deixa o handler 404 responder (não disfarça como login).
+    if not _rota_existe(request):
         return await call_next(request)
     return RedirectResponse("/?acesso=entrar", status_code=303)
 
@@ -234,6 +261,7 @@ TEMPLATES.env.globals["listra_emoji_efetivo"] = db.listra_emoji_efetivo
 TEMPLATES.env.globals["listra_texto_contexto"] = db.listra_texto_contexto
 TEMPLATES.env.globals["listra_linha_compartilhar"] = db.listra_linha_compartilhar
 TEMPLATES.env.globals["ADSENSE_CLIENT"] = ADSENSE_CLIENT
+TEMPLATES.env.globals["GA_MEASUREMENT_ID"] = GA_MEASUREMENT_ID
 TEMPLATES.env.filters["celular_fmt"] = db.formatar_celular
 TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 TEMPLATES.env.filters["wa_chat"] = db.url_whatsapp_chat
@@ -415,8 +443,10 @@ def render(request: Request, name: str, **ctx):
             )
         except Exception:
             ctx["recados_novos_count"] = 0
-    if "social_links" not in ctx:
-        ctx.update({k: v for k, v in _taxa_ctx().items() if k == "social_links"})
+    if "social_links" not in ctx or "whatsapp_group_url" not in ctx:
+        taxa = _taxa_ctx()
+        ctx.setdefault("social_links", taxa.get("social_links") or {})
+        ctx.setdefault("whatsapp_group_url", taxa.get("whatsapp_group_url") or "")
     if is_adm and "admin_pendentes_count" not in ctx:
         try:
             if "participantes" in ctx:
@@ -457,7 +487,8 @@ def render(request: Request, name: str, **ctx):
         except Exception:
             ctx["admin_bug_reports_count"] = 0
     ctx.setdefault("bug_status_label", BUG_REPORT_STATUS_LABEL)
-    resp = TEMPLATES.TemplateResponse(request, name, ctx)
+    status_code = int(ctx.pop("_status_code", 200) or 200)
+    resp = TEMPLATES.TemplateResponse(request, name, ctx, status_code=status_code)
     if force_admin_cookie:
         resp.set_cookie(
             "thdfm_ui_mode",
@@ -683,6 +714,79 @@ def ads_txt():
     # ID de certificação do Google AdSense (padrão ads.txt).
     body = f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n"
     return PlainTextResponse(body, media_type="text/plain; charset=utf-8")
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots_txt(request: Request):
+    """Orienta crawlers: indexar o site público e bloquear /admin."""
+    base = (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/")
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin\n"
+        "Disallow: /admin/\n"
+        f"Sitemap: {base}/sitemap.xml\n"
+    )
+    return PlainTextResponse(body, media_type="text/plain; charset=utf-8")
+
+
+_SITEMAP_PATHS: list[tuple[str, str]] = [
+    ("/", "daily"),
+    ("/grid", "daily"),
+    ("/hall-lendas", "weekly"),
+    ("/classificacao", "hourly"),
+    ("/regras", "monthly"),
+    ("/transparencia", "daily"),
+    ("/inscricao", "weekly"),
+    ("/xonhometro", "weekly"),
+    ("/grupo/listra", "weekly"),
+    ("/grupo/bans", "weekly"),
+    ("/grupo/copypastas", "monthly"),
+    ("/grupo/cardapio", "monthly"),
+    ("/privacidade", "yearly"),
+    ("/termos", "yearly"),
+]
+
+
+@app.get("/sitemap.xml", response_class=PlainTextResponse)
+def sitemap_xml(request: Request):
+    """Mapa das páginas públicas para indexação."""
+    base = (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/")
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for path, freq in _SITEMAP_PATHS:
+        lines.append("  <url>")
+        lines.append(f"    <loc>{base}{path}</loc>")
+        lines.append(f"    <changefreq>{freq}</changefreq>")
+        lines.append("  </url>")
+    lines.append("</urlset>")
+    lines.append("")
+    return PlainTextResponse(
+        "\n".join(lines),
+        media_type="application/xml; charset=utf-8",
+    )
+
+
+@app.get("/privacidade", response_class=HTMLResponse)
+def privacidade(request: Request):
+    return render(request, "privacidade.html")
+
+
+@app.get("/termos", response_class=HTMLResponse)
+def termos(request: Request):
+    return render(request, "termos.html")
+
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """404 HTML amigável; JSON para APIs / Accept application/json."""
+    accept = (request.headers.get("accept") or "").lower()
+    wants_json = "application/json" in accept and "text/html" not in accept
+    if wants_json or request.url.path.startswith("/grid/api/"):
+        return JSONResponse({"detail": "Não encontrado"}, status_code=404)
+    return render(request, "404.html", _status_code=404)
 
 
 def _redirect_acesso(

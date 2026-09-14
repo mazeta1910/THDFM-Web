@@ -1,4 +1,5 @@
 {# Emblema de clube #}
 {% macro emblema(clube, alt="", class="") -%}
-<img{% if class %} class="{{ class }}"{% endif %} src="{{ emblema_url(clube) }}" alt="{{ alt }}" />
+{%- set alt_txt = alt if alt else (clube if clube is string else (clube.nome if clube.nome is defined else 'Emblema do clube')) -%}
+<img{% if class %} class="{{ class }}"{% endif %} src="{{ emblema_url(clube) }}" alt="{{ alt_txt }}" />
 {%- endmacro %}
