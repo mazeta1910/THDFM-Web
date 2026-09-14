@@ -34,8 +34,9 @@
 ) -%}
 {%- set src = url if url is not none else avatar_url(path) -%}
 {%- set ini = iniciais if iniciais is not none else (nome or '??')[:2]|upper -%}
+{%- set alt_txt = alt if alt else ('Foto de ' ~ nome if nome else 'Avatar') -%}
 {%- if src -%}
-<img{% if img_class %} class="{{ img_class }}"{% endif %} src="{{ src }}" alt="{{ alt }}"{% if width %} width="{{ width }}"{% endif %}{% if height %} height="{{ height }}"{% endif %}{% if img_attrs %} {{ img_attrs|safe }}{% endif %} />
+<img{% if img_class %} class="{{ img_class }}"{% endif %} src="{{ src }}" alt="{{ alt_txt }}"{% if width %} width="{{ width }}"{% endif %}{% if height %} height="{{ height }}"{% endif %}{% if img_attrs %} {{ img_attrs|safe }}{% endif %} />
 {%- else -%}
 <span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}{% if fallback_attrs %} {{ fallback_attrs|safe }}{% endif %}>{{ ini }}</span>
 {%- endif -%}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Inscrição — Bolão THDFM{% endblock %}
+{% block meta_description %}Inscreva-se no bolão THDFM da Copa do Brasil.{% endblock %}
 {% block content %}
 {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
 {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
@@ -202,6 +203,14 @@ form?.addEventListener("submit", (e) => {
       modalLista.innerHTML = faltando.map((f) => `<li>${f}</li>`).join("");
     }
     abrirModal();
+    return;
+  }
+  const btn = form.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.labelOriginal = btn.textContent;
+    btn.textContent = "Enviando…";
+    form.classList.add("is-submitting");
   }
 });
 

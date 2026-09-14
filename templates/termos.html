@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Termos de uso — THDFM{% endblock %}
+{% block meta_description %}Termos de uso do THDFM: bolão, conta, conduta e limitações.{% endblock %}
+{% block og_title %}Termos de uso — THDFM{% endblock %}
+{% block content %}
+<article class="legal-page card">
+  <h1>Termos de uso</h1>
+  <p class="legal-updated">Última atualização: setembro de 2026</p>
+
+  <h2>Aceite</h2>
+  <p>
+    Ao usar o site THDFM você concorda com estes termos e com a
+    <a href="/privacidade">política de privacidade</a>.
+  </p>
+
+  <h2>O serviço</h2>
+  <p>
+    O THDFM oferece páginas e jogos da comunidade (bolão da Copa do Brasil, Grid, Hall das Lendas,
+    acervo do grupo etc.). É um projeto comunitário, sem garantia de disponibilidade contínua.
+  </p>
+
+  <h2>Conta e bolão</h2>
+  <ul>
+    <li>A inscrição no bolão pode exigir taxa via PIX e aprovação dos administradores.</li>
+    <li>Você é responsável por manter username/senha em segredo e por palpites feitos na sua conta.</li>
+    <li>As regras de pontuação do bolão estão em <a href="/regras">/regras</a>; decisões de arbitragem dos admins prevalecem em casos omissos.</li>
+    <li>Comprovantes falsos ou abuso podem resultar em recusa/exclusão.</li>
+  </ul>
+
+  <h2>Conduta</h2>
+  <p>
+    É proibido tentar invadir o sistema, assediar outros participantes, publicar conteúdo ilegal
+    ou quebrar a experiência do grupo de má-fé. Moderadores podem remover conteúdo e restringir acesso.
+  </p>
+
+  <h2>Conteúdo da comunidade</h2>
+  <p>
+    Recados, listras, reports e demais contribuições devem respeitar a comunidade. O THDFM pode
+    moderar ou apagar material incompatível com o uso do site.
+  </p>
+
+  <h2>Propriedade</h2>
+  <p>
+    Marca THDFM, layout e código do site pertencem ao projeto. Emblemas e imagens de clubes
+    pertencem aos respectivos detentores e são usados para fins de entretenimento do bolão/jogos.
+  </p>
+
+  <h2>Limitação</h2>
+  <p>
+    O site é oferecido “como está”. Não nos responsabilizamos por indisponibilidade, perda de
+    palpites por falha técnica ou decisões de terceiros (WhatsApp, Google Ads, provedores).
+  </p>
+
+  <h2>Contato</h2>
+  <p>
+    Dúvidas: pelos canais do rodapé
+    {% if whatsapp_group_url or (social_links and social_links.whatsapp) %}
+    ou pelo <a href="{{ whatsapp_group_url or social_links.whatsapp }}" target="_blank" rel="noopener noreferrer">WhatsApp do grupo</a>
+    {% endif %}.
+  </p>
+</article>
+{% endblock %}

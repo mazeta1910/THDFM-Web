@@ -5,23 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{% block title %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}</title>
   {% block head_meta %}
-  <meta name="description" content="Técnicos Horríveis do Futebol Mundial — bolão, jogos e passatempos." />
+  <meta name="description" content="{% block meta_description %}Técnicos Horríveis do Futebol Mundial — bolão, jogos e passatempos.{% endblock %}" />
   <meta property="og:site_name" content="THDFM" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
-  <meta property="og:description" content="{% block og_description %}Técnicos Horríveis do Futebol Mundial — bolão, jogos e passatempos.{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}" />
   <meta property="og:url" content="{% block og_url %}{{ public_base_url }}{{ request.url.path }}{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}{{ public_base_url }}/static/img/og-default.png{% endblock %}" />
+  <meta property="og:image:width" content="{% block og_image_width %}1200{% endblock %}" />
+  <meta property="og:image:height" content="{% block og_image_height %}630{% endblock %}" />
+  <meta property="og:image:alt" content="{% block og_image_alt %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{{ self.og_title() }}" />
   <meta name="twitter:description" content="{{ self.og_description() }}" />
+  <meta name="twitter:image" content="{{ self.og_image() }}" />
   {% endblock %}
   <link rel="icon" href="/static/img/thdfm-logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/static/img/thdfm-logo.png" />
   <script src="/static/theme-boot.js?v=1"></script>
-  <link rel="stylesheet" href="/static/style.css?v=337" />
+  <link rel="stylesheet" href="/static/style.css?v=338" />
   {% if ADSENSE_CLIENT %}
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT }}"
-     crossorigin="anonymous"></script>
+  <meta name="thdfm-adsense-client" content="{{ ADSENSE_CLIENT }}" />
+  {% endif %}
+  {% if GA_MEASUREMENT_ID %}
+  <meta name="thdfm-ga-id" content="{{ GA_MEASUREMENT_ID }}" />
   {% endif %}
 </head>
 {% set ui_mode = ui_mode if ui_mode is defined else 'admin' %}
@@ -118,6 +125,20 @@
   <script src="/static/site-chrome.js?v=3"></script>
   <script src="/static/avatar-crop.js?v=1"></script>
   <script src="/static/drawers.js?v=1"></script>
+  <script src="/static/cookie-consent.js?v=1" defer></script>
+
+  <div id="cookie-banner" class="cookie-banner" hidden role="dialog" aria-live="polite" aria-label="Consentimento de cookies">
+    <div class="cookie-banner-inner">
+      <p class="cookie-banner-text">
+        Usamos cookies necessários ao site e, se você aceitar, cookies de anúncios/analytics.
+        Veja a <a href="/privacidade">política de privacidade</a>.
+      </p>
+      <div class="cookie-banner-actions">
+        <button type="button" class="btn cookie-btn-reject" data-cookie-consent="0">Só necessários</button>
+        <button type="button" class="btn cookie-btn-accept" data-cookie-consent="1">Aceitar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
   (function () {

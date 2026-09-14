@@ -83,6 +83,12 @@ ADSENSE_CLIENT = os.environ.get(
     "ADSENSE_CLIENT", "ca-pub-9141284700785025"
 ).strip()
 
+# Google Analytics 4 (G-…). Vazio desliga; só carrega após consentimento de cookies.
+GA_MEASUREMENT_ID = os.environ.get("GA_MEASUREMENT_ID", "").strip()
+
+
+
+
 JANELAS = ("ida", "volta", "fechado")
 STATUS_PARTICIPANTE = ("pendente", "comprovante", "liberado")
 
