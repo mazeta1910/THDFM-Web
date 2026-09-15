@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, uf_com_bandeira, emblema_comp %}
+{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, uf_com_bandeira, emblema_comp, link_tabela %}
 {% block title %}Admin · Acervo{% endblock %}
 {% block content %}
 <section class="card acervo-admin">
@@ -344,7 +344,7 @@
             {% else %}—{% endif %}
           </td>
           <td class="acervo-acoes">
-            <a class="acervo-link-btn" href="/admin/acervo?sec=edicoes&edicao_id={{ e.id }}">Tabela</a>
+            {{ link_tabela("/admin/acervo?sec=edicoes&edicao_id=" ~ e.id) }}
             <details class="acervo-edit">
               {{ sum_editar() }}
               <form method="post" action="/admin/acervo/edicoes/salvar" class="acervo-form acervo-form--inline">

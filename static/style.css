@@ -16475,6 +16475,14 @@ summary.acervo-icon-btn::marker { content: ""; }
 .acervo-icon-btn--edit:hover {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
+.acervo-icon-btn--table {
+  text-decoration: none;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+}
+.acervo-icon-btn--table:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 
 /* Célula de ações: lápis (editar) à esquerda do lixo (apagar) */
 .acervo-acoes { white-space: nowrap; }
