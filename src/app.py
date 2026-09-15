@@ -2075,6 +2075,230 @@ async def admin_hall_lendas_apagar(request: Request):
     )
 
 
+def _acervo_sec(raw: str | None) -> str:
+    s = (raw or "clubes").strip().lower()
+    return s if s in ("clubes", "competicoes", "edicoes") else "clubes"
+
+
+def _acervo_ctx(request: Request, *, sec: str | None = None):
+    from src.acervo import (
+        AMBITOS,
+        COBERTURAS,
+        UFS_BR,
+        rotulo_ambito,
+        rotulo_cobertura,
+    )
+
+    secao = _acervo_sec(sec or request.query_params.get("sec"))
+    ambitos = [(a, rotulo_ambito(a)) for a in sorted(AMBITOS)]
+    coberturas = [(c, rotulo_cobertura(c)) for c in ("vazia", "campeao_apenas", "parcial", "completa")]
+    return {
+        "sec": secao,
+        "resumo": db.resumo_acervo(),
+        "clubes": db.list_acervo_clubes(limite=500),
+        "competicoes": db.list_acervo_competicoes(limite=500),
+        "edicoes": db.list_acervo_edicoes(limite=500),
+        "ufs": sorted(UFS_BR),
+        "ambitos": ambitos,
+        "coberturas": coberturas,
+        "ambitos_map": dict(ambitos),
+        "coberturas_map": dict(coberturas),
+        "msg": request.query_params.get("msg"),
+        "erro": request.query_params.get("erro"),
+    }
+
+
+def _acervo_redirect(sec: str, *, msg: str | None = None, erro: str | None = None):
+    q = f"sec={_acervo_sec(sec)}"
+    if msg:
+        q += "&msg=" + quote(msg)
+    if erro:
+        q += "&erro=" + quote(erro)
+    return RedirectResponse(f"/admin/acervo?{q}", status_code=303)
+
+
+@app.get("/admin/acervo", response_class=HTMLResponse)
+def admin_acervo(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    return render(request, "admin_acervo.html", **_acervo_ctx(request))
+
+
+@app.post("/admin/acervo/clubes/salvar")
+async def admin_acervo_clube_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    nome = str(form.get("nome") or "")
+    nome_popular = str(form.get("nome_popular") or "")
+    uf = str(form.get("uf") or "")
+    fm = str(form.get("fm_unique_id") or "") or None
+    notas = str(form.get("notas") or "")
+    extinto = str(form.get("extinto") or "") in ("1", "on", "true", "yes")
+    raw_id = str(form.get("id") or "").strip()
+    try:
+        if raw_id:
+            db.atualizar_acervo_clube(
+                int(raw_id),
+                nome=nome,
+                nome_popular=nome_popular,
+                uf=uf,
+                fm_unique_id=fm,
+                extinto=extinto,
+                notas=notas,
+            )
+            msg = "Clube atualizado"
+        else:
+            db.criar_acervo_clube(
+                nome,
+                nome_popular=nome_popular,
+                uf=uf,
+                fm_unique_id=fm,
+                extinto=extinto,
+                notas=notas,
+            )
+            msg = "Clube criado"
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect("clubes", erro=str(exc))
+    return _acervo_redirect("clubes", msg=msg)
+
+
+@app.post("/admin/acervo/clubes/apagar")
+async def admin_acervo_clube_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        cid = int(str(form.get("id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect("clubes", erro="Clube inválido")
+    if db.apagar_acervo_clube(cid):
+        return _acervo_redirect("clubes", msg="Clube apagado")
+    return _acervo_redirect("clubes", erro="Clube não encontrado")
+
+
+@app.post("/admin/acervo/competicoes/salvar")
+async def admin_acervo_competicao_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    nome = str(form.get("nome") or "")
+    slug = str(form.get("slug") or "") or None
+    ambito = str(form.get("ambito") or "nacional")
+    uf = str(form.get("uf") or "")
+    cobertura = str(form.get("cobertura") or "vazia")
+    notas = str(form.get("notas") or "")
+    raw_id = str(form.get("id") or "").strip()
+    try:
+        if raw_id:
+            db.atualizar_acervo_competicao(
+                int(raw_id),
+                nome=nome,
+                slug=slug,
+                ambito=ambito,
+                uf=uf,
+                cobertura=cobertura,
+                notas=notas,
+            )
+            msg = "Competição atualizada"
+        else:
+            db.criar_acervo_competicao(
+                nome,
+                slug=slug,
+                ambito=ambito,
+                uf=uf,
+                cobertura=cobertura,
+                notas=notas,
+            )
+            msg = "Competição criada"
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect("competicoes", erro=str(exc))
+    return _acervo_redirect("competicoes", msg=msg)
+
+
+@app.post("/admin/acervo/competicoes/apagar")
+async def admin_acervo_competicao_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        cid = int(str(form.get("id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect("competicoes", erro="Competição inválida")
+    if db.apagar_acervo_competicao(cid):
+        return _acervo_redirect("competicoes", msg="Competição apagada")
+    return _acervo_redirect("competicoes", erro="Competição não encontrada")
+
+
+@app.post("/admin/acervo/edicoes/salvar")
+async def admin_acervo_edicao_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+
+    def _opt_int(key: str) -> int | None:
+        raw = str(form.get(key) or "").strip()
+        if not raw:
+            return None
+        return int(raw)
+
+    raw_id = str(form.get("id") or "").strip()
+    ano = str(form.get("ano") or "")
+    fonte = str(form.get("fonte_url") or "")
+    notas = str(form.get("notas") or "")
+    tem_tabela = str(form.get("tem_tabela") or "") in ("1", "on", "true", "yes")
+    try:
+        camp = _opt_int("campeao_clube_id")
+        vice = _opt_int("vice_clube_id")
+        if raw_id:
+            db.atualizar_acervo_edicao(
+                int(raw_id),
+                ano=ano,
+                campeao_clube_id=camp,
+                vice_clube_id=vice,
+                tem_tabela=tem_tabela,
+                fonte_url=fonte,
+                notas=notas,
+            )
+            msg = "Edição atualizada"
+        else:
+            comp_id = int(str(form.get("competicao_id") or "").strip())
+            db.criar_acervo_edicao(
+                comp_id,
+                ano,
+                campeao_clube_id=camp,
+                vice_clube_id=vice,
+                tem_tabela=tem_tabela,
+                fonte_url=fonte,
+                notas=notas,
+            )
+            msg = "Edição criada"
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect("edicoes", erro=str(exc))
+    return _acervo_redirect("edicoes", msg=msg)
+
+
+@app.post("/admin/acervo/edicoes/apagar")
+async def admin_acervo_edicao_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        eid = int(str(form.get("id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect("edicoes", erro="Edição inválida")
+    if db.apagar_acervo_edicao(eid):
+        return _acervo_redirect("edicoes", msg="Edição apagada")
+    return _acervo_redirect("edicoes", erro="Edição não encontrada")
+
+
 @app.post("/meu-perfil/hall-borda")
 async def meu_perfil_hall_borda(request: Request):
     neg = _require_perfil(request)

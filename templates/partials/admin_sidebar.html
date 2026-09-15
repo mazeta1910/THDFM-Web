@@ -11,6 +11,7 @@
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
 {% set on_admin_hall_lendas = path.startswith('/admin/hall-lendas') %}
 {% set on_hall_lendas = path.startswith('/hall-lendas') %}
+{% set on_admin_acervo = path.startswith('/admin/acervo') %}
 {% set on_grid = path == '/grid' or path.startswith('/grid/api') or path.startswith('/grid/bugs') %}
 {% set on_grid_ranking = path.startswith('/grid/ranking') %}
 {% set on_admin_reports = path.startswith('/admin/reports') %}
@@ -109,7 +110,7 @@
       </div>
 
       <div class="admin-menu-sortable" data-menu-sortable>
-      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas or on_admin_reports %}open{% endif %}>
+      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas or on_admin_reports or on_admin_acervo %}open{% endif %}>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
@@ -121,6 +122,7 @@
             {{ ico('bug') }}<span>Reports</span>
             {% if reports_n %}<span class="admin-badge">{{ reports_n }}</span>{% endif %}
           </a>
+          <a class="admin-side-link {% if on_admin_acervo %}active{% endif %}" href="/admin/acervo">{{ ico('transparencia') }}<span>Acervo</span></a>
           <a class="admin-side-link {% if on_hall_lendas or on_admin_hall_lendas %}active{% endif %}" href="/admin/hall-lendas">{{ ico('classificacao') }}<span>Hall das Lendas</span></a>
           {% endif %}
         </div>

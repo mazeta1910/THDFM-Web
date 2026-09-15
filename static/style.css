@@ -16293,6 +16293,121 @@ button.grid-matriz-item:focus-visible {
   margin-top: 1.1rem;
 }
 
+/* —— Acervo admin (MVP) —— */
+.acervo-admin h1 { margin: 0.15rem 0 0.35rem; font-size: 1.35rem; }
+.acervo-h { margin: 0 0 0.45rem; font-size: 1.05rem; }
+.acervo-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  margin: 0.65rem 0 0.85rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.acervo-resumo strong { color: var(--text); }
+.acervo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.acervo-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: var(--muted);
+  background: transparent;
+}
+.acervo-tab:hover { color: var(--text); border-color: var(--accent); }
+.acervo-tab.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.acervo-form { display: grid; gap: 0.45rem; }
+.acervo-form--inline { margin-top: 0.45rem; max-width: 28rem; }
+.acervo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 0.55rem;
+}
+.acervo-field {
+  display: grid;
+  gap: 0.18rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.acervo-field input,
+.acervo-field select,
+.acervo-field textarea {
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.28rem 0.4rem;
+}
+.acervo-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  align-self: end;
+  margin-bottom: 0.15rem;
+}
+.acervo-actions { margin-top: 0.15rem; }
+.acervo-btn {
+  width: auto !important;
+  padding: 0.28rem 0.55rem !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2;
+  min-height: 0;
+}
+.acervo-table-wrap { overflow-x: auto; margin-top: 0.35rem; }
+.acervo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.acervo-table th,
+.acervo-table td {
+  text-align: left;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.acervo-table th {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.acervo-table tr.is-muted td { opacity: 0.72; }
+.acervo-muted { color: var(--muted); font-size: 0.84rem; }
+.acervo-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8rem; }
+.acervo-badge {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  vertical-align: middle;
+}
+.acervo-link-btn {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.acervo-link-btn::-webkit-details-marker { display: none; }
+.acervo-edit { display: inline; }
+
 .form-inscricao.is-submitting button[type="submit"] {
   opacity: 0.75;
   cursor: wait;

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}Admin · Acervo{% endblock %}
+{% block content %}
+<section class="card acervo-admin">
+  <p class="credenciais-kicker">Só Mazeta</p>
+  <h1>Acervo</h1>
+  <p class="login-lead">
+    Base de fatos de futebol do site (clubes, competições e edições).
+    O Grid e outros jogos consomem daqui.
+  </p>
+
+  {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+
+  <div class="acervo-resumo" aria-label="Resumo do acervo">
+    <span><strong>{{ resumo.clubes }}</strong> clubes</span>
+    <span><strong>{{ resumo.competicoes }}</strong> competições</span>
+    <span><strong>{{ resumo.edicoes }}</strong> edições</span>
+  </div>
+
+  <nav class="acervo-tabs" aria-label="Seções do acervo">
+    <a href="/admin/acervo?sec=clubes" class="acervo-tab {% if sec == 'clubes' %}is-active{% endif %}">Clubes</a>
+    <a href="/admin/acervo?sec=competicoes" class="acervo-tab {% if sec == 'competicoes' %}is-active{% endif %}">Competições</a>
+    <a href="/admin/acervo?sec=edicoes" class="acervo-tab {% if sec == 'edicoes' %}is-active{% endif %}">Edições</a>
+  </nav>
+</section>
+
+{% if sec == 'clubes' %}
+<section class="card acervo-admin" style="margin-top:0.75rem">
+  <h2 class="acervo-h">Novo clube</h2>
+  <form method="post" action="/admin/acervo/clubes/salvar" class="acervo-form" autocomplete="off">
+    <div class="acervo-grid">
+      <label class="acervo-field">Nome
+        <input name="nome" required maxlength="120" placeholder="Baré Esporte Clube" />
+      </label>
+      <label class="acervo-field">Nome popular
+        <input name="nome_popular" maxlength="80" placeholder="Baré" />
+      </label>
+      <label class="acervo-field">UF
+        <select name="uf">
+          <option value="">—</option>
+          {% for u in ufs %}
+          <option value="{{ u }}">{{ u }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Unique ID FM
+        <input name="fm_unique_id" maxlength="32" placeholder="123.456" />
+      </label>
+      <label class="acervo-check">
+        <input type="checkbox" name="extinto" value="1" /> Extinto
+      </label>
+    </div>
+    <label class="acervo-field">Notas
+      <textarea name="notas" rows="2" maxlength="2000"></textarea>
+    </label>
+    <div class="acervo-actions">
+      <button type="submit" class="btn acervo-btn" title="Salvar clube">Salvar</button>
+    </div>
+  </form>
+
+  <h2 class="acervo-h" style="margin-top:1rem">Clubes ({{ clubes|length }})</h2>
+  {% if clubes %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>UF</th>
+          <th>FM</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clubes %}
+        <tr class="{% if c.extinto %}is-muted{% endif %}">
+          <td>
+            <strong>{{ c.nome }}</strong>
+            {% if c.nome_popular %}<span class="acervo-muted"> · {{ c.nome_popular }}</span>{% endif %}
+            {% if c.extinto %}<span class="acervo-badge">extinto</span>{% endif %}
+          </td>
+          <td>{{ c.uf or '—' }}</td>
+          <td class="acervo-mono">{{ c.fm_unique_id or '—' }}</td>
+          <td>
+            <details class="acervo-edit">
+              <summary class="acervo-link-btn" title="Editar">Editar</summary>
+              <form method="post" action="/admin/acervo/clubes/salvar" class="acervo-form acervo-form--inline">
+                <input type="hidden" name="id" value="{{ c.id }}" />
+                <label class="acervo-field">Nome<input name="nome" value="{{ c.nome }}" required maxlength="120" /></label>
+                <label class="acervo-field">Popular<input name="nome_popular" value="{{ c.nome_popular }}" maxlength="80" /></label>
+                <label class="acervo-field">UF
+                  <select name="uf">
+                    <option value="">—</option>
+                    {% for u in ufs %}
+                    <option value="{{ u }}" {% if c.uf == u %}selected{% endif %}>{{ u }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">FM ID<input name="fm_unique_id" value="{{ c.fm_unique_id or '' }}" maxlength="32" /></label>
+                <label class="acervo-check"><input type="checkbox" name="extinto" value="1" {% if c.extinto %}checked{% endif %} /> Extinto</label>
+                <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ c.notas }}</textarea></label>
+                <button type="submit" class="btn acervo-btn">Atualizar</button>
+              </form>
+            </details>
+          </td>
+          <td>
+            <form method="post" action="/admin/acervo/clubes/apagar" onsubmit="return confirm('Apagar {{ c.nome }}?');">
+              <input type="hidden" name="id" value="{{ c.id }}" />
+              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhum clube cadastrado.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if sec == 'competicoes' %}
+<section class="card acervo-admin" style="margin-top:0.75rem">
+  <h2 class="acervo-h">Nova competição</h2>
+  <form method="post" action="/admin/acervo/competicoes/salvar" class="acervo-form" autocomplete="off">
+    <div class="acervo-grid">
+      <label class="acervo-field">Nome
+        <input name="nome" required maxlength="120" placeholder="Campeonato Roraimense" />
+      </label>
+      <label class="acervo-field">Slug
+        <input name="slug" maxlength="80" placeholder="auto a partir do nome" />
+      </label>
+      <label class="acervo-field">Âmbito
+        <select name="ambito">
+          {% for a, lab in ambitos %}
+          <option value="{{ a }}">{{ lab }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">UF
+        <select name="uf">
+          <option value="">—</option>
+          {% for u in ufs %}
+          <option value="{{ u }}">{{ u }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Cobertura
+        <select name="cobertura">
+          {% for c, lab in coberturas %}
+          <option value="{{ c }}">{{ lab }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <label class="acervo-field">Notas
+      <textarea name="notas" rows="2" maxlength="2000"></textarea>
+    </label>
+    <div class="acervo-actions">
+      <button type="submit" class="btn acervo-btn">Salvar</button>
+    </div>
+  </form>
+
+  <h2 class="acervo-h" style="margin-top:1rem">Competições ({{ competicoes|length }})</h2>
+  {% if competicoes %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead>
+        <tr><th>Nome</th><th>Âmbito</th><th>Cobertura</th><th>Edições</th><th></th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for c in competicoes %}
+        <tr>
+          <td>
+            <strong>{{ c.nome }}</strong>
+            <span class="acervo-muted acervo-mono"> · {{ c.slug }}</span>
+            {% if c.uf %}<span class="acervo-badge">{{ c.uf }}</span>{% endif %}
+          </td>
+          <td>{{ ambitos_map.get(c.ambito, c.ambito) }}</td>
+          <td>{{ coberturas_map.get(c.cobertura, c.cobertura) }}</td>
+          <td>{{ c.n_edicoes }}</td>
+          <td>
+            <details class="acervo-edit">
+              <summary class="acervo-link-btn">Editar</summary>
+              <form method="post" action="/admin/acervo/competicoes/salvar" class="acervo-form acervo-form--inline">
+                <input type="hidden" name="id" value="{{ c.id }}" />
+                <label class="acervo-field">Nome<input name="nome" value="{{ c.nome }}" required maxlength="120" /></label>
+                <label class="acervo-field">Slug<input name="slug" value="{{ c.slug }}" maxlength="80" /></label>
+                <label class="acervo-field">Âmbito
+                  <select name="ambito">
+                    {% for a, lab in ambitos %}
+                    <option value="{{ a }}" {% if c.ambito == a %}selected{% endif %}>{{ lab }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">UF
+                  <select name="uf">
+                    <option value="">—</option>
+                    {% for u in ufs %}
+                    <option value="{{ u }}" {% if c.uf == u %}selected{% endif %}>{{ u }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">Cobertura
+                  <select name="cobertura">
+                    {% for cov, lab in coberturas %}
+                    <option value="{{ cov }}" {% if c.cobertura == cov %}selected{% endif %}>{{ lab }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ c.notas }}</textarea></label>
+                <button type="submit" class="btn acervo-btn">Atualizar</button>
+              </form>
+            </details>
+          </td>
+          <td>
+            <form method="post" action="/admin/acervo/competicoes/apagar" onsubmit="return confirm('Apagar {{ c.nome }} e suas edições?');">
+              <input type="hidden" name="id" value="{{ c.id }}" />
+              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhuma competição cadastrada.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if sec == 'edicoes' %}
+<section class="card acervo-admin" style="margin-top:0.75rem">
+  <h2 class="acervo-h">Nova edição</h2>
+  {% if not competicoes %}
+  <p class="erro">Cadastre uma competição antes de criar edições.</p>
+  {% else %}
+  <form method="post" action="/admin/acervo/edicoes/salvar" class="acervo-form" autocomplete="off">
+    <div class="acervo-grid">
+      <label class="acervo-field">Competição
+        <select name="competicao_id" required>
+          <option value="">Selecione…</option>
+          {% for c in competicoes %}
+          <option value="{{ c.id }}">{{ c.nome }}{% if c.uf %} ({{ c.uf }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Ano
+        <input name="ano" type="number" min="1860" max="2100" required placeholder="2024" />
+      </label>
+      <label class="acervo-field">Campeão
+        <select name="campeao_clube_id">
+          <option value="">—</option>
+          {% for cl in clubes %}
+          <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.uf %} ({{ cl.uf }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Vice
+        <select name="vice_clube_id">
+          <option value="">—</option>
+          {% for cl in clubes %}
+          <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.uf %} ({{ cl.uf }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Fonte
+        <input name="fonte_url" type="url" maxlength="500" placeholder="https://…" />
+      </label>
+      <label class="acervo-check">
+        <input type="checkbox" name="tem_tabela" value="1" /> Tem tabela completa
+      </label>
+    </div>
+    <label class="acervo-field">Notas
+      <textarea name="notas" rows="2" maxlength="2000"></textarea>
+    </label>
+    <div class="acervo-actions">
+      <button type="submit" class="btn acervo-btn">Salvar</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <h2 class="acervo-h" style="margin-top:1rem">Edições ({{ edicoes|length }})</h2>
+  {% if edicoes %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead>
+        <tr><th>Ano</th><th>Competição</th><th>Campeão</th><th>Vice</th><th></th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in edicoes %}
+        <tr>
+          <td><strong>{{ e.ano }}</strong>{% if e.tem_tabela %}<span class="acervo-badge">tabela</span>{% endif %}</td>
+          <td>{{ e.competicao_nome }}</td>
+          <td>{{ e.campeao_nome or '—' }}</td>
+          <td>{{ e.vice_nome or '—' }}</td>
+          <td>
+            <details class="acervo-edit">
+              <summary class="acervo-link-btn">Editar</summary>
+              <form method="post" action="/admin/acervo/edicoes/salvar" class="acervo-form acervo-form--inline">
+                <input type="hidden" name="id" value="{{ e.id }}" />
+                <input type="hidden" name="competicao_id" value="{{ e.competicao_id }}" />
+                <label class="acervo-field">Ano<input name="ano" type="number" min="1860" max="2100" value="{{ e.ano }}" required /></label>
+                <label class="acervo-field">Campeão
+                  <select name="campeao_clube_id">
+                    <option value="">—</option>
+                    {% for cl in clubes %}
+                    <option value="{{ cl.id }}" {% if e.campeao_clube_id == cl.id %}selected{% endif %}>{{ cl.nome }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">Vice
+                  <select name="vice_clube_id">
+                    <option value="">—</option>
+                    {% for cl in clubes %}
+                    <option value="{{ cl.id }}" {% if e.vice_clube_id == cl.id %}selected{% endif %}>{{ cl.nome }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="acervo-field">Fonte<input name="fonte_url" type="url" value="{{ e.fonte_url }}" maxlength="500" /></label>
+                <label class="acervo-check"><input type="checkbox" name="tem_tabela" value="1" {% if e.tem_tabela %}checked{% endif %} /> Tem tabela</label>
+                <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ e.notas }}</textarea></label>
+                <button type="submit" class="btn acervo-btn">Atualizar</button>
+              </form>
+            </details>
+          </td>
+          <td>
+            <form method="post" action="/admin/acervo/edicoes/apagar" onsubmit="return confirm('Apagar edição {{ e.ano }}?');">
+              <input type="hidden" name="id" value="{{ e.id }}" />
+              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhuma edição cadastrada.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
