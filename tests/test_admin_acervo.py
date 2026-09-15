@@ -177,3 +177,94 @@ def test_acervo_classificacao_http(client: TestClient):
     assert r.status_code == 303
     assert db.list_acervo_classificacao(ed["id"]) == []
     assert db.get_acervo_edicao(ed["id"])["tem_tabela"] is False
+
+
+def test_acervo_mata_mata_http(client: TestClient):
+    login_admin(client, "mazeta", "senha-dono")
+    import src.db as db
+
+    a = db.criar_acervo_clube("Flamengo", uf="RJ")
+    b = db.criar_acervo_clube("Fluminense", uf="RJ")
+    comp = db.criar_acervo_competicao("Copa Rio", ambito="estadual", uf="RJ")
+    ed = db.criar_acervo_edicao(comp["id"], 2024)
+
+    # Cria a fase mata-mata; redireciona já focando a chave.
+    r = client.post(
+        "/admin/acervo/fases/salvar",
+        data={"edicao_id": str(ed["id"]), "nome": "Final", "tipo": "mata_mata"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    loc = r.headers["location"]
+    assert "fase_id=" in loc
+    fases = db.list_acervo_fases(ed["id"])
+    assert len(fases) == 1
+    fid = fases[0]["id"]
+
+    # A página de fases renderiza.
+    r = client.get(f"/admin/acervo?sec=edicoes&edicao_id={ed['id']}")
+    assert r.status_code == 200
+    assert "Fases ·" in r.text
+    assert "Final" in r.text
+
+    # Adiciona o confronto (ida e volta).
+    r = client.post(
+        "/admin/acervo/confrontos/salvar",
+        data={
+            "edicao_id": str(ed["id"]),
+            "fase_id": str(fid),
+            "clube_a_id": str(a["id"]),
+            "clube_b_id": str(b["id"]),
+            "formato": "ida_volta",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+
+    # O editor de chave renderiza com os dois clubes.
+    r = client.get(f"/admin/acervo?sec=edicoes&edicao_id={ed['id']}&fase_id={fid}")
+    assert r.status_code == 200
+    assert "Chave ·" in r.text
+    assert "Flamengo" in r.text
+    assert "Fluminense" in r.text
+
+    cf = db.list_acervo_confrontos(fid)[0]
+
+    # Salva placar: agregado 3x2 para o Flamengo.
+    r = client.post(
+        "/admin/acervo/confrontos/salvar",
+        data={
+            "id": str(cf["id"]),
+            "edicao_id": str(ed["id"]),
+            "fase_id": str(fid),
+            "clube_a_id": str(a["id"]),
+            "clube_b_id": str(b["id"]),
+            "formato": "ida_volta",
+            "gols_a_ida": "2",
+            "gols_b_ida": "1",
+            "gols_a_volta": "1",
+            "gols_b_volta": "1",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    cf = db.get_acervo_confronto(cf["id"])
+    assert cf["vencedor_clube_id"] == a["id"]
+    assert cf["vencedor_criterio"] == "agregado"
+
+    # Remove o confronto e a fase.
+    r = client.post(
+        "/admin/acervo/confrontos/apagar",
+        data={"id": str(cf["id"]), "edicao_id": str(ed["id"]), "fase_id": str(fid)},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert db.list_acervo_confrontos(fid) == []
+
+    r = client.post(
+        "/admin/acervo/fases/apagar",
+        data={"id": str(fid), "edicao_id": str(ed["id"])},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert db.list_acervo_fases(ed["id"]) == []

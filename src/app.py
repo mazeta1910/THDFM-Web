@@ -2116,15 +2116,19 @@ def _acervo_redirect(
     msg: str | None = None,
     erro: str | None = None,
     edicao_id: int | None = None,
+    fase_id: int | None = None,
 ):
     q = f"sec={_acervo_sec(sec)}"
     if edicao_id is not None:
         q += f"&edicao_id={int(edicao_id)}"
+    if fase_id is not None:
+        q += f"&fase_id={int(fase_id)}"
     if msg:
         q += "&msg=" + quote(msg)
     if erro:
         q += "&erro=" + quote(erro)
-    return RedirectResponse(f"/admin/acervo?{q}", status_code=303)
+    anchor = "#acervo-mata" if fase_id is not None else ""
+    return RedirectResponse(f"/admin/acervo?{q}{anchor}", status_code=303)
 
 
 @app.get("/admin/acervo", response_class=HTMLResponse)
@@ -2134,15 +2138,35 @@ def admin_acervo(request: Request):
         return neg
     ctx = _acervo_ctx(request)
     raw_ed = (request.query_params.get("edicao_id") or "").strip()
+    raw_fase = (request.query_params.get("fase_id") or "").strip()
     edicao_foco = None
     classificacao: list = []
+    fases: list = []
+    participantes: list = []
+    fase_foco = None
+    confrontos: list = []
     if raw_ed.isdigit():
         edicao_foco = db.get_acervo_edicao(int(raw_ed))
         if edicao_foco:
             classificacao = db.list_acervo_classificacao(int(raw_ed))
+            fases = db.list_acervo_fases(int(raw_ed))
+            participantes = db.list_acervo_participantes(int(raw_ed))
             ctx["sec"] = "edicoes"
+            if raw_fase.isdigit():
+                cand = db.get_acervo_fase(int(raw_fase))
+                if cand and int(cand["edicao_id"]) == int(edicao_foco["id"]):
+                    fase_foco = cand
+                    if cand["tipo"] == "mata_mata":
+                        confrontos = db.list_acervo_confrontos(int(raw_fase))
     ctx["edicao_foco"] = edicao_foco
     ctx["classificacao"] = classificacao
+    ctx["fases"] = fases
+    ctx["participantes"] = participantes
+    ctx["fase_foco"] = fase_foco
+    ctx["confrontos"] = confrontos
+    from src.acervo import rotulo_fase_tipo
+
+    ctx["rotulo_fase_tipo"] = rotulo_fase_tipo
     return render(request, "admin_acervo.html", **ctx)
 
 
@@ -2427,6 +2451,144 @@ async def admin_acervo_classificacao_limpar(request: Request):
         "edicoes",
         msg="Tabela limpa",
         edicao_id=edicao_id,
+    )
+
+
+@app.post("/admin/acervo/fases/salvar")
+async def admin_acervo_fase_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    eid_raw = str(form.get("edicao_id") or "").strip()
+    edicao_id = int(eid_raw) if eid_raw.isdigit() else None
+    nome = str(form.get("nome") or "")
+    tipo = str(form.get("tipo") or "pontos_corridos")
+    raw_id = str(form.get("id") or "").strip()
+    try:
+        if raw_id:
+            fase = db.atualizar_acervo_fase(int(raw_id), nome=nome, tipo=tipo)
+            msg = "Fase atualizada"
+        else:
+            if edicao_id is None:
+                raise ValueError("Edição inválida.")
+            fase = db.criar_acervo_fase(edicao_id, nome=nome, tipo=tipo)
+            msg = "Fase criada"
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect("edicoes", erro=str(exc), edicao_id=edicao_id)
+    fase_id = fase["id"] if fase.get("tipo") == "mata_mata" else None
+    return _acervo_redirect(
+        "edicoes", msg=msg, edicao_id=edicao_id, fase_id=fase_id
+    )
+
+
+@app.post("/admin/acervo/fases/apagar")
+async def admin_acervo_fase_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    eid_raw = str(form.get("edicao_id") or "").strip()
+    edicao_id = int(eid_raw) if eid_raw.isdigit() else None
+    try:
+        fid = int(str(form.get("id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect("edicoes", erro="Fase inválida", edicao_id=edicao_id)
+    if db.apagar_acervo_fase(fid):
+        return _acervo_redirect("edicoes", msg="Fase apagada", edicao_id=edicao_id)
+    return _acervo_redirect(
+        "edicoes", erro="Fase não encontrada", edicao_id=edicao_id
+    )
+
+
+@app.post("/admin/acervo/confrontos/salvar")
+async def admin_acervo_confronto_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+
+    def _opt_int(key: str) -> int | None:
+        raw = str(form.get(key) or "").strip()
+        return int(raw) if raw.lstrip("-").isdigit() else None
+
+    def _flag(key: str) -> bool:
+        return str(form.get(key) or "") in ("1", "on", "true", "yes")
+
+    eid_raw = str(form.get("edicao_id") or "").strip()
+    edicao_id = int(eid_raw) if eid_raw.isdigit() else None
+    fid_raw = str(form.get("fase_id") or "").strip()
+    fase_id = int(fid_raw) if fid_raw.isdigit() else None
+    raw_id = str(form.get("id") or "").strip()
+    try:
+        if raw_id:
+            db.atualizar_acervo_confronto(
+                int(raw_id),
+                clube_a_id=_opt_int("clube_a_id"),
+                clube_b_id=_opt_int("clube_b_id"),
+                formato=str(form.get("formato") or "jogo_unico"),
+                gol_fora_de_casa=_flag("gol_fora_de_casa"),
+                tem_prorrogacao=_flag("tem_prorrogacao"),
+                tem_penaltis=_flag("tem_penaltis"),
+                gols_a_ida=_opt_int("gols_a_ida"),
+                gols_b_ida=_opt_int("gols_b_ida"),
+                gols_a_volta=_opt_int("gols_a_volta"),
+                gols_b_volta=_opt_int("gols_b_volta"),
+                penaltis_a=_opt_int("penaltis_a"),
+                penaltis_b=_opt_int("penaltis_b"),
+                vencedor_manual=_flag("vencedor_manual"),
+                vencedor_clube_id=_opt_int("vencedor_clube_id"),
+                chave=str(form.get("chave") or ""),
+            )
+            msg = "Confronto salvo"
+        else:
+            if fase_id is None:
+                raise ValueError("Fase inválida.")
+            db.criar_acervo_confronto(
+                fase_id,
+                clube_a_id=_opt_int("clube_a_id"),
+                clube_b_id=_opt_int("clube_b_id"),
+                formato=str(form.get("formato") or "jogo_unico"),
+                gol_fora_de_casa=_flag("gol_fora_de_casa"),
+                tem_prorrogacao=_flag("tem_prorrogacao"),
+                tem_penaltis=_flag("tem_penaltis"),
+                chave=str(form.get("chave") or ""),
+            )
+            msg = "Confronto adicionado"
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect(
+            "edicoes", erro=str(exc), edicao_id=edicao_id, fase_id=fase_id
+        )
+    return _acervo_redirect(
+        "edicoes", msg=msg, edicao_id=edicao_id, fase_id=fase_id
+    )
+
+
+@app.post("/admin/acervo/confrontos/apagar")
+async def admin_acervo_confronto_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    eid_raw = str(form.get("edicao_id") or "").strip()
+    edicao_id = int(eid_raw) if eid_raw.isdigit() else None
+    fid_raw = str(form.get("fase_id") or "").strip()
+    fase_id = int(fid_raw) if fid_raw.isdigit() else None
+    try:
+        cid = int(str(form.get("id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect(
+            "edicoes", erro="Confronto inválido", edicao_id=edicao_id, fase_id=fase_id
+        )
+    if db.apagar_acervo_confronto(cid):
+        return _acervo_redirect(
+            "edicoes", msg="Confronto removido", edicao_id=edicao_id, fase_id=fase_id
+        )
+    return _acervo_redirect(
+        "edicoes",
+        erro="Confronto não encontrado",
+        edicao_id=edicao_id,
+        fase_id=fase_id,
     )
 
 

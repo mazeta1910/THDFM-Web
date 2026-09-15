@@ -389,6 +389,60 @@
 </section>
 
 {% if edicao_foco %}
+<section class="card acervo-admin" style="margin-top:0.75rem" id="acervo-fases">
+  <h2 class="acervo-h">
+    Fases · {{ edicao_foco.competicao_nome }} {{ edicao_foco.ano }}
+  </h2>
+  <p class="acervo-muted">
+    A edição é uma sequência de fases. Pontos corridos e grupos usam a tabela
+    de classificação; mata-mata usa chaves de confrontos.
+    <a href="/admin/acervo?sec=edicoes">Fechar</a>
+  </p>
+  <form method="post" action="/admin/acervo/fases/salvar" class="acervo-form" autocomplete="off">
+    <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+    <div class="acervo-grid">
+      <label class="acervo-field">Nome da fase
+        <input name="nome" maxlength="80" placeholder="Oitavas de final" />
+      </label>
+      <label class="acervo-field">Tipo
+        <select name="tipo">
+          <option value="pontos_corridos">Pontos corridos</option>
+          <option value="grupos">Fase de grupos</option>
+          <option value="mata_mata">Mata-mata</option>
+        </select>
+      </label>
+    </div>
+    <div class="acervo-actions">{{ btn_salvar("Adicionar fase") }}</div>
+  </form>
+  {% if fases %}
+  <div class="acervo-table-wrap" style="margin-top:0.5rem">
+    <table class="acervo-table">
+      <thead><tr><th>#</th><th>Fase</th><th>Tipo</th><th>Itens</th><th></th></tr></thead>
+      <tbody>
+        {% for f in fases %}
+        <tr class="{% if fase_foco and fase_foco.id == f.id %}acervo-fase-ativa{% endif %}">
+          <td>{{ f.ordem }}</td>
+          <td>{{ f.nome or '—' }}</td>
+          <td>{{ rotulo_fase_tipo(f.tipo) }}</td>
+          <td class="acervo-mono">{% if f.tipo == 'mata_mata' %}{{ f.n_confrontos }} confr.{% else %}{{ f.n_linhas }} linhas{% endif %}</td>
+          <td class="acervo-acoes">
+            {% if f.tipo == 'mata_mata' %}
+            {{ link_tabela("/admin/acervo?sec=edicoes&edicao_id=" ~ edicao_foco.id ~ "&fase_id=" ~ f.id, title="Abrir chave") }}
+            {% endif %}
+            <form method="post" action="/admin/acervo/fases/apagar" class="acervo-del" onsubmit="return confirm('Apagar a fase {{ f.nome }}?');">
+              <input type="hidden" name="id" value="{{ f.id }}" />
+              <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+              {{ btn_apagar() }}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
 <section class="card acervo-admin" style="margin-top:0.75rem" id="acervo-tabela">
   <h2 class="acervo-h">
     Tabela · {{ edicao_foco.competicao_nome }} {{ edicao_foco.ano }}
@@ -540,6 +594,143 @@
   <p class="acervo-muted" style="margin-top:0.75rem">Nenhuma linha na tabela ainda.</p>
   {% endif %}
 </section>
+
+{% if fase_foco and fase_foco.tipo == 'mata_mata' %}
+{% macro opts_clubes(lista, sel, pid) -%}
+  <option value="">—</option>
+  {%- for cl in lista -%}
+    {%- set cid = cl.clube_id if pid else cl.id -%}
+    {%- set cnome = cl.clube_nome if pid else cl.nome -%}
+    {%- set cuf = cl.clube_uf if pid else cl.uf -%}
+    <option value="{{ cid }}" {% if sel and sel == cid %}selected{% endif %}>{{ cnome }}{% if cuf %} ({{ cuf }}){% endif %}</option>
+  {%- endfor -%}
+{%- endmacro %}
+{% set usar_pid = participantes|length > 0 %}
+<section class="card acervo-admin acervo-mata" style="margin-top:0.75rem" id="acervo-mata">
+  <h2 class="acervo-h">Chave · {{ fase_foco.nome or 'Mata-mata' }}</h2>
+  <p class="acervo-muted">
+    Escolha os dois clubes e as regras; o vencedor é calculado sozinho a partir
+    dos placares (com override manual quando precisar).
+    <a href="/admin/acervo?sec=edicoes&edicao_id={{ edicao_foco.id }}#acervo-fases">Voltar às fases</a>
+  </p>
+
+  <form method="post" action="/admin/acervo/confrontos/salvar" class="acervo-form" autocomplete="off">
+    <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+    <input type="hidden" name="fase_id" value="{{ fase_foco.id }}" />
+    <div class="acervo-grid">
+      <label class="acervo-field">Mandante (ida)
+        <select name="clube_a_id">{{ opts_clubes(clubes, none, false) }}</select>
+      </label>
+      <label class="acervo-field">Visitante (ida)
+        <select name="clube_b_id">{{ opts_clubes(clubes, none, false) }}</select>
+      </label>
+      <label class="acervo-field">Formato
+        <select name="formato">
+          <option value="jogo_unico">Jogo único</option>
+          <option value="ida_volta">Ida e volta</option>
+        </select>
+      </label>
+      <label class="acervo-check"><input type="checkbox" name="gol_fora_de_casa" value="1" /> Gol fora</label>
+      <label class="acervo-check"><input type="checkbox" name="tem_prorrogacao" value="1" /> Prorrogação</label>
+      <label class="acervo-check"><input type="checkbox" name="tem_penaltis" value="1" /> Pênaltis</label>
+    </div>
+    <div class="acervo-actions">{{ btn_salvar("Adicionar confronto") }}</div>
+  </form>
+
+  {% if confrontos %}
+  <div class="acervo-chave" style="margin-top:0.75rem">
+    {% for cf in confrontos %}
+    <div class="acervo-confronto acervo-confronto-form">
+      <form method="post" action="/admin/acervo/confrontos/salvar" id="cf-{{ cf.id }}"></form>
+      <div class="acervo-confronto-top">
+        <span class="acervo-confronto-ordem">#{{ cf.ordem }}</span>
+        <select form="cf-{{ cf.id }}" name="clube_a_id" class="acervo-confronto-clube">{{ opts_clubes(participantes if usar_pid else clubes, cf.clube_a_id, usar_pid) }}</select>
+        <span class="acervo-confronto-x">×</span>
+        <select form="cf-{{ cf.id }}" name="clube_b_id" class="acervo-confronto-clube">{{ opts_clubes(participantes if usar_pid else clubes, cf.clube_b_id, usar_pid) }}</select>
+      </div>
+      <div class="acervo-confronto-regras">
+        <label class="acervo-field acervo-field--slim">Formato
+          <select form="cf-{{ cf.id }}" name="formato" data-cf-formato>
+            <option value="jogo_unico" {% if cf.formato == 'jogo_unico' %}selected{% endif %}>Jogo único</option>
+            <option value="ida_volta" {% if cf.formato == 'ida_volta' %}selected{% endif %}>Ida e volta</option>
+          </select>
+        </label>
+        <label class="acervo-check"><input form="cf-{{ cf.id }}" type="checkbox" name="gol_fora_de_casa" value="1" {% if cf.gol_fora_de_casa %}checked{% endif %} /> Gol fora</label>
+        <label class="acervo-check"><input form="cf-{{ cf.id }}" type="checkbox" name="tem_prorrogacao" value="1" {% if cf.tem_prorrogacao %}checked{% endif %} /> Prorrog.</label>
+        <label class="acervo-check"><input form="cf-{{ cf.id }}" type="checkbox" name="tem_penaltis" value="1" {% if cf.tem_penaltis %}checked{% endif %} data-cf-penaltis /> Pênaltis</label>
+      </div>
+      <div class="acervo-confronto-placar">
+        <span class="acervo-confronto-leg"><span class="acervo-muted">Ida</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="gols_a_ida" type="number" min="0" value="{{ cf.gols_a_ida if cf.gols_a_ida is not none else '' }}" />
+          <span class="acervo-confronto-x">×</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="gols_b_ida" type="number" min="0" value="{{ cf.gols_b_ida if cf.gols_b_ida is not none else '' }}" />
+        </span>
+        <span class="acervo-confronto-leg acervo-cf-volta"><span class="acervo-muted">Volta</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="gols_a_volta" type="number" min="0" value="{{ cf.gols_a_volta if cf.gols_a_volta is not none else '' }}" />
+          <span class="acervo-confronto-x">×</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="gols_b_volta" type="number" min="0" value="{{ cf.gols_b_volta if cf.gols_b_volta is not none else '' }}" />
+        </span>
+        <span class="acervo-confronto-leg acervo-cf-penaltis"><span class="acervo-muted">Pên.</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="penaltis_a" type="number" min="0" value="{{ cf.penaltis_a if cf.penaltis_a is not none else '' }}" />
+          <span class="acervo-confronto-x">×</span>
+          <input form="cf-{{ cf.id }}" class="acervo-clf-input" name="penaltis_b" type="number" min="0" value="{{ cf.penaltis_b if cf.penaltis_b is not none else '' }}" />
+        </span>
+      </div>
+      <div class="acervo-confronto-venc">
+        <label class="acervo-check"><input form="cf-{{ cf.id }}" type="checkbox" name="vencedor_manual" value="1" {% if cf.vencedor_manual %}checked{% endif %} data-cf-manual /> Vencedor manual</label>
+        <select form="cf-{{ cf.id }}" name="vencedor_clube_id" class="acervo-cf-vencsel" {% if not cf.vencedor_manual %}disabled{% endif %}>
+          <option value="">—</option>
+          {% if cf.clube_a_id %}<option value="{{ cf.clube_a_id }}" {% if cf.vencedor_manual and cf.vencedor_clube_id == cf.clube_a_id %}selected{% endif %}>{{ cf.clube_a_nome }}</option>{% endif %}
+          {% if cf.clube_b_id %}<option value="{{ cf.clube_b_id }}" {% if cf.vencedor_manual and cf.vencedor_clube_id == cf.clube_b_id %}selected{% endif %}>{{ cf.clube_b_nome }}</option>{% endif %}
+        </select>
+        <span class="acervo-cf-resultado">
+          {% if cf.vencedor_nome %}✓ <strong>{{ cf.vencedor_nome }}</strong>{% if cf.vencedor_criterio %} <span class="acervo-badge">{{ cf.vencedor_criterio }}</span>{% endif %}{% else %}<span class="acervo-muted">sem definição</span>{% endif %}
+        </span>
+        <span class="acervo-confronto-acoes">
+          <button form="cf-{{ cf.id }}" type="submit" class="acervo-icon-btn acervo-icon-btn--save" title="Salvar confronto" aria-label="Salvar confronto">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
+          </button>
+          <input form="cf-{{ cf.id }}" type="hidden" name="id" value="{{ cf.id }}" />
+          <input form="cf-{{ cf.id }}" type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+          <input form="cf-{{ cf.id }}" type="hidden" name="fase_id" value="{{ fase_foco.id }}" />
+          <form method="post" action="/admin/acervo/confrontos/apagar" class="acervo-del" onsubmit="return confirm('Remover confronto?');">
+            <input type="hidden" name="id" value="{{ cf.id }}" />
+            <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+            <input type="hidden" name="fase_id" value="{{ fase_foco.id }}" />
+            {{ btn_apagar() }}
+          </form>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+  (function () {
+    function toggle(el, show) { if (el) el.style.display = show ? '' : 'none'; }
+    document.querySelectorAll('.acervo-confronto-form').forEach(function (box) {
+      var fmt = box.querySelector('[data-cf-formato]');
+      var volta = box.querySelector('.acervo-cf-volta');
+      var pen = box.querySelector('[data-cf-penaltis]');
+      var penBox = box.querySelector('.acervo-cf-penaltis');
+      var man = box.querySelector('[data-cf-manual]');
+      var sel = box.querySelector('.acervo-cf-vencsel');
+      function sync() {
+        toggle(volta, !fmt || fmt.value === 'ida_volta');
+        toggle(penBox, !!(pen && pen.checked));
+        if (sel && man) sel.disabled = !man.checked;
+      }
+      if (fmt) fmt.addEventListener('change', sync);
+      if (pen) pen.addEventListener('change', sync);
+      if (man) man.addEventListener('change', sync);
+      sync();
+    });
+  })();
+  </script>
+  {% else %}
+  <p class="acervo-muted" style="margin-top:0.75rem">Nenhum confronto nesta chave ainda.</p>
+  {% endif %}
+</section>
+{% endif %}
 {% endif %}
 {% endif %}
 {% endblock %}

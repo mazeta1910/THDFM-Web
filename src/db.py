@@ -7658,7 +7658,9 @@ def list_acervo_fases(edicao_id: int) -> list[dict[str, Any]]:
             """
             SELECT f.*,
                    (SELECT COUNT(*) FROM acervo_edicao_classificacao cl
-                    WHERE cl.fase_id = f.id) AS n_linhas
+                    WHERE cl.fase_id = f.id) AS n_linhas,
+                   (SELECT COUNT(*) FROM acervo_confrontos cf
+                    WHERE cf.fase_id = f.id) AS n_confrontos
             FROM acervo_edicao_fases f
             WHERE f.edicao_id = ?
             ORDER BY f.ordem ASC, f.id ASC

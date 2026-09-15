@@ -16571,6 +16571,66 @@ summary.acervo-icon-btn::marker { content: ""; }
 .acervo-clf-calc[data-fld="pts"] { color: inherit; }
 .acervo-clf-save { display: inline-block; margin: 0; }
 
+/* Mata-mata: chave de confrontos */
+.acervo-fase-ativa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.acervo-field--slim { max-width: 9rem; }
+.acervo-chave {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.acervo-confronto {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  background: color-mix(in srgb, var(--card, transparent) 60%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.acervo-confronto-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.acervo-confronto-ordem { color: var(--muted); font-weight: 600; min-width: 1.6rem; }
+.acervo-confronto-clube { flex: 1 1 12rem; min-width: 8rem; }
+.acervo-confronto-x { color: var(--muted); font-weight: 700; padding: 0 0.15rem; }
+.acervo-confronto-regras {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  flex-wrap: wrap;
+}
+.acervo-confronto-placar {
+  display: flex;
+  gap: 0.9rem 1.2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.acervo-confronto-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.acervo-confronto-leg .acervo-clf-input { width: 3rem; }
+.acervo-confronto-venc {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  flex-wrap: wrap;
+}
+.acervo-cf-vencsel { max-width: 12rem; }
+.acervo-cf-vencsel:disabled { opacity: 0.5; }
+.acervo-cf-resultado { font-size: 0.9rem; }
+.acervo-confronto-acoes {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+.acervo-confronto-acoes .acervo-del { display: inline-block; margin: 0; }
+
 .form-inscricao.is-submitting button[type="submit"] {
   opacity: 0.75;
   cursor: wait;
