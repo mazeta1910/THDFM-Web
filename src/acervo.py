@@ -46,6 +46,9 @@ COBERTURAS = frozenset({"vazia", "campeao_apenas", "parcial", "completa"})
 # Tipos de fase de uma edição. Uma edição é uma sequência ordenada de fases.
 FASE_TIPOS = frozenset({"pontos_corridos", "grupos", "mata_mata"})
 
+# Formato de um confronto de mata-mata.
+CONFRONTO_FORMATOS = frozenset({"jogo_unico", "ida_volta"})
+
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -194,6 +197,75 @@ def normalizar_fase_tipo(tipo: str | None) -> str:
     if t not in FASE_TIPOS:
         raise ValueError("Tipo de fase inválido.")
     return t
+
+
+def normalizar_confronto_formato(formato: str | None) -> str:
+    f = (formato or "jogo_unico").strip().lower()
+    if f not in CONFRONTO_FORMATOS:
+        raise ValueError("Formato de confronto inválido.")
+    return f
+
+
+def resolver_confronto(
+    *,
+    clube_a_id: int,
+    clube_b_id: int,
+    formato: str,
+    gols_a_ida: int | None,
+    gols_b_ida: int | None,
+    gols_a_volta: int | None = None,
+    gols_b_volta: int | None = None,
+    gol_fora_de_casa: bool = False,
+    tem_penaltis: bool = False,
+    penaltis_a: int | None = None,
+    penaltis_b: int | None = None,
+) -> tuple[int | None, str | None]:
+    """Deriva o vencedor de um confronto de mata-mata.
+
+    Convenção de mando: no ida/volta, o clube A é mandante no jogo de ida e o
+    clube B é mandante na volta. Logo, os gols "fora" de A são os da volta
+    (``gols_a_volta``) e os de B são os da ida (``gols_b_ida``).
+
+    Retorna ``(vencedor_clube_id, criterio)`` com ``criterio`` em
+    ``{"agregado", "gol_fora", "penaltis"}`` — ou ``(None, None)`` quando não há
+    dados suficientes para decidir.
+    """
+    fmt = normalizar_confronto_formato(formato)
+
+    def _penaltis() -> tuple[int | None, str | None]:
+        if tem_penaltis and penaltis_a is not None and penaltis_b is not None:
+            if penaltis_a > penaltis_b:
+                return clube_a_id, "penaltis"
+            if penaltis_b > penaltis_a:
+                return clube_b_id, "penaltis"
+        return None, None
+
+    if fmt == "jogo_unico":
+        if gols_a_ida is None or gols_b_ida is None:
+            return None, None
+        if gols_a_ida > gols_b_ida:
+            return clube_a_id, "agregado"
+        if gols_b_ida > gols_a_ida:
+            return clube_b_id, "agregado"
+        return _penaltis()
+
+    # ida_volta
+    if None in (gols_a_ida, gols_b_ida, gols_a_volta, gols_b_volta):
+        return None, None
+    total_a = gols_a_ida + gols_a_volta  # type: ignore[operator]
+    total_b = gols_b_ida + gols_b_volta  # type: ignore[operator]
+    if total_a > total_b:
+        return clube_a_id, "agregado"
+    if total_b > total_a:
+        return clube_b_id, "agregado"
+    if gol_fora_de_casa:
+        fora_a = gols_a_volta  # A jogou fora na volta
+        fora_b = gols_b_ida  # B jogou fora na ida
+        if fora_a > fora_b:  # type: ignore[operator]
+            return clube_a_id, "gol_fora"
+        if fora_b > fora_a:  # type: ignore[operator]
+            return clube_b_id, "gol_fora"
+    return _penaltis()
 
 
 def rotulo_fase_tipo(tipo: str) -> str:

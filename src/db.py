@@ -848,6 +848,42 @@ def _migrate_acervo(conn: sqlite3.Connection) -> None:
         "ON acervo_edicao_participantes(edicao_id)"
     )
 
+    # Confrontos de uma fase mata-mata. Regras (formato, gol fora, prorrogação,
+    # pênaltis) vivem no confronto — a UI pré-preenche com o default da fase.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_confrontos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          fase_id INTEGER NOT NULL
+            REFERENCES acervo_edicao_fases(id) ON DELETE CASCADE,
+          chave TEXT NOT NULL DEFAULT '',
+          ordem INTEGER NOT NULL DEFAULT 1,
+          clube_a_id INTEGER REFERENCES acervo_clubes(id) ON DELETE SET NULL,
+          clube_b_id INTEGER REFERENCES acervo_clubes(id) ON DELETE SET NULL,
+          formato TEXT NOT NULL DEFAULT 'jogo_unico',
+          gol_fora_de_casa INTEGER NOT NULL DEFAULT 0,
+          tem_prorrogacao INTEGER NOT NULL DEFAULT 0,
+          tem_penaltis INTEGER NOT NULL DEFAULT 0,
+          gols_a_ida INTEGER,
+          gols_b_ida INTEGER,
+          gols_a_volta INTEGER,
+          gols_b_volta INTEGER,
+          penaltis_a INTEGER,
+          penaltis_b INTEGER,
+          vencedor_clube_id INTEGER
+            REFERENCES acervo_clubes(id) ON DELETE SET NULL,
+          vencedor_manual INTEGER NOT NULL DEFAULT 0,
+          vencedor_criterio TEXT NOT NULL DEFAULT '',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_confrontos_fase "
+        "ON acervo_confrontos(fase_id, ordem ASC)"
+    )
+
     # Vincula cada linha de classificação a uma fase (anulável; aditivo).
     _clf_cols = {
         r["name"]
@@ -7769,5 +7805,255 @@ def remover_acervo_participante(edicao_id: int, clube_id: int) -> bool:
             "DELETE FROM acervo_edicao_participantes "
             "WHERE edicao_id = ? AND clube_id = ?",
             (int(edicao_id), int(clube_id)),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+# ---------------------------------------------------------------------------
+# Acervo — confrontos de mata-mata
+# ---------------------------------------------------------------------------
+
+
+def _confronto_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if row is None:
+        return None
+    d = dict(row)
+    for k in (
+        "gol_fora_de_casa",
+        "tem_prorrogacao",
+        "tem_penaltis",
+        "vencedor_manual",
+    ):
+        d[k] = bool(d.get(k))
+    return d
+
+
+def list_acervo_confrontos(fase_id: int) -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT cf.*,
+                   ca.nome AS clube_a_nome, ca.uf AS clube_a_uf,
+                   ca.fm_unique_id AS clube_a_fm,
+                   cb.nome AS clube_b_nome, cb.uf AS clube_b_uf,
+                   cb.fm_unique_id AS clube_b_fm,
+                   cv.nome AS vencedor_nome
+            FROM acervo_confrontos cf
+            LEFT JOIN acervo_clubes ca ON ca.id = cf.clube_a_id
+            LEFT JOIN acervo_clubes cb ON cb.id = cf.clube_b_id
+            LEFT JOIN acervo_clubes cv ON cv.id = cf.vencedor_clube_id
+            WHERE cf.fase_id = ?
+            ORDER BY cf.ordem ASC, cf.id ASC
+            """,
+            (int(fase_id),),
+        ).fetchall()
+    return [_confronto_row(r) for r in rows]  # type: ignore[misc]
+
+
+def get_acervo_confronto(confronto_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT cf.*,
+                   ca.nome AS clube_a_nome, ca.uf AS clube_a_uf,
+                   ca.fm_unique_id AS clube_a_fm,
+                   cb.nome AS clube_b_nome, cb.uf AS clube_b_uf,
+                   cb.fm_unique_id AS clube_b_fm,
+                   cv.nome AS vencedor_nome
+            FROM acervo_confrontos cf
+            LEFT JOIN acervo_clubes ca ON ca.id = cf.clube_a_id
+            LEFT JOIN acervo_clubes cb ON cb.id = cf.clube_b_id
+            LEFT JOIN acervo_clubes cv ON cv.id = cf.vencedor_clube_id
+            WHERE cf.id = ?
+            """,
+            (int(confronto_id),),
+        ).fetchone()
+    return _confronto_row(row)
+
+
+def criar_acervo_confronto(
+    fase_id: int,
+    *,
+    clube_a_id: int | None = None,
+    clube_b_id: int | None = None,
+    formato: str = "jogo_unico",
+    gol_fora_de_casa: bool = False,
+    tem_prorrogacao: bool = False,
+    tem_penaltis: bool = False,
+    chave: str = "",
+    ordem: int | None = None,
+) -> dict[str, Any]:
+    from src.acervo import normalizar_confronto_formato, normalizar_texto_curto
+
+    fase = get_acervo_fase(fase_id)
+    if not fase:
+        raise ValueError("Fase não encontrada.")
+    fmt = normalizar_confronto_formato(formato)
+    chave_n = normalizar_texto_curto(chave, campo="Chave", maxlen=40)
+    a = int(clube_a_id) if clube_a_id else None
+    b = int(clube_b_id) if clube_b_id else None
+    if a and not get_acervo_clube(a):
+        raise ValueError("Clube A inválido.")
+    if b and not get_acervo_clube(b):
+        raise ValueError("Clube B inválido.")
+    if a and b and a == b:
+        raise ValueError("Os dois clubes do confronto devem ser diferentes.")
+    with get_db() as conn:
+        if ordem is None:
+            r = conn.execute(
+                "SELECT COALESCE(MAX(ordem), 0) AS m FROM acervo_confrontos "
+                "WHERE fase_id = ?",
+                (int(fase_id),),
+            ).fetchone()
+            ordem_n = int(r["m"]) + 1
+        else:
+            ordem_n = int(ordem)
+        cur = conn.execute(
+            """
+            INSERT INTO acervo_confrontos
+              (fase_id, chave, ordem, clube_a_id, clube_b_id, formato,
+               gol_fora_de_casa, tem_prorrogacao, tem_penaltis)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(fase_id),
+                chave_n,
+                ordem_n,
+                a,
+                b,
+                fmt,
+                1 if gol_fora_de_casa else 0,
+                1 if tem_prorrogacao else 0,
+                1 if tem_penaltis else 0,
+            ),
+        )
+        cid = int(cur.lastrowid)
+    for clube in (a, b):
+        if clube:
+            adicionar_acervo_participante(int(fase["edicao_id"]), clube)
+    out = get_acervo_confronto(cid)
+    assert out is not None
+    return out
+
+
+def atualizar_acervo_confronto(
+    confronto_id: int,
+    *,
+    clube_a_id: int | None = None,
+    clube_b_id: int | None = None,
+    formato: str = "jogo_unico",
+    gol_fora_de_casa: bool = False,
+    tem_prorrogacao: bool = False,
+    tem_penaltis: bool = False,
+    gols_a_ida: Any = None,
+    gols_b_ida: Any = None,
+    gols_a_volta: Any = None,
+    gols_b_volta: Any = None,
+    penaltis_a: Any = None,
+    penaltis_b: Any = None,
+    vencedor_manual: bool = False,
+    vencedor_clube_id: int | None = None,
+    chave: str = "",
+    ordem: int | None = None,
+) -> dict[str, Any]:
+    from src.acervo import (
+        normalizar_confronto_formato,
+        normalizar_texto_curto,
+        resolver_confronto,
+    )
+
+    atual = get_acervo_confronto(confronto_id)
+    if not atual:
+        raise ValueError("Confronto não encontrado.")
+    fase = get_acervo_fase(atual["fase_id"])
+    assert fase is not None
+    fmt = normalizar_confronto_formato(formato)
+    chave_n = normalizar_texto_curto(chave, campo="Chave", maxlen=40)
+    a = int(clube_a_id) if clube_a_id else None
+    b = int(clube_b_id) if clube_b_id else None
+    if a and not get_acervo_clube(a):
+        raise ValueError("Clube A inválido.")
+    if b and not get_acervo_clube(b):
+        raise ValueError("Clube B inválido.")
+    if a and b and a == b:
+        raise ValueError("Os dois clubes do confronto devem ser diferentes.")
+    gai = _opt_stat(gols_a_ida)
+    gbi = _opt_stat(gols_b_ida)
+    gav = _opt_stat(gols_a_volta)
+    gbv = _opt_stat(gols_b_volta)
+    pa = _opt_stat(penaltis_a)
+    pb = _opt_stat(penaltis_b)
+    ordem_n = int(ordem) if ordem is not None else int(atual["ordem"])
+
+    if vencedor_manual:
+        venc = int(vencedor_clube_id) if vencedor_clube_id else None
+        if venc is not None and venc not in (a, b):
+            raise ValueError("Vencedor deve ser um dos clubes do confronto.")
+        criterio = "manual" if venc else ""
+    elif a and b:
+        venc, crit = resolver_confronto(
+            clube_a_id=a,
+            clube_b_id=b,
+            formato=fmt,
+            gols_a_ida=gai,
+            gols_b_ida=gbi,
+            gols_a_volta=gav,
+            gols_b_volta=gbv,
+            gol_fora_de_casa=gol_fora_de_casa,
+            tem_penaltis=tem_penaltis,
+            penaltis_a=pa,
+            penaltis_b=pb,
+        )
+        criterio = crit or ""
+    else:
+        venc, criterio = None, ""
+
+    with get_db() as conn:
+        conn.execute(
+            """
+            UPDATE acervo_confrontos
+            SET chave = ?, ordem = ?, clube_a_id = ?, clube_b_id = ?,
+                formato = ?, gol_fora_de_casa = ?, tem_prorrogacao = ?,
+                tem_penaltis = ?, gols_a_ida = ?, gols_b_ida = ?,
+                gols_a_volta = ?, gols_b_volta = ?, penaltis_a = ?,
+                penaltis_b = ?, vencedor_clube_id = ?, vencedor_manual = ?,
+                vencedor_criterio = ?,
+                atualizado_em = datetime('now', 'localtime')
+            WHERE id = ?
+            """,
+            (
+                chave_n,
+                ordem_n,
+                a,
+                b,
+                fmt,
+                1 if gol_fora_de_casa else 0,
+                1 if tem_prorrogacao else 0,
+                1 if tem_penaltis else 0,
+                gai,
+                gbi,
+                gav,
+                gbv,
+                pa,
+                pb,
+                venc,
+                1 if vencedor_manual else 0,
+                criterio,
+                int(confronto_id),
+            ),
+        )
+    for clube in (a, b):
+        if clube:
+            adicionar_acervo_participante(int(fase["edicao_id"]), clube)
+    out = get_acervo_confronto(confronto_id)
+    assert out is not None
+    return out
+
+
+def apagar_acervo_confronto(confronto_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_confrontos WHERE id = ?",
+            (int(confronto_id),),
         )
         return int(cur.rowcount or 0) > 0
