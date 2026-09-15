@@ -43,6 +43,9 @@ UFS_BR = frozenset(
 AMBITOS = frozenset({"nacional", "estadual", "internacional", "outro"})
 COBERTURAS = frozenset({"vazia", "campeao_apenas", "parcial", "completa"})
 
+# Tipos de fase de uma edição. Uma edição é uma sequência ordenada de fases.
+FASE_TIPOS = frozenset({"pontos_corridos", "grupos", "mata_mata"})
+
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -184,3 +187,18 @@ def rotulo_cobertura(cobertura: str) -> str:
         "parcial": "Parcial",
         "completa": "Completa",
     }.get(cobertura, cobertura)
+
+
+def normalizar_fase_tipo(tipo: str | None) -> str:
+    t = (tipo or "pontos_corridos").strip().lower()
+    if t not in FASE_TIPOS:
+        raise ValueError("Tipo de fase inválido.")
+    return t
+
+
+def rotulo_fase_tipo(tipo: str) -> str:
+    return {
+        "pontos_corridos": "Pontos corridos",
+        "grupos": "Fase de grupos",
+        "mata_mata": "Mata-mata",
+    }.get(tipo, tipo)

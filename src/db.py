@@ -803,6 +803,120 @@ def _migrate_acervo(conn: sqlite3.Connection) -> None:
         "ON acervo_edicao_classificacao(edicao_id, posicao ASC)"
     )
 
+    # --- Mata-mata / fases (Bloco A: fundação) ---------------------------
+    # Uma edição é uma sequência de fases. Cada fase tem um tipo:
+    # 'pontos_corridos' | 'grupos' | 'mata_mata'. As edições atuais (que só
+    # têm classificação) são convertidas numa fase implícita de pontos
+    # corridos pelo backfill abaixo.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_edicao_fases (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          edicao_id INTEGER NOT NULL
+            REFERENCES acervo_edicoes(id) ON DELETE CASCADE,
+          ordem INTEGER NOT NULL DEFAULT 1,
+          nome TEXT NOT NULL DEFAULT '',
+          tipo TEXT NOT NULL DEFAULT 'pontos_corridos',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          UNIQUE (edicao_id, ordem)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_fases_edicao "
+        "ON acervo_edicao_fases(edicao_id, ordem ASC)"
+    )
+
+    # Conjunto explícito de clubes participantes de cada edição. Todo seletor
+    # de clube (grupos, confrontos, classificação) escolhe dentro deste pool.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_edicao_participantes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          edicao_id INTEGER NOT NULL
+            REFERENCES acervo_edicoes(id) ON DELETE CASCADE,
+          clube_id INTEGER NOT NULL
+            REFERENCES acervo_clubes(id) ON DELETE CASCADE,
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          UNIQUE (edicao_id, clube_id)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_participantes_edicao "
+        "ON acervo_edicao_participantes(edicao_id)"
+    )
+
+    # Vincula cada linha de classificação a uma fase (anulável; aditivo).
+    _clf_cols = {
+        r["name"]
+        for r in conn.execute(
+            "PRAGMA table_info(acervo_edicao_classificacao)"
+        ).fetchall()
+    }
+    if "fase_id" not in _clf_cols:
+        conn.execute(
+            "ALTER TABLE acervo_edicao_classificacao ADD COLUMN fase_id INTEGER"
+        )
+
+    _backfill_acervo_fases(conn)
+
+
+def _backfill_acervo_fases(conn: sqlite3.Connection) -> None:
+    """Converte edições legadas numa fase implícita e preenche participantes.
+
+    Idempotente: só cria a fase para edições com classificação sem fase, e usa
+    INSERT OR IGNORE para os participantes.
+    """
+    pendentes = conn.execute(
+        "SELECT DISTINCT edicao_id FROM acervo_edicao_classificacao "
+        "WHERE fase_id IS NULL"
+    ).fetchall()
+    for row in pendentes:
+        eid = int(row["edicao_id"])
+        existente = conn.execute(
+            "SELECT id FROM acervo_edicao_fases WHERE edicao_id = ? "
+            "ORDER BY ordem ASC LIMIT 1",
+            (eid,),
+        ).fetchone()
+        if existente:
+            fid = int(existente["id"])
+        else:
+            cur = conn.execute(
+                "INSERT INTO acervo_edicao_fases (edicao_id, ordem, nome, tipo) "
+                "VALUES (?, 1, 'Classificação', 'pontos_corridos')",
+                (eid,),
+            )
+            fid = int(cur.lastrowid)
+        conn.execute(
+            "UPDATE acervo_edicao_classificacao SET fase_id = ? "
+            "WHERE edicao_id = ? AND fase_id IS NULL",
+            (fid, eid),
+        )
+
+    # Participantes = clubes da classificação + campeão + vice.
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO acervo_edicao_participantes (edicao_id, clube_id)
+        SELECT edicao_id, clube_id FROM acervo_edicao_classificacao
+        """
+    )
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO acervo_edicao_participantes (edicao_id, clube_id)
+        SELECT id, campeao_clube_id FROM acervo_edicoes
+        WHERE campeao_clube_id IS NOT NULL
+        """
+    )
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO acervo_edicao_participantes (edicao_id, clube_id)
+        SELECT id, vice_clube_id FROM acervo_edicoes
+        WHERE vice_clube_id IS NOT NULL
+        """
+    )
+
 
 def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
     """Reports de bugs do Grid — usuário envia; Mazeta responde/atualiza status."""
@@ -7495,3 +7609,165 @@ def limpar_acervo_classificacao(edicao_id: int) -> int:
         n = int(cur.rowcount or 0)
         _sync_edicao_tem_tabela(conn, edicao_id)
         return n
+
+
+# ---------------------------------------------------------------------------
+# Acervo — fases da edição (pontos corridos / grupos / mata-mata)
+# ---------------------------------------------------------------------------
+
+
+def list_acervo_fases(edicao_id: int) -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT f.*,
+                   (SELECT COUNT(*) FROM acervo_edicao_classificacao cl
+                    WHERE cl.fase_id = f.id) AS n_linhas
+            FROM acervo_edicao_fases f
+            WHERE f.edicao_id = ?
+            ORDER BY f.ordem ASC, f.id ASC
+            """,
+            (int(edicao_id),),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_acervo_fase(fase_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM acervo_edicao_fases WHERE id = ?",
+            (int(fase_id),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def criar_acervo_fase(
+    edicao_id: int,
+    *,
+    nome: str = "",
+    tipo: str = "pontos_corridos",
+    ordem: int | None = None,
+) -> dict[str, Any]:
+    from src.acervo import normalizar_fase_tipo, normalizar_texto_curto
+
+    if not get_acervo_edicao(edicao_id):
+        raise ValueError("Edição não encontrada.")
+    tipo_n = normalizar_fase_tipo(tipo)
+    nome_n = normalizar_texto_curto(nome, campo="Nome da fase", maxlen=80)
+    with get_db() as conn:
+        if ordem is None:
+            r = conn.execute(
+                "SELECT COALESCE(MAX(ordem), 0) AS m FROM acervo_edicao_fases "
+                "WHERE edicao_id = ?",
+                (int(edicao_id),),
+            ).fetchone()
+            ordem_n = int(r["m"]) + 1
+        else:
+            ordem_n = int(ordem)
+        conflito = conn.execute(
+            "SELECT id FROM acervo_edicao_fases WHERE edicao_id = ? AND ordem = ?",
+            (int(edicao_id), ordem_n),
+        ).fetchone()
+        if conflito:
+            raise ValueError(f"Já existe fase na ordem {ordem_n}.")
+        cur = conn.execute(
+            "INSERT INTO acervo_edicao_fases (edicao_id, ordem, nome, tipo) "
+            "VALUES (?, ?, ?, ?)",
+            (int(edicao_id), ordem_n, nome_n, tipo_n),
+        )
+        fid = int(cur.lastrowid)
+    out = get_acervo_fase(fid)
+    assert out is not None
+    return out
+
+
+def atualizar_acervo_fase(
+    fase_id: int,
+    *,
+    nome: str = "",
+    tipo: str = "pontos_corridos",
+    ordem: int | None = None,
+) -> dict[str, Any]:
+    from src.acervo import normalizar_fase_tipo, normalizar_texto_curto
+
+    atual = get_acervo_fase(fase_id)
+    if not atual:
+        raise ValueError("Fase não encontrada.")
+    tipo_n = normalizar_fase_tipo(tipo)
+    nome_n = normalizar_texto_curto(nome, campo="Nome da fase", maxlen=80)
+    ordem_n = int(ordem) if ordem is not None else int(atual["ordem"])
+    with get_db() as conn:
+        conflito = conn.execute(
+            "SELECT id FROM acervo_edicao_fases "
+            "WHERE edicao_id = ? AND ordem = ? AND id != ?",
+            (int(atual["edicao_id"]), ordem_n, int(fase_id)),
+        ).fetchone()
+        if conflito:
+            raise ValueError(f"Já existe fase na ordem {ordem_n}.")
+        conn.execute(
+            """
+            UPDATE acervo_edicao_fases
+            SET nome = ?, tipo = ?, ordem = ?,
+                atualizado_em = datetime('now', 'localtime')
+            WHERE id = ?
+            """,
+            (nome_n, tipo_n, ordem_n, int(fase_id)),
+        )
+    out = get_acervo_fase(fase_id)
+    assert out is not None
+    return out
+
+
+def apagar_acervo_fase(fase_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_edicao_fases WHERE id = ?",
+            (int(fase_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+# ---------------------------------------------------------------------------
+# Acervo — participantes da edição (pool de clubes)
+# ---------------------------------------------------------------------------
+
+
+def list_acervo_participantes(edicao_id: int) -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.id, p.edicao_id, p.clube_id,
+                   c.nome AS clube_nome, c.uf AS clube_uf,
+                   c.fm_unique_id AS clube_fm
+            FROM acervo_edicao_participantes p
+            JOIN acervo_clubes c ON c.id = p.clube_id
+            WHERE p.edicao_id = ?
+            ORDER BY c.nome COLLATE NOCASE ASC, p.id ASC
+            """,
+            (int(edicao_id),),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def adicionar_acervo_participante(edicao_id: int, clube_id: int) -> bool:
+    if not get_acervo_edicao(edicao_id):
+        raise ValueError("Edição não encontrada.")
+    if not get_acervo_clube(clube_id):
+        raise ValueError("Clube inválido.")
+    with get_db() as conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO acervo_edicao_participantes "
+            "(edicao_id, clube_id) VALUES (?, ?)",
+            (int(edicao_id), int(clube_id)),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def remover_acervo_participante(edicao_id: int, clube_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_edicao_participantes "
+            "WHERE edicao_id = ? AND clube_id = ?",
+            (int(edicao_id), int(clube_id)),
+        )
+        return int(cur.rowcount or 0) > 0
