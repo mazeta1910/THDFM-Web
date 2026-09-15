@@ -16404,9 +16404,18 @@ button.grid-matriz-item:focus-visible {
   list-style: none;
   font-size: 0.78rem;
   color: var(--accent);
+  text-decoration: none;
 }
+a.acervo-link-btn { margin-right: 0.45rem; }
 .acervo-link-btn::-webkit-details-marker { display: none; }
 .acervo-edit { display: inline; }
+.acervo-grid--stats {
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+}
+.acervo-grid--stats .acervo-field:nth-child(2) {
+  grid-column: span 2;
+  min-width: 10rem;
+}
 
 .form-inscricao.is-submitting button[type="submit"] {
   opacity: 0.75;

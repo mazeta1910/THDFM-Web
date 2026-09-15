@@ -298,6 +298,7 @@
           <td>{{ e.campeao_nome or '—' }}</td>
           <td>{{ e.vice_nome or '—' }}</td>
           <td>
+            <a class="acervo-link-btn" href="/admin/acervo?sec=edicoes&edicao_id={{ e.id }}">Tabela</a>
             <details class="acervo-edit">
               <summary class="acervo-link-btn">Editar</summary>
               <form method="post" action="/admin/acervo/edicoes/salvar" class="acervo-form acervo-form--inline">
@@ -342,5 +343,87 @@
   <p class="acervo-muted">Nenhuma edição cadastrada.</p>
   {% endif %}
 </section>
+
+{% if edicao_foco %}
+<section class="card acervo-admin" style="margin-top:0.75rem" id="acervo-tabela">
+  <h2 class="acervo-h">
+    Tabela · {{ edicao_foco.competicao_nome }} {{ edicao_foco.ano }}
+  </h2>
+  <p class="acervo-muted">
+    Campeão/vice podem existir sem tabela. Linhas aqui marcam a edição como “tem tabela”.
+    <a href="/admin/acervo?sec=edicoes">Fechar</a>
+  </p>
+
+  <form method="post" action="/admin/acervo/classificacao/salvar" class="acervo-form" autocomplete="off">
+    <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+    <div class="acervo-grid acervo-grid--stats">
+      <label class="acervo-field">Pos.
+        <input name="posicao" type="number" min="1" max="128" required />
+      </label>
+      <label class="acervo-field">Clube
+        <select name="clube_id" required>
+          <option value="">Selecione…</option>
+          {% for cl in clubes %}
+          <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.uf %} ({{ cl.uf }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="acervo-field">Pts<input name="pts" type="number" /></label>
+      <label class="acervo-field">J<input name="j" type="number" /></label>
+      <label class="acervo-field">V<input name="v" type="number" /></label>
+      <label class="acervo-field">E<input name="e" type="number" /></label>
+      <label class="acervo-field">D<input name="d" type="number" /></label>
+      <label class="acervo-field">GP<input name="gp" type="number" /></label>
+      <label class="acervo-field">GC<input name="gc" type="number" /></label>
+      <label class="acervo-field">SG<input name="sg" type="number" placeholder="auto" /></label>
+    </div>
+    <div class="acervo-actions">
+      <button type="submit" class="btn acervo-btn">Salvar linha</button>
+    </div>
+  </form>
+
+  {% if classificacao %}
+  <div class="acervo-table-wrap" style="margin-top:0.75rem">
+    <table class="acervo-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Clube</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in classificacao %}
+        <tr>
+          <td>{{ row.posicao }}</td>
+          <td>{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-muted">({{ row.clube_uf }})</span>{% endif %}</td>
+          <td>{{ row.pts if row.pts is not none else '—' }}</td>
+          <td>{{ row.j if row.j is not none else '—' }}</td>
+          <td>{{ row.v if row.v is not none else '—' }}</td>
+          <td>{{ row.e if row.e is not none else '—' }}</td>
+          <td>{{ row.d if row.d is not none else '—' }}</td>
+          <td>{{ row.gp if row.gp is not none else '—' }}</td>
+          <td>{{ row.gc if row.gc is not none else '—' }}</td>
+          <td>{{ row.sg if row.sg is not none else '—' }}</td>
+          <td>
+            <form method="post" action="/admin/acervo/classificacao/apagar" onsubmit="return confirm('Remover linha?');">
+              <input type="hidden" name="id" value="{{ row.id }}" />
+              <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+              <button type="submit" class="btn secondary acervo-btn" title="Remover">×</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/admin/acervo/classificacao/limpar" style="margin-top:0.5rem"
+        onsubmit="return confirm('Limpar toda a tabela desta edição?');">
+    <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+    <button type="submit" class="btn secondary acervo-btn">Limpar tabela</button>
+  </form>
+  {% else %}
+  <p class="acervo-muted" style="margin-top:0.75rem">Nenhuma linha na tabela ainda.</p>
+  {% endif %}
+</section>
+{% endif %}
 {% endif %}
 {% endblock %}

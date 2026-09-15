@@ -2108,8 +2108,16 @@ def _acervo_ctx(request: Request, *, sec: str | None = None):
     }
 
 
-def _acervo_redirect(sec: str, *, msg: str | None = None, erro: str | None = None):
+def _acervo_redirect(
+    sec: str,
+    *,
+    msg: str | None = None,
+    erro: str | None = None,
+    edicao_id: int | None = None,
+):
     q = f"sec={_acervo_sec(sec)}"
+    if edicao_id is not None:
+        q += f"&edicao_id={int(edicao_id)}"
     if msg:
         q += "&msg=" + quote(msg)
     if erro:
@@ -2122,7 +2130,18 @@ def admin_acervo(request: Request):
     neg = require_mazeta(request)
     if neg:
         return neg
-    return render(request, "admin_acervo.html", **_acervo_ctx(request))
+    ctx = _acervo_ctx(request)
+    raw_ed = (request.query_params.get("edicao_id") or "").strip()
+    edicao_foco = None
+    classificacao: list = []
+    if raw_ed.isdigit():
+        edicao_foco = db.get_acervo_edicao(int(raw_ed))
+        if edicao_foco:
+            classificacao = db.list_acervo_classificacao(int(raw_ed))
+            ctx["sec"] = "edicoes"
+    ctx["edicao_foco"] = edicao_foco
+    ctx["classificacao"] = classificacao
+    return render(request, "admin_acervo.html", **ctx)
 
 
 @app.post("/admin/acervo/clubes/salvar")
@@ -2297,6 +2316,89 @@ async def admin_acervo_edicao_apagar(request: Request):
     if db.apagar_acervo_edicao(eid):
         return _acervo_redirect("edicoes", msg="Edição apagada")
     return _acervo_redirect("edicoes", erro="Edição não encontrada")
+
+
+@app.post("/admin/acervo/classificacao/salvar")
+async def admin_acervo_classificacao_salvar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+
+    def _opt_int(key: str) -> int | None:
+        raw = str(form.get(key) or "").strip()
+        if not raw:
+            return None
+        return int(raw)
+
+    try:
+        edicao_id = int(str(form.get("edicao_id") or "").strip())
+        clube_id = int(str(form.get("clube_id") or "").strip())
+        posicao = int(str(form.get("posicao") or "").strip())
+        db.upsert_acervo_classificacao(
+            edicao_id,
+            clube_id=clube_id,
+            posicao=posicao,
+            pts=_opt_int("pts"),
+            j=_opt_int("j"),
+            v=_opt_int("v"),
+            e=_opt_int("e"),
+            d=_opt_int("d"),
+            gp=_opt_int("gp"),
+            gc=_opt_int("gc"),
+            sg=_opt_int("sg"),
+        )
+    except (TypeError, ValueError) as exc:
+        eid_raw = str(form.get("edicao_id") or "").strip()
+        eid = int(eid_raw) if eid_raw.isdigit() else None
+        return _acervo_redirect("edicoes", erro=str(exc), edicao_id=eid)
+    return _acervo_redirect(
+        "edicoes",
+        msg="Linha da tabela salva",
+        edicao_id=edicao_id,
+    )
+
+
+@app.post("/admin/acervo/classificacao/apagar")
+async def admin_acervo_classificacao_apagar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        linha_id = int(str(form.get("id") or "").strip())
+        edicao_id = int(str(form.get("edicao_id") or "").strip())
+    except (TypeError, ValueError):
+        return _acervo_redirect("edicoes", erro="Linha inválida")
+    if db.apagar_acervo_classificacao(linha_id):
+        return _acervo_redirect(
+            "edicoes",
+            msg="Linha removida",
+            edicao_id=edicao_id,
+        )
+    return _acervo_redirect(
+        "edicoes",
+        erro="Linha não encontrada",
+        edicao_id=edicao_id,
+    )
+
+
+@app.post("/admin/acervo/classificacao/limpar")
+async def admin_acervo_classificacao_limpar(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    form = await request.form()
+    try:
+        edicao_id = int(str(form.get("edicao_id") or "").strip())
+        db.limpar_acervo_classificacao(edicao_id)
+    except (TypeError, ValueError) as exc:
+        return _acervo_redirect("edicoes", erro=str(exc))
+    return _acervo_redirect(
+        "edicoes",
+        msg="Tabela limpa",
+        edicao_id=edicao_id,
+    )
 
 
 @app.post("/meu-perfil/hall-borda")

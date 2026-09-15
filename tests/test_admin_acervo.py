@@ -104,3 +104,74 @@ def test_acervo_fluxo_crud_http(client: TestClient):
     )
     assert r.status_code == 303
     assert db.list_acervo_edicoes() == []
+
+
+def test_acervo_classificacao_http(client: TestClient):
+    login_admin(client, "mazeta", "senha-dono")
+    import src.db as db
+
+    clube = db.criar_acervo_clube("GAS", uf="RR")
+    outro = db.criar_acervo_clube("Náutico-RR", uf="RR")
+    comp = db.criar_acervo_competicao(
+        "Roraimense", ambito="estadual", uf="RR", cobertura="parcial"
+    )
+    ed = db.criar_acervo_edicao(comp["id"], 2023, campeao_clube_id=clube["id"])
+
+    r = client.get(f"/admin/acervo?sec=edicoes&edicao_id={ed['id']}")
+    assert r.status_code == 200
+    assert "Tabela ·" in r.text
+    assert "Roraimense 2023" in r.text
+
+    r = client.post(
+        "/admin/acervo/classificacao/salvar",
+        data={
+            "edicao_id": str(ed["id"]),
+            "clube_id": str(clube["id"]),
+            "posicao": "1",
+            "pts": "12",
+            "j": "4",
+            "v": "4",
+            "e": "0",
+            "d": "0",
+            "gp": "10",
+            "gc": "2",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert f"edicao_id={ed['id']}" in r.headers["location"]
+
+    r = client.post(
+        "/admin/acervo/classificacao/salvar",
+        data={
+            "edicao_id": str(ed["id"]),
+            "clube_id": str(outro["id"]),
+            "posicao": "2",
+            "pts": "6",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+
+    r = client.get(f"/admin/acervo?sec=edicoes&edicao_id={ed['id']}")
+    assert "GAS" in r.text
+    assert "Náutico-RR" in r.text
+    assert db.get_acervo_edicao(ed["id"])["tem_tabela"] is True
+
+    rows = db.list_acervo_classificacao(ed["id"])
+    r = client.post(
+        "/admin/acervo/classificacao/apagar",
+        data={"id": str(rows[1]["id"]), "edicao_id": str(ed["id"])},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert len(db.list_acervo_classificacao(ed["id"])) == 1
+
+    r = client.post(
+        "/admin/acervo/classificacao/limpar",
+        data={"edicao_id": str(ed["id"])},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert db.list_acervo_classificacao(ed["id"]) == []
+    assert db.get_acervo_edicao(ed["id"])["tem_tabela"] is False

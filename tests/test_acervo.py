@@ -119,3 +119,53 @@ def test_crud_competicao_e_edicao(acervo_db):
     # Apagar competição em cascata não quebra clubes
     assert acervo_db.apagar_acervo_competicao(comp["id"]) is True
     assert acervo_db.get_acervo_clube(camp["id"]) is not None
+
+
+def test_crud_classificacao(acervo_db):
+    a = acervo_db.criar_acervo_clube("Alpha", uf="RR")
+    b = acervo_db.criar_acervo_clube("Beta", uf="RR")
+    comp = acervo_db.criar_acervo_competicao(
+        "Roraimense", ambito="estadual", uf="RR"
+    )
+    ed = acervo_db.criar_acervo_edicao(comp["id"], 2024, campeao_clube_id=a["id"])
+    assert ed["tem_tabela"] is False
+
+    r1 = acervo_db.upsert_acervo_classificacao(
+        ed["id"],
+        clube_id=a["id"],
+        posicao=1,
+        pts=9,
+        j=3,
+        v=3,
+        e=0,
+        d=0,
+        gp=5,
+        gc=1,
+    )
+    assert r1["posicao"] == 1
+    assert r1["sg"] == 4
+    assert acervo_db.get_acervo_edicao(ed["id"])["tem_tabela"] is True
+
+    acervo_db.upsert_acervo_classificacao(
+        ed["id"], clube_id=b["id"], posicao=2, pts=3, j=3, v=1, e=0, d=2, gp=2, gc=4
+    )
+    rows = acervo_db.list_acervo_classificacao(ed["id"])
+    assert [r["clube_nome"] for r in rows] == ["Alpha", "Beta"]
+
+    with pytest.raises(ValueError, match="posição"):
+        acervo_db.upsert_acervo_classificacao(
+            ed["id"], clube_id=a["id"], posicao=2  # conflito com Beta
+        )
+
+    # Atualiza mesma linha (mesmo clube)
+    upd = acervo_db.upsert_acervo_classificacao(
+        ed["id"], clube_id=a["id"], posicao=1, pts=10, j=4, v=3, e=1, d=0, gp=6, gc=2
+    )
+    assert upd["pts"] == 10
+
+    assert acervo_db.apagar_acervo_classificacao(rows[1]["id"]) is True
+    assert len(acervo_db.list_acervo_classificacao(ed["id"])) == 1
+
+    assert acervo_db.limpar_acervo_classificacao(ed["id"]) == 1
+    assert acervo_db.list_acervo_classificacao(ed["id"]) == []
+    assert acervo_db.get_acervo_edicao(ed["id"])["tem_tabela"] is False

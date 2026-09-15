@@ -764,6 +764,33 @@ def _migrate_acervo(conn: sqlite3.Connection) -> None:
         "ON acervo_edicoes(campeao_clube_id)"
     )
 
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_edicao_classificacao (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          edicao_id INTEGER NOT NULL
+            REFERENCES acervo_edicoes(id) ON DELETE CASCADE,
+          clube_id INTEGER NOT NULL
+            REFERENCES acervo_clubes(id) ON DELETE CASCADE,
+          posicao INTEGER NOT NULL,
+          pts INTEGER,
+          j INTEGER,
+          v INTEGER,
+          e INTEGER,
+          d INTEGER,
+          gp INTEGER,
+          gc INTEGER,
+          sg INTEGER,
+          UNIQUE (edicao_id, clube_id),
+          UNIQUE (edicao_id, posicao)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_classificacao_edicao "
+        "ON acervo_edicao_classificacao(edicao_id, posicao ASC)"
+    )
+
 
 def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
     """Reports de bugs do Grid — usuário envia; Mazeta responde/atualiza status."""
@@ -7255,3 +7282,163 @@ def resumo_acervo() -> dict[str, int]:
         "competicoes": int(comps["n"] if comps else 0),
         "edicoes": int(edicoes["n"] if edicoes else 0),
     }
+
+
+def _sync_edicao_tem_tabela(conn: sqlite3.Connection, edicao_id: int) -> None:
+    n = conn.execute(
+        "SELECT COUNT(*) AS n FROM acervo_edicao_classificacao WHERE edicao_id = ?",
+        (int(edicao_id),),
+    ).fetchone()
+    tem = 1 if int(n["n"] if n else 0) > 0 else 0
+    conn.execute(
+        """
+        UPDATE acervo_edicoes
+        SET tem_tabela = ?, atualizado_em = datetime('now', 'localtime')
+        WHERE id = ?
+        """,
+        (tem, int(edicao_id)),
+    )
+
+
+def _opt_stat(raw: Any) -> int | None:
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Estatística inválida (use inteiro).") from exc
+
+
+def list_acervo_classificacao(edicao_id: int) -> list[dict[str, Any]]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT cl.*, c.nome AS clube_nome, c.uf AS clube_uf
+            FROM acervo_edicao_classificacao cl
+            JOIN acervo_clubes c ON c.id = cl.clube_id
+            WHERE cl.edicao_id = ?
+            ORDER BY cl.posicao ASC, cl.id ASC
+            """,
+            (int(edicao_id),),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def upsert_acervo_classificacao(
+    edicao_id: int,
+    *,
+    clube_id: int,
+    posicao: int,
+    pts: int | None = None,
+    j: int | None = None,
+    v: int | None = None,
+    e: int | None = None,
+    d: int | None = None,
+    gp: int | None = None,
+    gc: int | None = None,
+    sg: int | None = None,
+) -> dict[str, Any]:
+    if not get_acervo_edicao(edicao_id):
+        raise ValueError("Edição não encontrada.")
+    if not get_acervo_clube(clube_id):
+        raise ValueError("Clube inválido.")
+    try:
+        pos = int(posicao)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Posição inválida.") from exc
+    if pos < 1 or pos > 128:
+        raise ValueError("Posição fora do intervalo (1–128).")
+    pts_n = _opt_stat(pts)
+    j_n = _opt_stat(j)
+    v_n = _opt_stat(v)
+    e_n = _opt_stat(e)
+    d_n = _opt_stat(d)
+    gp_n = _opt_stat(gp)
+    gc_n = _opt_stat(gc)
+    sg_n = _opt_stat(sg)
+    if sg_n is None and gp_n is not None and gc_n is not None:
+        sg_n = gp_n - gc_n
+    with get_db() as conn:
+        conflito = conn.execute(
+            """
+            SELECT id FROM acervo_edicao_classificacao
+            WHERE edicao_id = ? AND posicao = ? AND clube_id != ?
+            """,
+            (int(edicao_id), pos, int(clube_id)),
+        ).fetchone()
+        if conflito:
+            raise ValueError(f"Já existe clube na posição {pos}.")
+        conn.execute(
+            """
+            INSERT INTO acervo_edicao_classificacao
+              (edicao_id, clube_id, posicao, pts, j, v, e, d, gp, gc, sg)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(edicao_id, clube_id) DO UPDATE SET
+              posicao = excluded.posicao,
+              pts = excluded.pts,
+              j = excluded.j,
+              v = excluded.v,
+              e = excluded.e,
+              d = excluded.d,
+              gp = excluded.gp,
+              gc = excluded.gc,
+              sg = excluded.sg
+            """,
+            (
+                int(edicao_id),
+                int(clube_id),
+                pos,
+                pts_n,
+                j_n,
+                v_n,
+                e_n,
+                d_n,
+                gp_n,
+                gc_n,
+                sg_n,
+            ),
+        )
+        _sync_edicao_tem_tabela(conn, edicao_id)
+        row = conn.execute(
+            """
+            SELECT cl.*, c.nome AS clube_nome, c.uf AS clube_uf
+            FROM acervo_edicao_classificacao cl
+            JOIN acervo_clubes c ON c.id = cl.clube_id
+            WHERE cl.edicao_id = ? AND cl.clube_id = ?
+            """,
+            (int(edicao_id), int(clube_id)),
+        ).fetchone()
+    assert row is not None
+    return dict(row)
+
+
+def apagar_acervo_classificacao(linha_id: int) -> bool:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT edicao_id FROM acervo_edicao_classificacao WHERE id = ?",
+            (int(linha_id),),
+        ).fetchone()
+        if not row:
+            return False
+        edicao_id = int(row["edicao_id"])
+        cur = conn.execute(
+            "DELETE FROM acervo_edicao_classificacao WHERE id = ?",
+            (int(linha_id),),
+        )
+        ok = int(cur.rowcount or 0) > 0
+        if ok:
+            _sync_edicao_tem_tabela(conn, edicao_id)
+        return ok
+
+
+def limpar_acervo_classificacao(edicao_id: int) -> int:
+    if not get_acervo_edicao(edicao_id):
+        raise ValueError("Edição não encontrada.")
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_edicao_classificacao WHERE edicao_id = ?",
+            (int(edicao_id),),
+        )
+        n = int(cur.rowcount or 0)
+        _sync_edicao_tem_tabela(conn, edicao_id)
+        return n
