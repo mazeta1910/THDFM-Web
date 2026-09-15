@@ -1,0 +1,18 @@
+{
+  "name": "THDFM Bolão (FastAPI + SQLite)",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "web",
+      "command": ".venv/bin/uvicorn src.app:app --host 0.0.0.0 --port 8000 --reload",
+      "description": "FastAPI dev server (auto-reload) on http://localhost:8000. Initializes/seeds data/bolao.db on startup."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 8000
+    }
+  ]
+}
