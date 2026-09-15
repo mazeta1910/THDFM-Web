@@ -76,8 +76,13 @@ def test_montar_portal_agrupa_por_time_e_inclui_avatar(client: TestClient):
     assert emp_v["grupo"] == "fora"
     assert emp_v["penaltis"]
 
-def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient):
+def test_admin_palpites_mostra_emblemas_e_fotos(client: TestClient, tmp_path, monkeypatch):
+    av_dir = tmp_path / "avatars"
+    monkeypatch.setattr("src.config.AVATARES_DIR", av_dir)
+    monkeypatch.setattr("src.app.AVATARES_DIR", av_dir)
+
     part = db.criar_participante("Foto User", status="liberado", celular="11990000009")
+    (av_dir / "foto.jpg").write_bytes(b"fake-jpg")
     db.salvar_avatar(part["id"], "foto.jpg")
     confrontos = db.list_confrontos_completos("oitavas")
     jogo = next(j for j in confrontos[0]["jogos"] if j.get("perna") == "ida")

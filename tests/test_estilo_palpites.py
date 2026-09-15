@@ -46,9 +46,11 @@ def test_leitura_publica_anonimo(client):
 def test_escrita_ainda_pede_login(client):
     r = client.post("/grupo/listra", data={"texto": "x"}, follow_redirects=False)
     assert r.status_code in (303, 401, 403)
+    # Registrar chute numa partida (persistir) exige login; convidado só joga
+    # no modo contínuo (sem partida_id).
     chute = client.post(
         "/grid/api/chute",
-        json={"linha": 0, "coluna": 0, "nome": "Flamengo"},
+        json={"linha": 0, "coluna": 0, "nome": "Flamengo", "partida_id": 1},
         follow_redirects=False,
     )
     assert chute.status_code == 401
