@@ -16228,7 +16228,7 @@ button.grid-matriz-item:focus-visible {
   right: 0;
   bottom: 0;
   z-index: 400;
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
   background: color-mix(in srgb, var(--bg2) 92%, #000);
   border-top: 1px solid var(--border);
   box-shadow: 0 -8px 24px rgba(0,0,0,.18);
@@ -16237,32 +16237,49 @@ button.grid-matriz-item:focus-visible {
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.75rem 1rem;
 }
 .cookie-banner-text {
-  flex: 1 1 240px;
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.35;
   color: var(--muted);
 }
 .cookie-banner-text a { color: var(--accent); }
 .cookie-banner-actions {
   display: flex;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  flex: 0 0 auto;
 }
-.cookie-banner-actions .btn {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.8rem;
+.cookie-banner-actions .btn,
+.cookie-banner-actions button {
+  width: auto !important;
+  padding: 0.32rem 0.7rem !important;
+  font-size: 0.8rem !important;
+  line-height: 1.2;
   min-height: 0;
+  border-radius: 8px;
 }
 .cookie-btn-reject {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
+}
+@media (max-width: 560px) {
+  .cookie-banner-inner {
+    flex-wrap: wrap;
+  }
+  .cookie-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 .site-footer-legal {
   display: flex;
@@ -16360,7 +16377,44 @@ button.grid-matriz-item:focus-visible {
   align-self: end;
   margin-bottom: 0.15rem;
 }
-.acervo-actions { margin-top: 0.15rem; }
+.acervo-actions {
+  margin-top: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.acervo-icon-btn {
+  width: 1.85rem !important;
+  height: 1.85rem;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card, transparent);
+  color: var(--text);
+  cursor: pointer;
+  min-height: 0;
+  line-height: 0;
+}
+.acervo-icon-btn svg { display: block; }
+.acervo-icon-btn--save {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.acervo-icon-btn--save:hover {
+  background: var(--accent);
+  color: #111;
+}
+.acervo-icon-btn--delete {
+  border-color: color-mix(in srgb, var(--danger, #c0392b) 40%, var(--border));
+  color: var(--danger, #c0392b);
+}
+.acervo-icon-btn--delete:hover {
+  background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent);
+}
 .acervo-btn {
   width: auto !important;
   padding: 0.28rem 0.55rem !important;

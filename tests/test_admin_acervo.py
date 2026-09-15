@@ -37,6 +37,8 @@ def test_acervo_fluxo_crud_http(client: TestClient):
     assert "Acervo" in r.text
     assert 'href="/admin/acervo"' in r.text
     assert "Novo clube" in r.text
+    assert 'aria-label="Salvar clube"' in r.text
+    assert "class=\"btn acervo-btn\"" not in r.text
 
     r = client.post(
         "/admin/acervo/clubes/salvar",

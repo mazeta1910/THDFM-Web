@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar %}
 {% block title %}Admin · Acervo{% endblock %}
 {% block content %}
 <section class="card acervo-admin">
@@ -6,7 +7,9 @@
   <h1>Acervo</h1>
   <p class="login-lead">
     Base de fatos de futebol do site (clubes, competições e edições).
-    O Grid e outros jogos consomem daqui.
+    O Grid e outros jogos vão consumir daqui.
+    Por enquanto o painel lista só o que estiver cadastrado nestas tabelas —
+    ainda <strong>não importa</strong> automaticamente os CSVs históricos do Grid.
   </p>
 
   {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
@@ -55,7 +58,7 @@
       <textarea name="notas" rows="2" maxlength="2000"></textarea>
     </label>
     <div class="acervo-actions">
-      <button type="submit" class="btn acervo-btn" title="Salvar clube">Salvar</button>
+      {{ btn_salvar("Salvar clube") }}
     </div>
   </form>
 
@@ -100,14 +103,14 @@
                 <label class="acervo-field">FM ID<input name="fm_unique_id" value="{{ c.fm_unique_id or '' }}" maxlength="32" /></label>
                 <label class="acervo-check"><input type="checkbox" name="extinto" value="1" {% if c.extinto %}checked{% endif %} /> Extinto</label>
                 <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ c.notas }}</textarea></label>
-                <button type="submit" class="btn acervo-btn">Atualizar</button>
+                {{ btn_atualizar() }}
               </form>
             </details>
           </td>
           <td>
             <form method="post" action="/admin/acervo/clubes/apagar" onsubmit="return confirm('Apagar {{ c.nome }}?');">
               <input type="hidden" name="id" value="{{ c.id }}" />
-              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+              {{ btn_apagar() }}
             </form>
           </td>
         </tr>
@@ -159,7 +162,7 @@
       <textarea name="notas" rows="2" maxlength="2000"></textarea>
     </label>
     <div class="acervo-actions">
-      <button type="submit" class="btn acervo-btn">Salvar</button>
+      {{ btn_salvar() }}
     </div>
   </form>
 
@@ -211,14 +214,14 @@
                   </select>
                 </label>
                 <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ c.notas }}</textarea></label>
-                <button type="submit" class="btn acervo-btn">Atualizar</button>
+                {{ btn_atualizar() }}
               </form>
             </details>
           </td>
           <td>
             <form method="post" action="/admin/acervo/competicoes/apagar" onsubmit="return confirm('Apagar {{ c.nome }} e suas edições?');">
               <input type="hidden" name="id" value="{{ c.id }}" />
-              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+              {{ btn_apagar() }}
             </form>
           </td>
         </tr>
@@ -278,7 +281,7 @@
       <textarea name="notas" rows="2" maxlength="2000"></textarea>
     </label>
     <div class="acervo-actions">
-      <button type="submit" class="btn acervo-btn">Salvar</button>
+      {{ btn_salvar() }}
     </div>
   </form>
   {% endif %}
@@ -324,14 +327,14 @@
                 <label class="acervo-field">Fonte<input name="fonte_url" type="url" value="{{ e.fonte_url }}" maxlength="500" /></label>
                 <label class="acervo-check"><input type="checkbox" name="tem_tabela" value="1" {% if e.tem_tabela %}checked{% endif %} /> Tem tabela</label>
                 <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ e.notas }}</textarea></label>
-                <button type="submit" class="btn acervo-btn">Atualizar</button>
+                {{ btn_atualizar() }}
               </form>
             </details>
           </td>
           <td>
             <form method="post" action="/admin/acervo/edicoes/apagar" onsubmit="return confirm('Apagar edição {{ e.ano }}?');">
               <input type="hidden" name="id" value="{{ e.id }}" />
-              <button type="submit" class="btn secondary acervo-btn" title="Apagar">×</button>
+              {{ btn_apagar() }}
             </form>
           </td>
         </tr>
@@ -378,7 +381,7 @@
       <label class="acervo-field">SG<input name="sg" type="number" placeholder="auto" /></label>
     </div>
     <div class="acervo-actions">
-      <button type="submit" class="btn acervo-btn">Salvar linha</button>
+      {{ btn_salvar("Salvar linha") }}
     </div>
   </form>
 
@@ -407,7 +410,7 @@
             <form method="post" action="/admin/acervo/classificacao/apagar" onsubmit="return confirm('Remover linha?');">
               <input type="hidden" name="id" value="{{ row.id }}" />
               <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
-              <button type="submit" class="btn secondary acervo-btn" title="Remover">×</button>
+              {{ btn_apagar("Remover") }}
             </form>
           </td>
         </tr>
@@ -418,7 +421,7 @@
   <form method="post" action="/admin/acervo/classificacao/limpar" style="margin-top:0.5rem"
         onsubmit="return confirm('Limpar toda a tabela desta edição?');">
     <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
-    <button type="submit" class="btn secondary acervo-btn">Limpar tabela</button>
+    {{ btn_apagar("Limpar tabela") }}
   </form>
   {% else %}
   <p class="acervo-muted" style="margin-top:0.75rem">Nenhuma linha na tabela ainda.</p>
