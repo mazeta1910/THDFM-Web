@@ -689,6 +689,82 @@ def _migrate_hall_lendas(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_acervo(conn: sqlite3.Connection) -> None:
+    """Acervo de fatos de futebol (clubes, competições, edições)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_clubes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nome TEXT NOT NULL,
+          nome_popular TEXT NOT NULL DEFAULT '',
+          uf TEXT NOT NULL DEFAULT '',
+          fm_unique_id TEXT,
+          extinto INTEGER NOT NULL DEFAULT 0,
+          notas TEXT NOT NULL DEFAULT '',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_clubes_nome "
+        "ON acervo_clubes(nome COLLATE NOCASE)"
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_acervo_clubes_fm "
+        "ON acervo_clubes(fm_unique_id) WHERE fm_unique_id IS NOT NULL"
+    )
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_competicoes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slug TEXT NOT NULL UNIQUE,
+          nome TEXT NOT NULL,
+          ambito TEXT NOT NULL DEFAULT 'nacional',
+          uf TEXT NOT NULL DEFAULT '',
+          cobertura TEXT NOT NULL DEFAULT 'vazia',
+          notas TEXT NOT NULL DEFAULT '',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_competicoes_ambito "
+        "ON acervo_competicoes(ambito, uf, nome COLLATE NOCASE)"
+    )
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS acervo_edicoes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          competicao_id INTEGER NOT NULL
+            REFERENCES acervo_competicoes(id) ON DELETE CASCADE,
+          ano INTEGER NOT NULL,
+          campeao_clube_id INTEGER
+            REFERENCES acervo_clubes(id) ON DELETE SET NULL,
+          vice_clube_id INTEGER
+            REFERENCES acervo_clubes(id) ON DELETE SET NULL,
+          tem_tabela INTEGER NOT NULL DEFAULT 0,
+          fonte_url TEXT NOT NULL DEFAULT '',
+          notas TEXT NOT NULL DEFAULT '',
+          criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+          UNIQUE (competicao_id, ano)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_edicoes_ano "
+        "ON acervo_edicoes(ano DESC, competicao_id)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_acervo_edicoes_campeao "
+        "ON acervo_edicoes(campeao_clube_id)"
+    )
+
+
 def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
     """Reports de bugs do Grid — usuário envia; Mazeta responde/atualiza status."""
     conn.execute(
@@ -862,6 +938,7 @@ def init_db() -> None:
         _migrate_grid_eixo_override(conn)
         _migrate_grid_streak_override(conn)
         _migrate_hall_lendas(conn)
+        _migrate_acervo(conn)
         _migrate_bug_reports(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
@@ -6645,3 +6722,536 @@ def contar_bug_reports_abertos() -> int:
             """
         ).fetchone()
     return int(row["n"] if row else 0)
+
+
+# ---------------------------------------------------------------------------
+# Acervo (fatos de futebol)
+# ---------------------------------------------------------------------------
+
+
+def _acervo_clube_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if row is None:
+        return None
+    d = dict(row)
+    d["extinto"] = bool(d.get("extinto"))
+    return d
+
+
+def get_acervo_clube(clube_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM acervo_clubes WHERE id = ?",
+            (int(clube_id),),
+        ).fetchone()
+    return _acervo_clube_row(row)
+
+
+def list_acervo_clubes(
+    *,
+    q: str | None = None,
+    uf: str | None = None,
+    extintos: bool | None = None,
+    limite: int = 200,
+) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limite or 200), 1000))
+    clauses: list[str] = []
+    params: list[Any] = []
+    termo = (q or "").strip()
+    if termo:
+        clauses.append("(nome LIKE ? OR nome_popular LIKE ?)")
+        like = f"%{termo}%"
+        params.extend([like, like])
+    if uf is not None and str(uf).strip():
+        clauses.append("uf = ?")
+        params.append(str(uf).strip().upper())
+    if extintos is True:
+        clauses.append("extinto = 1")
+    elif extintos is False:
+        clauses.append("extinto = 0")
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT * FROM acervo_clubes
+            {where}
+            ORDER BY nome COLLATE NOCASE ASC, id ASC
+            LIMIT ?
+            """,
+            (*params, lim),
+        ).fetchall()
+    return [_acervo_clube_row(r) for r in rows]  # type: ignore[misc]
+
+
+def criar_acervo_clube(
+    nome: str,
+    *,
+    nome_popular: str = "",
+    uf: str = "",
+    fm_unique_id: str | None = None,
+    extinto: bool = False,
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import (
+        normalizar_fm_unique_id,
+        normalizar_nome,
+        normalizar_notas,
+        normalizar_uf,
+    )
+
+    nome_n = normalizar_nome(nome)
+    pop = " ".join((nome_popular or "").strip().split())
+    if len(pop) > 80:
+        raise ValueError("Nome popular muito longo (máx. 80).")
+    uf_n = normalizar_uf(uf)
+    fm = normalizar_fm_unique_id(fm_unique_id)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        if fm:
+            ja = conn.execute(
+                "SELECT id FROM acervo_clubes WHERE fm_unique_id = ?",
+                (fm,),
+            ).fetchone()
+            if ja:
+                raise ValueError("Já existe clube com este Unique ID FM.")
+        cur = conn.execute(
+            """
+            INSERT INTO acervo_clubes
+              (nome, nome_popular, uf, fm_unique_id, extinto, notas)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (nome_n, pop, uf_n, fm, 1 if extinto else 0, notas_n),
+        )
+        cid = int(cur.lastrowid)
+    out = get_acervo_clube(cid)
+    assert out is not None
+    return out
+
+
+def atualizar_acervo_clube(
+    clube_id: int,
+    *,
+    nome: str,
+    nome_popular: str = "",
+    uf: str = "",
+    fm_unique_id: str | None = None,
+    extinto: bool = False,
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import (
+        normalizar_fm_unique_id,
+        normalizar_nome,
+        normalizar_notas,
+        normalizar_uf,
+    )
+
+    if not get_acervo_clube(clube_id):
+        raise ValueError("Clube não encontrado.")
+    nome_n = normalizar_nome(nome)
+    pop = " ".join((nome_popular or "").strip().split())
+    if len(pop) > 80:
+        raise ValueError("Nome popular muito longo (máx. 80).")
+    uf_n = normalizar_uf(uf)
+    fm = normalizar_fm_unique_id(fm_unique_id)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        if fm:
+            ja = conn.execute(
+                "SELECT id FROM acervo_clubes WHERE fm_unique_id = ? AND id != ?",
+                (fm, int(clube_id)),
+            ).fetchone()
+            if ja:
+                raise ValueError("Já existe clube com este Unique ID FM.")
+        conn.execute(
+            """
+            UPDATE acervo_clubes
+            SET nome = ?, nome_popular = ?, uf = ?, fm_unique_id = ?,
+                extinto = ?, notas = ?,
+                atualizado_em = datetime('now', 'localtime')
+            WHERE id = ?
+            """,
+            (
+                nome_n,
+                pop,
+                uf_n,
+                fm,
+                1 if extinto else 0,
+                notas_n,
+                int(clube_id),
+            ),
+        )
+    out = get_acervo_clube(clube_id)
+    assert out is not None
+    return out
+
+
+def apagar_acervo_clube(clube_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_clubes WHERE id = ?",
+            (int(clube_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def get_acervo_competicao(comp_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM acervo_competicoes WHERE id = ?",
+            (int(comp_id),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def get_acervo_competicao_por_slug(slug: str) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM acervo_competicoes WHERE slug = ?",
+            ((slug or "").strip(),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_acervo_competicoes(
+    *,
+    q: str | None = None,
+    ambito: str | None = None,
+    limite: int = 200,
+) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limite or 200), 1000))
+    clauses: list[str] = []
+    params: list[Any] = []
+    termo = (q or "").strip()
+    if termo:
+        clauses.append("(nome LIKE ? OR slug LIKE ?)")
+        like = f"%{termo}%"
+        params.extend([like, like])
+    if ambito:
+        clauses.append("ambito = ?")
+        params.append(str(ambito).strip().lower())
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT c.*,
+                   (SELECT COUNT(*) FROM acervo_edicoes e
+                    WHERE e.competicao_id = c.id) AS n_edicoes
+            FROM acervo_competicoes c
+            {where}
+            ORDER BY c.nome COLLATE NOCASE ASC, c.id ASC
+            LIMIT ?
+            """,
+            (*params, lim),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def criar_acervo_competicao(
+    nome: str,
+    *,
+    slug: str | None = None,
+    ambito: str = "nacional",
+    uf: str = "",
+    cobertura: str = "vazia",
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import (
+        normalizar_ambito,
+        normalizar_cobertura,
+        normalizar_nome,
+        normalizar_notas,
+        normalizar_uf,
+        slugify,
+    )
+
+    nome_n = normalizar_nome(nome)
+    slug_n = (slug or "").strip() or slugify(nome_n)
+    if not slug_n:
+        raise ValueError("Slug inválido.")
+    if len(slug_n) > 80:
+        raise ValueError("Slug muito longo (máx. 80).")
+    ambito_n = normalizar_ambito(ambito)
+    uf_n = normalizar_uf(uf, obrigatorio=(ambito_n == "estadual"))
+    if ambito_n != "estadual":
+        uf_n = uf_n  # estadual exige; demais podem ter UF opcional
+    cob_n = normalizar_cobertura(cobertura)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        ja = conn.execute(
+            "SELECT id FROM acervo_competicoes WHERE slug = ?",
+            (slug_n,),
+        ).fetchone()
+        if ja:
+            raise ValueError("Já existe competição com este slug.")
+        cur = conn.execute(
+            """
+            INSERT INTO acervo_competicoes
+              (slug, nome, ambito, uf, cobertura, notas)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (slug_n, nome_n, ambito_n, uf_n, cob_n, notas_n),
+        )
+        cid = int(cur.lastrowid)
+    out = get_acervo_competicao(cid)
+    assert out is not None
+    return out
+
+
+def atualizar_acervo_competicao(
+    comp_id: int,
+    *,
+    nome: str,
+    slug: str | None = None,
+    ambito: str = "nacional",
+    uf: str = "",
+    cobertura: str = "vazia",
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import (
+        normalizar_ambito,
+        normalizar_cobertura,
+        normalizar_nome,
+        normalizar_notas,
+        normalizar_uf,
+        slugify,
+    )
+
+    if not get_acervo_competicao(comp_id):
+        raise ValueError("Competição não encontrada.")
+    nome_n = normalizar_nome(nome)
+    slug_n = (slug or "").strip() or slugify(nome_n)
+    if not slug_n:
+        raise ValueError("Slug inválido.")
+    ambito_n = normalizar_ambito(ambito)
+    uf_n = normalizar_uf(uf, obrigatorio=(ambito_n == "estadual"))
+    cob_n = normalizar_cobertura(cobertura)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        ja = conn.execute(
+            "SELECT id FROM acervo_competicoes WHERE slug = ? AND id != ?",
+            (slug_n, int(comp_id)),
+        ).fetchone()
+        if ja:
+            raise ValueError("Já existe competição com este slug.")
+        conn.execute(
+            """
+            UPDATE acervo_competicoes
+            SET slug = ?, nome = ?, ambito = ?, uf = ?, cobertura = ?,
+                notas = ?, atualizado_em = datetime('now', 'localtime')
+            WHERE id = ?
+            """,
+            (slug_n, nome_n, ambito_n, uf_n, cob_n, notas_n, int(comp_id)),
+        )
+    out = get_acervo_competicao(comp_id)
+    assert out is not None
+    return out
+
+
+def apagar_acervo_competicao(comp_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_competicoes WHERE id = ?",
+            (int(comp_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def get_acervo_edicao(edicao_id: int) -> dict[str, Any] | None:
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT e.*,
+                   c.nome AS competicao_nome,
+                   c.slug AS competicao_slug,
+                   camp.nome AS campeao_nome,
+                   vice.nome AS vice_nome
+            FROM acervo_edicoes e
+            JOIN acervo_competicoes c ON c.id = e.competicao_id
+            LEFT JOIN acervo_clubes camp ON camp.id = e.campeao_clube_id
+            LEFT JOIN acervo_clubes vice ON vice.id = e.vice_clube_id
+            WHERE e.id = ?
+            """,
+            (int(edicao_id),),
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["tem_tabela"] = bool(d.get("tem_tabela"))
+    return d
+
+
+def list_acervo_edicoes(
+    *,
+    competicao_id: int | None = None,
+    ano: int | None = None,
+    limite: int = 300,
+) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limite or 300), 2000))
+    clauses: list[str] = []
+    params: list[Any] = []
+    if competicao_id is not None:
+        clauses.append("e.competicao_id = ?")
+        params.append(int(competicao_id))
+    if ano is not None:
+        clauses.append("e.ano = ?")
+        params.append(int(ano))
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT e.*,
+                   c.nome AS competicao_nome,
+                   c.slug AS competicao_slug,
+                   camp.nome AS campeao_nome,
+                   vice.nome AS vice_nome
+            FROM acervo_edicoes e
+            JOIN acervo_competicoes c ON c.id = e.competicao_id
+            LEFT JOIN acervo_clubes camp ON camp.id = e.campeao_clube_id
+            LEFT JOIN acervo_clubes vice ON vice.id = e.vice_clube_id
+            {where}
+            ORDER BY e.ano DESC, c.nome COLLATE NOCASE ASC, e.id ASC
+            LIMIT ?
+            """,
+            (*params, lim),
+        ).fetchall()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        d = dict(r)
+        d["tem_tabela"] = bool(d.get("tem_tabela"))
+        out.append(d)
+    return out
+
+
+def criar_acervo_edicao(
+    competicao_id: int,
+    ano: int | str,
+    *,
+    campeao_clube_id: int | None = None,
+    vice_clube_id: int | None = None,
+    tem_tabela: bool = False,
+    fonte_url: str = "",
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import normalizar_ano, normalizar_notas, normalizar_url
+
+    if not get_acervo_competicao(competicao_id):
+        raise ValueError("Competição não encontrada.")
+    ano_n = normalizar_ano(ano)
+    camp = int(campeao_clube_id) if campeao_clube_id else None
+    vice = int(vice_clube_id) if vice_clube_id else None
+    if camp and not get_acervo_clube(camp):
+        raise ValueError("Campeão inválido.")
+    if vice and not get_acervo_clube(vice):
+        raise ValueError("Vice inválido.")
+    fonte = normalizar_url(fonte_url)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        ja = conn.execute(
+            """
+            SELECT id FROM acervo_edicoes
+            WHERE competicao_id = ? AND ano = ?
+            """,
+            (int(competicao_id), ano_n),
+        ).fetchone()
+        if ja:
+            raise ValueError("Já existe edição deste ano para a competição.")
+        cur = conn.execute(
+            """
+            INSERT INTO acervo_edicoes
+              (competicao_id, ano, campeao_clube_id, vice_clube_id,
+               tem_tabela, fonte_url, notas)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(competicao_id),
+                ano_n,
+                camp,
+                vice,
+                1 if tem_tabela else 0,
+                fonte,
+                notas_n,
+            ),
+        )
+        eid = int(cur.lastrowid)
+    out = get_acervo_edicao(eid)
+    assert out is not None
+    return out
+
+
+def atualizar_acervo_edicao(
+    edicao_id: int,
+    *,
+    ano: int | str,
+    campeao_clube_id: int | None = None,
+    vice_clube_id: int | None = None,
+    tem_tabela: bool = False,
+    fonte_url: str = "",
+    notas: str = "",
+) -> dict[str, Any]:
+    from src.acervo import normalizar_ano, normalizar_notas, normalizar_url
+
+    atual = get_acervo_edicao(edicao_id)
+    if not atual:
+        raise ValueError("Edição não encontrada.")
+    ano_n = normalizar_ano(ano)
+    camp = int(campeao_clube_id) if campeao_clube_id else None
+    vice = int(vice_clube_id) if vice_clube_id else None
+    if camp and not get_acervo_clube(camp):
+        raise ValueError("Campeão inválido.")
+    if vice and not get_acervo_clube(vice):
+        raise ValueError("Vice inválido.")
+    fonte = normalizar_url(fonte_url)
+    notas_n = normalizar_notas(notas)
+    with get_db() as conn:
+        ja = conn.execute(
+            """
+            SELECT id FROM acervo_edicoes
+            WHERE competicao_id = ? AND ano = ? AND id != ?
+            """,
+            (int(atual["competicao_id"]), ano_n, int(edicao_id)),
+        ).fetchone()
+        if ja:
+            raise ValueError("Já existe edição deste ano para a competição.")
+        conn.execute(
+            """
+            UPDATE acervo_edicoes
+            SET ano = ?, campeao_clube_id = ?, vice_clube_id = ?,
+                tem_tabela = ?, fonte_url = ?, notas = ?,
+                atualizado_em = datetime('now', 'localtime')
+            WHERE id = ?
+            """,
+            (
+                ano_n,
+                camp,
+                vice,
+                1 if tem_tabela else 0,
+                fonte,
+                notas_n,
+                int(edicao_id),
+            ),
+        )
+    out = get_acervo_edicao(edicao_id)
+    assert out is not None
+    return out
+
+
+def apagar_acervo_edicao(edicao_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM acervo_edicoes WHERE id = ?",
+            (int(edicao_id),),
+        )
+        return int(cur.rowcount or 0) > 0
+
+
+def resumo_acervo() -> dict[str, int]:
+    with get_db() as conn:
+        clubes = conn.execute("SELECT COUNT(*) AS n FROM acervo_clubes").fetchone()
+        comps = conn.execute(
+            "SELECT COUNT(*) AS n FROM acervo_competicoes"
+        ).fetchone()
+        edicoes = conn.execute("SELECT COUNT(*) AS n FROM acervo_edicoes").fetchone()
+    return {
+        "clubes": int(clubes["n"] if clubes else 0),
+        "competicoes": int(comps["n"] if comps else 0),
+        "edicoes": int(edicoes["n"] if edicoes else 0),
+    }
