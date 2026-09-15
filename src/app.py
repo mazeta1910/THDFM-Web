@@ -83,6 +83,7 @@ from src.ranking import (
     faixa_zonas,
     resumo_pontuacao_por_participante,
 )
+from src.clubes_catalogo import emblema_fm_url
 from src.scoring import agregado_empatado
 from src.seed_data import emblema_url, formatar_inicio_jogo, inicio_em_input_value, nome_clube_curto
 from src.transparencia import metricas_gerais, montar_portal, ranking_apostadores
@@ -250,6 +251,7 @@ def avatar_url(avatar_path: str | None) -> str | None:
 
 
 TEMPLATES.env.globals["emblema_url"] = emblema_url
+TEMPLATES.env.globals["emblema_fm_url"] = emblema_fm_url
 TEMPLATES.env.globals["formatar_inicio_jogo"] = formatar_inicio_jogo
 TEMPLATES.env.globals["inicio_em_input_value"] = inicio_em_input_value
 TEMPLATES.env.globals["nome_clube_curto"] = nome_clube_curto

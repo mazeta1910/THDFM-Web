@@ -16462,7 +16462,59 @@ button.grid-matriz-item:focus-visible {
 }
 a.acervo-link-btn { margin-right: 0.45rem; }
 .acervo-link-btn::-webkit-details-marker { display: none; }
-.acervo-edit { display: inline; }
+.acervo-edit { display: inline-block; vertical-align: top; }
+
+/* Botão-lápis (summary) alinhado com os demais ícones de ação */
+summary.acervo-icon-btn { list-style: none; }
+summary.acervo-icon-btn::-webkit-details-marker { display: none; }
+summary.acervo-icon-btn::marker { content: ""; }
+.acervo-icon-btn--edit {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+}
+.acervo-icon-btn--edit:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Célula de ações: lápis (editar) à esquerda do lixo (apagar) */
+.acervo-acoes { white-space: nowrap; }
+.acervo-acoes .acervo-edit,
+.acervo-acoes .acervo-del { display: inline-block; vertical-align: top; margin: 0; }
+.acervo-acoes > * + * { margin-left: 0.3rem; }
+.acervo-acoes .acervo-edit[open] { display: block; margin: 0 0 0.25rem; }
+
+/* Nome com emblema/bandeira à esquerda (mesma pegada da foto das pessoas) */
+.acervo-nome { display: inline-flex; align-items: center; gap: 0.4rem; }
+.acervo-nome-txt { min-width: 0; }
+.acervo-emblema {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 4px;
+}
+.acervo-emblema-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.acervo-emblema--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.acervo-bandeira {
+  width: 22px;
+  height: 15px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+.acervo-emblema.is-hidden,
+.acervo-bandeira.is-hidden { display: none; }
 .acervo-grid--stats {
   grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
 }

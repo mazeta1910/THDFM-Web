@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar %}
+{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, emblema_comp %}
 {% block title %}Admin · Acervo{% endblock %}
 {% block content %}
 <section class="card acervo-admin">
@@ -79,22 +79,27 @@
           <th>UF</th>
           <th>FM</th>
           <th></th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for c in clubes %}
         <tr class="{% if c.extinto %}is-muted{% endif %}">
           <td>
-            <strong>{{ c.nome }}</strong>
-            {% if c.nome_popular %}<span class="acervo-muted"> · {{ c.nome_popular }}</span>{% endif %}
-            {% if c.extinto %}<span class="acervo-badge">extinto</span>{% endif %}
+            <span class="acervo-nome">
+              {{ emblema_clube(c.fm_unique_id, c.nome) }}
+              {{ bandeira_uf(c.uf) }}
+              <span class="acervo-nome-txt">
+                <strong>{{ c.nome }}</strong>
+                {% if c.nome_popular %}<span class="acervo-muted"> · {{ c.nome_popular }}</span>{% endif %}
+                {% if c.extinto %}<span class="acervo-badge">extinto</span>{% endif %}
+              </span>
+            </span>
           </td>
           <td>{{ c.uf or '—' }}</td>
           <td class="acervo-mono">{{ c.fm_unique_id or '—' }}</td>
-          <td>
+          <td class="acervo-acoes">
             <details class="acervo-edit">
-              <summary class="acervo-link-btn" title="Editar">Editar</summary>
+              {{ sum_editar() }}
               <form method="post" action="/admin/acervo/clubes/salvar" class="acervo-form acervo-form--inline">
                 <input type="hidden" name="id" value="{{ c.id }}" />
                 <label class="acervo-field">Nome<input name="nome" value="{{ c.nome }}" required maxlength="120" /></label>
@@ -113,9 +118,7 @@
                 {{ btn_atualizar() }}
               </form>
             </details>
-          </td>
-          <td>
-            <form method="post" action="/admin/acervo/clubes/apagar" onsubmit="return confirm('Apagar {{ c.nome }}?');">
+            <form method="post" action="/admin/acervo/clubes/apagar" class="acervo-del" onsubmit="return confirm('Apagar {{ c.nome }}?');">
               <input type="hidden" name="id" value="{{ c.id }}" />
               {{ btn_apagar() }}
             </form>
@@ -178,22 +181,27 @@
   <div class="acervo-table-wrap">
     <table class="acervo-table">
       <thead>
-        <tr><th>Nome</th><th>Âmbito</th><th>Cobertura</th><th>Edições</th><th></th><th></th></tr>
+        <tr><th>Nome</th><th>Âmbito</th><th>Cobertura</th><th>Edições</th><th></th></tr>
       </thead>
       <tbody>
         {% for c in competicoes %}
         <tr>
           <td>
-            <strong>{{ c.nome }}</strong>
-            <span class="acervo-muted acervo-mono"> · {{ c.slug }}</span>
-            {% if c.uf %}<span class="acervo-badge">{{ c.uf }}</span>{% endif %}
+            <span class="acervo-nome">
+              {{ emblema_comp(c.slug, c.nome) }}
+              <span class="acervo-nome-txt">
+                <strong>{{ c.nome }}</strong>
+                <span class="acervo-muted acervo-mono"> · {{ c.slug }}</span>
+                {% if c.uf %}<span class="acervo-badge">{{ c.uf }}</span>{% endif %}
+              </span>
+            </span>
           </td>
           <td>{{ ambitos_map.get(c.ambito, c.ambito) }}</td>
           <td>{{ coberturas_map.get(c.cobertura, c.cobertura) }}</td>
           <td>{{ c.n_edicoes }}</td>
-          <td>
+          <td class="acervo-acoes">
             <details class="acervo-edit">
-              <summary class="acervo-link-btn">Editar</summary>
+              {{ sum_editar() }}
               <form method="post" action="/admin/acervo/competicoes/salvar" class="acervo-form acervo-form--inline">
                 <input type="hidden" name="id" value="{{ c.id }}" />
                 <label class="acervo-field">Nome<input name="nome" value="{{ c.nome }}" required maxlength="120" /></label>
@@ -224,9 +232,7 @@
                 {{ btn_atualizar() }}
               </form>
             </details>
-          </td>
-          <td>
-            <form method="post" action="/admin/acervo/competicoes/apagar" onsubmit="return confirm('Apagar {{ c.nome }} e suas edições?');">
+            <form method="post" action="/admin/acervo/competicoes/apagar" class="acervo-del" onsubmit="return confirm('Apagar {{ c.nome }} e suas edições?');">
               <input type="hidden" name="id" value="{{ c.id }}" />
               {{ btn_apagar() }}
             </form>
@@ -298,19 +304,40 @@
   <div class="acervo-table-wrap">
     <table class="acervo-table">
       <thead>
-        <tr><th>Ano</th><th>Competição</th><th>Campeão</th><th>Vice</th><th></th><th></th></tr>
+        <tr><th>Ano</th><th>Competição</th><th>Campeão</th><th>Vice</th><th></th></tr>
       </thead>
       <tbody>
         {% for e in edicoes %}
         <tr>
           <td><strong>{{ e.ano }}</strong>{% if e.tem_tabela %}<span class="acervo-badge">tabela</span>{% endif %}</td>
-          <td>{{ e.competicao_nome }}</td>
-          <td>{{ e.campeao_nome or '—' }}</td>
-          <td>{{ e.vice_nome or '—' }}</td>
           <td>
+            <span class="acervo-nome">
+              {{ emblema_comp(e.competicao_slug, e.competicao_nome) }}
+              <span class="acervo-nome-txt">{{ e.competicao_nome }}</span>
+            </span>
+          </td>
+          <td>
+            {% if e.campeao_nome %}
+            <span class="acervo-nome">
+              {{ emblema_clube(e.campeao_fm, e.campeao_nome) }}
+              {{ bandeira_uf(e.campeao_uf) }}
+              <span class="acervo-nome-txt">{{ e.campeao_nome }}</span>
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if e.vice_nome %}
+            <span class="acervo-nome">
+              {{ emblema_clube(e.vice_fm, e.vice_nome) }}
+              {{ bandeira_uf(e.vice_uf) }}
+              <span class="acervo-nome-txt">{{ e.vice_nome }}</span>
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="acervo-acoes">
             <a class="acervo-link-btn" href="/admin/acervo?sec=edicoes&edicao_id={{ e.id }}">Tabela</a>
             <details class="acervo-edit">
-              <summary class="acervo-link-btn">Editar</summary>
+              {{ sum_editar() }}
               <form method="post" action="/admin/acervo/edicoes/salvar" class="acervo-form acervo-form--inline">
                 <input type="hidden" name="id" value="{{ e.id }}" />
                 <input type="hidden" name="competicao_id" value="{{ e.competicao_id }}" />
@@ -337,9 +364,7 @@
                 {{ btn_atualizar() }}
               </form>
             </details>
-          </td>
-          <td>
-            <form method="post" action="/admin/acervo/edicoes/apagar" onsubmit="return confirm('Apagar edição {{ e.ano }}?');">
+            <form method="post" action="/admin/acervo/edicoes/apagar" class="acervo-del" onsubmit="return confirm('Apagar edição {{ e.ano }}?');">
               <input type="hidden" name="id" value="{{ e.id }}" />
               {{ btn_apagar() }}
             </form>
@@ -404,7 +429,13 @@
         {% for row in classificacao %}
         <tr>
           <td>{{ row.posicao }}</td>
-          <td>{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-muted">({{ row.clube_uf }})</span>{% endif %}</td>
+          <td>
+            <span class="acervo-nome">
+              {{ emblema_clube(row.clube_fm, row.clube_nome) }}
+              {{ bandeira_uf(row.clube_uf) }}
+              <span class="acervo-nome-txt">{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-muted">({{ row.clube_uf }})</span>{% endif %}</span>
+            </span>
+          </td>
           <td>{{ row.pts if row.pts is not none else '—' }}</td>
           <td>{{ row.j if row.j is not none else '—' }}</td>
           <td>{{ row.v if row.v is not none else '—' }}</td>

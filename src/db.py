@@ -7136,7 +7136,11 @@ def list_acervo_edicoes(
                    c.nome AS competicao_nome,
                    c.slug AS competicao_slug,
                    camp.nome AS campeao_nome,
-                   vice.nome AS vice_nome
+                   camp.uf AS campeao_uf,
+                   camp.fm_unique_id AS campeao_fm,
+                   vice.nome AS vice_nome,
+                   vice.uf AS vice_uf,
+                   vice.fm_unique_id AS vice_fm
             FROM acervo_edicoes e
             JOIN acervo_competicoes c ON c.id = e.competicao_id
             LEFT JOIN acervo_clubes camp ON camp.id = e.campeao_clube_id
@@ -7320,7 +7324,8 @@ def list_acervo_classificacao(edicao_id: int) -> list[dict[str, Any]]:
     with get_db() as conn:
         rows = conn.execute(
             """
-            SELECT cl.*, c.nome AS clube_nome, c.uf AS clube_uf
+            SELECT cl.*, c.nome AS clube_nome, c.uf AS clube_uf,
+                   c.fm_unique_id AS clube_fm
             FROM acervo_edicao_classificacao cl
             JOIN acervo_clubes c ON c.id = cl.clube_id
             WHERE cl.edicao_id = ?
