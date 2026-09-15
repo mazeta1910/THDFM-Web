@@ -24,6 +24,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, admin_users: str):
     monkeypatch.chdir(ROOT_DIR)
     if admin_users:
         monkeypatch.setenv("ADMIN_USERS", admin_users)
+    monkeypatch.setenv("ACERVO_SKIP_IMPORT", "1")
     db.DB_PATH = tmp_path / "test.db"
     (tmp_path / "avatars").mkdir(exist_ok=True)
     (tmp_path / "comprovantes").mkdir(exist_ok=True)

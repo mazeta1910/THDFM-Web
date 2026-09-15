@@ -2095,7 +2095,7 @@ def _acervo_ctx(request: Request, *, sec: str | None = None):
     return {
         "sec": secao,
         "resumo": db.resumo_acervo(),
-        "clubes": db.list_acervo_clubes(limite=500),
+        "clubes": db.list_acervo_clubes(limite=3000),
         "competicoes": db.list_acervo_competicoes(limite=500),
         "edicoes": db.list_acervo_edicoes(limite=500),
         "ufs": sorted(UFS_BR),
@@ -2142,6 +2142,29 @@ def admin_acervo(request: Request):
     ctx["edicao_foco"] = edicao_foco
     ctx["classificacao"] = classificacao
     return render(request, "admin_acervo.html", **ctx)
+
+
+@app.post("/admin/acervo/importar-csvs")
+async def admin_acervo_importar_csvs(request: Request):
+    neg = require_mazeta(request)
+    if neg:
+        return neg
+    from src.acervo_seed import importar_acervo_csvs
+
+    try:
+        stats = importar_acervo_csvs(force=True)
+    except Exception as exc:
+        return _acervo_redirect("clubes", erro=f"Falha na importação: {exc}")
+    if stats.get("skipped"):
+        return _acervo_redirect("clubes", msg="Acervo já estava importado")
+    t = stats.get("totais") or {}
+    msg = (
+        f"Importado: {t.get('clubes', 0)} clubes, "
+        f"{t.get('competicoes', 0)} competições, "
+        f"{t.get('edicoes', 0)} edições, "
+        f"{t.get('linhas_tabela', 0)} linhas de tabela"
+    )
+    return _acervo_redirect("clubes", msg=msg)
 
 
 @app.post("/admin/acervo/clubes/salvar")

@@ -16377,11 +16377,11 @@ button.grid-matriz-item:focus-visible {
   align-self: end;
   margin-bottom: 0.15rem;
 }
-.acervo-actions {
-  margin-top: 0.15rem;
-  display: flex;
+.acervo-import {
+  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.55rem;
 }
 .acervo-icon-btn {
   width: 1.85rem !important;

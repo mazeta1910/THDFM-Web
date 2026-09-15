@@ -7,9 +7,8 @@
   <h1>Acervo</h1>
   <p class="login-lead">
     Base de fatos de futebol do site (clubes, competições e edições).
-    O Grid e outros jogos vão consumir daqui.
-    Por enquanto o painel lista só o que estiver cadastrado nestas tabelas —
-    ainda <strong>não importa</strong> automaticamente os CSVs históricos do Grid.
+    Alimentada pelos CSVs históricos (Séries A/B/C + Copa do Brasil + catálogo FM).
+    O Grid passa a poder consumir daqui.
   </p>
 
   {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
@@ -20,6 +19,14 @@
     <span><strong>{{ resumo.competicoes }}</strong> competições</span>
     <span><strong>{{ resumo.edicoes }}</strong> edições</span>
   </div>
+
+  <form method="post" action="/admin/acervo/importar-csvs" class="acervo-import"
+        onsubmit="return confirm('Reimportar CSVs? Isso recria clubes/competições/edições a partir dos arquivos.');">
+    <button type="submit" class="acervo-icon-btn acervo-icon-btn--save" title="Reimportar CSVs" aria-label="Reimportar CSVs">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.9-4"/><path d="M19 4v4h-4"/><path d="M20 12a8 8 0 0 1-14.9 4"/><path d="M5 20v-4h4"/></svg>
+    </button>
+    <span class="acervo-muted">Reimportar CSVs</span>
+  </form>
 
   <nav class="acervo-tabs" aria-label="Seções do acervo">
     <a href="/admin/acervo?sec=clubes" class="acervo-tab {% if sec == 'clubes' %}is-active{% endif %}">Clubes</a>

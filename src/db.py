@@ -979,6 +979,13 @@ def init_db() -> None:
             )
         if not conn.execute("SELECT 1 FROM confrontos LIMIT 1").fetchone():
             _seed_oitavas(conn)
+    # Acervo: importa CSVs históricos uma vez (idempotente via meta).
+    try:
+        from src.acervo_seed import garantir_acervo_importado
+
+        garantir_acervo_importado()
+    except Exception:
+        pass
     # Invalida cache de puzzle após eventual novo salt do cutover Pro.
     try:
         from src.grid_game import _gerar_puzzle_cached
@@ -6780,7 +6787,7 @@ def list_acervo_clubes(
     extintos: bool | None = None,
     limite: int = 200,
 ) -> list[dict[str, Any]]:
-    lim = max(1, min(int(limite or 200), 1000))
+    lim = max(1, min(int(limite or 200), 5000))
     clauses: list[str] = []
     params: list[Any] = []
     termo = (q or "").strip()
@@ -6944,7 +6951,7 @@ def list_acervo_competicoes(
     ambito: str | None = None,
     limite: int = 200,
 ) -> list[dict[str, Any]]:
-    lim = max(1, min(int(limite or 200), 1000))
+    lim = max(1, min(int(limite or 200), 5000))
     clauses: list[str] = []
     params: list[Any] = []
     termo = (q or "").strip()
@@ -7112,7 +7119,7 @@ def list_acervo_edicoes(
     ano: int | None = None,
     limite: int = 300,
 ) -> list[dict[str, Any]]:
-    lim = max(1, min(int(limite or 300), 2000))
+    lim = max(1, min(int(limite or 300), 5000))
     clauses: list[str] = []
     params: list[Any] = []
     if competicao_id is not None:

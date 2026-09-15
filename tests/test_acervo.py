@@ -13,6 +13,7 @@ from src import acervo
 @pytest.fixture()
 def acervo_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(Path(__file__).resolve().parents[1])
+    monkeypatch.setenv("ACERVO_SKIP_IMPORT", "1")
     db.DB_PATH = tmp_path / "acervo.db"
     db.init_db()
     return db
