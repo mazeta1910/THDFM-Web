@@ -16523,6 +16523,46 @@ summary.acervo-icon-btn::marker { content: ""; }
   min-width: 10rem;
 }
 
+/* UF com bandeira ao lado da sigla (nunca colada no emblema do clube) */
+.acervo-uf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.acervo-uf .acervo-bandeira { margin: 0; }
+.acervo-uf--paren { gap: 0.2rem; }
+.acervo-uf--paren .acervo-bandeira { width: 18px; height: 12px; }
+
+/* Classificação: edição célula a célula */
+.acervo-clf-hint { margin: 0.35rem 0; font-size: 0.85rem; }
+.acervo-clf-preview { color: var(--accent); font-weight: 600; margin-left: 0.35rem; }
+.acervo-clf-table th,
+.acervo-clf-table td { padding: 0.3rem 0.35rem; vertical-align: middle; }
+.acervo-clf-input {
+  width: 3.2rem;
+  padding: 0.2rem 0.3rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.acervo-clf-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.acervo-clf-pos { width: 2.8rem; font-weight: 600; }
+.acervo-clf-calc {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.acervo-clf-calc[data-fld="pts"] { color: inherit; }
+.acervo-clf-save { display: inline-block; margin: 0; }
+
 .form-inscricao.is-submitting button[type="submit"] {
   opacity: 0.75;
   cursor: wait;

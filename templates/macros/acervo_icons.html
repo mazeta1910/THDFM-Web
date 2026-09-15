@@ -35,6 +35,11 @@
 {%- if uf %}<img class="acervo-bandeira" src="/bandeiras-uf/{{ uf }}.svg" alt="{{ uf }}" title="{{ uf }}" loading="lazy" onerror="this.classList.add('is-hidden')" />{% endif -%}
 {%- endmacro %}
 
+{# UF com a bandeira ao lado da sigla (nunca ao lado do emblema do clube). #}
+{% macro uf_com_bandeira(uf) -%}
+<span class="acervo-uf">{{ bandeira_uf(uf) }}<span class="acervo-uf-txt">{{ uf or '—' }}</span></span>
+{%- endmacro %}
+
 {# Emblema da competição: usa /emblemas/{slug}.png quando existir; senão, troféu. #}
 {% macro emblema_comp(slug, nome="") -%}
 <span class="acervo-emblema-wrap">{% if slug %}<img class="acervo-emblema" src="/emblemas/{{ slug }}.png" alt="{{ nome }}" loading="lazy" onerror="this.classList.add('is-hidden'); this.nextElementSibling.classList.remove('is-hidden');" />{% endif %}<span class="acervo-emblema acervo-emblema--ph{% if slug %} is-hidden{% endif %}" aria-hidden="true">{{ ico_trofeu() }}</span></span>

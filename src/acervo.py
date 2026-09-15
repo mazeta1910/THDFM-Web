@@ -115,6 +115,50 @@ def normalizar_notas(notas: str | None) -> str:
     return n
 
 
+def normalizar_texto_curto(
+    valor: str | None, *, campo: str = "Campo", maxlen: int = 120
+) -> str:
+    """Colapsa espaços e limita o tamanho de um texto curto opcional."""
+    v = " ".join((valor or "").strip().split())
+    if len(v) > maxlen:
+        raise ValueError(f"{campo} muito longo (máx. {maxlen}).")
+    return v
+
+
+# --- Pontuação de tabelas (pontos corridos) ------------------------------
+# Critério padrão do futebol de pontos corridos.
+PONTOS_VITORIA = 3
+PONTOS_EMPATE = 1
+PONTOS_DERROTA = 0
+
+
+def calcular_derivados(
+    v: int | None,
+    e: int | None,
+    d: int | None,
+    gp: int | None,
+    gc: int | None,
+) -> tuple[int | None, int | None, int | None]:
+    """Deriva (jogos, saldo de gols, pontos) a partir das estatísticas base.
+
+    - J  = V + E + D
+    - SG = GP - GC
+    - Pts = 3·V + 1·E + 0·D
+    Retorna ``None`` para cada métrica cujas entradas necessárias faltem.
+    """
+    tem_resultado = any(x is not None for x in (v, e, d))
+    j = (v or 0) + (e or 0) + (d or 0) if tem_resultado else None
+    pts = (
+        PONTOS_VITORIA * (v or 0)
+        + PONTOS_EMPATE * (e or 0)
+        + PONTOS_DERROTA * (d or 0)
+        if tem_resultado
+        else None
+    )
+    sg = (gp - gc) if (gp is not None and gc is not None) else None
+    return j, sg, pts
+
+
 def normalizar_url(url: str | None) -> str:
     u = (url or "").strip()
     if len(u) > 500:

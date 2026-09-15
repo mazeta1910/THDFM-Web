@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, emblema_comp %}
+{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, uf_com_bandeira, emblema_comp %}
 {% block title %}Admin · Acervo{% endblock %}
 {% block content %}
 <section class="card acervo-admin">
@@ -57,6 +57,12 @@
       <label class="acervo-field">Unique ID FM
         <input name="fm_unique_id" maxlength="32" placeholder="123.456" />
       </label>
+      <label class="acervo-field">Estádio
+        <input name="estadio" maxlength="120" placeholder="Estádio Canindé" />
+      </label>
+      <label class="acervo-field">Treinador
+        <input name="treinador" maxlength="120" placeholder="Nome do treinador" />
+      </label>
       <label class="acervo-check">
         <input type="checkbox" name="extinto" value="1" /> Extinto
       </label>
@@ -77,6 +83,8 @@
         <tr>
           <th>Nome</th>
           <th>UF</th>
+          <th>Estádio</th>
+          <th>Treinador</th>
           <th>FM</th>
           <th></th>
         </tr>
@@ -87,7 +95,6 @@
           <td>
             <span class="acervo-nome">
               {{ emblema_clube(c.fm_unique_id, c.nome) }}
-              {{ bandeira_uf(c.uf) }}
               <span class="acervo-nome-txt">
                 <strong>{{ c.nome }}</strong>
                 {% if c.nome_popular %}<span class="acervo-muted"> · {{ c.nome_popular }}</span>{% endif %}
@@ -95,7 +102,9 @@
               </span>
             </span>
           </td>
-          <td>{{ c.uf or '—' }}</td>
+          <td>{{ uf_com_bandeira(c.uf) }}</td>
+          <td>{{ c.estadio or '—' }}</td>
+          <td>{{ c.treinador or '—' }}</td>
           <td class="acervo-mono">{{ c.fm_unique_id or '—' }}</td>
           <td class="acervo-acoes">
             <details class="acervo-edit">
@@ -112,6 +121,8 @@
                     {% endfor %}
                   </select>
                 </label>
+                <label class="acervo-field">Estádio<input name="estadio" value="{{ c.estadio or '' }}" maxlength="120" /></label>
+                <label class="acervo-field">Treinador<input name="treinador" value="{{ c.treinador or '' }}" maxlength="120" /></label>
                 <label class="acervo-field">FM ID<input name="fm_unique_id" value="{{ c.fm_unique_id or '' }}" maxlength="32" /></label>
                 <label class="acervo-check"><input type="checkbox" name="extinto" value="1" {% if c.extinto %}checked{% endif %} /> Extinto</label>
                 <label class="acervo-field">Notas<textarea name="notas" rows="2" maxlength="2000">{{ c.notas }}</textarea></label>
@@ -320,8 +331,7 @@
             {% if e.campeao_nome %}
             <span class="acervo-nome">
               {{ emblema_clube(e.campeao_fm, e.campeao_nome) }}
-              {{ bandeira_uf(e.campeao_uf) }}
-              <span class="acervo-nome-txt">{{ e.campeao_nome }}</span>
+              <span class="acervo-nome-txt">{{ e.campeao_nome }}{% if e.campeao_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.campeao_uf) }}{{ e.campeao_uf }})</span>{% endif %}</span>
             </span>
             {% else %}—{% endif %}
           </td>
@@ -329,8 +339,7 @@
             {% if e.vice_nome %}
             <span class="acervo-nome">
               {{ emblema_clube(e.vice_fm, e.vice_nome) }}
-              {{ bandeira_uf(e.vice_uf) }}
-              <span class="acervo-nome-txt">{{ e.vice_nome }}</span>
+              <span class="acervo-nome-txt">{{ e.vice_nome }}{% if e.vice_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.vice_uf) }}{{ e.vice_uf }})</span>{% endif %}</span>
             </span>
             {% else %}—{% endif %}
           </td>
@@ -389,7 +398,7 @@
     <a href="/admin/acervo?sec=edicoes">Fechar</a>
   </p>
 
-  <form method="post" action="/admin/acervo/classificacao/salvar" class="acervo-form" autocomplete="off">
+  <form id="acervo-clf-add" method="post" action="/admin/acervo/classificacao/salvar" class="acervo-form" autocomplete="off">
     <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
     <div class="acervo-grid acervo-grid--stats">
       <label class="acervo-field">Pos.
@@ -403,23 +412,28 @@
           {% endfor %}
         </select>
       </label>
-      <label class="acervo-field">Pts<input name="pts" type="number" /></label>
-      <label class="acervo-field">J<input name="j" type="number" /></label>
-      <label class="acervo-field">V<input name="v" type="number" /></label>
-      <label class="acervo-field">E<input name="e" type="number" /></label>
-      <label class="acervo-field">D<input name="d" type="number" /></label>
-      <label class="acervo-field">GP<input name="gp" type="number" /></label>
-      <label class="acervo-field">GC<input name="gc" type="number" /></label>
-      <label class="acervo-field">SG<input name="sg" type="number" placeholder="auto" /></label>
+      <label class="acervo-field">V<input name="v" type="number" min="0" data-stat="v" /></label>
+      <label class="acervo-field">E<input name="e" type="number" min="0" data-stat="e" /></label>
+      <label class="acervo-field">D<input name="d" type="number" min="0" data-stat="d" /></label>
+      <label class="acervo-field">GP<input name="gp" type="number" min="0" data-stat="gp" /></label>
+      <label class="acervo-field">GC<input name="gc" type="number" min="0" data-stat="gc" /></label>
     </div>
+    <p class="acervo-muted acervo-clf-hint">
+      Pts, J e SG são calculados automaticamente — V=3, E=1, D=0; SG = GP − GC.
+      <span id="acervo-clf-add-preview" class="acervo-clf-preview"></span>
+    </p>
     <div class="acervo-actions">
       {{ btn_salvar("Salvar linha") }}
     </div>
   </form>
 
   {% if classificacao %}
-  <div class="acervo-table-wrap" style="margin-top:0.75rem">
-    <table class="acervo-table">
+  <p class="acervo-muted acervo-clf-hint">
+    Edite célula a célula (V, E, D, GP, GC) e clique no <span class="acervo-muted">✓</span> da linha.
+    Pts, J e SG são recalculados automaticamente.
+  </p>
+  <div class="acervo-table-wrap" style="margin-top:0.5rem">
+    <table class="acervo-table acervo-clf-table">
       <thead>
         <tr>
           <th>#</th><th>Clube</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th></th>
@@ -427,28 +441,36 @@
       </thead>
       <tbody>
         {% for row in classificacao %}
-        <tr>
-          <td>{{ row.posicao }}</td>
+        <tr class="acervo-clf-row" data-clf="{{ row.id }}">
+          <td>
+            <input class="acervo-clf-input acervo-clf-pos" form="clf-{{ row.id }}"
+                   name="posicao" type="number" min="1" max="128"
+                   value="{{ row.posicao }}" required aria-label="Posição" />
+          </td>
           <td>
             <span class="acervo-nome">
               {{ emblema_clube(row.clube_fm, row.clube_nome) }}
-              {{ bandeira_uf(row.clube_uf) }}
-              <span class="acervo-nome-txt">{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-muted">({{ row.clube_uf }})</span>{% endif %}</span>
+              <span class="acervo-nome-txt">{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-uf acervo-uf--paren acervo-muted">({{ bandeira_uf(row.clube_uf) }}{{ row.clube_uf }})</span>{% endif %}</span>
             </span>
           </td>
-          <td>{{ row.pts if row.pts is not none else '—' }}</td>
-          <td>{{ row.j if row.j is not none else '—' }}</td>
-          <td>{{ row.v if row.v is not none else '—' }}</td>
-          <td>{{ row.e if row.e is not none else '—' }}</td>
-          <td>{{ row.d if row.d is not none else '—' }}</td>
-          <td>{{ row.gp if row.gp is not none else '—' }}</td>
-          <td>{{ row.gc if row.gc is not none else '—' }}</td>
-          <td>{{ row.sg if row.sg is not none else '—' }}</td>
-          <td>
-            <form method="post" action="/admin/acervo/classificacao/apagar" onsubmit="return confirm('Remover linha?');">
+          <td class="acervo-clf-calc" data-fld="pts"><strong>{{ row.pts if row.pts is not none else '—' }}</strong></td>
+          <td class="acervo-clf-calc" data-fld="j">{{ row.j if row.j is not none else '—' }}</td>
+          <td><input class="acervo-clf-input" data-stat="v" form="clf-{{ row.id }}" name="v" type="number" min="0" value="{{ row.v if row.v is not none else '' }}" aria-label="Vitórias" /></td>
+          <td><input class="acervo-clf-input" data-stat="e" form="clf-{{ row.id }}" name="e" type="number" min="0" value="{{ row.e if row.e is not none else '' }}" aria-label="Empates" /></td>
+          <td><input class="acervo-clf-input" data-stat="d" form="clf-{{ row.id }}" name="d" type="number" min="0" value="{{ row.d if row.d is not none else '' }}" aria-label="Derrotas" /></td>
+          <td><input class="acervo-clf-input" data-stat="gp" form="clf-{{ row.id }}" name="gp" type="number" min="0" value="{{ row.gp if row.gp is not none else '' }}" aria-label="Gols pró" /></td>
+          <td><input class="acervo-clf-input" data-stat="gc" form="clf-{{ row.id }}" name="gc" type="number" min="0" value="{{ row.gc if row.gc is not none else '' }}" aria-label="Gols contra" /></td>
+          <td class="acervo-clf-calc" data-fld="sg">{{ row.sg if row.sg is not none else '—' }}</td>
+          <td class="acervo-acoes">
+            <form id="clf-{{ row.id }}" method="post" action="/admin/acervo/classificacao/salvar" class="acervo-clf-save">
+              <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
+              <input type="hidden" name="clube_id" value="{{ row.clube_id }}" />
+              {{ btn_atualizar("Salvar linha") }}
+            </form>
+            <form method="post" action="/admin/acervo/classificacao/apagar" class="acervo-del" onsubmit="return confirm('Remover linha?');">
               <input type="hidden" name="id" value="{{ row.id }}" />
               <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
-              {{ btn_apagar("Remover") }}
+              {{ btn_apagar() }}
             </form>
           </td>
         </tr>
@@ -456,6 +478,59 @@
       </tbody>
     </table>
   </div>
+  <script>
+  (function () {
+    var PV = 3, PE = 1, PD = 0;
+    function num(el) {
+      if (!el) return null;
+      var s = (el.value || '').trim();
+      if (s === '') return null;
+      var n = parseInt(s, 10);
+      return isNaN(n) ? null : n;
+    }
+    function setCalc(scope, fld, val, bold) {
+      var el = scope.querySelector('.acervo-clf-calc[data-fld="' + fld + '"]');
+      if (!el) return;
+      var txt = (val === null ? '—' : String(val));
+      el.innerHTML = bold ? '<strong>' + txt + '</strong>' : txt;
+    }
+    function derivar(scope) {
+      var v = num(scope.querySelector('[data-stat="v"]'));
+      var e = num(scope.querySelector('[data-stat="e"]'));
+      var d = num(scope.querySelector('[data-stat="d"]'));
+      var gp = num(scope.querySelector('[data-stat="gp"]'));
+      var gc = num(scope.querySelector('[data-stat="gc"]'));
+      var tem = (v !== null || e !== null || d !== null);
+      var j = tem ? (v || 0) + (e || 0) + (d || 0) : null;
+      var pts = tem ? PV * (v || 0) + PE * (e || 0) + PD * (d || 0) : null;
+      var sg = (gp !== null && gc !== null) ? gp - gc : null;
+      return { j: j, pts: pts, sg: sg };
+    }
+    document.querySelectorAll('.acervo-clf-row').forEach(function (row) {
+      row.querySelectorAll('.acervo-clf-input[data-stat]').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          var r = derivar(row);
+          setCalc(row, 'pts', r.pts, true);
+          setCalc(row, 'j', r.j, false);
+          setCalc(row, 'sg', r.sg, false);
+        });
+      });
+    });
+    var addForm = document.getElementById('acervo-clf-add');
+    var preview = document.getElementById('acervo-clf-add-preview');
+    if (addForm && preview) {
+      addForm.querySelectorAll('[data-stat]').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          var r = derivar(addForm);
+          if (r.pts === null && r.sg === null) { preview.textContent = ''; return; }
+          preview.textContent = '→ Pts ' + (r.pts === null ? '—' : r.pts) +
+            ' · J ' + (r.j === null ? '—' : r.j) +
+            ' · SG ' + (r.sg === null ? '—' : r.sg);
+        });
+      });
+    }
+  })();
+  </script>
   <form method="post" action="/admin/acervo/classificacao/limpar" style="margin-top:0.5rem"
         onsubmit="return confirm('Limpar toda a tabela desta edição?');">
     <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />

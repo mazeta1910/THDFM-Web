@@ -714,6 +714,18 @@ def _migrate_acervo(conn: sqlite3.Connection) -> None:
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_acervo_clubes_fm "
         "ON acervo_clubes(fm_unique_id) WHERE fm_unique_id IS NOT NULL"
     )
+    _clube_cols = {
+        r["name"]
+        for r in conn.execute("PRAGMA table_info(acervo_clubes)").fetchall()
+    }
+    if "estadio" not in _clube_cols:
+        conn.execute(
+            "ALTER TABLE acervo_clubes ADD COLUMN estadio TEXT NOT NULL DEFAULT ''"
+        )
+    if "treinador" not in _clube_cols:
+        conn.execute(
+            "ALTER TABLE acervo_clubes ADD COLUMN treinador TEXT NOT NULL DEFAULT ''"
+        )
 
     conn.execute(
         """
@@ -6822,6 +6834,8 @@ def criar_acervo_clube(
     nome_popular: str = "",
     uf: str = "",
     fm_unique_id: str | None = None,
+    estadio: str = "",
+    treinador: str = "",
     extinto: bool = False,
     notas: str = "",
 ) -> dict[str, Any]:
@@ -6829,6 +6843,7 @@ def criar_acervo_clube(
         normalizar_fm_unique_id,
         normalizar_nome,
         normalizar_notas,
+        normalizar_texto_curto,
         normalizar_uf,
     )
 
@@ -6838,6 +6853,8 @@ def criar_acervo_clube(
         raise ValueError("Nome popular muito longo (máx. 80).")
     uf_n = normalizar_uf(uf)
     fm = normalizar_fm_unique_id(fm_unique_id)
+    estadio_n = normalizar_texto_curto(estadio, campo="Estádio", maxlen=120)
+    treinador_n = normalizar_texto_curto(treinador, campo="Treinador", maxlen=120)
     notas_n = normalizar_notas(notas)
     with get_db() as conn:
         if fm:
@@ -6850,10 +6867,20 @@ def criar_acervo_clube(
         cur = conn.execute(
             """
             INSERT INTO acervo_clubes
-              (nome, nome_popular, uf, fm_unique_id, extinto, notas)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (nome, nome_popular, uf, fm_unique_id, estadio, treinador,
+               extinto, notas)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (nome_n, pop, uf_n, fm, 1 if extinto else 0, notas_n),
+            (
+                nome_n,
+                pop,
+                uf_n,
+                fm,
+                estadio_n,
+                treinador_n,
+                1 if extinto else 0,
+                notas_n,
+            ),
         )
         cid = int(cur.lastrowid)
     out = get_acervo_clube(cid)
@@ -6868,6 +6895,8 @@ def atualizar_acervo_clube(
     nome_popular: str = "",
     uf: str = "",
     fm_unique_id: str | None = None,
+    estadio: str = "",
+    treinador: str = "",
     extinto: bool = False,
     notas: str = "",
 ) -> dict[str, Any]:
@@ -6875,6 +6904,7 @@ def atualizar_acervo_clube(
         normalizar_fm_unique_id,
         normalizar_nome,
         normalizar_notas,
+        normalizar_texto_curto,
         normalizar_uf,
     )
 
@@ -6886,6 +6916,8 @@ def atualizar_acervo_clube(
         raise ValueError("Nome popular muito longo (máx. 80).")
     uf_n = normalizar_uf(uf)
     fm = normalizar_fm_unique_id(fm_unique_id)
+    estadio_n = normalizar_texto_curto(estadio, campo="Estádio", maxlen=120)
+    treinador_n = normalizar_texto_curto(treinador, campo="Treinador", maxlen=120)
     notas_n = normalizar_notas(notas)
     with get_db() as conn:
         if fm:
@@ -6899,6 +6931,7 @@ def atualizar_acervo_clube(
             """
             UPDATE acervo_clubes
             SET nome = ?, nome_popular = ?, uf = ?, fm_unique_id = ?,
+                estadio = ?, treinador = ?,
                 extinto = ?, notas = ?,
                 atualizado_em = datetime('now', 'localtime')
             WHERE id = ?
@@ -6908,6 +6941,8 @@ def atualizar_acervo_clube(
                 pop,
                 uf_n,
                 fm,
+                estadio_n,
+                treinador_n,
                 1 if extinto else 0,
                 notas_n,
                 int(clube_id),
@@ -7349,6 +7384,7 @@ def upsert_acervo_classificacao(
     gp: int | None = None,
     gc: int | None = None,
     sg: int | None = None,
+    auto: bool = False,
 ) -> dict[str, Any]:
     if not get_acervo_edicao(edicao_id):
         raise ValueError("Edição não encontrada.")
@@ -7368,7 +7404,12 @@ def upsert_acervo_classificacao(
     gp_n = _opt_stat(gp)
     gc_n = _opt_stat(gc)
     sg_n = _opt_stat(sg)
-    if sg_n is None and gp_n is not None and gc_n is not None:
+    if auto:
+        # Edição pela admin: J, SG e Pts são sempre derivados de V/E/D/GP/GC.
+        from src.acervo import calcular_derivados
+
+        j_n, sg_n, pts_n = calcular_derivados(v_n, e_n, d_n, gp_n, gc_n)
+    elif sg_n is None and gp_n is not None and gc_n is not None:
         sg_n = gp_n - gc_n
     with get_db() as conn:
         conflito = conn.execute(

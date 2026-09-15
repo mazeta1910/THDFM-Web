@@ -2179,6 +2179,8 @@ async def admin_acervo_clube_salvar(request: Request):
     nome_popular = str(form.get("nome_popular") or "")
     uf = str(form.get("uf") or "")
     fm = str(form.get("fm_unique_id") or "") or None
+    estadio = str(form.get("estadio") or "")
+    treinador = str(form.get("treinador") or "")
     notas = str(form.get("notas") or "")
     extinto = str(form.get("extinto") or "") in ("1", "on", "true", "yes")
     raw_id = str(form.get("id") or "").strip()
@@ -2190,6 +2192,8 @@ async def admin_acervo_clube_salvar(request: Request):
                 nome_popular=nome_popular,
                 uf=uf,
                 fm_unique_id=fm,
+                estadio=estadio,
+                treinador=treinador,
                 extinto=extinto,
                 notas=notas,
             )
@@ -2200,6 +2204,8 @@ async def admin_acervo_clube_salvar(request: Request):
                 nome_popular=nome_popular,
                 uf=uf,
                 fm_unique_id=fm,
+                estadio=estadio,
+                treinador=treinador,
                 extinto=extinto,
                 notas=notas,
             )
@@ -2364,14 +2370,12 @@ async def admin_acervo_classificacao_salvar(request: Request):
             edicao_id,
             clube_id=clube_id,
             posicao=posicao,
-            pts=_opt_int("pts"),
-            j=_opt_int("j"),
             v=_opt_int("v"),
             e=_opt_int("e"),
             d=_opt_int("d"),
             gp=_opt_int("gp"),
             gc=_opt_int("gc"),
-            sg=_opt_int("sg"),
+            auto=True,
         )
     except (TypeError, ValueError) as exc:
         eid_raw = str(form.get("edicao_id") or "").strip()
