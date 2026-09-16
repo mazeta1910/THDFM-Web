@@ -115,7 +115,7 @@
             <span class="acervo-nome">
               {{ emblema_clube(c.fm_unique_id, c.nome) }}
               <span class="acervo-nome-txt">
-                <strong>{{ c.nome }}</strong>
+                <a class="acervo-link" href="/acervo/clube/{{ c.id }}"><strong>{{ c.nome }}</strong></a>
                 {% if c.nome_popular %}<span class="acervo-muted"> · {{ c.nome_popular }}</span>{% endif %}
                 {% if c.extinto %}<span class="acervo-badge">extinto</span>{% endif %}
               </span>
@@ -162,13 +162,13 @@
   {% set base = "/admin/acervo?sec=clubes" ~ ("&q=" ~ clubes_pag.q|urlencode if clubes_pag.q else "") ~ ("&uf=" ~ clubes_pag.uf if clubes_pag.uf else "") %}
   <nav class="acervo-pager" aria-label="Paginação de clubes">
     {% if clubes_pag.has_prev %}
-    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base }}&pg={{ clubes_pag.pg - 1 }}" title="Página anterior" aria-label="Página anterior">{{ ico_chevron('left') }}</a>
+    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base ~ '&pg=' ~ (clubes_pag.pg - 1) }}" title="Página anterior" aria-label="Página anterior">{{ ico_chevron('left') }}</a>
     {% else %}
     <span class="acervo-icon-btn acervo-icon-btn--table is-disabled" aria-hidden="true">{{ ico_chevron('left') }}</span>
     {% endif %}
     <span class="acervo-pager-info">Pág. {{ clubes_pag.pg }} / {{ clubes_pag.pgs }}</span>
     {% if clubes_pag.has_next %}
-    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base }}&pg={{ clubes_pag.pg + 1 }}" title="Próxima página" aria-label="Próxima página">{{ ico_chevron('right') }}</a>
+    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base ~ '&pg=' ~ (clubes_pag.pg + 1) }}" title="Próxima página" aria-label="Próxima página">{{ ico_chevron('right') }}</a>
     {% else %}
     <span class="acervo-icon-btn acervo-icon-btn--table is-disabled" aria-hidden="true">{{ ico_chevron('right') }}</span>
     {% endif %}
@@ -236,7 +236,7 @@
             <span class="acervo-nome">
               {{ emblema_comp(c.slug, c.nome) }}
               <span class="acervo-nome-txt">
-                <strong>{{ c.nome }}</strong>
+                <a class="acervo-link" href="/acervo/competicao/{{ c.slug }}"><strong>{{ c.nome }}</strong></a>
                 <span class="acervo-muted acervo-mono"> · {{ c.slug }}</span>
                 {% if c.uf %}<span class="acervo-badge">{{ c.uf }}</span>{% endif %}
               </span>
@@ -359,14 +359,14 @@
           <td>
             <span class="acervo-nome">
               {{ emblema_comp(e.competicao_slug, e.competicao_nome) }}
-              <span class="acervo-nome-txt">{{ e.competicao_nome }}</span>
+              <span class="acervo-nome-txt"><a class="acervo-link" href="/acervo/competicao/{{ e.competicao_slug }}">{{ e.competicao_nome }}</a></span>
             </span>
           </td>
           <td>
             {% if e.campeao_nome %}
             <span class="acervo-nome">
               {{ emblema_clube(e.campeao_fm, e.campeao_nome) }}
-              <span class="acervo-nome-txt">{{ e.campeao_nome }}{% if e.campeao_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.campeao_uf) }}{{ e.campeao_uf }})</span>{% endif %}</span>
+              <span class="acervo-nome-txt"><a class="acervo-link" href="/acervo/clube/{{ e.campeao_clube_id }}">{{ e.campeao_nome }}</a>{% if e.campeao_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.campeao_uf) }}{{ e.campeao_uf }})</span>{% endif %}</span>
             </span>
             {% else %}—{% endif %}
           </td>
@@ -374,7 +374,7 @@
             {% if e.vice_nome %}
             <span class="acervo-nome">
               {{ emblema_clube(e.vice_fm, e.vice_nome) }}
-              <span class="acervo-nome-txt">{{ e.vice_nome }}{% if e.vice_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.vice_uf) }}{{ e.vice_uf }})</span>{% endif %}</span>
+              <span class="acervo-nome-txt"><a class="acervo-link" href="/acervo/clube/{{ e.vice_clube_id }}">{{ e.vice_nome }}</a>{% if e.vice_uf %} <span class="acervo-uf acervo-uf--paren">({{ bandeira_uf(e.vice_uf) }}{{ e.vice_uf }})</span>{% endif %}</span>
             </span>
             {% else %}—{% endif %}
           </td>
@@ -539,7 +539,7 @@
           <td>
             <span class="acervo-nome">
               {{ emblema_clube(row.clube_fm, row.clube_nome) }}
-              <span class="acervo-nome-txt">{{ row.clube_nome }}{% if row.clube_uf %} <span class="acervo-uf acervo-uf--paren acervo-muted">({{ bandeira_uf(row.clube_uf) }}{{ row.clube_uf }})</span>{% endif %}</span>
+              <span class="acervo-nome-txt"><a class="acervo-link" href="/acervo/clube/{{ row.clube_id }}">{{ row.clube_nome }}</a>{% if row.clube_uf %} <span class="acervo-uf acervo-uf--paren acervo-muted">({{ bandeira_uf(row.clube_uf) }}{{ row.clube_uf }})</span>{% endif %}</span>
             </span>
           </td>
           <td class="acervo-clf-calc" data-fld="pts"><strong>{{ row.pts if row.pts is not none else '—' }}</strong></td>
