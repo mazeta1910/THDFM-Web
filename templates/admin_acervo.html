@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, uf_com_bandeira, emblema_comp, link_tabela %}
+{% from "macros/acervo_icons.html" import btn_salvar, btn_atualizar, btn_apagar, sum_editar, emblema_clube, bandeira_uf, uf_com_bandeira, emblema_comp, link_tabela, ico_busca, ico_x, ico_chevron %}
 {% block title %}Admin · Acervo{% endblock %}
 {% block content %}
 <section class="card acervo-admin">
@@ -75,8 +75,27 @@
     </div>
   </form>
 
-  <h2 class="acervo-h" style="margin-top:1rem">Clubes ({{ clubes|length }})</h2>
-  {% if clubes %}
+  <h2 class="acervo-h" style="margin-top:1rem">
+    Clubes ({{ clubes_pag.total }}{% if clubes_pag.filtrando %} no filtro{% endif %})
+  </h2>
+
+  <form method="get" action="/admin/acervo" class="acervo-busca" role="search">
+    <input type="hidden" name="sec" value="clubes" />
+    <input class="acervo-busca-input" type="search" name="q" value="{{ clubes_pag.q }}"
+           placeholder="Buscar clube por nome…" maxlength="80" aria-label="Buscar clube" />
+    <select class="acervo-busca-uf" name="uf" aria-label="Filtrar por UF">
+      <option value="">UF</option>
+      {% for u in ufs %}
+      <option value="{{ u }}" {% if clubes_pag.uf == u %}selected{% endif %}>{{ u }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="acervo-icon-btn acervo-icon-btn--save" title="Buscar" aria-label="Buscar">{{ ico_busca() }}</button>
+    {% if clubes_pag.filtrando %}
+    <a class="acervo-icon-btn acervo-icon-btn--table" href="/admin/acervo?sec=clubes" title="Limpar filtro" aria-label="Limpar filtro">{{ ico_x() }}</a>
+    {% endif %}
+  </form>
+
+  {% if clubes_pag.rows %}
   <div class="acervo-table-wrap">
     <table class="acervo-table">
       <thead>
@@ -90,7 +109,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for c in clubes %}
+        {% for c in clubes_pag.rows %}
         <tr class="{% if c.extinto %}is-muted{% endif %}">
           <td>
             <span class="acervo-nome">
@@ -139,8 +158,24 @@
       </tbody>
     </table>
   </div>
+  {% if clubes_pag.pgs > 1 %}
+  {% set base = "/admin/acervo?sec=clubes" ~ ("&q=" ~ clubes_pag.q|urlencode if clubes_pag.q else "") ~ ("&uf=" ~ clubes_pag.uf if clubes_pag.uf else "") %}
+  <nav class="acervo-pager" aria-label="Paginação de clubes">
+    {% if clubes_pag.has_prev %}
+    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base }}&pg={{ clubes_pag.pg - 1 }}" title="Página anterior" aria-label="Página anterior">{{ ico_chevron('left') }}</a>
+    {% else %}
+    <span class="acervo-icon-btn acervo-icon-btn--table is-disabled" aria-hidden="true">{{ ico_chevron('left') }}</span>
+    {% endif %}
+    <span class="acervo-pager-info">Pág. {{ clubes_pag.pg }} / {{ clubes_pag.pgs }}</span>
+    {% if clubes_pag.has_next %}
+    <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ base }}&pg={{ clubes_pag.pg + 1 }}" title="Próxima página" aria-label="Próxima página">{{ ico_chevron('right') }}</a>
+    {% else %}
+    <span class="acervo-icon-btn acervo-icon-btn--table is-disabled" aria-hidden="true">{{ ico_chevron('right') }}</span>
+    {% endif %}
+  </nav>
+  {% endif %}
   {% else %}
-  <p class="acervo-muted">Nenhum clube cadastrado.</p>
+  <p class="acervo-muted">{% if clubes_pag.filtrando %}Nenhum clube encontrado para o filtro.{% else %}Nenhum clube cadastrado.{% endif %}</p>
   {% endif %}
 </section>
 {% endif %}

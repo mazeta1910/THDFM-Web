@@ -16483,6 +16483,55 @@ summary.acervo-icon-btn::marker { content: ""; }
 .acervo-icon-btn--table:hover {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
+.acervo-icon-btn.is-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Busca + filtro da lista de clubes (compacto) */
+.acervo-busca {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 0.75rem;
+}
+.acervo-busca-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.acervo-busca-uf {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+/* Paginação compacta (vetores + indicador) */
+.acervo-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.acervo-pager-info {
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 /* Célula de ações: lápis (editar) à esquerda do lixo (apagar) */
 .acervo-acoes { white-space: nowrap; }

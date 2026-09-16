@@ -23,6 +23,18 @@
 <svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M3 14.5h18"/><path d="M9 9.5V20"/></svg>
 {%- endmacro %}
 
+{% macro ico_busca(size=15) -%}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+{%- endmacro %}
+
+{% macro ico_x(size=15) -%}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+{%- endmacro %}
+
+{% macro ico_chevron(dir="left", size=16) -%}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{% if dir == 'left' %}<path d="M15 5l-7 7 7 7"/>{% else %}<path d="M9 5l7 7-7 7"/>{% endif %}</svg>
+{%- endmacro %}
+
 {# Link-ícone para abrir a tabela (classificação) de uma edição. #}
 {% macro link_tabela(href, title="Tabela") -%}
 <a class="acervo-icon-btn acervo-icon-btn--table" href="{{ href }}" title="{{ title }}" aria-label="{{ title }}">{{ ico_tabela() }}</a>
