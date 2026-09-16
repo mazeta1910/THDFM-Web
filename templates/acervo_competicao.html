@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "macros/acervo_icons.html" import emblema_clube, bandeira_uf, emblema_comp %}
+{% block title %}{{ comp.nome }} · Acervo{% endblock %}
+{% block content %}
+<section class="card acervo-admin acervo-perfil">
+  <a class="acervo-voltar" href="/admin/acervo?sec=competicoes">&larr; Acervo</a>
+
+  <header class="acervo-perfil-head">
+    <span class="acervo-perfil-emblema">{{ emblema_comp(comp.slug, comp.nome) }}</span>
+    <div class="acervo-perfil-id">
+      <h1 class="acervo-perfil-nome">{{ comp.nome }}</h1>
+      <p class="acervo-perfil-meta">
+        {{ ambito_label }}
+        {% if comp.uf %}<span class="acervo-perfil-sep">·</span> {{ comp.uf }}{% endif %}
+        <span class="acervo-perfil-sep">·</span> {{ cobertura_label }}
+        <span class="acervo-perfil-sep">·</span> <span class="acervo-mono">{{ comp.slug }}</span>
+      </p>
+    </div>
+  </header>
+
+  {% if comp.notas %}<p class="acervo-perfil-notas">{{ comp.notas }}</p>{% endif %}
+
+  <div class="acervo-resumo" aria-label="Resumo da competição">
+    <span><strong>{{ edicoes|length }}</strong> ediç{{ 'ões' if edicoes|length != 1 else 'ão' }}</span>
+  </div>
+
+  <h2 class="acervo-h" style="margin-top:1rem">Edições</h2>
+  {% if edicoes %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead><tr><th>Ano</th><th>Campeão</th><th>Vice</th></tr></thead>
+      <tbody>
+        {% for e in edicoes %}
+        <tr>
+          <td><strong>{{ e.ano }}</strong>{% if e.tem_tabela %} <span class="acervo-badge">tabela</span>{% endif %}</td>
+          <td>
+            {% if e.campeao_nome %}
+            <a class="acervo-nome acervo-link" href="/acervo/clube/{{ e.campeao_clube_id }}">
+              {{ emblema_clube(e.campeao_fm, e.campeao_nome) }}
+              <span class="acervo-nome-txt">{{ e.campeao_nome }}{% if e.campeao_uf %} <span class="acervo-uf acervo-uf--paren acervo-muted">({{ bandeira_uf(e.campeao_uf) }}{{ e.campeao_uf }})</span>{% endif %}</span>
+            </a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if e.vice_nome %}
+            <a class="acervo-nome acervo-link" href="/acervo/clube/{{ e.vice_clube_id }}">
+              {{ emblema_clube(e.vice_fm, e.vice_nome) }}
+              <span class="acervo-nome-txt">{{ e.vice_nome }}{% if e.vice_uf %} <span class="acervo-uf acervo-uf--paren acervo-muted">({{ bandeira_uf(e.vice_uf) }}{{ e.vice_uf }})</span>{% endif %}</span>
+            </a>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhuma edição registrada.</p>
+  {% endif %}
+</section>
+{% endblock %}

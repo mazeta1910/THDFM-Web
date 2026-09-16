@@ -139,6 +139,9 @@ def _path_publico(path: str, method: str = "GET") -> bool:
             return True
         if path.startswith("/prototipo/"):
             return True
+        # Acervo: páginas de perfil (clube/competição) são leitura pública.
+        if path.startswith("/acervo/"):
+            return True
     # Perfil público + APIs (recados/karma): o handler devolve JSON 401 em vez de redirect HTML.
     if path.startswith("/perfil/"):
         return True
@@ -2199,6 +2202,44 @@ def admin_acervo(request: Request):
 
     ctx["rotulo_fase_tipo"] = rotulo_fase_tipo
     return render(request, "admin_acervo.html", **ctx)
+
+
+@app.get("/acervo/clube/{clube_id}", response_class=HTMLResponse)
+def acervo_clube_publico(clube_id: int, request: Request):
+    clube = db.get_acervo_clube(clube_id)
+    if not clube:
+        raise HTTPException(status_code=404)
+    titulos = db.list_acervo_titulos_clube(clube_id)
+    participacoes = db.list_acervo_participacoes_clube(clube_id)
+    n_titulos = sum(1 for t in titulos if t["papel"] == "campeao")
+    n_vices = sum(1 for t in titulos if t["papel"] == "vice")
+    return render(
+        request,
+        "acervo_clube.html",
+        clube=clube,
+        titulos=titulos,
+        participacoes=participacoes,
+        n_titulos=n_titulos,
+        n_vices=n_vices,
+    )
+
+
+@app.get("/acervo/competicao/{slug}", response_class=HTMLResponse)
+def acervo_competicao_publico(slug: str, request: Request):
+    from src.acervo import rotulo_ambito, rotulo_cobertura
+
+    comp = db.get_acervo_competicao_por_slug(slug)
+    if not comp:
+        raise HTTPException(status_code=404)
+    edicoes = db.list_acervo_edicoes(competicao_id=comp["id"], limite=1000)
+    return render(
+        request,
+        "acervo_competicao.html",
+        comp=comp,
+        edicoes=edicoes,
+        ambito_label=rotulo_ambito(comp.get("ambito") or ""),
+        cobertura_label=rotulo_cobertura(comp.get("cobertura") or ""),
+    )
 
 
 @app.post("/admin/acervo/importar-csvs")

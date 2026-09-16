@@ -16533,6 +16533,63 @@ summary.acervo-icon-btn::marker { content: ""; }
   white-space: nowrap;
 }
 
+/* Links de navegação para páginas de clube/competição */
+.acervo-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.acervo-link:hover {
+  border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Páginas de perfil (clube / competição) */
+.acervo-voltar {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+  text-decoration: none;
+}
+.acervo-voltar:hover { color: var(--accent); }
+.acervo-perfil-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+.acervo-perfil-emblema .acervo-emblema,
+.acervo-perfil-emblema .acervo-emblema-wrap,
+.acervo-perfil-emblema svg {
+  width: 54px;
+  height: 54px;
+}
+.acervo-perfil-id { min-width: 0; }
+.acervo-perfil-nome { margin: 0; line-height: 1.15; }
+.acervo-perfil-meta {
+  margin: 0.25rem 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted, #6b7280);
+}
+.acervo-perfil-meta strong { color: var(--text, inherit); font-weight: 700; }
+.acervo-perfil-sep { opacity: 0.5; }
+.acervo-perfil-notas {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted, #6b7280);
+  font-size: 0.9rem;
+}
+.acervo-badge--ouro {
+  background: color-mix(in srgb, #d4a017 22%, transparent);
+  border-color: color-mix(in srgb, #d4a017 55%, transparent);
+  color: #8a6d0b;
+}
+
 /* Célula de ações: lápis (editar) à esquerda do lixo (apagar) */
 .acervo-acoes { white-space: nowrap; }
 .acervo-acoes .acervo-edit,

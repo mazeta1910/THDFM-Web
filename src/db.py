@@ -6942,6 +6942,43 @@ def get_acervo_clube(clube_id: int) -> dict[str, Any] | None:
     return _acervo_clube_row(row)
 
 
+def list_acervo_titulos_clube(clube_id: int) -> list[dict[str, Any]]:
+    """Edições em que o clube foi campeão ou vice, mais recente primeiro."""
+    cid = int(clube_id)
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT e.id AS edicao_id, e.ano, e.competicao_id,
+                   c.nome AS competicao_nome, c.slug AS competicao_slug,
+                   CASE WHEN e.campeao_clube_id = ? THEN 'campeao' ELSE 'vice' END AS papel
+            FROM acervo_edicoes e
+            JOIN acervo_competicoes c ON c.id = e.competicao_id
+            WHERE e.campeao_clube_id = ? OR e.vice_clube_id = ?
+            ORDER BY e.ano DESC, c.nome COLLATE NOCASE ASC
+            """,
+            (cid, cid, cid),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def list_acervo_participacoes_clube(clube_id: int) -> list[dict[str, Any]]:
+    """Linhas de classificação do clube em todas as edições, mais recente primeiro."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT cl.*, e.ano, e.id AS edicao_id, e.competicao_id,
+                   co.nome AS competicao_nome, co.slug AS competicao_slug
+            FROM acervo_edicao_classificacao cl
+            JOIN acervo_edicoes e ON e.id = cl.edicao_id
+            JOIN acervo_competicoes co ON co.id = e.competicao_id
+            WHERE cl.clube_id = ?
+            ORDER BY e.ano DESC, cl.posicao ASC, cl.id ASC
+            """,
+            (int(clube_id),),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def _acervo_clubes_filtros(
     q: str | None,
     uf: str | None,

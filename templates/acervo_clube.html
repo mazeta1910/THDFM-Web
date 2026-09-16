@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "macros/acervo_icons.html" import emblema_clube, bandeira_uf, uf_com_bandeira %}
+{% block title %}{{ clube.nome }} · Acervo{% endblock %}
+{% block content %}
+<section class="card acervo-admin acervo-perfil">
+  <a class="acervo-voltar" href="/admin/acervo?sec=clubes">&larr; Acervo</a>
+
+  <header class="acervo-perfil-head">
+    <span class="acervo-perfil-emblema">{{ emblema_clube(clube.fm_unique_id, clube.nome) }}</span>
+    <div class="acervo-perfil-id">
+      <h1 class="acervo-perfil-nome">
+        {{ clube.nome }}{% if clube.extinto %} <span class="acervo-badge">extinto</span>{% endif %}
+      </h1>
+      {% if clube.nome_popular %}<p class="acervo-muted">{{ clube.nome_popular }}</p>{% endif %}
+      <p class="acervo-perfil-meta">
+        {{ uf_com_bandeira(clube.uf) }}
+        {% if clube.estadio %}<span class="acervo-perfil-sep">·</span> Estádio: <strong>{{ clube.estadio }}</strong>{% endif %}
+        {% if clube.treinador %}<span class="acervo-perfil-sep">·</span> Treinador: <strong>{{ clube.treinador }}</strong>{% endif %}
+        {% if clube.fm_unique_id %}<span class="acervo-perfil-sep">·</span> <span class="acervo-mono">FM {{ clube.fm_unique_id }}</span>{% endif %}
+      </p>
+    </div>
+  </header>
+
+  {% if clube.notas %}<p class="acervo-perfil-notas">{{ clube.notas }}</p>{% endif %}
+
+  <div class="acervo-resumo" aria-label="Resumo do clube">
+    <span><strong>{{ n_titulos }}</strong> título{{ 's' if n_titulos != 1 else '' }}</span>
+    <span><strong>{{ n_vices }}</strong> vice{{ 's' if n_vices != 1 else '' }}</span>
+    <span><strong>{{ participacoes|length }}</strong> participaç{{ 'ões' if participacoes|length != 1 else 'ão' }}</span>
+  </div>
+
+  <h2 class="acervo-h" style="margin-top:1rem">Títulos e vices</h2>
+  {% if titulos %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead><tr><th>Ano</th><th>Competição</th><th>Resultado</th></tr></thead>
+      <tbody>
+        {% for t in titulos %}
+        <tr>
+          <td><strong>{{ t.ano }}</strong></td>
+          <td><a class="acervo-link" href="/acervo/competicao/{{ t.competicao_slug }}">{{ t.competicao_nome }}</a></td>
+          <td>
+            {% if t.papel == 'campeao' %}<span class="acervo-badge acervo-badge--ouro">Campeão</span>
+            {% else %}<span class="acervo-badge">Vice</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhum título ou vice registrado.</p>
+  {% endif %}
+
+  <h2 class="acervo-h" style="margin-top:1rem">Participações (tabelas)</h2>
+  {% if participacoes %}
+  <div class="acervo-table-wrap">
+    <table class="acervo-table">
+      <thead>
+        <tr><th>Ano</th><th>Competição</th><th>Pos</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr>
+      </thead>
+      <tbody>
+        {% for p in participacoes %}
+        <tr>
+          <td><strong>{{ p.ano }}</strong></td>
+          <td><a class="acervo-link" href="/acervo/competicao/{{ p.competicao_slug }}">{{ p.competicao_nome }}</a></td>
+          <td>{{ p.posicao }}º</td>
+          <td><strong>{{ p.pts if p.pts is not none else '—' }}</strong></td>
+          <td>{{ p.j if p.j is not none else '—' }}</td>
+          <td>{{ p.v if p.v is not none else '—' }}</td>
+          <td>{{ p.e if p.e is not none else '—' }}</td>
+          <td>{{ p.d if p.d is not none else '—' }}</td>
+          <td>{{ p.gp if p.gp is not none else '—' }}</td>
+          <td>{{ p.gc if p.gc is not none else '—' }}</td>
+          <td>{{ p.sg if p.sg is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="acervo-muted">Nenhuma participação em tabela registrada.</p>
+  {% endif %}
+</section>
+{% endblock %}
