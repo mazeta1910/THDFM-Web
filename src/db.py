@@ -6942,14 +6942,11 @@ def get_acervo_clube(clube_id: int) -> dict[str, Any] | None:
     return _acervo_clube_row(row)
 
 
-def list_acervo_clubes(
-    *,
-    q: str | None = None,
-    uf: str | None = None,
-    extintos: bool | None = None,
-    limite: int = 200,
-) -> list[dict[str, Any]]:
-    lim = max(1, min(int(limite or 200), 5000))
+def _acervo_clubes_filtros(
+    q: str | None,
+    uf: str | None,
+    extintos: bool | None,
+) -> tuple[str, list[Any]]:
     clauses: list[str] = []
     params: list[Any] = []
     termo = (q or "").strip()
@@ -6965,15 +6962,44 @@ def list_acervo_clubes(
     elif extintos is False:
         clauses.append("extinto = 0")
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    return where, params
+
+
+def contar_acervo_clubes(
+    *,
+    q: str | None = None,
+    uf: str | None = None,
+    extintos: bool | None = None,
+) -> int:
+    where, params = _acervo_clubes_filtros(q, uf, extintos)
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT COUNT(*) AS n FROM acervo_clubes {where}",
+            tuple(params),
+        ).fetchone()
+    return int(row["n"] if row else 0)
+
+
+def list_acervo_clubes(
+    *,
+    q: str | None = None,
+    uf: str | None = None,
+    extintos: bool | None = None,
+    limite: int = 200,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limite or 200), 5000))
+    off = max(0, int(offset or 0))
+    where, params = _acervo_clubes_filtros(q, uf, extintos)
     with get_db() as conn:
         rows = conn.execute(
             f"""
             SELECT * FROM acervo_clubes
             {where}
             ORDER BY nome COLLATE NOCASE ASC, id ASC
-            LIMIT ?
+            LIMIT ? OFFSET ?
             """,
-            (*params, lim),
+            (*params, lim, off),
         ).fetchall()
     return [_acervo_clube_row(r) for r in rows]  # type: ignore[misc]
 

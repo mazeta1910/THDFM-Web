@@ -2094,10 +2094,41 @@ def _acervo_ctx(request: Request, *, sec: str | None = None):
     secao = _acervo_sec(sec or request.query_params.get("sec"))
     ambitos = [(a, rotulo_ambito(a)) for a in sorted(AMBITOS)]
     coberturas = [(c, rotulo_cobertura(c)) for c in ("vazia", "campeao_apenas", "parcial", "completa")]
+
+    clubes_q = (request.query_params.get("q") or "").strip()
+    clubes_uf = (request.query_params.get("uf") or "").strip().upper()
+    clubes_uf = clubes_uf if clubes_uf in UFS_BR else ""
+    por_pagina = 30
+    total_clubes = db.contar_acervo_clubes(q=clubes_q or None, uf=clubes_uf or None)
+    total_paginas = max(1, (total_clubes + por_pagina - 1) // por_pagina)
+    try:
+        pagina = int(request.query_params.get("pg") or 1)
+    except ValueError:
+        pagina = 1
+    pagina = max(1, min(pagina, total_paginas))
+    clubes_pagina = db.list_acervo_clubes(
+        q=clubes_q or None,
+        uf=clubes_uf or None,
+        limite=por_pagina,
+        offset=(pagina - 1) * por_pagina,
+    )
+
     return {
         "sec": secao,
         "resumo": db.resumo_acervo(),
         "clubes": db.list_acervo_clubes(limite=3000),
+        "clubes_pag": {
+            "rows": clubes_pagina,
+            "total": total_clubes,
+            "pg": pagina,
+            "pgs": total_paginas,
+            "q": clubes_q,
+            "uf": clubes_uf,
+            "por_pagina": por_pagina,
+            "has_prev": pagina > 1,
+            "has_next": pagina < total_paginas,
+            "filtrando": bool(clubes_q or clubes_uf),
+        },
         "competicoes": db.list_acervo_competicoes(limite=500),
         "edicoes": db.list_acervo_edicoes(limite=500),
         "ufs": sorted(UFS_BR),

@@ -108,6 +108,47 @@ def test_acervo_fluxo_crud_http(client: TestClient):
     assert db.list_acervo_edicoes() == []
 
 
+def test_acervo_clubes_busca_e_paginacao(client: TestClient):
+    login_admin(client, "mazeta", "senha-dono")
+    import src.db as db
+
+    for i in range(1, 66):
+        db.criar_acervo_clube(f"Clube {i:03d}", uf=("RR" if i <= 5 else "SP"))
+
+    # Camada de dados: contagem + offset.
+    assert db.contar_acervo_clubes() == 65
+    assert db.contar_acervo_clubes(uf="RR") == 5
+    assert len(db.list_acervo_clubes(limite=30, offset=0)) == 30
+    assert len(db.list_acervo_clubes(limite=30, offset=60)) == 5
+
+    # Página 1: só 30 linhas, com pager e busca.
+    r = client.get("/admin/acervo?sec=clubes")
+    assert r.status_code == 200
+    assert "Clubes (65)" in r.text
+    assert "acervo-busca" in r.text
+    assert "Pág. 1 / 3" in r.text
+    assert "Clube 001" in r.text
+    assert "Clube 065" not in r.text
+
+    # Última página.
+    r = client.get("/admin/acervo?sec=clubes&pg=3")
+    assert "Pág. 3 / 3" in r.text
+    assert "Clube 065" in r.text
+    assert "Clube 001" not in r.text
+
+    # Busca por nome.
+    r = client.get("/admin/acervo?sec=clubes&q=Clube+063")
+    assert "Clubes (1 no filtro)" in r.text
+    assert "Clube 063" in r.text
+    assert "Clube 001" not in r.text
+
+    # Filtro por UF.
+    r = client.get("/admin/acervo?sec=clubes&uf=RR")
+    assert "Clubes (5 no filtro)" in r.text
+    assert "Clube 005" in r.text
+    assert "Clube 006" not in r.text
+
+
 def test_acervo_classificacao_http(client: TestClient):
     login_admin(client, "mazeta", "senha-dono")
     import src.db as db
