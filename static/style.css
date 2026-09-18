@@ -16441,30 +16441,34 @@ summary.acervo-icon-btn::marker { content: ""; }
 .acervo-busca {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin: 0.5rem 0 0.75rem;
+  margin: var(--space-2) 0 var(--space-3);
 }
 .acervo-busca-input {
   flex: 1 1 12rem;
+  width: auto;
   min-width: 0;
-  padding: 0.4rem 0.6rem;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface, #fff);
-  color: inherit;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 .acervo-busca-uf {
   flex: 0 0 auto;
-  padding: 0.4rem 0.5rem;
+  width: auto;
+  margin: 0;
+  padding: var(--space-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface, #fff);
-  color: inherit;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 /* Paginação compacta (vetores + indicador) */
@@ -16472,12 +16476,12 @@ summary.acervo-icon-btn::marker { content: ""; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  margin-top: 0.75rem;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 .acervo-pager-info {
-  font-size: 0.85rem;
-  color: var(--muted, #6b7280);
+  font-size: var(--fs-sm);
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -16504,9 +16508,11 @@ summary.acervo-icon-btn::marker { content: ""; }
 .acervo-perfil-head {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
+  margin-bottom: var(--space-4);
 }
+.acervo-perfil .acervo-resumo { margin-top: var(--space-2); }
 .acervo-perfil-emblema .acervo-emblema,
 .acervo-perfil-emblema .acervo-emblema-wrap,
 .acervo-perfil-emblema svg {
@@ -16514,24 +16520,24 @@ summary.acervo-icon-btn::marker { content: ""; }
   height: 54px;
 }
 .acervo-perfil-id { min-width: 0; }
-.acervo-perfil-nome { margin: 0; line-height: 1.15; }
+.acervo-perfil-nome { margin: 0; line-height: var(--lh-tight); }
 .acervo-perfil-meta {
-  margin: 0.25rem 0 0;
+  margin: var(--space-1) 0 0;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  font-size: 0.9rem;
-  color: var(--muted, #6b7280);
+  gap: var(--space-2);
+  font-size: var(--fs-md);
+  color: var(--muted);
 }
-.acervo-perfil-meta strong { color: var(--text, inherit); font-weight: 700; }
+.acervo-perfil-meta strong { color: var(--text); font-weight: 700; }
 .acervo-perfil-sep { opacity: 0.5; }
 .acervo-perfil-notas {
-  margin: 0.75rem 0 0;
-  padding: 0.6rem 0.75rem;
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--border);
-  color: var(--muted, #6b7280);
-  font-size: 0.9rem;
+  color: var(--muted);
+  font-size: var(--fs-md);
 }
 .acervo-badge--ouro {
   background: color-mix(in srgb, #d4a017 22%, transparent);
