@@ -4306,12 +4306,6 @@ html[data-theme="light"] .admin-main {
   border-top-right-radius: 0;
   border-top: none;
 }
-.admin-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-  align-items: stretch;
-}
 .confirm-alert {
   color: var(--muted);
   line-height: 1.45;
@@ -4339,10 +4333,6 @@ html[data-theme="light"] .admin-main {
   color: var(--accent) !important;
   font-weight: 600;
   font-size: 0.88rem;
-}
-.card-with-tip {
-  position: relative;
-  padding-right: 2.4rem;
 }
 .help-tip {
   position: absolute;
@@ -4425,9 +4415,6 @@ html[data-theme="light"] .admin-main {
   pointer-events: auto;
 }
 @media (max-width: 900px) {
-  .admin-grid-2 {
-    grid-template-columns: 1fr;
-  }
   .admin-sidebar {
     position: fixed;
     left: 0;
