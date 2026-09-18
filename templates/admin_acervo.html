@@ -36,7 +36,7 @@
 </section>
 
 {% if sec == 'clubes' %}
-<section class="card acervo-admin" style="margin-top:0.75rem">
+<section class="card acervo-admin mt-3">
   <h2 class="acervo-h">Novo clube</h2>
   <form method="post" action="/admin/acervo/clubes/salvar" class="acervo-form" autocomplete="off">
     <div class="acervo-grid">
@@ -75,7 +75,7 @@
     </div>
   </form>
 
-  <h2 class="acervo-h" style="margin-top:1rem">
+  <h2 class="acervo-h mt-4">
     Clubes ({{ clubes_pag.total }}{% if clubes_pag.filtrando %} no filtro{% endif %})
   </h2>
 
@@ -181,7 +181,7 @@
 {% endif %}
 
 {% if sec == 'competicoes' %}
-<section class="card acervo-admin" style="margin-top:0.75rem">
+<section class="card acervo-admin mt-3">
   <h2 class="acervo-h">Nova competição</h2>
   <form method="post" action="/admin/acervo/competicoes/salvar" class="acervo-form" autocomplete="off">
     <div class="acervo-grid">
@@ -222,7 +222,7 @@
     </div>
   </form>
 
-  <h2 class="acervo-h" style="margin-top:1rem">Competições ({{ competicoes|length }})</h2>
+  <h2 class="acervo-h mt-4">Competições ({{ competicoes|length }})</h2>
   {% if competicoes %}
   <div class="acervo-table-wrap">
     <table class="acervo-table">
@@ -295,7 +295,7 @@
 {% endif %}
 
 {% if sec == 'edicoes' %}
-<section class="card acervo-admin" style="margin-top:0.75rem">
+<section class="card acervo-admin mt-3">
   <h2 class="acervo-h">Nova edição</h2>
   {% if not competicoes %}
   <p class="erro">Cadastre uma competição antes de criar edições.</p>
@@ -345,7 +345,7 @@
   </form>
   {% endif %}
 
-  <h2 class="acervo-h" style="margin-top:1rem">Edições ({{ edicoes|length }})</h2>
+  <h2 class="acervo-h mt-4">Edições ({{ edicoes|length }})</h2>
   {% if edicoes %}
   <div class="acervo-table-wrap">
     <table class="acervo-table">
@@ -424,7 +424,7 @@
 </section>
 
 {% if edicao_foco %}
-<section class="card acervo-admin" style="margin-top:0.75rem" id="acervo-fases">
+<section class="card acervo-admin mt-3" id="acervo-fases">
   <h2 class="acervo-h">
     Fases · {{ edicao_foco.competicao_nome }} {{ edicao_foco.ano }}
   </h2>
@@ -450,7 +450,7 @@
     <div class="acervo-actions">{{ btn_salvar("Adicionar fase") }}</div>
   </form>
   {% if fases %}
-  <div class="acervo-table-wrap" style="margin-top:0.5rem">
+  <div class="acervo-table-wrap mt-2">
     <table class="acervo-table">
       <thead><tr><th>#</th><th>Fase</th><th>Tipo</th><th>Itens</th><th></th></tr></thead>
       <tbody>
@@ -478,7 +478,7 @@
   {% endif %}
 </section>
 
-<section class="card acervo-admin" style="margin-top:0.75rem" id="acervo-tabela">
+<section class="card acervo-admin mt-3" id="acervo-tabela">
   <h2 class="acervo-h">
     Tabela · {{ edicao_foco.competicao_nome }} {{ edicao_foco.ano }}
   </h2>
@@ -521,7 +521,7 @@
     Edite célula a célula (V, E, D, GP, GC) e clique no <span class="acervo-muted">✓</span> da linha.
     Pts, J e SG são recalculados automaticamente.
   </p>
-  <div class="acervo-table-wrap" style="margin-top:0.5rem">
+  <div class="acervo-table-wrap mt-2">
     <table class="acervo-table acervo-clf-table">
       <thead>
         <tr>
@@ -620,13 +620,13 @@
     }
   })();
   </script>
-  <form method="post" action="/admin/acervo/classificacao/limpar" style="margin-top:0.5rem"
+  <form method="post" action="/admin/acervo/classificacao/limpar" class="mt-2"
         onsubmit="return confirm('Limpar toda a tabela desta edição?');">
     <input type="hidden" name="edicao_id" value="{{ edicao_foco.id }}" />
     {{ btn_apagar("Limpar tabela") }}
   </form>
   {% else %}
-  <p class="acervo-muted" style="margin-top:0.75rem">Nenhuma linha na tabela ainda.</p>
+  <p class="acervo-muted mt-3">Nenhuma linha na tabela ainda.</p>
   {% endif %}
 </section>
 
@@ -641,7 +641,7 @@
   {%- endfor -%}
 {%- endmacro %}
 {% set usar_pid = participantes|length > 0 %}
-<section class="card acervo-admin acervo-mata" style="margin-top:0.75rem" id="acervo-mata">
+<section class="card acervo-admin acervo-mata mt-3" id="acervo-mata">
   <h2 class="acervo-h">Chave · {{ fase_foco.nome or 'Mata-mata' }}</h2>
   <p class="acervo-muted">
     Escolha os dois clubes e as regras; o vencedor é calculado sozinho a partir
@@ -673,7 +673,7 @@
   </form>
 
   {% if confrontos %}
-  <div class="acervo-chave" style="margin-top:0.75rem">
+  <div class="acervo-chave mt-3">
     {% for cf in confrontos %}
     <div class="acervo-confronto acervo-confronto-form">
       <form method="post" action="/admin/acervo/confrontos/salvar" id="cf-{{ cf.id }}"></form>
@@ -762,7 +762,7 @@
   })();
   </script>
   {% else %}
-  <p class="acervo-muted" style="margin-top:0.75rem">Nenhum confronto nesta chave ainda.</p>
+  <p class="acervo-muted mt-3">Nenhum confronto nesta chave ainda.</p>
   {% endif %}
 </section>
 {% endif %}

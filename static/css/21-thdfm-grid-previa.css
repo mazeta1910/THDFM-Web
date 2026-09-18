@@ -1,0 +1,84 @@
+/* —— THDFM Grid (prévia) —— */
+.grid-page {
+  max-width: min(58rem, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.15rem;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.grid-login-banner {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.grid-login-banner a {
+  font-weight: 800;
+  color: var(--accent);
+}
+.grid-head {
+  display: block;
+}
+.grid-head-main {
+  min-width: 0;
+}
+.grid-head-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  flex-wrap: nowrap;
+}
+.grid-report-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.36rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #c92a2a 55%, transparent);
+  background: #c92a2a;
+  color: #fff !important;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-decoration: none !important;
+  line-height: 1.1;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
+}
+.grid-report-btn:hover {
+  background: #a61e1e;
+  border-color: #a61e1e;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+.grid-report-ico {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+.grid-report-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #c92a2a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+

@@ -1,0 +1,371 @@
+/* —— Home portal —— */
+.site-brand-link {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.site-brand-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+.site-brand-link strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+.site-brand-sub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.site-menu-items-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.35rem 0.65rem 0.85rem;
+}
+
+/* Ganha da regra .site-body .site-main > .wrap { max-width: 1100px } */
+.site-body .site-main > .wrap.wrap-home {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 3rem;
+}
+
+.page-home .site-topbar-title {
+  opacity: 0.85;
+}
+
+.home-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  isolation: isolate;
+}
+@media (max-width: 900px) {
+  .home-hero {
+    min-height: calc(100dvh - var(--site-header-offset, 3.5rem));
+  }
+}
+.home-slides {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: inherit;
+}
+.home-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.55s ease, visibility 0.55s ease;
+}
+.home-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
+}
+.home-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.home-hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+  transform: scale(1.04);
+  animation: home-ken 18s ease-out forwards;
+}
+.home-hero-media--grad {
+  background-size: cover;
+  background-position: center;
+}
+.home-hero-media--welcome {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 20%, rgba(232, 93, 4, 0.35), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 15% 80%, rgba(255, 45, 45, 0.22), transparent 50%),
+    linear-gradient(145deg, #0a0a0a 0%, #1a120c 45%, #0d0d0d 100%);
+}
+.home-hero-media--wip {
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 30%, rgba(232, 93, 4, 0.28), transparent 55%),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 18px,
+      rgba(255, 255, 255, 0.03) 18px,
+      rgba(255, 255, 255, 0.03) 19px
+    ),
+    linear-gradient(160deg, #0c0c0c 0%, #1c1410 50%, #0a0a0a 100%);
+}
+.home-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0.88) 100%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.55) 0%, transparent 55%);
+  pointer-events: none;
+}
+.home-hero-scrim--deep {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.62) 40%, rgba(0, 0, 0, 0.92) 100%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.6) 0%, transparent 55%);
+}
+html.theme-light .home-hero-scrim,
+html[data-theme="light"] .home-hero-scrim {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(10, 10, 10, 0.35) 40%, rgba(10, 10, 10, 0.82) 100%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.4) 0%, transparent 60%);
+}
+.home-hero-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 720px;
+  padding: 2.5rem 1.25rem 4.5rem;
+}
+.home-slide.is-active .home-hero-inner {
+  animation: home-rise 0.7s ease-out both;
+}
+.home-brand {
+  margin: 0 0 0.35rem;
+  font-size: clamp(2.4rem, 9vw, 4.2rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+}
+.home-kicker {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.home-headline {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.25rem, 3.6vw, 1.85rem);
+  font-weight: 650;
+  line-height: 1.2;
+  color: #fff;
+}
+.home-lead {
+  margin: 0 0 1.15rem;
+  max-width: 28rem;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+}
+.home-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  max-width: 28rem;
+}
+.home-cta-login {
+  margin: 0.7rem 0 0;
+  max-width: 28rem;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+.home-cta-login a {
+  color: #fff;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.home-cta-login a:hover {
+  color: var(--accent);
+}
+.home-ctas .btn {
+  width: auto;
+  flex: 1 1 10rem;
+  min-width: 10rem;
+  padding: 0.85rem 1.1rem;
+  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.home-ctas .btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+.home-cta-primary {
+  background: var(--accent);
+  color: #111;
+}
+.home-ctas .btn.home-cta-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  color: #ffffff;
+}
+.home-ctas .btn.home-cta-secondary:hover,
+.home-ctas .btn.home-cta-secondary:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ffffff;
+  color: #ffffff;
+  filter: none;
+}
+html.theme-light .home-ctas .btn.home-cta-secondary,
+html[data-theme="light"] .home-ctas .btn.home-cta-secondary,
+html.theme-light .home-ctas .btn.home-cta-secondary:hover,
+html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.home-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.home-steps--hero {
+  gap: 0.45rem;
+  margin: 0 0 1.15rem;
+  max-width: 28rem;
+}
+.home-steps--hero li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+.home-steps li {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+.home-step-n {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: center;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.home-steps--hero .home-step-n {
+  width: 1.55rem;
+  height: 1.55rem;
+  font-size: 0.78rem;
+  background: rgba(232, 93, 4, 0.28);
+  border-color: rgba(232, 93, 4, 0.65);
+  color: #ffb070;
+}
+.home-steps--hero > li > span:last-child {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+}
+
+.home-slider-ui {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+.home-slider-btn,
+.home-dot {
+  pointer-events: auto;
+}
+.home-slider-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.home-slider-btn:hover {
+  background: rgba(0, 0, 0, 0.55);
+  border-color: #fff;
+}
+.home-slider-dots {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.home-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.home-dot.is-active {
+  background: var(--accent);
+  width: 1.15rem;
+}
+
+@keyframes home-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes home-ken {
+  from { transform: scale(1.04); }
+  to { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-slide {
+    transition: none;
+  }
+  .home-slide.is-active .home-hero-inner,
+  .home-hero-media img {
+    animation: none;
+  }
+  .home-hero-media img {
+    transform: none;
+  }
+  .home-ctas .btn {
+    transition: none;
+  }
+}
+

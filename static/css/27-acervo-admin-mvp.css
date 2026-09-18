@@ -1,0 +1,421 @@
+/* —— Acervo admin (MVP) —— */
+.acervo-admin h1 { margin: 0.15rem 0 0.35rem; font-size: 1.35rem; }
+.acervo-h { margin: 0 0 0.45rem; font-size: 1.05rem; }
+.acervo-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  margin: 0.65rem 0 0.85rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.acervo-resumo strong { color: var(--text); }
+.acervo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.acervo-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: var(--muted);
+  background: transparent;
+}
+.acervo-tab:hover { color: var(--text); border-color: var(--accent); }
+.acervo-tab.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.acervo-form { display: grid; gap: 0.45rem; }
+.acervo-form--inline { margin-top: 0.45rem; max-width: 28rem; }
+.acervo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 0.55rem;
+}
+.acervo-field {
+  display: grid;
+  gap: 0.18rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.acervo-field input,
+.acervo-field select,
+.acervo-field textarea {
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.28rem 0.4rem;
+}
+.acervo-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  align-self: end;
+  margin-bottom: 0.15rem;
+}
+.acervo-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.55rem;
+}
+.acervo-icon-btn {
+  width: 1.85rem !important;
+  height: 1.85rem;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card, transparent);
+  color: var(--text);
+  cursor: pointer;
+  min-height: 0;
+  line-height: 0;
+}
+.acervo-icon-btn svg { display: block; }
+.acervo-icon-btn--save {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.acervo-icon-btn--save:hover {
+  background: var(--accent);
+  color: #111;
+}
+.acervo-icon-btn--delete {
+  border-color: color-mix(in srgb, var(--danger, #c0392b) 40%, var(--border));
+  color: var(--danger, #c0392b);
+}
+.acervo-icon-btn--delete:hover {
+  background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent);
+}
+.acervo-table-wrap { overflow-x: auto; margin-top: var(--space-1); }
+.acervo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.acervo-table th,
+.acervo-table td {
+  text-align: left;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.acervo-table th {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.acervo-table tr.is-muted td { opacity: 0.72; }
+.acervo-muted { color: var(--muted); font-size: 0.84rem; }
+.acervo-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8rem; }
+.acervo-badge {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  vertical-align: middle;
+}
+.acervo-edit { display: inline-block; vertical-align: top; }
+
+/* Botão-lápis (summary) alinhado com os demais ícones de ação */
+summary.acervo-icon-btn { list-style: none; }
+summary.acervo-icon-btn::-webkit-details-marker { display: none; }
+summary.acervo-icon-btn::marker { content: ""; }
+.acervo-icon-btn--edit {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+}
+.acervo-icon-btn--edit:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.acervo-icon-btn--table {
+  text-decoration: none;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+}
+.acervo-icon-btn--table:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.acervo-icon-btn.is-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Busca + filtro da lista de clubes (compacto) */
+.acervo-busca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: var(--space-2) 0 var(--space-3);
+}
+.acervo-busca-input {
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+}
+.acervo-busca-uf {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+}
+
+/* Paginação compacta (vetores + indicador) */
+.acervo-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.acervo-pager-info {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Links de navegação para páginas de clube/competição */
+.acervo-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.acervo-link:hover {
+  border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Páginas de perfil (clube / competição) */
+.acervo-voltar {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+  text-decoration: none;
+}
+.acervo-voltar:hover { color: var(--accent); }
+.acervo-perfil-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.acervo-perfil .acervo-resumo { margin-top: var(--space-2); }
+.acervo-perfil-emblema .acervo-emblema,
+.acervo-perfil-emblema .acervo-emblema-wrap,
+.acervo-perfil-emblema svg {
+  width: 54px;
+  height: 54px;
+}
+.acervo-perfil-id { min-width: 0; }
+.acervo-perfil-nome { margin: 0; line-height: var(--lh-tight); }
+.acervo-perfil-meta {
+  margin: var(--space-1) 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+.acervo-perfil-meta strong { color: var(--text); font-weight: 700; }
+.acervo-perfil-sep { opacity: 0.5; }
+.acervo-perfil-notas {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+.acervo-badge--ouro {
+  background: color-mix(in srgb, #d4a017 22%, transparent);
+  border-color: color-mix(in srgb, #d4a017 55%, transparent);
+  color: #8a6d0b;
+}
+
+/* Célula de ações: lápis (editar) à esquerda do lixo (apagar) */
+.acervo-acoes { white-space: nowrap; }
+.acervo-acoes .acervo-edit,
+.acervo-acoes .acervo-del { display: inline-block; vertical-align: top; margin: 0; }
+.acervo-acoes > * + * { margin-left: 0.3rem; }
+.acervo-acoes .acervo-edit[open] { display: block; margin: 0 0 0.25rem; }
+
+/* Nome com emblema/bandeira à esquerda (mesma pegada da foto das pessoas) */
+.acervo-nome { display: inline-flex; align-items: center; gap: 0.4rem; }
+.acervo-nome-txt { min-width: 0; }
+.acervo-emblema {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 4px;
+}
+.acervo-emblema-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.acervo-emblema--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.acervo-bandeira {
+  width: 22px;
+  height: 15px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+.acervo-emblema.is-hidden,
+.acervo-bandeira.is-hidden { display: none; }
+.acervo-grid--stats {
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+}
+.acervo-grid--stats .acervo-field:nth-child(2) {
+  grid-column: span 2;
+  min-width: 10rem;
+}
+
+/* UF com bandeira ao lado da sigla (nunca colada no emblema do clube) */
+.acervo-uf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.acervo-uf .acervo-bandeira { margin: 0; }
+.acervo-uf--paren { gap: 0.2rem; }
+.acervo-uf--paren .acervo-bandeira { width: 18px; height: 12px; }
+
+/* Classificação: edição célula a célula */
+.acervo-clf-hint { margin: 0.35rem 0; font-size: 0.85rem; }
+.acervo-clf-preview { color: var(--accent); font-weight: 600; margin-left: 0.35rem; }
+.acervo-clf-table th,
+.acervo-clf-table td { padding: 0.3rem 0.35rem; vertical-align: middle; }
+.acervo-clf-input {
+  width: 3.2rem;
+  padding: 0.2rem 0.3rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.acervo-clf-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.acervo-clf-pos { width: 2.8rem; font-weight: 600; }
+.acervo-clf-calc {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.acervo-clf-calc[data-fld="pts"] { color: inherit; }
+.acervo-clf-save { display: inline-block; margin: 0; }
+
+/* Mata-mata: chave de confrontos */
+.acervo-fase-ativa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.acervo-field--slim { max-width: 9rem; }
+.acervo-chave {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.acervo-confronto {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  background: color-mix(in srgb, var(--card, transparent) 60%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.acervo-confronto-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.acervo-confronto-ordem { color: var(--muted); font-weight: 600; min-width: 1.6rem; }
+.acervo-confronto-clube { flex: 1 1 12rem; min-width: 8rem; }
+.acervo-confronto-x { color: var(--muted); font-weight: 700; padding: 0 0.15rem; }
+.acervo-confronto-regras {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  flex-wrap: wrap;
+}
+.acervo-confronto-placar {
+  display: flex;
+  gap: 0.9rem 1.2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.acervo-confronto-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.acervo-confronto-leg .acervo-clf-input { width: 3rem; }
+.acervo-confronto-venc {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  flex-wrap: wrap;
+}
+.acervo-cf-vencsel { max-width: 12rem; }
+.acervo-cf-vencsel:disabled { opacity: 0.5; }
+.acervo-cf-resultado { font-size: 0.9rem; }
+.acervo-confronto-acoes {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+.acervo-confronto-acoes .acervo-del { display: inline-block; margin: 0; }
+
+.form-inscricao.is-submitting button[type="submit"] {
+  opacity: 0.75;
+  cursor: wait;
+}

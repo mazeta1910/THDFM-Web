@@ -1,0 +1,82 @@
+/* —— Credenciais / entrar —— */
+.credenciais-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.credenciais-hint {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.conta-senha-card {
+  margin-top: 1rem;
+}
+.conta-senha-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+.conta-senha-form button {
+  margin-top: 0.35rem;
+}
+.login-back {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.login-marlon-aside {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.login-forgot-wrap {
+  margin: -0.35rem 0 0.85rem;
+}
+.login-forgot-btn {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.88rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.login-forgot-btn:hover {
+  opacity: 0.85;
+}
+.modal-esqueci #modal-esqueci-title {
+  margin: 0 0 0.55rem;
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.modal-esqueci .modal-esqueci-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.modal-esqueci-gif {
+  margin: 0 0 1.1rem;
+  text-align: center;
+}
+.modal-esqueci-gif img {
+  display: inline-block;
+  width: min(100%, 165px);
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0a0a0a;
+}
+
