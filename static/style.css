@@ -7,7 +7,55 @@
   --scroll-thumb: color-mix(in srgb, var(--accent) 55%, #666);
   --scroll-thumb-hover: var(--accent);
   --scroll-track: transparent;
+
+  /* ===== Fundação de design tokens (escalas consistentes) =====
+     Aditivo e agnóstico a tema. Use estes tokens em vez de valores
+     "chutados" para ganhar ritmo, densidade e previsibilidade. */
+
+  /* Escala de espaçamento (base 4px) */
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4  */
+  --space-2: 0.5rem;    /* 8  */
+  --space-3: 0.75rem;   /* 12 */
+  --space-4: 1rem;      /* 16 */
+  --space-5: 1.5rem;    /* 24 */
+  --space-6: 2rem;      /* 32 */
+  --space-7: 3rem;      /* 48 */
+
+  /* Escala tipográfica */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.85rem;
+  --fs-md: 0.95rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.15rem;
+  --fs-xl: 1.35rem;
+  --fs-2xl: 1.6rem;
+  --lh-tight: 1.15;
+  --lh-normal: 1.45;
+  --lh-loose: 1.6;
+
+  /* Raios e sombras */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.22);
+
+  /* Camadas de empilhamento (z-index) nomeadas */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-max: 9999;
 }
+
+/* Utilitários de espaçamento (escala de tokens) — substituem style="" inline */
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
 
 /* Scrollbar do site (Firefox + WebKit) */
 * {
@@ -4264,43 +4312,6 @@ html[data-theme="light"] .admin-main {
   gap: 1rem;
   align-items: stretch;
 }
-.admin-ops-grid > .admin-op-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-.admin-op-card h2 {
-  margin-top: 0;
-  margin-bottom: 0.65rem;
-}
-.admin-op-status {
-  margin: 0 0 0.65rem;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-.admin-op-status strong {
-  color: var(--text);
-}
-.admin-op-status-meta {
-  opacity: 0.8;
-}
-.admin-op-form {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  margin-top: 0;
-  padding-top: 0;
-  gap: 0;
-}
-.admin-op-form > .select-wrap {
-  margin-bottom: 0.65rem;
-}
-.admin-op-form > button,
-.admin-op-form.rodada-actions {
-  margin-top: auto;
-  margin-bottom: 0;
-}
 .confirm-alert {
   color: var(--muted);
   line-height: 1.45;
@@ -7702,52 +7713,6 @@ body.acesso-drawer-open {
 }
 .loguin-drawer-root {
   z-index: 9610;
-}
-.conta-drawer-root {
-  z-index: 9620;
-}
-.conta-drawer-kicker {
-  margin: 0 0 0.15rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.conta-top--drawer {
-  flex-direction: column;
-  align-items: stretch;
-}
-.conta-top--drawer .avatar-preview {
-  align-self: center;
-}
-.conta-drawer-form {
-  margin-bottom: 1.25rem;
-}
-.conta-drawer-save {
-  margin-top: 0.85rem;
-  width: auto;
-  max-width: 100%;
-}
-.conta-drawer-senha {
-  margin: 0 0 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-soft, var(--border));
-}
-.conta-drawer-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  padding-top: 0.35rem;
-  border-top: 1px solid var(--border-soft, var(--border));
-}
-.conta-drawer-actions .btn.secondary,
-.conta-drawer-actions .secondary {
-  width: 100%;
-}
-.conta-drawer .badge {
-  display: inline-block;
-  margin: 0 0 0.75rem;
 }
 .loguin-kicker--drawer {
   margin: 0 0 0.2rem;
@@ -16415,14 +16380,7 @@ button.grid-matriz-item:focus-visible {
 .acervo-icon-btn--delete:hover {
   background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent);
 }
-.acervo-btn {
-  width: auto !important;
-  padding: 0.28rem 0.55rem !important;
-  font-size: 0.82rem !important;
-  line-height: 1.2;
-  min-height: 0;
-}
-.acervo-table-wrap { overflow-x: auto; margin-top: 0.35rem; }
+.acervo-table-wrap { overflow-x: auto; margin-top: var(--space-1); }
 .acervo-table {
   width: 100%;
   border-collapse: collapse;
@@ -16453,15 +16411,6 @@ button.grid-matriz-item:focus-visible {
   color: var(--muted);
   vertical-align: middle;
 }
-.acervo-link-btn {
-  cursor: pointer;
-  list-style: none;
-  font-size: 0.78rem;
-  color: var(--accent);
-  text-decoration: none;
-}
-a.acervo-link-btn { margin-right: 0.45rem; }
-.acervo-link-btn::-webkit-details-marker { display: none; }
 .acervo-edit { display: inline-block; vertical-align: top; }
 
 /* Botão-lápis (summary) alinhado com os demais ícones de ação */
