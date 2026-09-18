@@ -1,0 +1,61 @@
+/* —— Admin: pedidos de recuperação —— */
+.recuperacao-box {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+}
+.recuperacao-head h3 {
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 1.05rem;
+}
+.recuperacao-head p {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.recuperacao-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.recuperacao-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.recuperacao-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.recuperacao-item-main strong {
+  font-size: 0.95rem;
+}
+.recuperacao-item-main span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.recuperacao-quando {
+  font-size: 0.78rem !important;
+}
+.recuperacao-item .btn-whatsapp-mini {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.7rem;
+  text-decoration: none;
+}
+

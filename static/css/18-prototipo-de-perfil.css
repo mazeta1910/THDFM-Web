@@ -1,0 +1,15 @@
+/* ——— Protótipo de perfil ——— */
+.proto-redirect-hint {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.proto-redirect-hint a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
