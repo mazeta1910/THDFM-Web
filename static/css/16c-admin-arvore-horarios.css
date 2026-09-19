@@ -1,0 +1,135 @@
+/* Árvore / horários no admin Resultados */
+.admin-arvore-card {
+  margin: 1.5rem 0 1.25rem;
+  text-align: center;
+}
+.admin-arvore-lead {
+  margin: 0 auto 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 44rem;
+}
+.admin-arvore-fase {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.admin-arvore-fase h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+.admin-arvore-status,
+.admin-arvore-pool {
+  margin: 0 auto 0.75rem;
+  font-size: 0.9rem;
+  max-width: 52rem;
+}
+.admin-arvore-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.15rem 0.25rem 0.15rem 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 80%, var(--bg));
+  font-size: 0.82rem;
+  cursor: grab;
+  user-select: none;
+}
+.admin-arvore-chip.is-dragging {
+  opacity: 0.55;
+}
+.admin-arvore-chip img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+.admin-arvore-existentes {
+  margin: 0 auto 0.75rem;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  display: inline-block;
+  text-align: left;
+}
+.admin-arvore-chaves {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 auto 0.85rem;
+  max-width: 64rem;
+  text-align: left;
+}
+.admin-arvore-chave {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 92%, var(--bg));
+}
+.admin-arvore-chave label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.admin-arvore-chave select,
+.admin-arvore-chave input[type="datetime-local"],
+.match-inicio-label input[type="datetime-local"] {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+}
+.admin-arvore-drop {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 70%, var(--card));
+}
+.admin-arvore-drop.is-over {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.admin-arvore-drop.has-clube {
+  border-style: solid;
+  color: var(--text);
+  font-weight: 600;
+}
+.admin-arvore-submit {
+  width: auto;
+  margin: 0 auto;
+  display: inline-flex;
+}
+.match-inicio-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.45rem;
+  padding: 0 0.65rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
