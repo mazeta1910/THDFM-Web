@@ -88,17 +88,7 @@ Não é preciso instalar um banco de dados à parte: o **SQLite** é um único a
 
 ## Licença
 
-Todos os componentes principais são **open source e permissivos**:
-
-| Componente | Licença | 
-|-----------|---------|
-| FastAPI | **MIT** |
-| Starlette | **BSD-3-Clause** |
-| Uvicorn | **BSD-3-Clause** |
-| Pydantic | **MIT** |
-| Python (CPython) | **PSF License** |
-
-Licenças MIT/BSD/PSF permitem uso comercial, modificação e distribuição, exigindo basicamente a manutenção do aviso de copyright.
+O **FastAPI** é distribuído sob a licença **MIT**, uma licença de código aberto **permissiva**. Na prática, ela permite usar, modificar e distribuir o framework livremente — inclusive em projetos comerciais —, exigindo apenas que o aviso de copyright e o texto da licença sejam mantidos. Não há cobrança e nem obrigação de abrir o código do seu próprio projeto.
 
 ## Responsáveis pelo desenvolvimento
 
