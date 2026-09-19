@@ -60,13 +60,32 @@ Para deixar o site acessível na internet, mantemos o Uvicorn rodando e usamos u
 
 ## Configuração necessária para rodar
 
-- **Python 3.10+** (este projeto foi validado no **3.12**).
-- Um **ambiente virtual** (`venv`).
-- Dependências via `pip` (arquivo `requirements.txt`): `fastapi`, `uvicorn[standard]`, `jinja2`, `python-multipart` (formulários/upload), `itsdangerous` (sessões), `python-dotenv` (variáveis de ambiente) etc.
-- Um arquivo **`.env`** com as variáveis (ex.: `SECRET_KEY`, `ADMIN_USERS`).
-- Executar com o Uvicorn: `uvicorn src.app:app --reload`.
+Pré-requisitos e passos:
 
-Não é necessário instalar banco separado: o **SQLite** é um arquivo (`data/bolao.db`) e já vem no Python (`sqlite3`).
+- **Python 3.10+** (o projeto foi validado no **3.12**).
+- Um **ambiente virtual** (`venv`): uma "caixa" isolada onde as bibliotecas do projeto ficam separadas do resto do sistema.
+- Instalar as bibliotecas com `pip install -r requirements.txt`.
+- Criar o arquivo **`.env`** (copiando o `.env.example`) com as variáveis, como `SECRET_KEY` e `ADMIN_USERS`.
+- Rodar com o Uvicorn: `uvicorn src.app:app --reload`.
+
+Não é preciso instalar um banco de dados à parte: o **SQLite** é um único arquivo (`data/bolao.db`) e já vem embutido no Python (módulo `sqlite3`).
+
+### Para que serve cada dependência (`requirements.txt`)
+
+| Pacote | Para que serve |
+|--------|----------------|
+| `fastapi` | O próprio framework web: define as rotas, faz a validação dos dados (com o Pydantic) e gera a documentação automática. |
+| `uvicorn[standard]` | O servidor que executa a aplicação (o servidor ASGI). O extra `[standard]` inclui otimizações de desempenho, como `uvloop` e `httptools`. |
+| `jinja2` | Motor de templates que monta as páginas HTML, misturando HTML com dados (`{{ variavel }}` e `{% for %}`). |
+| `python-multipart` | Permite ao FastAPI ler dados enviados por **formulários HTML** e **uploads de arquivos** (o formato `multipart/form-data`). |
+| `itsdangerous` | Assina de forma segura os **cookies de sessão** (usado pelo `SessionMiddleware`), para que o login não possa ser forjado. |
+| `python-dotenv` | Lê as variáveis do arquivo `.env` (ex.: `SECRET_KEY`, `ADMIN_USERS`) e as entrega para a aplicação. |
+| `pillow` | Biblioteca de imagens (*Python Imaging Library*), disponível para processar e validar imagens (avatares, comprovantes). |
+| `bcrypt` | Gera e confere os **hashes de senha** — as senhas ficam guardadas cifradas, nunca em texto puro (usada em `src/db.py`). |
+| `tzdata` | Fornece a base de **fusos horários** (ex.: `America/Sao_Paulo`); importante no Windows, que não traz esses dados por padrão. |
+| `pytest` | Framework de **testes automatizados**; roda a suíte de testes do projeto (`pytest -q`). |
+| `httpx` | Cliente HTTP usado pelo `TestClient` do FastAPI nos testes para simular requisições à aplicação. |
+| `beautifulsoup4` | Lê e extrai dados de páginas HTML; usada nos scripts de importação de dados (ex.: `scripts/scrape_serie_a_wiki.py`). |
 
 ## Licença
 
