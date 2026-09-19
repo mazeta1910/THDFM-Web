@@ -80,7 +80,6 @@ Não é preciso instalar um banco de dados à parte: o **SQLite** é um único a
 | `python-multipart` | Permite ao FastAPI ler dados enviados por **formulários HTML** e **uploads de arquivos** (o formato `multipart/form-data`). |
 | `itsdangerous` | Assina de forma segura os **cookies de sessão** (usado pelo `SessionMiddleware`), para que o login não possa ser forjado. |
 | `python-dotenv` | Lê as variáveis do arquivo `.env` (ex.: `SECRET_KEY`, `ADMIN_USERS`) e as entrega para a aplicação. |
-| `pillow` | Biblioteca de imagens (*Python Imaging Library*), disponível para processar e validar imagens (avatares, comprovantes). |
 | `bcrypt` | Gera e confere os **hashes de senha** — as senhas ficam guardadas cifradas, nunca em texto puro (usada em `src/db.py`). |
 | `tzdata` | Fornece a base de **fusos horários** (ex.: `America/Sao_Paulo`); importante no Windows, que não traz esses dados por padrão. |
 | `pytest` | Framework de **testes automatizados**; roda a suíte de testes do projeto (`pytest -q`). |
