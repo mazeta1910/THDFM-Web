@@ -30,20 +30,20 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 
 ## Principais características
 
-- **Escreve pouco e confere sozinho.** Você anota o tipo de cada dado (texto, número, etc.) e o FastAPI já valida e converte automaticamente — o que evita bastante código repetido.
-- **Documentação pronta, sem esforço.** Ele monta sozinho uma página interativa (`/docs`) onde qualquer pessoa testa a API pelo navegador, além de uma versão alternativa (`/redoc`). Tudo isso segue o padrão **OpenAPI** — um "manual" da API que outras ferramentas conseguem ler.
-- **Rápido.** É feito para atender muitos pedidos ao mesmo tempo sem travar; entre as opções em Python, está entre as mais velozes.
-- **Atende vários pedidos ao mesmo tempo.** Usa o modelo assíncrono do Python (`async`/`await`), útil quando a aplicação fica "esperando" o banco de dados ou uma resposta de fora.
-- **Peças reaproveitáveis.** Tem um mecanismo simples de **injeção de dependências** (`Depends`): pense em "blocos" prontos de login, sessão ou acesso ao banco que você encaixa nas rotas quando precisa.
+- **Validação automática com _type hints_.** Os _type hints_, ou "dicas de tipo", foram introduzidos no Python para permitir que os desenvolvedores indiquem explicitamente os tipos de dados das variáveis e dos retornos de funções (GOMES, 2024). A partir dessas anotações, o FastAPI valida e converte os dados de entrada e saída automaticamente, evitando muito _boilerplate_ (código repetitivo de configuração que apareceria em vários lugares).
+- **Documentação automática (OpenAPI).** O FastAPI gera sozinho uma página interativa em `/docs` (e uma versão alternativa em `/redoc`) para testar a API pelo navegador. Ela segue o **OpenAPI** (ou _OpenAPI Specification_, OAS), um padrão universal para descrever e documentar APIs REST de forma que tanto humanos quanto máquinas consigam ler e entender (NOSOWITZ; GOODWIN, 2026).
+- **Alto desempenho.** É construído para atender muitos pedidos ao mesmo tempo; entre os frameworks Python, está entre os mais rápidos.
+- **Assíncrono (`async`/`await`).** Suporta o modelo assíncrono do Python, útil quando a aplicação fica "esperando" o banco de dados ou uma resposta externa — nesse meio-tempo ela consegue atender outros pedidos.
+- **Injeção de dependências (`Depends`).** Mecanismo que entrega automaticamente "peças" prontas (login, sessão, acesso ao banco) às rotas que as declaram, sem repetir código.
 - **Recursos web completos.** Formulários, upload de arquivos, cookies/sessões, tempo real (WebSockets), páginas HTML (via Jinja2) e arquivos estáticos.
 
 ## Linguagem, framework e plataforma — vantagens e desvantagens
 
 | Camada | Vantagens | Desvantagens |
 |--------|-----------|--------------|
-| **Linguagem (Python)** | Código fácil de ler e escrever; enorme quantidade de bibliotecas prontas; roda em qualquer sistema; ótima para prototipar rápido e para dados/IA. | Em cálculos pesados é mais lenta que linguagens como Go/Rust; consegue processar um trecho "pesado" por vez (limitação conhecida como GIL). |
-| **Framework (FastAPI)** | Pouco código repetido; validação e documentação automáticas; a tipagem ajuda a evitar erros; documentação oficial excelente. | É relativamente novo (2018); vem **"sem muitos extras"** — não traz banco de dados, painel de administração nem login prontos (você escolhe as bibliotecas para isso); exige entender as anotações de tipo do Python. |
-| **Plataforma (ASGI)** | Atende muitas conexões ao mesmo tempo, tempo real (WebSockets) e streaming. | Precisa de um servidor próprio para esse modelo (os servidores mais antigos não rodam sem adaptação); se o código assíncrono for mal escrito, pode "segurar a fila" dos outros pedidos. |
+| **Linguagem (Python)** | Código fácil de ler e escrever; enorme quantidade de bibliotecas prontas; roda em qualquer sistema; ótima para prototipar rápido e para dados/IA. | Em cálculos pesados é mais lenta que linguagens como Go/Rust; por causa do **GIL** (_Global Interpreter Lock_, uma trava interna do interpretador), cada processo executa só um trecho de código Python por vez. |
+| **Framework (FastAPI)** | Pouco código repetitivo; validação e documentação automáticas; os _type hints_ ajudam a evitar erros; documentação oficial excelente. | É relativamente novo (2018); vem "sem muitos extras" — não traz banco de dados, painel de administração nem login prontos (você escolhe as bibliotecas para isso). |
+| **Plataforma (ASGI)** | Atende muitas conexões ao mesmo tempo, tempo real (WebSockets) e streaming. | Exige um servidor no padrão **ASGI** (_Asynchronous Server Gateway Interface_); os servidores no padrão antigo, **WSGI** (_Web Server Gateway Interface_), não rodam sem adaptação. E, se o código assíncrono for mal escrito, ele pode bloquear o _event loop_ (o laço que processa um evento por vez) e "segurar a fila" dos demais pedidos. |
 
 ## Servidores web disponíveis
 
@@ -519,7 +519,9 @@ Referências no formato ABNT (NBR 6023). As datas de acesso devem ser ajustadas 
 
 - ENCODE. **Starlette**. [S. l.], [entre 2018 e 2025]. Disponível em: https://www.starlette.io/. Acesso em: 19 set. 2026.
 - ENCODE. **Uvicorn**. [S. l.], [entre 2017 e 2025]. Disponível em: https://www.uvicorn.org/. Acesso em: 19 set. 2026.
+- GOMES, Ana Maria. **Type Hints em Python: Um Guia Completo**. Asimov Academy, 28 maio 2024. Disponível em: https://hub.asimov.academy/tutorial/type-hints-em-python-um-guia-completo/. Acesso em: 19 set. 2026.
 - LEAPCELL. **FastAPI is Overkill: Starlette and Pydantic Are All You Really Need**. DEV Community, 12 abr. 2025. Disponível em: https://dev.to/leapcell/fastapi-is-overkill-starlette-and-pydantic-are-all-you-really-need-1inp. Acesso em: 19 set. 2026.
+- NOSOWITZ, Dan; GOODWIN, Michael. **O que é OpenAPI?**. IBM Think, 24 fev. 2026. Disponível em: https://www.ibm.com/br-pt/think/topics/open-api. Acesso em: 19 set. 2026.
 - PYDANTIC. **Pydantic Documentation**. [S. l.], [entre 2017 e 2025]. Disponível em: https://docs.pydantic.dev/. Acesso em: 19 set. 2026.
 - PYTHON SOFTWARE FOUNDATION. **Python 3 Documentation**. [S. l.], [entre 2001 e 2025]. Disponível em: https://docs.python.org/3/. Acesso em: 19 set. 2026.
 - RAMÍREZ, Sebastián. **FastAPI**. [S. l.], 2018. Disponível em: https://fastapi.tiangolo.com/. Acesso em: 19 set. 2026.
