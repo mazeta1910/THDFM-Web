@@ -1,0 +1,47 @@
+html[data-theme="dark"],
+html.theme-dark,
+html:not([data-theme]) {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --card: #1a1a1a;
+  --text: #f2f2f2;
+  --muted: #9a9a9a;
+  --accent: #e85d04;
+  --accent2: #ff2d2d;
+  --danger: #ff4d4d;
+  --border: #333333;
+  --border-soft: #2a2a2a;
+  --page-bg-color: #0a0a0a;
+  --page-bg-image: none;
+  --nav-bg: #0a0a0a;
+  --hover-bg: #1a1a1a;
+  --planilha-placar-bg: #2a2410;
+  --cell-nada: #5c1a1a;
+  --cell-gols: #1a3a55;
+  --cell-placar: #1a3550;
+  --cell-venc-ok: #1e3a5c;
+  --cell-venc-erro: #5c1a1a;
+  --cell-venc-oficial: #3a3420;
+  --msg-bg: #1f1408;
+  --msg-border: #5a2e08;
+  --erro-bg: #2a1010;
+  --erro-border: #5a2020;
+  --modal-bg: #1a1a1a;
+  --zona-campeao: rgba(220, 180, 40, 0.35);
+  --zona-campeao-bar: #e6c200;
+  --zona-campeao-solid: #3a3418;
+  --zona-podio: rgba(154, 163, 173, 0.22);
+  --zona-podio-bar: #9aa3ad;
+  --zona-podio-solid: #2a2d32;
+  --zona-alta: rgba(40, 110, 190, 0.25);
+  --zona-alta-bar: #2a7ed0;
+  --zona-alta-solid: #1a2433;
+  --zona-meio: transparent;
+  --zona-meio-bar: #666;
+  --zona-meio-solid: #1a1a1a;
+  --zona-risco: rgba(200, 50, 50, 0.28);
+  --zona-risco-bar: #d03030;
+  --zona-risco-solid: #321818;
+}
+
