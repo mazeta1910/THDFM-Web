@@ -13,6 +13,7 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 - [Parte 1 — Apresentação do FastAPI](#parte-1--apresentação-do-fastapi)
 - [Parte 2 — Tutorial: configurar o FastAPI e criar um CRUD](#parte-2--tutorial-configurar-o-fastapi-e-criar-um-crud)
 - [Parte 3 — Operação do THDFM Web](#parte-3--operação-do-thdfm-web)
+- [Referências](#referências)
 
 ---
 
@@ -20,30 +21,29 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 
 ## O que é
 
-**FastAPI** é um framework web para Python, focado em construir **APIs** e aplicações web de alto desempenho com o mínimo de código. Ele é construído sobre dois pilares:
+**FastAPI** é um framework web para Python: ele é a "cola" que recebe os pedidos do navegador e devolve as respostas de uma aplicação ou API. Na prática, o FastAPI é uma **camada de conveniência** montada sobre duas peças já prontas e consagradas (LEAPCELL, 2025) — mais ou menos como uma montadora que junta um motor e um chassi testados, em vez de fabricar tudo do zero:
 
-- **Starlette** — a camada web/ASGI (roteamento, requisições, respostas, WebSockets, middlewares).
-- **Pydantic** — validação e serialização de dados a partir de *type hints* do Python.
+- **Starlette — a base web.** É quem faz o trabalho de servidor: cuida do roteamento, das requisições e respostas, dos WebSockets e dos **middlewares**. Um middleware é como um "porteiro" por onde todo pedido passa antes e depois de ser atendido (ex.: registro de logs, liberar *Cross-Origin Resource Sharing* (CORS)).
+- **Pydantic — os dados.** Funciona como um "formulário com regras": você descreve os campos que espera (por exemplo, `nome` é texto e `preço` é número) e ele **lê, confere e organiza** os dados que chegam. Se vier algo errado, avisa com uma mensagem clara; se estiver tudo certo, entrega os dados validados e prontos para virar JSON.
 
-A ideia central é usar as **anotações de tipo** do Python (`str`, `int`, modelos Pydantic) para, automaticamente: validar a entrada, converter os dados, documentar a API e gerar respostas — reduzindo código repetitivo e erros.
+**Como os dois se juntam:** o Starlette recebe e encaminha o pedido, o Pydantic valida e organiza os dados, e o FastAPI ainda monta **sozinho** uma documentação interativa (a página `/docs`), onde dá para testar tudo pelo navegador. É essa combinação que deixa o FastAPI produtivo e, ao mesmo tempo, rápido.
 
 ## Principais características
 
-- **Baseado em type hints**: validação e conversão automáticas dos dados de entrada/saída.
-- **Documentação interativa automática**: gera **Swagger UI** em `/docs`, **ReDoc** em `/redoc` e o schema **OpenAPI** em `/openapi.json` — sem escrever nada a mais.
-- **Alto desempenho**: é um framework **ASGI** (assíncrono); com Uvicorn, fica entre os frameworks Python mais rápidos.
-- **`async`/`await` nativo**: suporta rotas assíncronas e síncronas.
-- **Injeção de dependências** simples (`Depends`), útil para auth, sessões e acesso a banco.
-- **Padrões abertos**: OpenAPI e JSON Schema.
-- **Recursos web**: formulários, upload de arquivos, cookies/sessões, WebSockets, templates (via Jinja2) e arquivos estáticos (via Starlette).
+- **Escreve pouco e confere sozinho.** Você anota o tipo de cada dado (texto, número, etc.) e o FastAPI já valida e converte automaticamente — o que evita bastante código repetido.
+- **Documentação pronta, sem esforço.** Ele monta sozinho uma página interativa (`/docs`) onde qualquer pessoa testa a API pelo navegador, além de uma versão alternativa (`/redoc`). Tudo isso segue o padrão **OpenAPI** — um "manual" da API que outras ferramentas conseguem ler.
+- **Rápido.** É feito para atender muitos pedidos ao mesmo tempo sem travar; entre as opções em Python, está entre as mais velozes.
+- **Atende vários pedidos ao mesmo tempo.** Usa o modelo assíncrono do Python (`async`/`await`), útil quando a aplicação fica "esperando" o banco de dados ou uma resposta de fora.
+- **Peças reaproveitáveis.** Tem um mecanismo simples de **injeção de dependências** (`Depends`): pense em "blocos" prontos de login, sessão ou acesso ao banco que você encaixa nas rotas quando precisa.
+- **Recursos web completos.** Formulários, upload de arquivos, cookies/sessões, tempo real (WebSockets), páginas HTML (via Jinja2) e arquivos estáticos.
 
 ## Linguagem, framework e plataforma — vantagens e desvantagens
 
 | Camada | Vantagens | Desvantagens |
 |--------|-----------|--------------|
-| **Linguagem (Python)** | Sintaxe legível e produtiva; ecossistema gigantesco; multiplataforma; ótima para prototipar e para dados/IA. | Desempenho bruto menor que Go/Rust; o GIL limita paralelismo em tarefas CPU-bound. |
-| **Framework (FastAPI)** | Pouco *boilerplate*; validação e docs automáticas; tipagem reduz bugs; excelente documentação oficial; ótimo para APIs. | Relativamente novo (2018); **poucas "baterias inclusas"** — não traz ORM, painel admin nem autenticação prontos (usa-se bibliotecas externas); exige entender *type hints*. |
-| **Plataforma (ASGI)** | Concorrência assíncrona (muitas conexões simultâneas), WebSockets, streaming. | Precisa de um **servidor ASGI** (não roda em servidores WSGI clássicos como Apache `mod_wsgi` sem adaptação); código `async` mal escrito pode bloquear o *event loop*. |
+| **Linguagem (Python)** | Código fácil de ler e escrever; enorme quantidade de bibliotecas prontas; roda em qualquer sistema; ótima para prototipar rápido e para dados/IA. | Em cálculos pesados é mais lenta que linguagens como Go/Rust; consegue processar um trecho "pesado" por vez (limitação conhecida como GIL). |
+| **Framework (FastAPI)** | Pouco código repetido; validação e documentação automáticas; a tipagem ajuda a evitar erros; documentação oficial excelente. | É relativamente novo (2018); vem **"sem muitos extras"** — não traz banco de dados, painel de administração nem login prontos (você escolhe as bibliotecas para isso); exige entender as anotações de tipo do Python. |
+| **Plataforma (ASGI)** | Atende muitas conexões ao mesmo tempo, tempo real (WebSockets) e streaming. | Precisa de um servidor próprio para esse modelo (os servidores mais antigos não rodam sem adaptação); se o código assíncrono for mal escrito, pode "segurar a fila" dos outros pedidos. |
 
 ## Servidores web disponíveis
 
@@ -53,7 +53,7 @@ FastAPI é **ASGI**, então roda em servidores ASGI:
 - **Hypercorn** — suporta HTTP/2 e HTTP/3.
 - **Daphne** — servidor ASGI do projeto Django Channels.
 
-Em **produção** o padrão é rodar o **Gunicorn** gerenciando *workers* Uvicorn (`gunicorn -k uvicorn.workers.UvicornWorker`) atrás de um **proxy reverso** (Nginx, Caddy) ou de um túnel/CDN (Cloudflare). Neste repositório usamos Uvicorn diretamente e, para expor publicamente, um **Cloudflare Tunnel** (ver Parte 3).
+Em **produção** o padrão é rodar o **Gunicorn** coordenando vários processos Uvicorn (`gunicorn -k uvicorn.workers.UvicornWorker`) atrás de um **proxy reverso** — um intermediário que fica na frente da aplicação, como o Nginx ou o Caddy — ou de um túnel/CDN (Cloudflare). Neste repositório usamos o Uvicorn diretamente e, para expor na internet, um **Cloudflare Tunnel** (ver Parte 3).
 
 ## Configuração necessária para rodar
 
@@ -81,7 +81,7 @@ Licenças MIT/BSD/PSF permitem uso comercial, modificação e distribuição, ex
 
 ## Responsáveis pelo desenvolvimento
 
-- **FastAPI** foi **criado e é mantido por Sebastián Ramírez (`@tiangolo`)**, com uma **comunidade** open source ativa no GitHub.
+- **FastAPI** foi **criado e é mantido por Sebastián Ramírez (`@tiangolo`)** (RAMÍREZ, 2018), com uma **comunidade** open source ativa no GitHub.
 - **Starlette** e **Uvicorn** são mantidos pela **Encode** (liderada por **Tom Christie**) e comunidade.
 - **Pydantic** foi criado por **Samuel Colvin** e comunidade.
 
@@ -92,8 +92,8 @@ Ou seja: projeto de **comunidade** (não de uma única empresa proprietária), c
 - **Documentação oficial excelente e didática**: o [tutorial oficial](https://fastapi.tiangolo.com/) é passo a passo e cobre praticamente tudo com exemplos.
 - **Fácil achar material** (GitHub, Stack Overflow, cursos, vídeos) e a **qualidade** costuma ser boa por causa da tipagem e dos exemplos oficiais.
 - **Configuração simples**: `pip install` + `uvicorn` e a aplicação já sobe; as **docs automáticas em `/docs`** aceleram muito os testes durante o desenvolvimento.
-- **Pontos de atenção**: por não ter ORM/admin/auth embutidos, decisões de arquitetura ficam com você (aqui optamos por `sqlite3` puro + Jinja2). Programação assíncrona pede cuidado para não bloquear o *event loop*.
-- **Veredito**: ótima escolha para APIs e aplicações web modernas em Python — produtivo, rápido e com curva de aprendizado suave para quem já conhece Python.
+- **Pontos de atenção**: como não vem com banco de dados, login e painel de administração prontos, essas escolhas ficam com você (aqui usamos `sqlite3` puro + Jinja2). E o modelo assíncrono pede cuidado para que um pedido demorado não "segure a fila" dos demais.
+- **Veredito**: ótima escolha para APIs e aplicações web modernas em Python — produtivo, rápido e com uma curva de aprendizado tranquila para quem já conhece Python.
 
 ---
 
@@ -510,3 +510,16 @@ pytest -q
 | Final | 24 | 17 | 12 | 12 |
 
 Pênaltis: mesma lógica do bolão da Copa do Mundo (quem você apontou para passar).
+
+---
+
+# Referências
+
+Referências no formato ABNT (NBR 6023). As datas de acesso devem ser ajustadas para a data de entrega do trabalho.
+
+- ENCODE. **Starlette**. [S. l.], [entre 2018 e 2025]. Disponível em: https://www.starlette.io/. Acesso em: 19 set. 2026.
+- ENCODE. **Uvicorn**. [S. l.], [entre 2017 e 2025]. Disponível em: https://www.uvicorn.org/. Acesso em: 19 set. 2026.
+- LEAPCELL. **FastAPI is Overkill: Starlette and Pydantic Are All You Really Need**. DEV Community, 12 abr. 2025. Disponível em: https://dev.to/leapcell/fastapi-is-overkill-starlette-and-pydantic-are-all-you-really-need-1inp. Acesso em: 19 set. 2026.
+- PYDANTIC. **Pydantic Documentation**. [S. l.], [entre 2017 e 2025]. Disponível em: https://docs.pydantic.dev/. Acesso em: 19 set. 2026.
+- PYTHON SOFTWARE FOUNDATION. **Python 3 Documentation**. [S. l.], [entre 2001 e 2025]. Disponível em: https://docs.python.org/3/. Acesso em: 19 set. 2026.
+- RAMÍREZ, Sebastián. **FastAPI**. [S. l.], 2018. Disponível em: https://fastapi.tiangolo.com/. Acesso em: 19 set. 2026.
