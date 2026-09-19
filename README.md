@@ -37,13 +37,25 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 - **Injeção de dependências (`Depends`).** Mecanismo que entrega automaticamente "peças" prontas (login, sessão, acesso ao banco) às rotas que as declaram, sem repetir código.
 - **Recursos web completos.** Formulários, upload de arquivos, cookies/sessões, tempo real (WebSockets), páginas HTML (via Jinja2) e arquivos estáticos.
 
-## Linguagem, framework e plataforma — vantagens e desvantagens
+## Vantagens e desvantagens do FastAPI
 
-| Camada | Vantagens | Desvantagens |
-|--------|-----------|--------------|
-| **Linguagem (Python)** | Código fácil de ler e escrever; enorme quantidade de bibliotecas prontas; roda em qualquer sistema; ótima para prototipar rápido e para dados/IA. | Em cálculos pesados é mais lenta que linguagens como Go/Rust; por causa do **GIL** (_Global Interpreter Lock_, uma trava interna do interpretador), cada processo executa só um trecho de código Python por vez. |
-| **Framework (FastAPI)** | Pouco código repetitivo; validação e documentação automáticas; os _type hints_ ajudam a evitar erros; documentação oficial excelente. | É relativamente novo (2018); vem "sem muitos extras" — não traz banco de dados, painel de administração nem login prontos (você escolhe as bibliotecas para isso). |
-| **Plataforma (ASGI)** | Atende muitas conexões ao mesmo tempo, tempo real (WebSockets) e streaming. | Exige um servidor no padrão **ASGI** (_Asynchronous Server Gateway Interface_); os servidores no padrão antigo, **WSGI** (_Web Server Gateway Interface_), não rodam sem adaptação. E, se o código assíncrono for mal escrito, ele pode bloquear o _event loop_ (o laço que processa um evento por vez) e "segurar a fila" dos demais pedidos. |
+Como o trabalho é sobre o **FastAPI**, focamos as vantagens e desvantagens do próprio framework.
+
+**Vantagens**
+
+- **Produtivo**: a partir dos _type hints_, valida e converte os dados automaticamente, então se escreve bem menos código repetitivo.
+- **Documentação automática**: gera sozinho as páginas `/docs` e `/redoc`, o que agiliza testar a API durante o desenvolvimento.
+- **Rápido**: por ser assíncrono e rodar sobre o Starlette + Uvicorn, está entre os frameworks Python mais velozes.
+- **Menos erros**: as anotações de tipo ajudam o editor de código a apontar problemas antes mesmo de executar.
+- **Bem documentado e popular**: a documentação oficial é excelente e há bastante material da comunidade — é fácil achar ajuda.
+- **Padrões abertos**: segue o OpenAPI, o que facilita integrar a API com outras ferramentas.
+
+**Desvantagens**
+
+- **Relativamente novo (2018)**: o ecossistema de bibliotecas e plugins ainda é menor que o de frameworks mais antigos, como Django e Flask.
+- **Vem "sem muitos extras"**: não traz banco de dados, painel de administração nem login prontos — você escolhe as bibliotecas para isso.
+- **Exige alguns conceitos**: é preciso entender os _type hints_ e o modelo assíncrono (`async`/`await`); código assíncrono mal escrito pode "segurar a fila" dos pedidos.
+- **Mais decisões por sua conta**: por dar bastante liberdade, várias escolhas de arquitetura ficam com o desenvolvedor.
 
 ## Servidores web disponíveis
 
