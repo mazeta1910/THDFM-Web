@@ -47,13 +47,16 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 
 ## Servidores web disponíveis
 
-FastAPI é **ASGI**, então roda em servidores ASGI:
+O FastAPI não roda sozinho: ele precisa de um servidor de aplicação no padrão **ASGI** (_Asynchronous Server Gateway Interface_) — a interface assíncrona do Python que liga o servidor à aplicação web. Neste projeto, o servidor usado é o **Uvicorn**.
 
-- **Uvicorn** — o mais usado (e o adotado neste projeto). Baseado em `uvloop`/`httptools`.
-- **Hypercorn** — suporta HTTP/2 e HTTP/3.
-- **Daphne** — servidor ASGI do projeto Django Channels.
+Como o Uvicorn funciona, na prática:
 
-Em **produção** o padrão é rodar o **Gunicorn** coordenando vários processos Uvicorn (`gunicorn -k uvicorn.workers.UvicornWorker`) atrás de um **proxy reverso** — um intermediário que fica na frente da aplicação, como o Nginx ou o Caddy — ou de um túnel/CDN (Cloudflare). Neste repositório usamos o Uvicorn diretamente e, para expor na internet, um **Cloudflare Tunnel** (ver Parte 3).
+- Subimos a aplicação com `uvicorn src.app:app --host 0.0.0.0 --port 8000`, em que `src.app` é o arquivo e `app` é a instância do FastAPI.
+- Ele fica "escutando" naquela porta; a cada requisição HTTP que chega, repassa o pedido para o FastAPI, recebe a resposta e a devolve ao navegador.
+- Por ser assíncrono (e otimizado pelas bibliotecas `uvloop` e `httptools`), atende vários pedidos praticamente ao mesmo tempo, sem precisar de uma thread separada para cada um.
+- Em desenvolvimento, a opção `--reload` faz o servidor reiniciar sozinho sempre que um arquivo é salvo.
+
+Para deixar o site acessível na internet, mantemos o Uvicorn rodando e usamos um **Cloudflare Tunnel** (ver Parte 3). Em produção, também é comum colocá-lo atrás de um **proxy reverso** (um intermediário como o Nginx, que fica na frente da aplicação).
 
 ## Configuração necessária para rodar
 
