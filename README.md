@@ -21,7 +21,7 @@ Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/TH
 
 ## O que é
 
-**FastAPI** é um framework web para Python: ele é a "cola" que recebe os pedidos do navegador e devolve as respostas de uma aplicação ou API. Na prática, o FastAPI é uma **camada de conveniência** montada sobre duas peças já prontas e consagradas (LEAPCELL, 2025) — mais ou menos como uma montadora que junta um motor e um chassi testados, em vez de fabricar tudo do zero:
+**FastAPI** é um framework web para Python: ele é a "cola" que recebe os pedidos do navegador e devolve as respostas de uma aplicação ou API. Na prática, o FastAPI é uma **camada de conveniência** montada sobre duas peças já prontas e consagradas (LEAPCELL, 2025):
 
 - **Starlette — a base web.** É quem faz o trabalho de servidor: cuida do roteamento, das requisições e respostas, dos WebSockets e dos **middlewares**. Um middleware é como um "porteiro" por onde todo pedido passa antes e depois de ser atendido (ex.: registro de logs, liberar *Cross-Origin Resource Sharing* (CORS)).
 - **Pydantic — os dados.** Funciona como um "formulário com regras": você descreve os campos que espera (por exemplo, `nome` é texto e `preço` é número) e ele **lê, confere e organiza** os dados que chegam. Se vier algo errado, avisa com uma mensagem clara; se estiver tudo certo, entrega os dados validados e prontos para virar JSON.
@@ -105,9 +105,6 @@ O **FastAPI** é distribuído sob a licença **MIT**, uma licença de código ab
 ## Responsáveis pelo desenvolvimento
 
 - **FastAPI** foi **criado e é mantido por Sebastián Ramírez (`@tiangolo`)** (RAMÍREZ, 2018), com uma **comunidade** open source ativa no GitHub.
-- **Starlette** e **Uvicorn** são mantidos pela **Encode** (liderada por **Tom Christie**) e comunidade.
-- **Pydantic** foi criado por **Samuel Colvin** e comunidade.
-
 Ou seja: projeto de **comunidade** (não de uma única empresa proprietária), com mantenedores de referência bem definidos.
 
 ## Conclusões sobre o uso do framework
@@ -197,7 +194,7 @@ DB_PATH = Path("data/bolao.db")
 def get_db():
     DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row          # devolve linhas como dict-like
+    conn.row_factory = sqlite3.Row        
     try:
         yield conn
         conn.commit()
@@ -411,128 +408,6 @@ O mesmo padrão está em produção no cadastro de **Clubes do Acervo**:
 | Funções CRUD | `src/db.py` | `criar_acervo_clube`, `atualizar_acervo_clube`, `apagar_acervo_clube`, `list_acervo_clubes`, `get_acervo_clube` |
 | Rotas | `src/app.py` | `admin_acervo` (GET, lista), `admin_acervo_clube_salvar` (POST, cria/atualiza), `admin_acervo_clube_apagar` (POST) |
 | Template | `templates/admin_acervo.html` | seção **Clubes** (form + tabela + busca/paginação) |
-
-Para ver rodando: suba o servidor (Parte 3), entre em `/admin/login` como `mazeta` e acesse **`/admin/acervo?sec=clubes`**. Lá há **busca, paginação, criar, editar e apagar** — o CRUD completo.
-
-## Roteiro de apresentação (15–30 min)
-
-1. **(3 min)** O que é o FastAPI + principais características — abrir `/docs` ao vivo.
-2. **(3 min)** Vantagens/desvantagens, servidores web, licença e mantenedores.
-3. **(3 min)** Configuração: `venv` → `pip install` → `uvicorn`.
-4. **(10–15 min)** Tutorial do CRUD: mostrar o esquema, o `db.py`, as rotas e o template; depois demonstrar o **CRUD real de Clubes** em `/admin/acervo?sec=clubes` (criar/editar/buscar/apagar).
-5. **(3 min)** Conclusões sobre o uso do framework.
-
----
-
-# Parte 3 — Operação do THDFM Web
-
-## Subir local
-
-```bash
-cd THDFM-Web
-py -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-uvicorn src.app:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Abra http://127.0.0.1:8000
-
-### Rotas principais
-
-| Área | Caminho |
-|------|---------|
-| Home | `/` · `/home` |
-| Bolão — inscrição | `/inscricao` |
-| Bolão — palpites / conta | `/p/{token}` |
-| Bolão — classificação | `/classificacao` |
-| Regras | `/regras` |
-| Listra | `/grupo/listra` |
-| Xonhômetro | `/xonhometro` |
-| Banimentos | `/grupo/bans` |
-| Transparência | `/transparencia` |
-| Acervo (admin) | `/admin/acervo` |
-| Admin | `/admin/login` |
-
-Banco: `data/bolao.db`. Comprovantes: `data/comprovantes/`. Avatares: `data/avatars/`. Emblemas: `data/emblemas/*.png`. Seeds da Listra: `data/listra/`.
-
-## Túnel (link público)
-
-1. Instale [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
-2. Com o uvicorn rodando:
-
-```bash
-cloudflared tunnel --url http://127.0.0.1:8000
-```
-
-3. O cloudflared imprime uma URL tipo `https://xxxx.trycloudflare.com`.
-4. Cole no `.env`:
-
-```env
-PUBLIC_BASE_URL=https://xxxx.trycloudflare.com
-```
-
-5. Reinicie o uvicorn. No admin, os links passam a usar essa URL (e não o IP da rede).
-
-**O que mandar para quem:**
-
-| Para quem | Link |
-|-----------|------|
-| Todo o grupo (inscrição no bolão) | `PUBLIC_BASE_URL/inscricao` |
-| Cada pessoa (depois de liberar) | `PUBLIC_BASE_URL/p/{token}` no privado |
-| Site em geral | `PUBLIC_BASE_URL/` |
-
-PC ligado + uvicorn + túnel = site no ar. A cada reinício do túnel *rápido* (`trycloudflare`), a URL muda — atualize o `.env`.
-
-## Header (rotas)
-
-- Visitante: **Home**, páginas do grupo, **Inscrição**, **Regras**, **Admin**
-- Com link de participante: **Palpites** / status, **Classificação** (se liberado), **Regras**, **Conta**
-- Admin logado: **Admin** + nome na nav + **Sair**
-
-## Acesso dos admins (Mazeta, Ramos, João JEC)
-
-Cada um tem usuário e senha próprios no `.env`:
-
-```env
-ADMIN_USERS=mazeta=SENHA1=Mazeta:dono|ramos=SENHA2=Ramos:moderador|joaojec=SENHA3=João JEC:adminzinho
-```
-
-Formato: `login=senha=Nome[:papel]` separados por `|`.
-
-Papéis:
-- **Dono** (`dono` / `sagrado`) — Mazeta: tudo + painel `/admin/credenciais` (ver username e redefinir senha; senha antiga nunca aparece).
-- **Moderador** (`moderador` / `adminzinho`) — Ramos e João JEC: inscrições, resultados, palpites, links. Sem apagar em massa nem credenciais.
-
-1. Compartilhe a URL pública do túnel.
-2. Cada um abre `/admin/login` com o **próprio** usuário/senha (isso ativa o botão Admin/Site).
-3. A nav mostra o nome + papel + **Sair**.
-
-## Bolão — fluxo admin
-
-1. Participantes se inscrevem em `/inscricao` (PIX + comprovante) **ou** você cadastra no admin (opção "já pagou").
-2. Em **Inscrições**, abrir comprovante → **Liberar** (ou Recusar).
-3. Janela **ida** → grupo palpita pelos links.
-4. Lançar placares de ida → abrir janela **volta**.
-5. Grupo palpita volta → lançar voltas / pênaltis → **fechado** → confirmar rodada.
-
-## Testes
-
-```bash
-pytest -q
-```
-
-## Pontuação do bolão (resumo)
-
-| Fase | Placar | Vencedor | Gols | Fid. máx. |
-|------|--------|----------|------|-----------|
-| Oitavas | 10 | 7 | 5 | 5 |
-| Quartas | 14 | 10 | 7 | 7 |
-| Semis | 18 | 13 | 9 | 9 |
-| Final | 24 | 17 | 12 | 12 |
-
-Pênaltis: mesma lógica do bolão da Copa do Mundo (quem você apontou para passar).
 
 ---
 
