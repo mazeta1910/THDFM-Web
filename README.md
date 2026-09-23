@@ -415,6 +415,42 @@ O mesmo padrão está em produção no cadastro de **Clubes do Acervo**:
 
 ---
 
+## 9. Estrutura de Rotas
+
+O arquivo principal da aplicação concentra o roteamento do FastAPI. As rotas são definidas através de decoradores (como `@app.get` e `@app.post`) que associam as URLs às funções de processamento em Python.
+
+Abaixo estão as principais categorias de rotas mapeadas no sistema:
+
+### Rotas Públicas
+Páginas de acesso geral e leitura.
+* `/`: Página inicial (raiz).
+* `/home`: Home do site.
+* `/classificacao`: Classificação do bolão.
+* `/regras`: Regras de participação.
+
+### Autenticação e Acesso
+Gerenciamento de entrada de usuários.
+* `/login` (GET e POST)
+* `/entrar` (GET e POST)
+* `/loguin` (GET e POST)
+
+### Painel Administrativo
+Acesso restrito para controle da aplicação.
+* `/admin`: Home do painel.
+* `/admin/palpites`: Gestão de palpites.
+* `/admin/cobranca`: Controle de participantes pendentes.
+
+### APIs e Endpoints
+Rotas para consumo assíncrono pelo frontend, retornando dados estruturados em JSON.
+* `/perfil/{participante_id:int}/karma`
+* `/grid/api/chute`
+* `/grupo/listra/{ano}.json`
+
+### Rotas Dinâmicas
+URLs que recebem parâmetros variáveis para renderizar conteúdo específico do banco de dados.
+* `/p/{token}`: Link de acesso autenticado do participante.
+* `/perfil/{participante_id:int}`: Perfil público de um jogador específico.
+
 # Referências
 
 Referências no formato ABNT (NBR 6023). As datas de acesso devem ser ajustadas para a data de entrega do trabalho.
