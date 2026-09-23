@@ -55,14 +55,18 @@ Como o trabalho é sobre o **FastAPI**, focamos as vantagens e desvantagens do p
 - **Relativamente novo (2018)**: o ecossistema de bibliotecas e plugins ainda é menor que o de frameworks mais antigos, como Django e Flask.
 - **Vem "sem muitos extras"**: não traz banco de dados, painel de administração nem login prontos — você escolhe as bibliotecas para isso.
 - **Exige entender alguns conceitos**: além dos _type hints_ (já explicados acima), é preciso lidar com o modelo **assíncrono** (`async`/`await`). A ideia é simples: enquanto a aplicação espera por algo demorado — por exemplo, o banco de dados responder —, em vez de ficar parada, ela aproveita para atender outros pedidos.
-- **Mais decisões por sua conta**: por dar bastante liberdade, várias escolhas de arquitetura ficam com o desenvolvedor.
+- **Mais decisões por sua conta**: O FastAPI é "desopinado". Ele fornece as ferramentas para receber requisições HTTP e validar dados, mas não impõe regras sobre como organizar o sistema. Essa característica força o desenvolvedor a desenhar a arquitetura do zero.
 
 ## Servidores web disponíveis
 
-O FastAPI não roda sozinho: ele precisa de um servidor de aplicação no padrão **ASGI** (_Asynchronous Server Gateway Interface_) — a interface assíncrona do Python que liga o servidor à aplicação web. Neste projeto, o servidor usado é o **Uvicorn**.
+O FastAPI não roda sozinho: ele precisa de um servidor de aplicação no padrão **ASGI** (_Asynchronous Server Gateway Interface_) — a interface assíncrona do Python que liga o servidor à aplicação web. Neste projeto, o servidor usado é o **Uvicorn**. 
+Os principais servidores disponíveis são:
+- Uvicorn: É o servidor padrão e mais utilizado no ecossistema FastAPI. Construído sobre uvloop e httptools, oferece alta taxa de transferência para aplicações puramente assíncronas.
+- Granian: Servidor HTTP em Rust para aplicações Python (ASGI, RSGI e WSGI). Apresenta desempenho superior ao Uvicorn em cenários de alta concorrência e menor consumo de recursos.
+- Hypercorn: Implementação com suporte nativo a HTTP/2 e HTTP/3 (QUIC). Suporta asyncio e bibliotecas alternativas de concorrência, como o trio.
+- Daphne: Desenvolvido originalmente para o Django Channels. Focado em WebSockets e tráfego assíncrono, embora seja menos comum com FastAPI devido a uma performance inferior em comparação com Uvicorn ou Granian.
 
-Como o Uvicorn funciona, na prática:
-
+**Como o Uvicorn funciona, na prática:**
 - Subimos a aplicação com `uvicorn src.app:app --host 0.0.0.0 --port 8000`, em que `src.app` é o arquivo e `app` é a instância do FastAPI.
 - Ele fica "escutando" naquela porta; a cada requisição HTTP que chega, repassa o pedido para o FastAPI, recebe a resposta e a devolve ao navegador.
 - Por ser assíncrono (e otimizado pelas bibliotecas `uvloop` e `httptools`), atende vários pedidos praticamente ao mesmo tempo, sem precisar de uma thread separada para cada um.
