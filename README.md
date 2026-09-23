@@ -6,8 +6,6 @@ Stack: **FastAPI** (Python) sobre **Starlette** + **Pydantic**, servido por **Uv
 
 Repositório: [github.com/mazeta1910/THDFM-Web](https://github.com/mazeta1910/THDFM-Web)
 
-> **Este README também é o entregável do trabalho.** Ele traz a apresentação do framework escolhido (FastAPI) e um tutorial de configuração com uma aplicação exemplo: um **CRUD de Clube** (cadastro de uma entidade), demonstrado com o código real deste repositório.
-
 ## Sumário
 
 - [Parte 1 — Apresentação do FastAPI](#parte-1--apresentação-do-fastapi)
