@@ -54,7 +54,7 @@ Como o trabalho é sobre o **FastAPI**, focamos as vantagens e desvantagens do p
 
 - **Relativamente novo (2018)**: o ecossistema de bibliotecas e plugins ainda é menor que o de frameworks mais antigos, como Django e Flask.
 - **Vem "sem muitos extras"**: não traz banco de dados, painel de administração nem login prontos — você escolhe as bibliotecas para isso.
-- **Exige alguns conceitos**: é preciso entender os _type hints_ e o modelo assíncrono (`async`/`await`); código assíncrono mal escrito pode "segurar a fila" dos pedidos.
+- **Exige entender alguns conceitos**: além dos _type hints_ (já explicados acima), é preciso lidar com o modelo **assíncrono** (`async`/`await`). A ideia é simples: enquanto a aplicação espera por algo demorado — por exemplo, o banco de dados responder —, em vez de ficar parada, ela aproveita para atender outros pedidos.
 - **Mais decisões por sua conta**: por dar bastante liberdade, várias escolhas de arquitetura ficam com o desenvolvedor.
 
 ## Servidores web disponíveis
