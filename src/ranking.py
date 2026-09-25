@@ -7,6 +7,7 @@ from src.db import (
     load_snapshot,
     palpites_do_participante,
     participante_ativo_no_bolao,
+    soma_ajustes_pontos,
 )
 from src.fidelidade import FidelidadeDetalhe, calcular_fidelidade
 from src.models import PontosParticipante
@@ -189,8 +190,10 @@ def calcular_classificacao() -> list[dict]:
         pts.indice_fidelidade = (fid_indice / fid_jogos) if fid_jogos else 0.0
 
         pid_key = str(int(p["id"]))
+        ajuste = soma_ajustes_pontos(p["id"])
+        soma_total = pts.soma + ajuste  # ajuste negativo = punição
         soma_base = baseline.get(pid_key, 0)
-        rod = pts.soma - soma_base
+        rod = soma_total - soma_base
         linhas.append(
             {
                 "participante_id": p["id"],
@@ -204,7 +207,7 @@ def calcular_classificacao() -> list[dict]:
                 "fidelidade": pts.fidelidade,
                 "indice_fidelidade": pts.indice_fidelidade,
                 "fidelidade_detalhe": detalhe_fid,
-                "soma": pts.soma,
+                "soma": soma_total,
                 "rod": rod,
             }
         )
