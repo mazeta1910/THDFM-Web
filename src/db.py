@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS rodadas_historico (
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     payload TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ajustes_pontos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    participante_id INTEGER NOT NULL REFERENCES participantes(id),
+    pontos INTEGER NOT NULL,
+    motivo TEXT NOT NULL DEFAULT '',
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
 """
 
 
@@ -3009,6 +3017,62 @@ def delete_rodada_historico(rodada_id: int) -> bool:
 def clear_snapshot() -> None:
     with get_db() as conn:
         conn.execute("DELETE FROM snapshot WHERE id = 1")
+
+
+# ---------------------------------------------------------------------------
+# Ajustes/punições de pontos (desconto ou bônus manual por participante)
+# ---------------------------------------------------------------------------
+
+
+def criar_ajuste_pontos(participante_id: int, pontos: int, motivo: str = "") -> int:
+    """Registra um ajuste manual de pontos (negativo = punição)."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "INSERT INTO ajustes_pontos (participante_id, pontos, motivo) "
+            "VALUES (?, ?, ?)",
+            (int(participante_id), int(pontos), (motivo or "").strip()[:200]),
+        )
+        return int(cur.lastrowid or 0)
+
+
+def soma_ajustes_pontos(participante_id: int) -> int:
+    """Soma de todos os ajustes de um participante (0 se não houver)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(pontos), 0) AS s FROM ajustes_pontos "
+            "WHERE participante_id = ?",
+            (int(participante_id),),
+        ).fetchone()
+    return int(row["s"] if row else 0)
+
+
+def list_ajustes_pontos(participante_id: int | None = None) -> list[dict[str, Any]]:
+    """Lista os ajustes (com o nome do participante), mais recentes primeiro."""
+    with get_db() as conn:
+        if participante_id is None:
+            rows = conn.execute(
+                "SELECT a.*, p.nome AS participante_nome "
+                "FROM ajustes_pontos a "
+                "JOIN participantes p ON p.id = a.participante_id "
+                "ORDER BY a.id DESC"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT a.*, p.nome AS participante_nome "
+                "FROM ajustes_pontos a "
+                "JOIN participantes p ON p.id = a.participante_id "
+                "WHERE a.participante_id = ? ORDER BY a.id DESC",
+                (int(participante_id),),
+            ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def apagar_ajuste_pontos(ajuste_id: int) -> bool:
+    with get_db() as conn:
+        cur = conn.execute(
+            "DELETE FROM ajustes_pontos WHERE id = ?", (int(ajuste_id),)
+        )
+        return int(cur.rowcount or 0) > 0
 
 
 def db_path() -> Path:
