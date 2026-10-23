@@ -2897,6 +2897,124 @@ async def grupo_listra_criar(request: Request):
     )
 
 
+def _listra_meliantes_payload() -> list[dict]:
+    """Meliantes (nome + URL da foto) para os seletores da importação."""
+    out = []
+    for m in db.list_listra_meliantes_com_avatar():
+        out.append(
+            {"nome": m["nome"], "avatar": avatar_url(m.get("avatar_path")) or ""}
+        )
+    return out
+
+
+@app.post("/grupo/listra/importar/preview")
+async def grupo_listra_importar_preview(request: Request):
+    """Lê o .txt (ou texto colado) e devolve as linhas já com palpite de tipo."""
+    from src import listra_import
+
+    caps = _listra_caps(request)
+    if not caps["pode_adicionar"]:
+        return JSONResponse({"erro": "Sem permissão para importar."}, status_code=403)
+
+    texto = ""
+    form = await request.form()
+    upload = form.get("arquivo")
+    if upload is not None and hasattr(upload, "read"):
+        nome_arq = getattr(upload, "filename", "") or ""
+        if Path(nome_arq).suffix.lower() not in (".txt", ""):
+            return JSONResponse({"erro": "Envie um arquivo .txt"}, status_code=400)
+        data = await upload.read()
+        if len(data) > 1_000_000:
+            return JSONResponse(
+                {"erro": "Arquivo muito grande (máx. 1MB)."}, status_code=400
+            )
+        try:
+            texto = data.decode("utf-8")
+        except UnicodeDecodeError:
+            texto = data.decode("latin-1", errors="replace")
+    else:
+        texto = str(form.get("texto") or "")
+
+    linhas = listra_import.classificar(
+        listra_import.parse_linhas(texto), db.list_listra_meliantes()
+    )
+    if not linhas:
+        return JSONResponse(
+            {"erro": "Nenhuma linha encontrada no arquivo."}, status_code=400
+        )
+    return JSONResponse(
+        {"linhas": linhas, "meliantes": _listra_meliantes_payload()},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/grupo/listra/importar")
+async def grupo_listra_importar(request: Request):
+    """Cria as frases revisadas, atribuindo cada uma ao meliante resolvido."""
+    from src import listra_import
+    from src.listra_seed import LISTRA_ANO_ATUAL, LISTRA_ANOS
+
+    caps = _listra_caps(request)
+    if not caps["pode_adicionar"]:
+        return JSONResponse({"erro": "Sem permissão para importar."}, status_code=403)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"erro": "Payload inválido."}, status_code=400)
+
+    itens = (body or {}).get("itens")
+    if not isinstance(itens, list) or not itens:
+        return JSONResponse({"erro": "Nada para importar."}, status_code=400)
+    meliante_padrao = str((body or {}).get("meliante_padrao") or "")
+    try:
+        ano = int((body or {}).get("ano") or LISTRA_ANO_ATUAL)
+    except (TypeError, ValueError):
+        ano = LISTRA_ANO_ATUAL
+    if ano not in LISTRA_ANOS:
+        return JSONResponse({"erro": "Ano inválido para a Listra."}, status_code=400)
+
+    frases, avisos = listra_import.resolver_importacao(itens, meliante_padrao)
+    if not frases:
+        return JSONResponse(
+            {"erro": "Nenhuma frase válida para importar.", "avisos": avisos},
+            status_code=400,
+        )
+
+    conhecidos_antes = {n.casefold() for n in db.list_listra_meliantes()}
+    part = caps["participante"]
+    criadas = 0
+    novos: list[str] = []
+    vistos_novos: set[str] = set()
+    erros: list[str] = []
+    for f in frases:
+        try:
+            db.criar_listra_frase(
+                f["texto"],
+                f["responsavel"],
+                criado_por_id=part["id"] if part else None,
+                ano=ano,
+            )
+            criadas += 1
+            chave = f["responsavel"].casefold()
+            if chave not in conhecidos_antes and chave not in vistos_novos:
+                vistos_novos.add(chave)
+                novos.append(f["responsavel"])
+        except ValueError as exc:
+            erros.append(str(exc))
+
+    return JSONResponse(
+        {
+            "ok": criadas > 0,
+            "criadas": criadas,
+            "meliantes_novos": novos,
+            "avisos": avisos,
+            "erros": erros,
+            "ano": ano,
+        }
+    )
+
+
 @app.post("/grupo/listra/atualizar")
 def grupo_listra_atualizar(
     request: Request,
@@ -3073,6 +3191,31 @@ def admin_listra_meliante_apagar(request: Request, nome: str = Form(...)):
         )
     return RedirectResponse(
         f"/admin/listra?msg={quote('Meliante removido da lista')}#meliantes",
+        status_code=303,
+    )
+
+
+@app.post("/admin/listra/meliantes/unificar")
+def admin_listra_meliante_unificar(
+    request: Request,
+    origem: str = Form(...),
+    destino: str = Form(...),
+):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    try:
+        res = db.unificar_listra_meliantes(origem, destino)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/listra?erro={quote(str(exc))}#meliantes",
+            status_code=303,
+        )
+    msg = (
+        f"{res['origem']} unificado em {res['destino']} "
+        f"({res['frases_movidas']} frase(s) movida(s))"
+    )
+    return RedirectResponse(
+        f"/admin/listra?msg={quote(msg)}#meliantes",
         status_code=303,
     )
 

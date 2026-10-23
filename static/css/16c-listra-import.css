@@ -1,0 +1,339 @@
+/* Importação de .txt para a Listra: gatilho no cabeçalho + painel de revisão. */
+
+.listra-add-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.listra-add-head h2 {
+  margin: 0;
+}
+
+.listra-import-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.listra-import-trigger svg {
+  display: block;
+}
+.listra-import-trigger:hover,
+.listra-import-trigger:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.listra-import-card {
+  position: relative;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+}
+.listra-import-card[hidden] {
+  display: none !important;
+}
+.listra-import-card h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.05rem;
+}
+.listra-import-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.listra-import-close:hover {
+  color: var(--danger, #e5484d);
+  border-color: var(--danger, #e5484d);
+}
+
+/* Etapa 1: entrada */
+.listra-import-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.1rem 1rem;
+  margin: 0.4rem 0;
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.listra-import-drop:hover,
+.listra-import-drop.is-drag {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.listra-import-drop svg {
+  display: block;
+}
+.listra-import-paste {
+  margin: 0.2rem 0;
+}
+.listra-import-paste summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.listra-import-paste textarea {
+  margin-top: 0.5rem;
+  width: 100%;
+  resize: vertical;
+}
+.listra-import-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.6rem;
+}
+.listra-import-preview-btn,
+.listra-import-commit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(232, 93, 4, 0.45);
+  border-radius: 10px;
+  background: rgba(232, 93, 4, 0.1);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.listra-import-preview-btn svg,
+.listra-import-commit-btn svg {
+  display: block;
+}
+.listra-import-preview-btn:hover:not(:disabled),
+.listra-import-commit-btn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.listra-import-commit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.listra-import-erro {
+  margin: 0.4rem 0 0;
+  color: var(--danger, #e5484d);
+  font-size: 0.85rem;
+}
+
+/* Etapa 2: revisão */
+.listra-import-review-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.listra-import-counts {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.listra-import-padrao {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.listra-import-padrao label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.listra-import-padrao select {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  min-width: 10rem;
+}
+.listra-import-aviso {
+  margin: 0 0 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(229, 72, 77, 0.4);
+  border-radius: 8px;
+  background: rgba(229, 72, 77, 0.08);
+  color: var(--danger, #e5484d);
+  font-size: 0.82rem;
+}
+
+.listra-import-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.listra-import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.listra-import-table th,
+.listra-import-table td {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.listra-import-table tr:last-child td {
+  border-bottom: none;
+}
+.listra-import-table th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.listra-import-col-tipo {
+  width: 1%;
+  white-space: nowrap;
+}
+.listra-import-col-meliante {
+  width: 16rem;
+}
+
+.listra-import-row[data-tipo="fora"] {
+  opacity: 0.5;
+}
+.listra-import-row[data-tipo="fora"] .listra-import-linha {
+  text-decoration: line-through;
+}
+.listra-import-row[data-tipo="nome"] {
+  background: rgba(232, 93, 4, 0.06);
+}
+.listra-import-row[data-tipo="nome"] .listra-import-cell-tipo {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.listra-import-row[data-tipo="nome"] .listra-import-linha {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* Controle segmentado Tipo */
+.listra-import-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.listra-import-seg-btn {
+  padding: 0.25rem 0.45rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.listra-import-seg-btn + .listra-import-seg-btn {
+  border-left: 1px solid var(--border);
+}
+.listra-import-seg-btn.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.listra-import-linha {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Coluna Meliante */
+.listra-import-meliante {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.listra-import-meliante--nome {
+  color: var(--muted);
+}
+.listra-import-meliante-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.listra-import-meliante-muted {
+  color: var(--muted);
+}
+.listra-import-meliante-select {
+  flex: 1 1 7rem;
+  min-width: 0;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.8rem;
+}
+.listra-import-resolved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.listra-import-resolved-nome {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.listra-import-resolved.is-missing .listra-import-resolved-nome {
+  color: var(--danger, #e5484d);
+}
+.listra-import-avatar {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.listra-import-avatar--ini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 93, 4, 0.15);
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.listra-import-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.7rem;
+}
+
+@media (max-width: 640px) {
+  .listra-import-col-meliante {
+    width: auto;
+  }
+  .listra-import-seg-btn {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.68rem;
+  }
+}
