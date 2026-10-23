@@ -31,7 +31,24 @@
   {% set meliante_padrao = participante_listra.nome if participante_listra and participante_listra.nome else '' %}
   {% set meliante_na_lista = meliante_padrao and meliante_padrao in (listra_meliantes|default([])) %}
   <section class="card listra-add-card">
-    <h2>Nova frase · {{ ano_atual }}</h2>
+    <div class="listra-add-head">
+      <h2>Nova frase · {{ ano_atual }}</h2>
+      <button
+        type="button"
+        class="listra-import-trigger"
+        data-listra-import-open
+        aria-controls="listra-import-panel"
+        aria-expanded="false"
+        title="Importar frases de um arquivo .txt"
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 9 12 4 17 9"/>
+          <line x1="12" y1="4" x2="12" y2="16"/>
+        </svg>
+        <span>Importar .txt</span>
+      </button>
+    </div>
     <p class="listra-add-note">
       Novas entradas vão para a Listra do ano atual. No WhatsApp: número, emoji e trecho compartilhável (ou a frase inteira).
     </p>
@@ -240,6 +257,99 @@
         </div>
       </div>
     </template>
+  </section>
+
+  <section
+    class="card listra-import-card"
+    id="listra-import-panel"
+    data-listra-import-panel
+    data-import-preview-url="/grupo/listra/importar/preview"
+    data-import-commit-url="/grupo/listra/importar"
+    data-ano="{{ ano_atual }}"
+    aria-label="Importar frases de .txt"
+    hidden
+  >
+    <button
+      type="button"
+      class="listra-import-close"
+      data-listra-import-close
+      title="Fechar importação"
+      aria-label="Fechar importação"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="listra-import-step" data-listra-import-step="entrada">
+      <h2>Importar .txt · {{ ano_atual }}</h2>
+      <p class="listra-add-note">
+        Cada linha vira uma <strong>frase</strong> ou um <strong>nome</strong> de meliante.
+        Você revisa e ajusta tudo antes de salvar.
+      </p>
+      <label class="listra-import-drop" data-listra-import-drop>
+        <input type="file" accept=".txt,text/plain" data-listra-import-file hidden />
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 9 12 4 17 9"/>
+          <line x1="12" y1="4" x2="12" y2="16"/>
+        </svg>
+        <span data-listra-import-filename>Arraste o .txt aqui ou clique para escolher</span>
+      </label>
+      <details class="listra-import-paste">
+        <summary>ou colar o texto</summary>
+        <textarea
+          class="listra-input"
+          rows="6"
+          placeholder="Cole aqui o conteúdo (um nome ou uma frase por linha)…"
+          data-listra-import-text
+        ></textarea>
+      </details>
+      <p class="listra-import-erro" data-listra-import-erro role="alert" hidden></p>
+      <div class="listra-import-actions">
+        <button type="button" class="listra-import-preview-btn" data-listra-import-preview>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Pré-visualizar</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="listra-import-step" data-listra-import-step="revisao" hidden>
+      <div class="listra-import-review-head">
+        <p class="listra-import-counts" data-listra-import-counts role="status"></p>
+        <div class="listra-import-padrao">
+          <label for="listra-import-padrao-select">Meliante padrão</label>
+          <select id="listra-import-padrao-select" class="listra-input" data-listra-import-padrao></select>
+        </div>
+      </div>
+      <p class="listra-import-aviso" data-listra-import-aviso role="alert" hidden></p>
+      <div class="listra-import-table-wrap">
+        <table class="listra-import-table">
+          <thead>
+            <tr>
+              <th scope="col" class="listra-import-col-tipo">Tipo</th>
+              <th scope="col" class="listra-import-col-linha">Linha</th>
+              <th scope="col" class="listra-import-col-meliante">Meliante</th>
+            </tr>
+          </thead>
+          <tbody data-listra-import-rows></tbody>
+        </table>
+      </div>
+      <div class="listra-import-footer">
+        <button type="button" class="listra-import-commit-btn" data-listra-import-commit disabled>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 9 12 4 17 9"/>
+            <line x1="12" y1="4" x2="12" y2="16"/>
+          </svg>
+          <span>Importar</span>
+        </button>
+      </div>
+    </div>
   </section>
   {% endif %}
 
@@ -1441,4 +1551,7 @@
 </script>
 {% endif %}
 <script src="/static/listra-custom-select.js?v=186"></script>
+{% if pode_adicionar %}
+<script src="/static/listra-import.js?v=1"></script>
+{% endif %}
 {% endblock %}

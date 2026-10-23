@@ -75,6 +75,7 @@
             <th scope="col">Origem</th>
             <th scope="col">Frases</th>
             <th scope="col">Vínculo</th>
+            <th scope="col">Unificar</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -127,6 +128,33 @@
               </form>
               {% endif %}
             </td>
+            <td class="listra-meliante-unificar">
+              {% if meliantes|length > 1 %}
+              <form
+                method="post"
+                action="/admin/listra/meliantes/unificar"
+                class="listra-meliante-vinculo-form"
+                onsubmit="return confirm('Unificar {{ m.nome|e }} em outro meliante? As frases serão movidas e {{ m.nome|e }} será removido.');"
+              >
+                <input type="hidden" name="origem" value="{{ m.nome }}" />
+                <select
+                  name="destino"
+                  class="listra-input listra-meliante-vinculo-select"
+                  data-listra-custom-select
+                  required
+                  aria-label="Unificar {{ m.nome }} em outro meliante"
+                >
+                  <option value="">Unificar em…</option>
+                  {% for outro in meliantes if outro.nome != m.nome %}
+                  <option value="{{ outro.nome }}">{{ outro.nome }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="listra-meliante-link-btn">Unificar</button>
+              </form>
+              {% else %}
+              <span class="listra-perm-empty">—</span>
+              {% endif %}
+            </td>
             <td class="listra-meliante-acoes">
               <form
                 method="post"
@@ -140,7 +168,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="5" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
+            <td colspan="6" class="listra-perm-empty">Nenhum meliante cadastrado ainda.</td>
           </tr>
           {% endfor %}
         </tbody>
