@@ -4046,13 +4046,14 @@ def list_listra_meliantes_detalhe() -> list[dict[str, Any]]:
                    m.participante_id,
                    p.nome AS participante_nome,
                    p.username AS participante_username,
+                   p.avatar_path AS participante_avatar,
                    COALESCE(COUNT(f.id), 0) AS usos
             FROM listra_meliantes m
             LEFT JOIN participantes p ON p.id = m.participante_id
             LEFT JOIN listra_frases f
               ON TRIM(f.responsavel) = m.nome
             GROUP BY m.nome, m.criado_em, m.participante_id,
-                     p.nome, p.username
+                     p.nome, p.username, p.avatar_path
             ORDER BY m.nome COLLATE NOCASE
             """
         ).fetchall()
@@ -4063,6 +4064,22 @@ def list_listra_meliantes_detalhe() -> list[dict[str, Any]]:
             d["vinculado"] = bool(d.get("participante_id"))
             out.append(d)
         return out
+
+
+def list_listra_meliantes_com_avatar() -> list[dict[str, Any]]:
+    """Meliantes (nome + caminho da foto do usuário vinculado) para seletores."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT m.nome, p.avatar_path AS avatar_path
+            FROM listra_meliantes m
+            LEFT JOIN participantes p ON p.id = m.participante_id
+            ORDER BY m.nome COLLATE NOCASE
+            """
+        ).fetchall()
+        return [
+            {"nome": str(r["nome"]), "avatar_path": r["avatar_path"]} for r in rows
+        ]
 
 
 def list_participantes_candidatos_meliante() -> list[dict[str, Any]]:
@@ -4261,6 +4278,47 @@ def desvincular_listra_meliante(nome: str) -> str:
             (nome_ok,),
         )
     return str(mel["nome"])
+
+
+def unificar_listra_meliantes(origem: str, destino: str) -> dict[str, Any]:
+    """Funde o meliante ``origem`` no ``destino`` (ex.: Zoinho em Arthur).
+
+    Reatribui todas as frases de ``origem`` para ``destino`` e remove o
+    meliante ``origem``. O vínculo/usuário do ``destino`` é mantido.
+    """
+    origem_ok = re.sub(r"\s+", " ", (origem or "").strip())
+    destino_ok = re.sub(r"\s+", " ", (destino or "").strip())
+    if not origem_ok or not destino_ok:
+        raise ValueError("Informe os dois meliantes para unificar.")
+    if origem_ok.casefold() == destino_ok.casefold():
+        raise ValueError("Escolha dois meliantes diferentes.")
+    with get_db() as conn:
+        origem_row = conn.execute(
+            "SELECT nome FROM listra_meliantes WHERE nome = ? COLLATE NOCASE LIMIT 1",
+            (origem_ok,),
+        ).fetchone()
+        destino_row = conn.execute(
+            "SELECT nome FROM listra_meliantes WHERE nome = ? COLLATE NOCASE LIMIT 1",
+            (destino_ok,),
+        ).fetchone()
+        if not origem_row or not destino_row:
+            raise ValueError("Meliante não encontrado.")
+        destino_nome = str(destino_row["nome"])
+        cur = conn.execute(
+            "UPDATE listra_frases SET responsavel = ? "
+            "WHERE TRIM(responsavel) = ? COLLATE NOCASE",
+            (destino_nome, origem_ok),
+        )
+        frases_movidas = cur.rowcount
+        conn.execute(
+            "DELETE FROM listra_meliantes WHERE nome = ? COLLATE NOCASE",
+            (origem_ok,),
+        )
+    return {
+        "origem": str(origem_row["nome"]),
+        "destino": destino_nome,
+        "frases_movidas": int(frases_movidas or 0),
+    }
 
 
 def list_listra_frases(ano: int | None = None) -> list[dict[str, Any]]:
