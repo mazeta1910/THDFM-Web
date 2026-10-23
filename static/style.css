@@ -9996,6 +9996,8 @@ html[data-theme="light"] .listra-perm-table th {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  width: auto;
+  flex: 0 0 auto;
   padding: 0.3rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -10097,6 +10099,7 @@ html[data-theme="light"] .listra-perm-table th {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  width: auto;
   padding: 0.4rem 0.7rem;
   border: 1px solid rgba(232, 93, 4, 0.45);
   border-radius: 10px;
@@ -10227,8 +10230,10 @@ html[data-theme="light"] .listra-perm-table th {
   overflow: hidden;
 }
 .listra-import-seg-btn {
+  width: auto;
   padding: 0.25rem 0.45rem;
   border: none;
+  border-radius: 0;
   background: transparent;
   color: var(--muted);
   font: inherit;
