@@ -168,6 +168,16 @@ def test_inverter_mando_confronto(client):
     client.post("/admin/arvore/montar", data=data, follow_redirects=False)
     q = db.list_confrontos_completos("quartas")[0]
     a0, b0 = q["clube_a"], q["clube_b"]
+    ida = next(j for j in q["jogos"] if j["perna"] == "ida")
+    volta = next(j for j in q["jogos"] if j["perna"] == "volta")
+    # Ida: A 2 x 1 B | Volta: B 3 x 0 A | pênaltis em B
+    db.set_resultado_jogo(ida["id"], 2, 1, None)
+    db.set_resultado_jogo(volta["id"], 3, 0, "b")
+    part = db.criar_participante("Fan Mando", status="liberado", celular="11990000999")
+    db.salvar_palpite_jogo(part["id"], ida["id"], 2, 1)
+    db.salvar_palpite_jogo(part["id"], volta["id"], 3, 0)
+    db.salvar_palpite_penaltis(part["id"], q["id"], "b")
+
     r = client.post(f"/admin/confronto/{q['id']}/inverter-mando?format=json")
     assert r.status_code == 200
     body = r.json()
@@ -176,6 +186,48 @@ def test_inverter_mando_confronto(client):
     assert body["confronto"]["clube_b"] == a0
     q2 = db.list_confrontos_completos("quartas")[0]
     assert q2["clube_a"] == b0 and q2["clube_b"] == a0
+    ida2 = next(j for j in q2["jogos"] if j["perna"] == "ida")
+    volta2 = next(j for j in q2["jogos"] if j["perna"] == "volta")
+    # Mesmos gols por clube: agora B manda na ida → 1 x 2; A manda na volta → 0 x 3
+    assert ida2["gols_mandante"] == 1 and ida2["gols_visitante"] == 2
+    assert volta2["gols_mandante"] == 0 and volta2["gols_visitante"] == 3
+    assert volta2["penaltis_clube_id"] == "a"  # antigo B virou A
+    palp = db.palpites_do_participante(part["id"])
+    assert palp["jogos"][ida2["id"]]["gols_mandante"] == 1
+    assert palp["jogos"][ida2["id"]]["gols_visitante"] == 2
+    assert palp["jogos"][volta2["id"]]["gols_mandante"] == 0
+    assert palp["jogos"][volta2["id"]]["gols_visitante"] == 3
+    assert palp["penaltis"][q["id"]]["penaltis_clube_id"] == "a"
+
+
+def test_inverter_mando_palmeiras_vasco_preserva_gols_por_clube(client):
+    """Vasco x Palmeiras → Palmeiras x Vasco sem trocar o placar de cada time."""
+    login_admin(client)
+    cid = db.criar_confronto(
+        "quartas", "Vasco", "Palmeiras", ida_em="2026-08-20 21:30", volta_em="2026-08-27 21:30"
+    )
+    c = next(x for x in db.list_confrontos_completos("quartas") if x["id"] == cid)
+    ida = next(j for j in c["jogos"] if j["perna"] == "ida")
+    volta = next(j for j in c["jogos"] if j["perna"] == "volta")
+    # Ida: Vasco 2 x 1 Palmeiras | Volta: Palmeiras 0 x 0 Vasco
+    db.set_resultado_jogo(ida["id"], 2, 1, None)
+    db.set_resultado_jogo(volta["id"], 0, 0, None)
+    part = db.criar_participante("Palpiteiro", status="liberado", celular="11991112222")
+    db.salvar_palpite_jogo(part["id"], ida["id"], 2, 1)
+
+    out = db.inverter_mandantes_confronto(cid)
+    assert out["clube_a"] == "Palmeiras"
+    assert out["clube_b"] == "Vasco"
+
+    c2 = next(x for x in db.list_confrontos_completos("quartas") if x["id"] == cid)
+    ida2 = next(j for j in c2["jogos"] if j["perna"] == "ida")
+    volta2 = next(j for j in c2["jogos"] if j["perna"] == "volta")
+    # Ida agora Palmeiras x Vasco: 1 x 2 (Vasco continua com 2)
+    assert ida2["gols_mandante"] == 1 and ida2["gols_visitante"] == 2
+    assert volta2["gols_mandante"] == 0 and volta2["gols_visitante"] == 0
+    palp = db.palpites_do_participante(part["id"])
+    assert palp["jogos"][ida2["id"]]["gols_mandante"] == 1
+    assert palp["jogos"][ida2["id"]]["gols_visitante"] == 2
 
 
 def test_confirmar_e_desfazer_jogo(client):

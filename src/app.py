@@ -6501,7 +6501,10 @@ async def admin_arvore_montar(request: Request):
 
 @app.post("/admin/confronto/{confronto_id}/inverter-mando")
 def admin_inverter_mando_confronto(request: Request, confronto_id: int):
-    """Troca mandante da ida ↔ mandante da volta (clube_a ↔ clube_b)."""
+    """Troca mandante da ida ↔ mandante da volta (clube_a ↔ clube_b).
+
+    Placares e palpites ficam com cada clube (não trocam de time).
+    """
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     from fastapi.responses import JSONResponse
@@ -6516,7 +6519,7 @@ def admin_inverter_mando_confronto(request: Request, confronto_id: int):
     if _admin_wants_json(request):
         return JSONResponse({"ok": True, "confronto": out})
     return RedirectResponse(
-        f"/admin?sec=resultados&msg={quote('Mando invertido: agora ' + out['clube_b'] + ' decide em casa')}",
+        f"/admin?sec=resultados&msg={quote('Mando invertido: agora ' + out['clube_b'] + ' decide em casa (placares com cada clube)')}",
         status_code=303,
     )
 
