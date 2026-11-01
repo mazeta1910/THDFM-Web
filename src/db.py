@@ -272,11 +272,79 @@ def _seed_oitavas(conn: sqlite3.Connection) -> None:
         )
 
 
+def _flip_lado_ab(lado: str | None) -> str | None:
+    if lado == "a":
+        return "b"
+    if lado == "b":
+        return "a"
+    return lado
+
+
+def _preservar_placares_apos_troca_ab(
+    conn: sqlite3.Connection, confronto_id: int
+) -> None:
+    """Depois de clube_a ↔ clube_b, espelha gols/pênaltis para ficarem no mesmo clube.
+
+    Placares oficiais e palpites usam gols_mandante/gols_visitante relativos ao
+    slot (ida: A em casa; volta: B em casa). Sem este espelho, inverter o mando
+    faria o placar "mudar de time".
+    """
+    jogos = conn.execute(
+        "SELECT id, gols_mandante, gols_visitante, penaltis_clube_id "
+        "FROM jogos WHERE confronto_id = ?",
+        (confronto_id,),
+    ).fetchall()
+    for j in jogos:
+        jid = int(j["id"])
+        conn.execute(
+            "UPDATE jogos SET gols_mandante = ?, gols_visitante = ?, "
+            "penaltis_clube_id = ? WHERE id = ?",
+            (
+                j["gols_visitante"],
+                j["gols_mandante"],
+                _flip_lado_ab(j["penaltis_clube_id"]),
+                jid,
+            ),
+        )
+        palpites = conn.execute(
+            "SELECT participante_id, gols_mandante, gols_visitante "
+            "FROM palpites_jogo WHERE jogo_id = ?",
+            (jid,),
+        ).fetchall()
+        for p in palpites:
+            conn.execute(
+                "UPDATE palpites_jogo SET gols_mandante = ?, gols_visitante = ? "
+                "WHERE participante_id = ? AND jogo_id = ?",
+                (
+                    p["gols_visitante"],
+                    p["gols_mandante"],
+                    p["participante_id"],
+                    jid,
+                ),
+            )
+    pens = conn.execute(
+        "SELECT participante_id, penaltis_clube_id FROM palpites_penaltis "
+        "WHERE confronto_id = ?",
+        (confronto_id,),
+    ).fetchall()
+    for p in pens:
+        conn.execute(
+            "UPDATE palpites_penaltis SET penaltis_clube_id = ? "
+            "WHERE participante_id = ? AND confronto_id = ?",
+            (
+                _flip_lado_ab(p["penaltis_clube_id"]),
+                p["participante_id"],
+                confronto_id,
+            ),
+        )
+
+
 def _migrate_quartas_ordem_casa(conn: sqlite3.Connection) -> None:
     """Corrige clube_a/clube_b das quartas para o mandante da volta canônico.
 
     Ida: clube_a em casa. Volta: clube_b em casa (Grêmio, Galo, Vitória, Santos).
     Idempotente: só altera pares já cadastrados que estejam invertidos.
+    Ao corrigir, preserva placares/palpites em cada clube.
     """
     canon = {
         frozenset({p["clube_a"], p["clube_b"]}): (p["clube_a"], p["clube_b"])
@@ -297,6 +365,7 @@ def _migrate_quartas_ordem_casa(conn: sqlite3.Connection) -> None:
             "UPDATE confrontos SET clube_a = ?, clube_b = ? WHERE id = ?",
             (want_a, want_b, r["id"]),
         )
+        _preservar_placares_apos_troca_ab(conn, int(r["id"]))
 
 
 def _migrate_recuperacao(conn: sqlite3.Connection) -> None:
@@ -2671,6 +2740,7 @@ def substituir_confrontos_fase(
 def inverter_mandantes_confronto(confronto_id: int) -> dict[str, Any]:
     """Troca clube_a ↔ clube_b (quem manda na ida / decide na volta).
 
+    Placares oficiais e palpites acompanham o clube (não o slot de mando).
     Bloqueado se algum jogo já estiver confirmado.
     """
     with get_db() as conn:
@@ -2694,6 +2764,7 @@ def inverter_mandantes_confronto(confronto_id: int) -> dict[str, Any]:
             "UPDATE confrontos SET clube_a = ?, clube_b = ? WHERE id = ?",
             (b, a, confronto_id),
         )
+        _preservar_placares_apos_troca_ab(conn, confronto_id)
         return {"id": confronto_id, "clube_a": b, "clube_b": a, "fase": c["fase"]}
 
 
