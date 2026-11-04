@@ -8,14 +8,25 @@ Leia isto em **toda** mudança de UI/código. Preferência do dono: interface de
 - O site é da THDFM (bolão, Grid, feed, grupo Zap). Não reinventar a marca nem o tom.
 - Em features grandes: **alinhar requisitos antes de sair implementando** se o pedido for aberto (“reformular home”, “melhorar admin”). Se o pedido for pontual e claro, execute.
 
-## Controles compactos (obrigatório)
+## Botões — regras estritas (obrigatório)
+
+Sempre que criar botões, seguir **à risca**:
+
+1. **NUNCA** textos longos ou descritivos no botão  
+   (ex.: evitar “Clique aqui para salvar os dados do formulário”).
+2. Sempre preferir botões **compactos e minimalistas**.
+3. Se a ação puder ser visual: botão **pequeno só com ícone vetorial**  
+   (SVG inline ou macro `ico()` em `templates/partials/nav_icons.html` — não inventar outra lib de ícones neste repo).
+4. Se texto for estritamente necessário: **no máximo 1–2 palavras**  
+   (ex.: “Salvar”, “Excluir”).
+5. Botão só-ícone: sempre `title` e/ou `aria-label` (tooltip / acessibilidade).
+
+## Controles compactos (técnico)
 
 O CSS global faz `button, .btn { width: 100%; … }` — botão sem override vira um tijolo.
 
 1. **Não** use `.btn` / `.btn.secondary` / `<button>` cru para: toggles, chips, filtros, salvar, fechar, ícone de olho, ações em linha de tabela, toolbar, drawer, modal secundário.
-2. Preferir:
-   - **Ícone SVG** (vetor) — só, ou ícone + texto curto
-   - Classes já do projeto: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `login-forgot-btn`, `admin-side-link`, `grid-chip-btn`, `grid-mode-btn`, etc.
+2. Preferir classes do projeto: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `login-forgot-btn`, `admin-side-link`, `grid-chip-btn`, `grid-mode-btn`, etc.
 3. Novo controle compacto:
    - seletor `button.minha-classe` (não só `.minha-classe`)
    - `width: auto !important; max-width: max-content !important;`
@@ -23,16 +34,14 @@ O CSS global faz `button, .btn { width: 100%; … }` — botão sem override vir
    - `font-size` ≈ `0.78–0.85rem`
    - `min-height: 0`
    - `border-radius` ≤ `8px` (evitar pill `999px` em toggles)
-4. Ação primária de formulário longo (Entrar, Enviar inscrição) **pode** ser `.btn` full-width — e só ela.
+4. Exceção: **uma** CTA primária de formulário longo (Entrar, Enviar) **pode** ser `.btn` full-width — e o rótulo ainda obedece às regras 1–4 acima (curto).
 5. Ao mudar CSS de botão/controle: bump do cache em `templates/base.html` (`style.css?v=N` e JS afetado).
 
 ## Vetores / ícones (obrigatório)
 
 1. Preferir **SVG inline** (`currentColor`, `viewBox="0 0 24 24"`) a PNG/emoji decorativo.
-2. Menu/sidebar: macro `ico(...)` em `templates/partials/nav_icons.html` — **reutilize** ou acrescente lá; não invente outro sistema de ícones.
-3. Ações de UI (salvar, editar, fechar, mostrar senha, arrastar): **botão compacto + SVG**, não retângulo enorme com só texto.
-4. Tamanho típico de ícone de nav/ação: **14–16px**; não estourar 20px em chrome.
-5. `aria-label` / `title` quando o botão for só ícone.
+2. Menu/sidebar: macro `ico(...)` em `templates/partials/nav_icons.html` — **reutilize** ou acrescente lá.
+3. Tamanho típico de ícone de nav/ação: **14–16px**; não estourar 20px em chrome.
 
 ## Layout e densidade
 
