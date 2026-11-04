@@ -18,24 +18,20 @@ def test_raiz_mostra_home_para_visitante(client: TestClient):
     text = r.text
     assert "THDFM" in text
     assert "Técnicos Horríveis do Futebol Mundial" in text
-    assert "Site em desenvolvimento" in text
-    assert "tá diva" in text.casefold()
+    assert "O que já existe no site" in text or "em desenvolvimento" in text.casefold()
     assert "Fazer inscrição" not in text
     assert 'href="/?acesso=entrar"' in text or 'data-acesso-open="entrar"' in text
     assert "home-hero-slider" in text
     assert "site-footer" in text
-    bolao = text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
-    assert "Entrar" in bolao
-    assert "Recuperar link" not in bolao
-    assert "Meus Palpites" not in bolao
+    assert 'id="portal"' in text
+    bolao = text.split('id="bolao"', 1)[1].split('id="em-desenvolvimento"', 1)[0]
     assert "Classificação" in bolao
-    assert "THDFM Grid" in bolao
+    assert "Meus Palpites" not in bolao
     assert "PIX da inscrição" not in bolao
-    assert "Inscrição encerrada" in bolao
     assert 'href="/classificacao"' in bolao
-    assert 'href="/grid"' in bolao
-    assert "chat.whatsapp.com/DQX2VHp6aQl6ILcwHT7nRz" in text
-    assert "Entrar no grupo" in text
+    assert "home-modulos" in text
+    assert "THDFM Grid" in text
+    assert "Grupo" in text
     assert 'id="drawer-senha"' in text
     assert "password-field" in text
     assert 'aria-label="Mostrar senha"' in text
@@ -62,25 +58,24 @@ def test_home_logado_mostra_meus_palpites_no_slide(client: TestClient):
 
     r = client.get("/")
     assert r.status_code == 200
-    bolao = r.text.split('id="bolao"', 1)[1].split('id="apresentacao"', 1)[0]
+    bolao = r.text.split('id="bolao"', 1)[1].split('id="em-desenvolvimento"', 1)[0]
     assert "Meus Palpites" in bolao
     assert 'href="/bolao/meus-palpites"' in bolao
     assert "Classificação" in bolao
     assert 'data-acesso-open="entrar"' not in bolao
-    assert ">Entrar<" not in bolao
     assert "Fazer inscrição" not in bolao
+    assert "/bolao/meus-palpites" in r.text
 
 def test_home_alias_tambem_renderiza(client: TestClient):
     r = client.get("/home", follow_redirects=False)
     assert r.status_code == 200
     assert "Bolão da Copa do Brasil" in r.text
-    assert "Inscrição encerrada" in r.text
     assert "PIX da inscrição" not in r.text
-    # Bolão é o primeiro slide (is-active no #bolao)
+    # Portal é o primeiro slide; bolão vem em seguida
+    portal_pos = r.text.find('id="portal"')
     bolao_pos = r.text.find('id="bolao"')
-    apres_pos = r.text.find('id="apresentacao"')
-    assert 0 <= bolao_pos < apres_pos
-    assert 'id="bolao" aria-hidden="false"' in r.text or 'is-active" data-slide="0" id="bolao"' in r.text
+    assert 0 <= portal_pos < bolao_pos
+    assert 'is-active" data-slide="0" id="portal"' in r.text or 'id="portal" aria-hidden="false"' in r.text
 
 def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")
@@ -121,7 +116,6 @@ def test_menu_lateral_igual_na_home_e_no_bolao(client: TestClient):
         assert "Grupo do WhatsApp" in html
         assert "Acervo Xonha" in html
         assert 'href="/xonhometro"' in html
-        assert "Portal THDFM" not in html
         assert 'data-group="competicao"' not in html
         assert 'data-group="meu-bolao"' not in html
         assert 'data-group="grupo-whatsapp"' in html

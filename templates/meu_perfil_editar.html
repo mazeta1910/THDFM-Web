@@ -233,6 +233,36 @@
 
   {% if participante_nav %}
   {# TEXTOS PARA REESCREVER — começo #}
+  {% if participante_nav.username and participante_nav.password_hash %}
+  <section class="proto-edit-section proto-edit-senha" id="email">
+    <h2 class="proto-edit-section-title">E-mail (recuperação de senha)</h2>
+    <p class="proto-edit-senha-lead">
+      Cadastre um e-mail para usar em <a href="/esqueci-senha">Esqueci minha senha</a>.
+    </p>
+    <form
+      method="post"
+      action="/p/{{ participante_nav.token }}/conta/email"
+      class="proto-edit-senha-form"
+      novalidate
+    >
+      <input type="hidden" name="next" value="/meu-perfil/editar" />
+      <div class="proto-edit-field">
+        <label for="proto-email">E-mail</label>
+        <input
+          id="proto-email"
+          class="proto-edit-input"
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          value="{{ participante_nav.email or '' }}"
+          placeholder="voce@email.com"
+        />
+      </div>
+      <button type="submit" class="proto-text-btn proto-text-btn--accent">Salvar e-mail</button>
+    </form>
+  </section>
+  {% endif %}
   <section class="proto-edit-section proto-edit-senha" id="senha">
     <h2 class="proto-edit-section-title">Alterar senha</h2>
     {% set flash_msg = request.query_params.get('msg') %}

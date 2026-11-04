@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Permissões — Admin THDFM{% endblock %}
+{% block content %}
+<section class="card" style="max-width:52rem;margin:1rem auto;">
+  <h1>Permissões de operadores</h1>
+  <p class="login-lead">
+    O <strong>Dono</strong> tem tudo. Moderadores partem do pacote padrão
+    (resultados, inscrições, Listra, Xonhômetro) e você liga/desliga o resto aqui —
+    sem editar código nem o <code>.env</code>.
+  </p>
+  {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+
+  {% for op in operadores %}
+  <article class="card" style="margin:1rem 0;padding:1rem;">
+    <h2 style="margin-top:0">{{ op.nome }} <span class="admin-brand-hint">({{ op.login }} · {{ op.papel_label }})</span></h2>
+    {% if op.is_dono %}
+    <p>Dono — todas as capabilities liberadas automaticamente.</p>
+    {% else %}
+    <form method="post" action="/admin/permissoes">
+      <input type="hidden" name="admin_login" value="{{ op.login }}" />
+      <ul style="list-style:none;padding:0;margin:0 0 1rem;">
+        {% for cap, label in capabilities.items() %}
+        <li style="margin:0.35rem 0;">
+          <label>
+            <input
+              type="checkbox"
+              name="cap_{{ cap }}"
+              value="1"
+              {% if cap in op.efetivas %}checked{% endif %}
+            />
+            {{ label }}
+            {% if cap in default_moderador %}<small>(padrão moderador)</small>{% endif %}
+          </label>
+        </li>
+        {% endfor %}
+      </ul>
+      <button type="submit">Salvar {{ op.nome }}</button>
+    </form>
+    {% endif %}
+  </article>
+  {% endfor %}
+
+  <p class="login-alt"><a href="/admin">← Voltar ao painel</a></p>
+</section>
+{% endblock %}

@@ -142,7 +142,7 @@ def test_home_cta_aponta_para_entrar(client: TestClient):
     assert 'data-acesso-open="entrar"' in r.text
     assert "Já fiz a inscrição" not in r.text or "Entrar" in r.text
 
-def test_entrar_tem_esqueci_senha_modal(client: TestClient):
+def test_entrar_tem_esqueci_senha_real(client: TestClient):
     r = client.get("/entrar", follow_redirects=False)
     assert r.status_code == 303
     assert "acesso=entrar" in r.headers["location"]
@@ -151,17 +151,18 @@ def test_entrar_tem_esqueci_senha_modal(client: TestClient):
     assert r2.status_code == 200
     assert "acesso-drawer" in r2.text
     assert "Esqueci minha senha" in r2.text
-    assert "modal-esqueci-senha" in r2.text
-    assert "Esqueceu sua senha?" in r2.text
-    assert "Aí o problema não é meu" in r2.text
-    assert "Tá de saca?" in r2.text
+    assert 'href="/esqueci-senha"' in r2.text
+    assert "modal-esqueci-senha" not in r2.text
+    assert "Aí o problema não é meu" not in r2.text
     assert "Marlon" in r2.text
     assert "Loguin" in r2.text
     assert 'type="password"' in r2.text
     assert "password-toggle" in r2.text
     assert "loguin-drawer-root" in r2.text
-    assert "macaco-rindo.gif" in r2.text
-    assert "ortografia" not in r2.text.casefold()
+
+    r3 = client.get("/esqueci-senha")
+    assert r3.status_code == 200
+    assert "username ou e-mail" in r3.text.casefold()
 
 def test_menu_portal_minimizado_e_loguin_capitalizacao(client: TestClient):
     r = client.get("/")
