@@ -1,23 +1,22 @@
 ---
-description: UI THDFM — SVG/vetores e controles compactos em todo o site
+description: UI THDFM — botões compactos, SVG e texto mínimo (sempre)
 alwaysApply: true
 ---
 
-# UI: vetores + controles compactos
+# Botões — regras estritas
 
-O dono reitera: **use SVG/vetores**, não botões enormes full-width para ações secundárias.
+1. **NUNCA** textos longos/descritivos no botão.
+2. Sempre **compactos e minimalistas**.
+3. Preferir botão pequeno **só com ícone SVG** (`ico()` ou SVG inline) quando a ação for visual.
+4. Se precisar de texto: **1–2 palavras** no máximo (“Salvar”, “Excluir”).
+5. Só-ícone: sempre `title` e/ou `aria-label`.
 
-## Anti-padrão
+# Técnico
 
-- `<button class="btn">` ou `<button>` sem classe compacta em toolbar, linha de tabela, modal secundário, toggle, salvar, fechar.
-- Texto longo dentro de botão largo quando um ícone SVG resolve.
+- Evitar `.btn` full-width em toolbar, tabela, modal secundário, toggle, salvar, fechar.
+- Classes: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `*-chip-btn`, sidebar links.
+- CSS: `button.classe { width: auto !important; max-width: max-content !important; padding curto; }`
+- Uma CTA primária de form longo pode ser `.btn` full-width, mas o rótulo continua curto.
+- Bump `style.css?v=` / JS em `base.html` ao mudar estilo.
 
-## Padrão
-
-- Ícone SVG (`currentColor`) via `ico()` em `templates/partials/nav_icons.html` ou SVG inline no botão.
-- Classes: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `*-chip-btn`, links de sidebar.
-- CSS novo: `button.classe { width: auto !important; max-width: max-content !important; padding curto; }`
-- Só a CTA primária de form longo pode ser `.btn` full-width.
-- Bump `style.css?v=` / JS em `base.html` ao mudar estilo de controle.
-
-Ver também `.cursorrules` na raiz e `.cursor/rules/compact-controls.mdc` (Grid).
+Detalhes: `.cursorrules` · Grid: `.cursor/rules/compact-controls.mdc`.
