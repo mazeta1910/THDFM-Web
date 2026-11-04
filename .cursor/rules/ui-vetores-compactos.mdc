@@ -1,0 +1,22 @@
+---
+description: UI THDFM — botões compactos, SVG e texto mínimo (sempre)
+alwaysApply: true
+---
+
+# Botões — regras estritas
+
+1. **NUNCA** textos longos/descritivos no botão.
+2. Sempre **compactos e minimalistas**.
+3. Preferir botão pequeno **só com ícone SVG** (`ico()` ou SVG inline) quando a ação for visual.
+4. Se precisar de texto: **1–2 palavras** no máximo (“Salvar”, “Excluir”).
+5. Só-ícone: sempre `title` e/ou `aria-label`.
+
+# Técnico
+
+- Evitar `.btn` full-width em toolbar, tabela, modal secundário, toggle, salvar, fechar.
+- Classes: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `*-chip-btn`, sidebar links.
+- CSS: `button.classe { width: auto !important; max-width: max-content !important; padding curto; }`
+- Uma CTA primária de form longo pode ser `.btn` full-width, mas o rótulo continua curto.
+- Bump `style.css?v=` / JS em `base.html` ao mudar estilo.
+
+Detalhes: `.cursorrules` · Grid: `.cursor/rules/compact-controls.mdc`.
