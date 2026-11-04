@@ -114,10 +114,15 @@ def _path_publico(path: str, method: str = "GET") -> bool:
         "/entrar",
         "/login",
         "/loguin",
+        "/esqueci-senha",
         "/admin/login",
         "/admin/logout",
         "/conta/sair",
+        "/health",
+        "/em-desenvolvimento",
     ):
+        return True
+    if path.startswith("/redefinir-senha/"):
         return True
     # Inscrição: página só mostra “encerrada”; POST também precisa chegar no handler
     if path == "/inscricao":
@@ -347,22 +352,48 @@ def is_dono(request: Request) -> bool:
     return admin_ok(request) and admin_papel(request) == "dono"
 
 
+def admin_login_atual(request: Request) -> str:
+    return (request.session.get("admin_login") or "").strip().lower()
+
+
+def admin_caps(request: Request) -> set[str]:
+    if not admin_ok(request):
+        return set()
+    return db.admin_capabilities(admin_login_atual(request))
+
+
+def has_cap(request: Request, capability: str) -> bool:
+    return capability in admin_caps(request)
+
+
 def is_mazeta(request: Request) -> bool:
-    """Acesso privado a features em preview (ex.: /grid)."""
+    """Compat: true se login mazeta ou se tem capability de prévia (acervo/hall/bugs)."""
     if not admin_ok(request):
         return False
-    return (request.session.get("admin_login") or "").strip().lower() == "mazeta"
+    login = admin_login_atual(request)
+    if login == "mazeta":
+        return True
+    from src.permissoes import PREVIEW_CAPS
+
+    return bool(admin_caps(request) & PREVIEW_CAPS)
 
 
-def require_mazeta(request: Request) -> RedirectResponse | None:
-    if is_mazeta(request):
-        return None
+def require_capability(request: Request, capability: str) -> RedirectResponse | None:
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    if has_cap(request, capability):
+        return None
     return RedirectResponse(
-        "/admin?erro=" + quote("Prévia privada — só o Mazeta por enquanto."),
+        "/admin?erro=" + quote("Sem permissão para esta área."),
         status_code=303,
     )
+
+
+def require_mazeta(
+    request: Request, capability: str = "acervo.gestir"
+) -> RedirectResponse | None:
+    """Compat: prévias agora usam capabilities (padrão acervo.gestir)."""
+    return require_capability(request, capability)
 
 
 def require_dono(request: Request) -> RedirectResponse | None:
@@ -400,6 +431,7 @@ def render(request: Request, name: str, **ctx):
     ctx.setdefault("ui_mode", ui)
     ctx.setdefault("admin_papel", admin_papel(request) if is_adm else "")
     ctx.setdefault("is_dono", is_dono(request) if is_adm else False)
+    ctx.setdefault("admin_caps", admin_caps(request) if is_adm else set())
     ctx.setdefault("is_mazeta", is_mazeta(request) if is_adm else False)
     ctx.setdefault(
         "admin_papel_label",
@@ -486,7 +518,7 @@ def render(request: Request, name: str, **ctx):
             )
         except Exception:
             ctx["bug_reports_novos_count"] = 0
-    if is_adm and is_mazeta(request) and "admin_bug_reports_count" not in ctx:
+    if is_adm and has_cap(request, "grid.bugs") and "admin_bug_reports_count" not in ctx:
         try:
             ctx["admin_bug_reports_count"] = db.contar_bug_reports_abertos()
         except Exception:
@@ -701,6 +733,25 @@ def home(request: Request):
     return _render_home(request)
 
 
+@app.get("/health")
+def health():
+    """Healthcheck para VPS / load balancer / cron watchdog."""
+    from fastapi.responses import JSONResponse
+
+    db_ok = False
+    try:
+        with db.get_db() as conn:
+            conn.execute("SELECT 1").fetchone()
+        db_ok = True
+    except Exception:
+        db_ok = False
+    status = 200 if db_ok else 503
+    return JSONResponse(
+        {"ok": db_ok, "service": "thdfm", "db": db_ok},
+        status_code=status,
+    )
+
+
 @app.get("/favicon.ico")
 def favicon():
     """Logo THDFM na aba do navegador (mesmo arquivo do brasão)."""
@@ -737,6 +788,7 @@ def robots_txt(request: Request):
 
 _SITEMAP_PATHS: list[tuple[str, str]] = [
     ("/", "daily"),
+    ("/em-desenvolvimento", "weekly"),
     ("/grid", "daily"),
     ("/hall-lendas", "weekly"),
     ("/classificacao", "hourly"),
@@ -782,6 +834,12 @@ def privacidade(request: Request):
 @app.get("/termos", response_class=HTMLResponse)
 def termos(request: Request):
     return render(request, "termos.html")
+
+
+@app.get("/em-desenvolvimento", response_class=HTMLResponse)
+def em_desenvolvimento(request: Request):
+    """Lista honesta: público vs grupo WhatsApp vs em breve."""
+    return render(request, "em_desenvolvimento.html")
 
 
 @app.exception_handler(404)
@@ -919,6 +977,121 @@ async def entrar_post(
     if _promover_admin_da_conta(request):
         return _set_cookie_ui_admin(RedirectResponse("/admin", status_code=303))
     return RedirectResponse("/bolao/meus-palpites", status_code=303)
+
+
+@app.get("/esqueci-senha", response_class=HTMLResponse)
+def esqueci_senha_get(request: Request):
+    return render(
+        request,
+        "esqueci_senha.html",
+        erro=request.query_params.get("erro"),
+        msg=request.query_params.get("msg"),
+        form_usuario=request.query_params.get("usuario") or "",
+    )
+
+
+@app.post("/esqueci-senha")
+async def esqueci_senha_post(
+    request: Request,
+    usuario: str = Form(""),
+):
+    """Pede reset por username ou e-mail. Sempre responde genérico (anti-enumeração)."""
+    from src.mail import enviar_email
+
+    usuario = (usuario or "").strip()
+    ip = _client_ip(request)
+    rate_key = f"reset:{ip}:{usuario.casefold()}"
+    ok_msg = (
+        "Se existir conta com esse username/e-mail e senha cadastrada, "
+        "enviamos um link de redefinição."
+    )
+    if not usuario:
+        return RedirectResponse(
+            "/esqueci-senha?erro=" + quote("Informe username ou e-mail"),
+            status_code=303,
+        )
+    if not _auth_rate_ok(rate_key):
+        return RedirectResponse(
+            "/esqueci-senha?erro=" + quote("Muitas tentativas. Aguarde alguns minutos."),
+            status_code=303,
+        )
+    _auth_rate_hit(rate_key)
+
+    part = None
+    if "@" in usuario:
+        part = db.get_participante_por_email(usuario)
+    else:
+        part = db.get_participante_por_username(usuario)
+
+    if part and part.get("password_hash") and (part.get("email") or "").strip():
+        try:
+            token = db.criar_token_reset_senha(part["id"])
+            base = (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/")
+            link = f"{base}/redefinir-senha/{token}"
+            enviar_email(
+                para=part["email"],
+                assunto="THDFM — redefinir senha",
+                texto=(
+                    f"Olá {part.get('nome') or ''}!\n\n"
+                    f"Para redefinir a senha do bolão THDFM, abra o link (válido por 2 horas):\n"
+                    f"{link}\n\n"
+                    f"Se não foi você, ignore este e-mail.\n"
+                ),
+            )
+        except Exception:
+            pass
+
+    return RedirectResponse(
+        "/esqueci-senha?msg=" + quote(ok_msg),
+        status_code=303,
+    )
+
+
+@app.get("/redefinir-senha/{token}", response_class=HTMLResponse)
+def redefinir_senha_get(request: Request, token: str):
+    info = db.get_reset_token_valido(token)
+    if not info:
+        return render(
+            request,
+            "redefinir_senha.html",
+            token=token,
+            invalido=True,
+            erro="Link inválido ou expirado. Peça outro em Esqueci minha senha.",
+        )
+    return render(
+        request,
+        "redefinir_senha.html",
+        token=token,
+        invalido=False,
+        username=info.get("username") or "",
+        erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/redefinir-senha/{token}")
+async def redefinir_senha_post(
+    request: Request,
+    token: str,
+    senha_nova: str = Form(""),
+    senha_nova2: str = Form(""),
+):
+    if (senha_nova or "") != (senha_nova2 or ""):
+        return RedirectResponse(
+            f"/redefinir-senha/{token}?erro=" + quote("As senhas não conferem"),
+            status_code=303,
+        )
+    try:
+        part = db.consumir_token_reset_senha(token, senha_nova)
+    except ValueError as e:
+        return RedirectResponse(
+            f"/redefinir-senha/{token}?erro=" + quote(str(e)),
+            status_code=303,
+        )
+    _remember_participante(request, part["token"])
+    return RedirectResponse(
+        "/bolao/meus-palpites?msg=" + quote("Senha atualizada. Bem-vindo de volta."),
+        status_code=303,
+    )
 
 
 _MSG_MARLON_PORTA_ERRADA = (
@@ -1948,7 +2121,7 @@ def hall_lendas_page(request: Request, pagina: int = 1):
 @app.post("/admin/hall-lendas/hero")
 async def admin_hall_hero_salvar(request: Request):
     """Salva o HTML do header do Hall (só Mazeta)."""
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "hall.gestir")
     if neg:
         return JSONResponse({"ok": False, "erro": "Não autorizado"}, status_code=403)
     try:
@@ -1963,7 +2136,7 @@ async def admin_hall_hero_salvar(request: Request):
 @app.post("/admin/hall-lendas/hero/midia")
 async def admin_hall_hero_midia(request: Request):
     """Upload de imagem para o header do Hall (só Mazeta)."""
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "hall.gestir")
     if neg:
         return JSONResponse({"ok": False, "erro": "Não autorizado"}, status_code=403)
     form = await request.form()
@@ -1991,7 +2164,7 @@ async def admin_hall_hero_midia(request: Request):
 
 @app.get("/admin/hall-lendas", response_class=HTMLResponse)
 def admin_hall_lendas(request: Request):
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "hall.gestir")
     if neg:
         return neg
     data = db.listar_hall_lendas(pagina=1, por_pagina=200)
@@ -2008,7 +2181,7 @@ def admin_hall_lendas(request: Request):
 
 @app.post("/admin/hall-lendas/salvar")
 async def admin_hall_lendas_salvar(request: Request):
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "hall.gestir")
     if neg:
         return neg
     from src.hall_lendas import parse_valor_centavos, sanitize_hall_recado_html
@@ -2058,7 +2231,7 @@ async def admin_hall_lendas_salvar(request: Request):
 
 @app.post("/admin/hall-lendas/apagar")
 async def admin_hall_lendas_apagar(request: Request):
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "hall.gestir")
     if neg:
         return neg
     form = await request.form()
@@ -3796,8 +3969,8 @@ def _grid_neg_json(request: Request) -> JSONResponse | None:
 
 
 def _grid_mazeta_neg_json(request: Request) -> JSONResponse | None:
-    """Endpoints do painel admin do Grid — só Mazeta."""
-    if is_mazeta(request):
+    """Endpoints do painel admin do Grid — capability grid.bugs."""
+    if has_cap(request, "grid.bugs"):
         return None
     return JSONResponse({"erro": "Só o Mazeta pode fazer isso"}, status_code=403)
 
@@ -3989,7 +4162,7 @@ async def grid_bugs_enviar(request: Request):
 @app.get("/admin/reports", response_class=HTMLResponse)
 def admin_reports_page(request: Request):
     """Inbox de bug reports — só Mazeta."""
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "grid.bugs")
     if neg:
         return neg
     filtro = (request.query_params.get("status") or "").strip().lower() or None
@@ -4009,7 +4182,7 @@ def admin_reports_page(request: Request):
 
 @app.post("/admin/reports/{report_id:int}", response_class=HTMLResponse)
 async def admin_reports_atualizar(request: Request, report_id: int):
-    neg = require_mazeta(request)
+    neg = require_mazeta(request, "grid.bugs")
     if neg:
         return neg
     form = await request.form()
@@ -5445,6 +5618,29 @@ async def conta_alterar_senha(
     return _redirect_after_conta(token, next_url=next_url, msg="Senha atualizada")
 
 
+@app.post("/p/{token}/conta/email")
+async def conta_definir_email(
+    request: Request,
+    token: str,
+    email: str = Form(""),
+    next_url: str = Form("", alias="next"),
+):
+    part = db.get_participante_por_token(token)
+    if not part:
+        raise HTTPException(404, "Link inválido")
+    _remember_participante(request, token)
+    gate = _gate_credenciais(part)
+    if gate:
+        return gate
+    try:
+        db.definir_email_participante(part["id"], email)
+    except ValueError as exc:
+        return _redirect_after_conta(token, next_url=next_url, erro=str(exc))
+    return _redirect_after_conta(
+        token, next_url=next_url, msg="E-mail salvo — use-o em Esqueci minha senha"
+    )
+
+
 @app.post("/conta/sair")
 def conta_sair(request: Request):
     request.session.pop("participante_token", None)
@@ -5766,6 +5962,86 @@ def admin_credenciais(request: Request):
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/admin/permissoes", response_class=HTMLResponse)
+def admin_permissoes(request: Request):
+    """Dono (ou quem tem usuarios.permissoes) define capabilities dos operadores."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not (is_dono(request) or has_cap(request, "usuarios.permissoes")):
+        return RedirectResponse(
+            "/admin?erro=" + quote("Sem permissão para editar permissões."),
+            status_code=303,
+        )
+    from src.admins import list_admins
+    from src.permissoes import CAPABILITIES, DEFAULT_MODERADOR
+
+    operadores = []
+    for adm in list_admins():
+        efetivas = db.admin_capabilities(adm.login)
+        overrides = db.list_admin_permissoes_rows(adm.login)
+        operadores.append(
+            {
+                "login": adm.login,
+                "nome": adm.nome,
+                "papel": adm.papel,
+                "papel_label": adm.papel_label,
+                "is_dono": adm.is_dono,
+                "efetivas": efetivas,
+                "overrides": overrides,
+            }
+        )
+    return render(
+        request,
+        "admin_permissoes.html",
+        operadores=operadores,
+        capabilities=CAPABILITIES,
+        default_moderador=DEFAULT_MODERADOR,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/admin/permissoes")
+async def admin_permissoes_salvar(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if not (is_dono(request) or has_cap(request, "usuarios.permissoes")):
+        return RedirectResponse(
+            "/admin?erro=" + quote("Sem permissão para editar permissões."),
+            status_code=303,
+        )
+    from src.permissoes import CAPABILITIES
+
+    form = await request.form()
+    alvo = (form.get("admin_login") or "").strip().lower()
+    if not alvo:
+        return RedirectResponse(
+            "/admin/permissoes?erro=" + quote("Operador inválido"),
+            status_code=303,
+        )
+    from src.admins import get_admin
+
+    adm = get_admin(alvo)
+    if not adm:
+        return RedirectResponse(
+            "/admin/permissoes?erro=" + quote("Operador não encontrado"),
+            status_code=303,
+        )
+    if adm.is_dono:
+        return RedirectResponse(
+            "/admin/permissoes?msg=" + quote("Dono já tem todas as permissões."),
+            status_code=303,
+        )
+    for cap in CAPABILITIES:
+        key = f"cap_{cap}"
+        concedido = form.get(key) in ("1", "on", "true", "yes")
+        db.set_admin_capability(alvo, cap, concedido)
+    return RedirectResponse(
+        "/admin/permissoes?msg=" + quote(f"Permissões de {adm.nome} atualizadas."),
+        status_code=303,
     )
 
 

@@ -51,6 +51,23 @@
 
   {% if participante.username and participante.password_hash %}
   <div class="card conta-card conta-senha-card">
+    <h2 class="conta-senha-title">E-mail (recuperação de senha)</h2>
+    <form method="post" action="/p/{{ participante.token }}/conta/email" class="form-login conta-senha-form" novalidate>
+      <label for="conta-email">E-mail</label>
+      <input
+        id="conta-email"
+        class="input-compact"
+        type="email"
+        name="email"
+        required
+        autocomplete="email"
+        value="{{ participante.email or '' }}"
+        placeholder="voce@email.com"
+      />
+      <button type="submit">Salvar e-mail</button>
+    </form>
+  </div>
+  <div class="card conta-card conta-senha-card">
     <h2 class="conta-senha-title">Alterar senha</h2>
     <form method="post" action="/p/{{ participante.token }}/conta/senha" class="form-login conta-senha-form" novalidate>
       <label for="senha-atual">Senha atual</label>

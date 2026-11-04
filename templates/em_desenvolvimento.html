@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Em desenvolvimento — THDFM{% endblock %}
+{% block meta_description %}O que já está no ar no portal THDFM, o que é do grupo de WhatsApp e o que ainda vem aí.{% endblock %}
+{% block content %}
+<section class="card" style="max-width:42rem;margin:1.5rem auto;">
+  <h1>Site em desenvolvimento</h1>
+  <p class="login-lead">
+    O portal da THDFM cresce por módulos. Abaixo, o que um visitante encontra hoje —
+    separado do que faz sentido só para quem está no grupo de WhatsApp.
+  </p>
+
+  <h2>Público (sem conta)</h2>
+  <ul>
+    <li><a href="/">Início</a> — portal e atalhos</li>
+    <li><a href="/classificacao">Classificação</a>, <a href="/regras">Regras</a>, <a href="/transparencia">Transparência</a> do bolão</li>
+    <li><a href="/grid">THDFM Grid</a> — explorar (chutar pede login)</li>
+    <li><a href="/hall-lendas">Hall das Lendas</a></li>
+    <li><a href="/xonhometro">Xonhômetro</a> e páginas de <a href="/acervo/competicao/copa-do-brasil">Acervo</a></li>
+  </ul>
+
+  <h2>Com conta liberada (bolão)</h2>
+  <ul>
+    <li>Meus palpites, perfil, ranking ao vivo</li>
+    <li>Entrar com username/senha · <a href="/esqueci-senha">Esqueci minha senha</a> (com e-mail cadastrado)</li>
+  </ul>
+
+  <h2>Grupo do WhatsApp</h2>
+  <ul>
+    <li><a href="/grupo/listra">Listra</a> — presença / meliantes do Zap</li>
+    <li>Contador de Bans, Copypastas, Cardápio — em breve ou só do grupo</li>
+  </ul>
+
+  <h2>Em breve / sprint seguinte</h2>
+  <ul>
+    <li>Cadastro para usuários externos (fora do Zap), com permissões por módulo</li>
+    <li>Homepage e nav ainda mais claras para visitante vs membro</li>
+  </ul>
+
+  <p class="login-alt" style="margin-top:1.5rem">
+    <a class="btn" href="/">Voltar ao início</a>
+    <a class="btn secondary" href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
+  </p>
+</section>
+{% endblock %}

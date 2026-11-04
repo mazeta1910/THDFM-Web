@@ -1,87 +1,73 @@
 {% extends "base.html" %}
 {% block title %}THDFM — Técnicos Horríveis do Futebol Mundial{% endblock %}
-{% block meta_description %}Bolão da Copa do Brasil, THDFM Grid e a comunidade dos Técnicos Horríveis do Futebol Mundial.{% endblock %}
+{% block meta_description %}Bolão da Copa do Brasil, THDFM Grid, Hall das Lendas e acervo — a casa digital dos Técnicos Horríveis.{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block wrap_class %}wrap-home{% endblock %}
 {% block content %}
 <section class="home-hero home-hero-slider" id="home-hero" aria-roledescription="carrossel" aria-label="Destaques THDFM">
   <div class="home-slides" id="home-slides">
-    {# Slide 1 — bolão #}
-    <article class="home-slide is-active" data-slide="0" id="bolao" aria-hidden="false">
+    {# Slide 1 — portal / produto #}
+    <article class="home-slide is-active" data-slide="0" id="portal" aria-hidden="false">
+      <div class="home-hero-media home-hero-media--grad home-hero-media--welcome" aria-hidden="true"></div>
+      <div class="home-hero-scrim" aria-hidden="true"></div>
+      <div class="home-hero-inner">
+        <p class="home-brand">THDFM</p>
+        <h1 class="home-headline">Técnicos Horríveis do Futebol Mundial</h1>
+        <p class="home-lead">
+          Portal com bolão da Copa do Brasil, Grid, Hall das Lendas e acervo.
+          Entre se já tem conta — ou explore o que é público.
+        </p>
+        <div class="home-ctas">
+          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
+          <a class="btn home-cta-primary" href="/bolao/meus-palpites">Meus Palpites</a>
+          <a class="btn secondary home-cta-secondary" href="/grid">THDFM Grid</a>
+          {% elif participante_nav %}
+          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Minha inscrição</a>
+          <a class="btn secondary home-cta-secondary" href="/classificacao">Classificação</a>
+          {% else %}
+          <a class="btn home-cta-primary" href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
+          <a class="btn secondary home-cta-secondary" href="/classificacao">Ver classificação</a>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+
+    {# Slide 2 — bolão #}
+    <article class="home-slide" data-slide="1" id="bolao" aria-hidden="true">
       <div class="home-hero-media" aria-hidden="true">
         <img
           src="/static/img/coringao-campeao.jpg"
           alt="Corinthians campeão da Copa do Brasil"
           width="1600"
           height="900"
-          fetchpriority="high"
           decoding="async"
         />
       </div>
       <div class="home-hero-scrim home-hero-scrim--deep" aria-hidden="true"></div>
       <div class="home-hero-inner home-hero-inner--bolao">
-        <p class="home-kicker">Em andamento</p>
-        <h1 class="home-headline">Bolão da Copa do Brasil</h1>
+        <p class="home-kicker">Bolão CdB</p>
+        <h2 class="home-headline">Bolão da Copa do Brasil</h2>
         {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
-        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
-        <ol class="home-steps home-steps--hero" aria-label="Como participar">
-          <li><span class="home-step-n">1</span><span>Palpite os jogos da Copa</span></li>
-          <li><span class="home-step-n">2</span><span>Dispute a classificação do grupo</span></li>
-          <li><span class="home-step-n">3</span><span>Acompanhe regras e transparência</span></li>
-        </ol>
+        <p class="home-lead">Palpite os jogos, dispute o ranking e acompanhe regras e transparência.</p>
         <div class="home-ctas">
           <a class="btn home-cta-primary" href="/bolao/meus-palpites">Meus Palpites</a>
           <a class="btn secondary home-cta-secondary" href="/classificacao">Classificação</a>
         </div>
         {% elif participante_nav and participante_nav.status == 'liberado' %}
-        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
+        <p class="home-lead">Crie username e senha para palpitar.</p>
         <div class="home-ctas">
           <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}/credenciais">Criar senha</a>
-          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Ver inscrição</a>
-        </div>
-        {% elif participante_nav %}
-        <p class="home-lead">Palpite os jogos, dispute o ranking e viva a competição com o grupo.</p>
-        <div class="home-ctas">
-          <a class="btn home-cta-primary" href="/p/{{ participante_nav.token }}">Ver status da inscrição</a>
-          <a class="btn secondary home-cta-secondary" href="/meu-perfil/editar">Editar perfil</a>
         </div>
         {% else %}
-        <p class="home-lead">Inscrição encerrada. Acompanhe o ranking, as regras e o Grid sem conta — palpite é de quem já está no grupo.</p>
-        <ol class="home-steps home-steps--hero" aria-label="O que dá para ver sem login">
-          <li><span class="home-step-n">1</span><span>Classificação, regras e transparência abertas</span></li>
-          <li><span class="home-step-n">2</span><span>THDFM Grid para explorar (chute pede login)</span></li>
-          <li><span class="home-step-n">3</span><span>Já é do bolão? Entre pelo menu</span></li>
-        </ol>
+        <p class="home-lead">
+          Ranking, regras e transparência são públicos. Palpites são para quem já tem conta liberada.
+        </p>
         <div class="home-ctas">
           <a class="btn home-cta-primary" href="/classificacao">Classificação</a>
-          <a class="btn secondary home-cta-secondary" href="/grid">THDFM Grid</a>
+          <a class="btn secondary home-cta-secondary" href="/regras">Regras</a>
         </div>
         <p class="home-cta-login">Já participa? <a href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a></p>
         {% endif %}
-      </div>
-    </article>
-
-    {# Slide 2 — apresentação #}
-    <article class="home-slide" data-slide="1" id="apresentacao" aria-hidden="true">
-      <div class="home-hero-media home-hero-media--grad home-hero-media--welcome" aria-hidden="true"></div>
-      <div class="home-hero-scrim" aria-hidden="true"></div>
-      <div class="home-hero-inner">
-        <p class="home-brand">THDFM</p>
-        <h2 class="home-headline">Técnicos Horríveis do Futebol Mundial</h2>
-        <p class="home-lead">
-          A casa digital da página: memes, debate de bola e, agora, também o bolão da Copa do Brasil.
-        </p>
-        <div class="home-ctas">
-          {% if whatsapp_group_url %}
-          <a
-            class="btn home-cta-primary"
-            href="{{ whatsapp_group_url }}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Entrar no grupo</a>
-          {% endif %}
-          <button type="button" class="btn {% if whatsapp_group_url %}secondary home-cta-secondary{% else %}home-cta-primary{% endif %}" data-go-slide="0">Ver o bolão</button>
-        </div>
       </div>
     </article>
 
@@ -90,21 +76,15 @@
       <div class="home-hero-media home-hero-media--grad home-hero-media--wip" aria-hidden="true"></div>
       <div class="home-hero-scrim" aria-hidden="true"></div>
       <div class="home-hero-inner">
-        <p class="home-kicker">Aviso</p>
-        <h2 class="home-headline">Site em desenvolvimento</h2>
+        <p class="home-kicker">Roadmap</p>
+        <h2 class="home-headline">O que já existe no site</h2>
         <p class="home-lead">
-          O portal da THDFM ainda tá diva — estamos construindo aos poucos.
-          Algumas áreas vão mudar; o bolão da Copa do Brasil já está no ar para a galera.
+          Bolão, Grid, Hall e acervo no ar. Ferramentas só do WhatsApp ficam no menu Grupo.
+          Veja a lista completa do que é público, do bolão e do que ainda vem.
         </p>
         <div class="home-ctas">
-          <button type="button" class="btn home-cta-primary" data-go-slide="0">Ir ao bolão</button>
-          {% if participante_nav and participante_nav.status == 'liberado' and participante_nav.username and participante_nav.password_hash %}
-          <a class="btn secondary home-cta-secondary" href="/bolao/meus-palpites">Meus Palpites</a>
-          {% elif participante_nav %}
-          <a class="btn secondary home-cta-secondary" href="/p/{{ participante_nav.token }}">Minha inscrição</a>
-          {% else %}
-          <a class="btn secondary home-cta-secondary" href="/?acesso=entrar" data-acesso-open="entrar">Entrar</a>
-          {% endif %}
+          <a class="btn home-cta-primary" href="/em-desenvolvimento">Ver o mapa do site</a>
+          <button type="button" class="btn secondary home-cta-secondary" data-go-slide="1">Ir ao bolão</button>
         </div>
       </div>
     </article>
@@ -113,12 +93,28 @@
   <div class="home-slider-ui">
     <button type="button" class="home-slider-btn" id="home-slide-prev" aria-label="Slide anterior">‹</button>
     <div class="home-slider-dots" id="home-slide-dots" role="tablist" aria-label="Slides">
-      <button type="button" class="home-dot is-active" role="tab" aria-selected="true" aria-controls="bolao" data-slide="0"></button>
-      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="apresentacao" data-slide="1"></button>
+      <button type="button" class="home-dot is-active" role="tab" aria-selected="true" aria-controls="portal" data-slide="0"></button>
+      <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="bolao" data-slide="1"></button>
       <button type="button" class="home-dot" role="tab" aria-selected="false" aria-controls="em-desenvolvimento" data-slide="2"></button>
     </div>
     <button type="button" class="home-slider-btn" id="home-slide-next" aria-label="Próximo slide">›</button>
   </div>
+</section>
+
+<section class="home-modulos" aria-label="Módulos do portal" style="max-width:52rem;margin:1.5rem auto 2rem;padding:0 1rem;">
+  <h2 class="home-headline" style="font-size:1.35rem;">No portal</h2>
+  <ul style="list-style:none;padding:0;display:grid;gap:0.75rem;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));">
+    <li><a class="btn secondary" href="/#bolao" style="display:block;text-align:center;">Bolão CdB</a></li>
+    <li><a class="btn secondary" href="/grid" style="display:block;text-align:center;">THDFM Grid</a></li>
+    <li><a class="btn secondary" href="/hall-lendas" style="display:block;text-align:center;">Hall das Lendas</a></li>
+    <li><a class="btn secondary" href="/xonhometro" style="display:block;text-align:center;">Xonhômetro</a></li>
+  </ul>
+  <p class="login-alt" style="margin-top:1rem;">
+    Coisas do WhatsApp (Listra, bans…) ficam no menu <strong>Grupo</strong>.
+    {% if whatsapp_group_url %}
+    <a href="{{ whatsapp_group_url }}" target="_blank" rel="noopener noreferrer">Convite do grupo</a>.
+    {% endif %}
+  </p>
 </section>
 {% endblock %}
 
@@ -150,34 +146,20 @@
     });
     if (user) restart();
   }
-
+  function nextSlide() { go(idx + 1); }
   function restart() {
-    if (reduce) return;
     clearInterval(timer);
-    timer = setInterval(() => go(idx + 1), AUTO_MS);
+    if (reduce) return;
+    timer = setInterval(nextSlide, AUTO_MS);
   }
-
   prev?.addEventListener("click", () => go(idx - 1, { user: true }));
   next?.addEventListener("click", () => go(idx + 1, { user: true }));
-  dots.forEach((d) => d.addEventListener("click", () => go(Number(d.dataset.slide) || 0, { user: true })));
+  dots.forEach((d) => d.addEventListener("click", () => go(Number(d.dataset.slide || 0), { user: true })));
   root.querySelectorAll("[data-go-slide]").forEach((btn) => {
-    btn.addEventListener("click", () => go(Number(btn.getAttribute("data-go-slide")) || 0, { user: true }));
+    btn.addEventListener("click", () => go(Number(btn.getAttribute("data-go-slide") || 0), { user: true }));
   });
-
-  root.addEventListener("mouseenter", () => clearInterval(timer));
-  root.addEventListener("mouseleave", restart);
-  root.addEventListener("focusin", () => clearInterval(timer));
-  root.addEventListener("focusout", (e) => {
-    if (!root.contains(e.relatedTarget)) restart();
-  });
-
-  function fromHash() {
-    const hash = (location.hash || "").replace("#", "");
-    const map = { bolao: 0, apresentacao: 1, "em-desenvolvimento": 2 };
-    if (hash in map) go(map[hash], { user: true });
-  }
-  window.addEventListener("hashchange", fromHash);
-  fromHash();
+  if (location.hash === "#bolao") go(1);
+  if (location.hash === "#em-desenvolvimento") go(2);
   restart();
 })();
 </script>

@@ -70,26 +70,7 @@
       abrir(acesso === "login" ? "recuperar" : acesso);
     }
 
-    // Modal esqueci senha
-    const modal = document.getElementById("modal-esqueci-senha");
-    const btnForgot = document.getElementById("btn-esqueci-senha");
-    if (modal && btnForgot) {
-      document.body.appendChild(modal);
-      const abrirModal = () => {
-        modal.removeAttribute("hidden");
-        modal.classList.add("is-open");
-      };
-      const fecharModal = () => {
-        modal.classList.remove("is-open");
-        modal.setAttribute("hidden", "");
-      };
-      btnForgot.addEventListener("click", abrirModal);
-      document.getElementById("modal-esqueci-ok")?.addEventListener("click", fecharModal);
-      document.getElementById("modal-esqueci-fechar")?.addEventListener("click", fecharModal);
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) fecharModal();
-      });
-    }
+    // Esqueci senha agora é página /esqueci-senha (link no formulário).
   })();
 
 (function () {

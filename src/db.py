@@ -216,6 +216,26 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE participantes ADD COLUMN times_json TEXT")
     if "sidebar_ordem_json" not in cols:
         conn.execute("ALTER TABLE participantes ADD COLUMN sidebar_ordem_json TEXT")
+    if "email" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN email TEXT")
+    if "email_confirmado_em" not in cols:
+        conn.execute("ALTER TABLE participantes ADD COLUMN email_confirmado_em TEXT")
+    if "origem" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN origem TEXT NOT NULL DEFAULT 'grupo'"
+        )
+    if "pode_bolao" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN pode_bolao INTEGER NOT NULL DEFAULT 1"
+        )
+    if "visivel_grupo_wa" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN visivel_grupo_wa INTEGER NOT NULL DEFAULT 1"
+        )
+    if "pode_grid" not in cols:
+        conn.execute(
+            "ALTER TABLE participantes ADD COLUMN pode_grid INTEGER NOT NULL DEFAULT 1"
+        )
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_admin_login "
         "ON participantes(admin_login) WHERE admin_login IS NOT NULL AND admin_login != ''"
@@ -224,6 +244,43 @@ def _migrate_participantes(conn: sqlite3.Connection) -> None:
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_username_lower "
         "ON participantes(lower(username)) "
         "WHERE username IS NOT NULL AND username != ''"
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_participantes_email_lower "
+        "ON participantes(lower(email)) "
+        "WHERE email IS NOT NULL AND email != ''"
+    )
+
+
+def _migrate_senha_reset(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS senha_reset_tokens (
+            token TEXT PRIMARY KEY,
+            participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            expira_em TEXT NOT NULL,
+            usado_em TEXT
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_senha_reset_part "
+        "ON senha_reset_tokens(participante_id)"
+    )
+
+
+def _migrate_admin_permissoes(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admin_permissoes (
+            admin_login TEXT NOT NULL,
+            capability TEXT NOT NULL,
+            concedido INTEGER NOT NULL DEFAULT 1,
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            PRIMARY KEY (admin_login, capability)
+        )
+        """
     )
 
 
@@ -1191,6 +1248,8 @@ def init_db() -> None:
         _migrate_jogos(conn)
         _migrar_celulares_br(conn)
         _migrate_recuperacao(conn)
+        _migrate_senha_reset(conn)
+        _migrate_admin_permissoes(conn)
         _migrate_xonhometro(conn)
         _migrate_listra(conn)
         _migrate_perfil_karma(conn)
@@ -1276,7 +1335,8 @@ _PARTICIPANTE_COLS = (
     "avatar_path, celular, criado_em, link_enviado_em, recusado_em, inativo_em, "
     "admin_login, username, password_hash, credenciais_em, recados_visto_ate, "
     "perfil_frase, perfil_relacionamento, perfil_aniversario, "
-    "banner_preset, banner_path, times_json, sidebar_ordem_json"
+    "banner_preset, banner_path, times_json, sidebar_ordem_json, "
+    "email, email_confirmado_em, origem, pode_bolao, visivel_grupo_wa, pode_grid"
 )
 
 
@@ -1914,6 +1974,208 @@ def alterar_senha(
             "UPDATE participantes SET password_hash = ?, "
             "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
             (ph, participante_id),
+        )
+
+
+def normalizar_email(email: str) -> str:
+    e = (email or "").strip().lower()
+    if not e or "@" not in e or "." not in e.split("@")[-1]:
+        raise ValueError("E-mail inválido")
+    if len(e) > 120:
+        raise ValueError("E-mail muito longo")
+    return e
+
+
+def get_participante_por_email(email: str) -> dict[str, Any] | None:
+    try:
+        e = normalizar_email(email)
+    except ValueError:
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes "
+            "WHERE lower(email) = lower(?)",
+            (e,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def email_disponivel(email: str, *, exceto_id: int | None = None) -> bool:
+    e = normalizar_email(email)
+    with get_db() as conn:
+        if exceto_id is not None:
+            row = conn.execute(
+                "SELECT id FROM participantes "
+                "WHERE lower(email) = lower(?) AND id != ?",
+                (e, exceto_id),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT id FROM participantes WHERE lower(email) = lower(?)",
+                (e,),
+            ).fetchone()
+        return row is None
+
+
+def definir_email_participante(participante_id: int, email: str) -> dict[str, Any]:
+    """Cadastra/atualiza e-mail (marcado como confirmado no ato — sem fluxo OTP nesta sprint)."""
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    e = normalizar_email(email)
+    if not email_disponivel(e, exceto_id=participante_id):
+        raise ValueError("E-mail já está em uso")
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET email = ?, "
+            "email_confirmado_em = datetime('now', 'localtime') WHERE id = ?",
+            (e, participante_id),
+        )
+    updated = get_participante(participante_id)
+    if not updated:
+        raise ValueError("Falha ao gravar e-mail")
+    return updated
+
+
+def criar_token_reset_senha(participante_id: int, *, horas: int = 2) -> str:
+    part = get_participante(participante_id)
+    if not part or not part.get("password_hash"):
+        raise ValueError("Conta sem senha")
+    if not (part.get("email") or "").strip():
+        raise ValueError("Cadastre um e-mail na conta antes de recuperar a senha")
+    token = secrets.token_urlsafe(32)
+    with get_db() as conn:
+        # Invalida tokens anteriores não usados
+        conn.execute(
+            "UPDATE senha_reset_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE participante_id = ? AND usado_em IS NULL",
+            (participante_id,),
+        )
+        conn.execute(
+            "INSERT INTO senha_reset_tokens (token, participante_id, expira_em) "
+            "VALUES (?, ?, datetime('now', 'localtime', ?))",
+            (token, participante_id, f"+{int(horas)} hours"),
+        )
+    return token
+
+
+def consumir_token_reset_senha(token: str, senha_nova: str) -> dict[str, Any]:
+    token = (token or "").strip()
+    if not token:
+        raise ValueError("Token inválido")
+    senha_ok = validar_senha_nova(senha_nova)
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM senha_reset_tokens WHERE token = ?", (token,)
+        ).fetchone()
+        if not row:
+            raise ValueError("Link inválido ou já usado")
+        if row["usado_em"]:
+            raise ValueError("Link já utilizado")
+        exp = conn.execute(
+            "SELECT datetime('now', 'localtime') AS agora, "
+            "datetime(?) AS expira",
+            (row["expira_em"],),
+        ).fetchone()
+        if exp and exp["agora"] > exp["expira"]:
+            raise ValueError("Link expirado — peça outro")
+        ph = hash_senha(senha_ok)
+        conn.execute(
+            "UPDATE participantes SET password_hash = ?, "
+            "credenciais_em = datetime('now', 'localtime') WHERE id = ?",
+            (ph, row["participante_id"]),
+        )
+        conn.execute(
+            "UPDATE senha_reset_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE token = ?",
+            (token,),
+        )
+        part = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE id = ?",
+            (row["participante_id"],),
+        ).fetchone()
+        if not part:
+            raise ValueError("Participante não encontrado")
+        return dict(part)
+
+
+def get_reset_token_valido(token: str) -> dict[str, Any] | None:
+    token = (token or "").strip()
+    if not token:
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT t.*, p.username, p.email FROM senha_reset_tokens t "
+            "JOIN participantes p ON p.id = t.participante_id "
+            "WHERE t.token = ? AND t.usado_em IS NULL "
+            "AND datetime(t.expira_em) >= datetime('now', 'localtime')",
+            (token,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def admin_capabilities(admin_login: str) -> set[str]:
+    """Capabilities efetivas: dono = todas; moderador = default ∪ overrides do DB."""
+    from src.admins import get_admin
+    from src.permissoes import CAPABILITIES, DEFAULT_MODERADOR
+
+    login = (admin_login or "").strip().lower()
+    if not login:
+        return set()
+    admin = get_admin(login)
+    if not admin:
+        return set()
+    if admin.is_dono:
+        return set(CAPABILITIES.keys())
+
+    caps = set(DEFAULT_MODERADOR)
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT capability, concedido FROM admin_permissoes WHERE admin_login = ?",
+            (login,),
+        ).fetchall()
+    for r in rows:
+        cap = r["capability"]
+        if cap not in CAPABILITIES:
+            continue
+        if int(r["concedido"] or 0):
+            caps.add(cap)
+        else:
+            caps.discard(cap)
+    return caps
+
+
+def admin_tem_capability(admin_login: str, capability: str) -> bool:
+    return capability in admin_capabilities(admin_login)
+
+
+def list_admin_permissoes_rows(admin_login: str) -> dict[str, bool]:
+    """Mapa capability → concedido explícito no DB (só overrides)."""
+    login = (admin_login or "").strip().lower()
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT capability, concedido FROM admin_permissoes WHERE admin_login = ?",
+            (login,),
+        ).fetchall()
+    return {r["capability"]: bool(int(r["concedido"] or 0)) for r in rows}
+
+
+def set_admin_capability(admin_login: str, capability: str, concedido: bool) -> None:
+    from src.permissoes import CAPABILITIES
+
+    login = (admin_login or "").strip().lower()
+    if capability not in CAPABILITIES:
+        raise ValueError("capability inválida")
+    if not login:
+        raise ValueError("login vazio")
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO admin_permissoes (admin_login, capability, concedido, atualizado_em) "
+            "VALUES (?, ?, ?, datetime('now', 'localtime')) "
+            "ON CONFLICT(admin_login, capability) DO UPDATE SET "
+            "concedido = excluded.concedido, "
+            "atualizado_em = datetime('now', 'localtime')",
+            (login, capability, 1 if concedido else 0),
         )
 
 

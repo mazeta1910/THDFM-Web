@@ -103,6 +103,9 @@
                 {% if is_dono %}
                 <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
                 {% endif %}
+                {% if is_dono or ('usuarios.permissoes' in admin_caps) %}
+                <a class="admin-side-link {% if path.startswith('/admin/permissoes') %}active{% endif %}" href="/admin/permissoes">{{ ico('acesso') }}<span>Permissões</span></a>
+                {% endif %}
               </div>
             </details>
           </div>
@@ -117,12 +120,16 @@
         </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
-          {% if is_mazeta %}
+          {% if 'grid.bugs' in admin_caps %}
           <a class="admin-side-link {% if on_admin_reports %}active{% endif %}" href="/admin/reports">
             {{ ico('bug') }}<span>Reports</span>
             {% if reports_n %}<span class="admin-badge">{{ reports_n }}</span>{% endif %}
           </a>
+          {% endif %}
+          {% if 'acervo.gestir' in admin_caps %}
           <a class="admin-side-link {% if on_admin_acervo %}active{% endif %}" href="/admin/acervo">{{ ico('transparencia') }}<span>Acervo</span></a>
+          {% endif %}
+          {% if 'hall.gestir' in admin_caps %}
           <a class="admin-side-link {% if on_hall_lendas or on_admin_hall_lendas %}active{% endif %}" href="/admin/hall-lendas">{{ ico('classificacao') }}<span>Hall das Lendas</span></a>
           {% endif %}
         </div>

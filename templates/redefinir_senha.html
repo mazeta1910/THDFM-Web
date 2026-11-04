@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Redefinir senha — THDFM{% endblock %}
+{% block content %}
+<div class="card login-card">
+  <h1>Redefinir senha</h1>
+  {% if invalido %}
+  <p class="erro">{{ erro or 'Link inválido ou expirado.' }}</p>
+  <p class="login-alt"><a href="/esqueci-senha">Pedir novo link</a></p>
+  {% else %}
+  <p class="login-lead">
+    Conta{% if username %} <strong>{{ username }}</strong>{% endif %}: escolha uma senha nova (mín. 8 caracteres).
+  </p>
+  {% if erro %}<p class="erro">{{ erro.replace('+', ' ') }}</p>{% endif %}
+  <form method="post" action="/redefinir-senha/{{ token }}" class="form-login" novalidate>
+    <label for="senha_nova">Nova senha</label>
+    <input id="senha_nova" class="input-compact" type="password" name="senha_nova" required minlength="8" autocomplete="new-password" />
+    <label for="senha_nova2">Confirmar</label>
+    <input id="senha_nova2" class="input-compact" type="password" name="senha_nova2" required minlength="8" autocomplete="new-password" />
+    <button type="submit">Salvar senha</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
