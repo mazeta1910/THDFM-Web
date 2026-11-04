@@ -1,0 +1,53 @@
+# THDFM Web — regras para o agente
+
+Leia isto em **toda** mudança de UI/código. Preferência do dono: interface densa, ícones SVG, **nunca** botões enormes full-width para ações secundárias.
+
+## Idioma e produto
+
+- Respostas e copy de UI em **português (Brasil)**.
+- O site é da THDFM (bolão, Grid, feed, grupo Zap). Não reinventar a marca nem o tom.
+- Em features grandes: **alinhar requisitos antes de sair implementando** se o pedido for aberto (“reformular home”, “melhorar admin”). Se o pedido for pontual e claro, execute.
+
+## Controles compactos (obrigatório)
+
+O CSS global faz `button, .btn { width: 100%; … }` — botão sem override vira um tijolo.
+
+1. **Não** use `.btn` / `.btn.secondary` / `<button>` cru para: toggles, chips, filtros, salvar, fechar, ícone de olho, ações em linha de tabela, toolbar, drawer, modal secundário.
+2. Preferir:
+   - **Ícone SVG** (vetor) — só, ou ícone + texto curto
+   - Classes já do projeto: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `login-forgot-btn`, `admin-side-link`, `grid-chip-btn`, `grid-mode-btn`, etc.
+3. Novo controle compacto:
+   - seletor `button.minha-classe` (não só `.minha-classe`)
+   - `width: auto !important; max-width: max-content !important;`
+   - `padding` ≤ `0.35rem 0.75rem` (ícone só: ~`0.35rem`)
+   - `font-size` ≈ `0.78–0.85rem`
+   - `min-height: 0`
+   - `border-radius` ≤ `8px` (evitar pill `999px` em toggles)
+4. Ação primária de formulário longo (Entrar, Enviar inscrição) **pode** ser `.btn` full-width — e só ela.
+5. Ao mudar CSS de botão/controle: bump do cache em `templates/base.html` (`style.css?v=N` e JS afetado).
+
+## Vetores / ícones (obrigatório)
+
+1. Preferir **SVG inline** (`currentColor`, `viewBox="0 0 24 24"`) a PNG/emoji decorativo.
+2. Menu/sidebar: macro `ico(...)` em `templates/partials/nav_icons.html` — **reutilize** ou acrescente lá; não invente outro sistema de ícones.
+3. Ações de UI (salvar, editar, fechar, mostrar senha, arrastar): **botão compacto + SVG**, não retângulo enorme com só texto.
+4. Tamanho típico de ícone de nav/ação: **14–16px**; não estourar 20px em chrome.
+5. `aria-label` / `title` quando o botão for só ícone.
+
+## Layout e densidade
+
+1. Admin e listagens: priorizar **densidade** (tabela/planilha + ficha), não cards inchados para gestão de contas.
+2. Evitar card por card com sombra/padding grosso se borda/fundo não ajudar a interação.
+3. Sidebar/nav: links compactos com ícone + label (padrão atual `site-side-link` / `admin-side-link`).
+4. Não colocar stats, promo strips ou chips demais no primeiro viewport de landing.
+
+## Escopo e git
+
+- Mudanças focadas no pedido; sem refatoração oportunista.
+- Branches Cloud: `cursor/<descricao>-0365`.
+- Não editar plano/requisitos fechados sem o usuário pedir.
+- Não implementar a reforma portal/feed/admin unificado até pedido **explícito** de implementação.
+
+## Referência Grid
+
+Detalhes extras do Grid: `.cursor/rules/compact-controls.mdc`.

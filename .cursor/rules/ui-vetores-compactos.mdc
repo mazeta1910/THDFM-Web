@@ -1,0 +1,23 @@
+---
+description: UI THDFM — SVG/vetores e controles compactos em todo o site
+alwaysApply: true
+---
+
+# UI: vetores + controles compactos
+
+O dono reitera: **use SVG/vetores**, não botões enormes full-width para ações secundárias.
+
+## Anti-padrão
+
+- `<button class="btn">` ou `<button>` sem classe compacta em toolbar, linha de tabela, modal secundário, toggle, salvar, fechar.
+- Texto longo dentro de botão largo quando um ícone SVG resolve.
+
+## Padrão
+
+- Ícone SVG (`currentColor`) via `ico()` em `templates/partials/nav_icons.html` ou SVG inline no botão.
+- Classes: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `*-chip-btn`, links de sidebar.
+- CSS novo: `button.classe { width: auto !important; max-width: max-content !important; padding curto; }`
+- Só a CTA primária de form longo pode ser `.btn` full-width.
+- Bump `style.css?v=` / JS em `base.html` ao mudar estilo de controle.
+
+Ver também `.cursorrules` na raiz e `.cursor/rules/compact-controls.mdc` (Grid).
