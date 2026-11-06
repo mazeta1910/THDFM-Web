@@ -8,6 +8,15 @@ Leia isto em **toda** mudança de UI/código. Preferência do dono: interface de
 - O site é da THDFM (bolão, Grid, feed, grupo Zap). Não reinventar a marca nem o tom.
 - Em features grandes: **alinhar requisitos antes de sair implementando** se o pedido for aberto (“reformular home”, “melhorar admin”). Se o pedido for pontual e claro, execute.
 
+## Protótipo antes de UI nova (obrigatório)
+
+Sempre que for **criar ou redesenhar uma interface** (tela, modal, seção relevante de layout):
+
+1. **Antes de implementar no código**, mostre um **protótipo** (Canvas Cursor e/ou mock visual) ao Mazeta.
+2. Só implemente no repo **depois do consenso** explícito (“pode implementar”, “fecha nessa”, etc.).
+3. Ajustes pontuais mínimos (bug de CSS, typo, botão que já viola regra e o dono apontou) **podem** ir direto — se houver dúvida de layout, protótipo primeiro.
+4. Não “surpreender” com tela nova em PR sem o dono ter visto o protótipo.
+
 ## Botões — regras estritas (obrigatório)
 
 Sempre que criar botões, seguir **à risca**:

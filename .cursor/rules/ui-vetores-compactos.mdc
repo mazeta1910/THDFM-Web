@@ -1,7 +1,13 @@
 ---
-description: UI THDFM — botões compactos, SVG e texto mínimo (sempre)
+description: UI THDFM — protótipo antes, botões compactos, SVG (sempre)
 alwaysApply: true
 ---
+
+# Protótipo antes de UI nova
+
+- Tela/modal/layout novo ou redesenho: **mostrar protótipo (Canvas) e esperar consenso** antes de codar.
+- Bug pontual / correção óbvia apontada pelo dono: pode ir direto.
+- Ver `.cursorrules` § Protótipo.
 
 # Botões — regras estritas
 
