@@ -48,14 +48,35 @@
   margin: 0 0 0.65rem;
   font-size: 0.88rem;
 }
-.email-gate-resend {
-  margin: 0 0 0.75rem;
-  display: flex;
-  justify-content: center;
+.email-gate-resend-form {
+  display: none;
 }
-.email-gate-resend .login-submit-compact {
-  width: auto;
-  margin: 0;
+/* “reenvie o link” como hiperlink inline (não botão CTA) */
+button.email-gate-resend-link {
+  display: inline !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  color: var(--accent) !important;
+  font: inherit !important;
+  font-size: inherit !important;
+  font-weight: 600 !important;
+  line-height: inherit !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+  box-shadow: none !important;
+  vertical-align: baseline;
+}
+button.email-gate-resend-link:hover,
+button.email-gate-resend-link:focus-visible {
+  opacity: 0.9;
 }
 .email-gate-change-label {
   margin: 0 0 0.35rem;
