@@ -29,7 +29,7 @@ Sempre que criar botões, seguir **à risca**:
 4. Se texto for estritamente necessário: **no máximo 1–2 palavras**  
    (ex.: “Salvar”, “Excluir”).
 5. Botão só-ícone: sempre `title` e/ou `aria-label` (tooltip / acessibilidade).
-6. Em formulários, ações de submit/salvar ficam **à direita** (não à esquerda do campo).
+6. Em formulários, ações de submit/salvar ficam **à direita**. Em campo único (ex.: e-mail), o botão fica **na mesma linha, à direita do input** — nunca abaixo à esquerda.
 
 ## Controles compactos (técnico)
 

@@ -12,17 +12,17 @@
   {% if msg %}<p class="msg">{{ msg.replace('+', ' ') }}</p>{% endif %}
   <form method="post" action="/esqueci-senha" class="form-login" novalidate>
     <label for="usuario">Username ou e-mail</label>
-    <input
-      id="usuario"
-      class="input-compact"
-      type="text"
-      name="usuario"
-      required
-      autocomplete="username"
-      value="{{ form_usuario }}"
-      placeholder="seu.username ou voce@email.com"
-    />
-    <div class="form-login-actions">
+    <div class="form-login-row">
+      <input
+        id="usuario"
+        class="input-compact"
+        type="text"
+        name="usuario"
+        required
+        autocomplete="username"
+        value="{{ form_usuario }}"
+        placeholder="seu.username ou voce@email.com"
+      />
       <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M22 2L11 13"/>
