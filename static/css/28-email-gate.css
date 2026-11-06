@@ -51,7 +51,7 @@
 .email-gate-resend {
   margin: 0 0 0.75rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 .email-gate-resend .login-submit-compact {
   width: auto;
