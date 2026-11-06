@@ -270,6 +270,25 @@ def _migrate_senha_reset(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_email_verify(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS email_verify_tokens (
+            token TEXT PRIMARY KEY,
+            participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+            email TEXT NOT NULL,
+            criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            expira_em TEXT NOT NULL,
+            usado_em TEXT
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_email_verify_part "
+        "ON email_verify_tokens(participante_id)"
+    )
+
+
 def _migrate_admin_permissoes(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -1249,6 +1268,7 @@ def init_db() -> None:
         _migrar_celulares_br(conn)
         _migrate_recuperacao(conn)
         _migrate_senha_reset(conn)
+        _migrate_email_verify(conn)
         _migrate_admin_permissoes(conn)
         _migrate_xonhometro(conn)
         _migrate_listra(conn)
@@ -2017,8 +2037,14 @@ def email_disponivel(email: str, *, exceto_id: int | None = None) -> bool:
         return row is None
 
 
+def email_esta_confirmado(part: dict[str, Any] | None) -> bool:
+    if not part:
+        return False
+    return bool((part.get("email") or "").strip() and (part.get("email_confirmado_em") or "").strip())
+
+
 def definir_email_participante(participante_id: int, email: str) -> dict[str, Any]:
-    """Cadastra/atualiza e-mail (marcado como confirmado no ato — sem fluxo OTP nesta sprint)."""
+    """Grava e-mail já confirmado (admin/testes). Fluxo do usuário: solicitar_verificacao_email."""
     part = get_participante(participante_id)
     if not part:
         raise ValueError("Participante não encontrado")
@@ -2031,10 +2057,103 @@ def definir_email_participante(participante_id: int, email: str) -> dict[str, An
             "email_confirmado_em = datetime('now', 'localtime') WHERE id = ?",
             (e, participante_id),
         )
+        conn.execute(
+            "UPDATE email_verify_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE participante_id = ? AND usado_em IS NULL",
+            (participante_id,),
+        )
     updated = get_participante(participante_id)
     if not updated:
         raise ValueError("Falha ao gravar e-mail")
     return updated
+
+
+def solicitar_verificacao_email(
+    participante_id: int, email: str, *, horas: int = 24
+) -> tuple[dict[str, Any], str]:
+    """Salva e-mail pendente, limpa confirmação e gera token de verificação."""
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    e = normalizar_email(email)
+    if not email_disponivel(e, exceto_id=participante_id):
+        raise ValueError("E-mail já está em uso")
+    token = secrets.token_urlsafe(32)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE participantes SET email = ?, email_confirmado_em = NULL WHERE id = ?",
+            (e, participante_id),
+        )
+        conn.execute(
+            "UPDATE email_verify_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE participante_id = ? AND usado_em IS NULL",
+            (participante_id,),
+        )
+        conn.execute(
+            "INSERT INTO email_verify_tokens (token, participante_id, email, expira_em) "
+            "VALUES (?, ?, ?, datetime('now', 'localtime', ?))",
+            (token, participante_id, e, f"+{int(horas)} hours"),
+        )
+    updated = get_participante(participante_id)
+    if not updated:
+        raise ValueError("Falha ao gravar e-mail")
+    return updated, token
+
+
+def reenviar_verificacao_email(participante_id: int, *, horas: int = 24) -> tuple[dict[str, Any], str]:
+    """Novo token para o e-mail já salvo (ainda não confirmado)."""
+    part = get_participante(participante_id)
+    if not part:
+        raise ValueError("Participante não encontrado")
+    e = (part.get("email") or "").strip()
+    if not e:
+        raise ValueError("Informe um e-mail primeiro")
+    if email_esta_confirmado(part):
+        raise ValueError("E-mail já confirmado")
+    return solicitar_verificacao_email(participante_id, e, horas=horas)
+
+
+def confirmar_email_por_token(token: str) -> dict[str, Any]:
+    token = (token or "").strip()
+    if not token:
+        raise ValueError("Link inválido")
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM email_verify_tokens WHERE token = ?", (token,)
+        ).fetchone()
+        if not row:
+            raise ValueError("Link inválido ou já usado")
+        if row["usado_em"]:
+            raise ValueError("Link já utilizado")
+        exp = conn.execute(
+            "SELECT datetime('now', 'localtime') AS agora, datetime(?) AS expira",
+            (row["expira_em"],),
+        ).fetchone()
+        if exp and exp["agora"] > exp["expira"]:
+            raise ValueError("Link expirado — peça outro")
+        conn.execute(
+            "UPDATE participantes SET email = ?, "
+            "email_confirmado_em = datetime('now', 'localtime') WHERE id = ?",
+            (row["email"], row["participante_id"]),
+        )
+        conn.execute(
+            "UPDATE email_verify_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE token = ?",
+            (token,),
+        )
+        # Invalida outros tokens abertos
+        conn.execute(
+            "UPDATE email_verify_tokens SET usado_em = datetime('now', 'localtime') "
+            "WHERE participante_id = ? AND usado_em IS NULL",
+            (row["participante_id"],),
+        )
+        part = conn.execute(
+            f"SELECT {_PARTICIPANTE_COLS} FROM participantes WHERE id = ?",
+            (row["participante_id"],),
+        ).fetchone()
+        if not part:
+            raise ValueError("Participante não encontrado")
+        return dict(part)
 
 
 def criar_token_reset_senha(participante_id: int, *, horas: int = 2) -> str:

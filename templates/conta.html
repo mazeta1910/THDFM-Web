@@ -52,19 +52,31 @@
   {% if participante.username and participante.password_hash %}
   <div class="card conta-card conta-senha-card">
     <h2 class="conta-senha-title">E-mail (recuperação de senha)</h2>
+    {% if participante.email and participante.email_confirmado_em %}
+    <p class="conta-hint">Confirmado: <strong>{{ participante.email }}</strong></p>
+    {% elif participante.email %}
+    <p class="conta-hint">Pendente de confirmação: <strong>{{ participante.email }}</strong> — abra o link do e-mail.</p>
+    {% endif %}
     <form method="post" action="/p/{{ participante.token }}/conta/email" class="form-login conta-senha-form" novalidate>
       <label for="conta-email">E-mail</label>
-      <input
-        id="conta-email"
-        class="input-compact"
-        type="email"
-        name="email"
-        required
-        autocomplete="email"
-        value="{{ participante.email or '' }}"
-        placeholder="voce@email.com"
-      />
-      <button type="submit">Salvar e-mail</button>
+      <div class="form-login-row">
+        <input
+          id="conta-email"
+          class="input-compact"
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          value="{{ participante.email or '' }}"
+          placeholder="voce@email.com"
+        />
+        <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link de confirmação">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
     </form>
   </div>
   <div class="card conta-card conta-senha-card">

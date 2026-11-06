@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{% if ok %}E-mail confirmado{% else %}Link inválido{% endif %} — THDFM{% endblock %}
+{% block wrap_class %}auth-page{% endblock %}
+{% block content %}
+<div class="card login-card">
+  {% if ok %}
+  <h1>E-mail confirmado</h1>
+  <p class="login-lead">
+    {% if nome %}Pronto, {{ nome }} — {% endif %}sua conta está liberada. Pode usar o site.
+  </p>
+  <p class="login-alt"><a href="/">Ir para o início</a></p>
+  {% else %}
+  <h1>Não foi possível confirmar</h1>
+  <p class="erro">{{ erro }}</p>
+  <p class="login-lead">Peça um novo link na tela de e-mail obrigatório ou em Conta.</p>
+  <p class="login-alt"><a href="/">Voltar</a></p>
+  {% endif %}
+</div>
+{% endblock %}

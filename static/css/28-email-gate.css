@@ -1,0 +1,79 @@
+/* —— Gate: e-mail obrigatório (modal bloqueante) —— */
+.email-gate-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 1rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10050;
+  box-sizing: border-box;
+}
+.email-gate-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.email-gate-card {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 1.1rem 1.15rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card, var(--bg-elevated, #141414));
+  color: var(--text);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.email-gate-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.25;
+}
+.email-gate-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.email-gate-flash {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+}
+.email-gate-resend {
+  margin: 0 0 0.75rem;
+}
+.email-gate-resend .login-submit-compact {
+  width: auto;
+}
+.email-gate-change-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.email-gate-form {
+  margin: 0;
+}
+.email-gate-form label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+.email-gate-sair {
+  margin: 0.85rem 0 0;
+}
+.email-gate-sair button {
+  width: 100%;
+  font-size: 0.88rem;
+}
+body:has(.email-gate-dialog[open]) {
+  overflow: hidden;
+}
