@@ -7273,6 +7273,15 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
 .form-login button {
   margin-top: 0.25rem;
 }
+/* Submit de login/esqueci/redefinir: compacto (não full-width) */
+button.login-submit-compact {
+  width: auto !important;
+  max-width: max-content !important;
+  padding: 0.35rem 0.85rem !important;
+  font-size: 0.85rem;
+  min-height: 0;
+  border-radius: 8px;
+}
 .login-alt,
 .login-back {
   margin: 1rem 0 0;
