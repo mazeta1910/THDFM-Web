@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Esqueci minha senha — THDFM{% endblock %}
+{% block wrap_class %}auth-page{% endblock %}
 {% block content %}
 <div class="card login-card">
   <h1>Esqueci minha senha</h1>
@@ -21,7 +22,12 @@
       value="{{ form_usuario }}"
       placeholder="seu.username ou voce@email.com"
     />
-    <button type="submit" class="login-submit-compact" title="Enviar link de redefinição">Enviar</button>
+    <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 2L11 13"/>
+        <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+      </svg>
+    </button>
   </form>
   <p class="login-alt">
     Ainda não cadastrou e-mail? Entre na conta (ou use o link do Zap) e salve o e-mail em Conta.
