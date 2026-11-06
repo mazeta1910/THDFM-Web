@@ -482,12 +482,12 @@ a.recados-toggle {
   top: auto;
   right: auto;
   z-index: auto;
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   margin: 0;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--card);
   color: var(--accent);
   cursor: pointer;
@@ -495,7 +495,7 @@ a.recados-toggle {
   align-items: center;
   justify-content: center;
   line-height: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  box-shadow: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   flex-shrink: 0;
@@ -504,9 +504,9 @@ a.recados-toggle {
 }
 .chrome-mode-toggle {
   width: auto;
-  min-width: 42px;
-  padding: 0 0.75rem;
-  font-size: 0.78rem;
+  min-width: 32px;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -715,8 +715,8 @@ body.is-moderador #btn-recusar-todos {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   margin: 0;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -7281,6 +7281,43 @@ button.login-submit-compact {
   font-size: 0.85rem;
   min-height: 0;
   border-radius: 8px;
+}
+/* Submit só-ícone SVG */
+button.login-submit-icon {
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.35rem !important;
+  line-height: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+button.login-submit-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+/* Auth: card sem vazio enorme até o footer */
+.site-body .site-main > .wrap.auth-page {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 420px;
+  margin: 1.25rem auto 1.5rem;
+  padding-inline: 1rem;
+}
+.wrap.auth-page .login-card {
+  margin: 0;
+}
+.wrap.auth-page .login-lead {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+.wrap.auth-page .login-alt {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
 }
 .login-alt,
 .login-back {
