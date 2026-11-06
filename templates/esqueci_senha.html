@@ -22,19 +22,18 @@
       value="{{ form_usuario }}"
       placeholder="seu.username ou voce@email.com"
     />
-    <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M22 2L11 13"/>
-        <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
-      </svg>
-    </button>
+    <div class="form-login-actions">
+      <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 2L11 13"/>
+          <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </div>
   </form>
   <p class="login-alt">
-    Ainda não cadastrou e-mail? Entre na conta (ou use o link do Zap) e salve o e-mail em Conta.
-  </p>
-  <p class="login-alt">
     Sem e-mail? <a href="/?acesso=recuperar" data-acesso-open="recuperar">Recuperar link no WhatsApp</a>
-    · <a href="/?acesso=entrar" data-acesso-open="entrar">Voltar ao Entrar</a>
+    · <a href="/?acesso=entrar" data-acesso-open="entrar">Voltar</a>
   </p>
 </div>
 {% endblock %}

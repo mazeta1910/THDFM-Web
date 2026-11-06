@@ -7273,6 +7273,17 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
 .form-login button {
   margin-top: 0.25rem;
 }
+/* Ações do form: sempre à direita */
+.form-login-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.form-login-actions > button {
+  margin-top: 0;
+}
 /* Submit de login/esqueci/redefinir: compacto (não full-width) */
 button.login-submit-compact {
   width: auto !important;
