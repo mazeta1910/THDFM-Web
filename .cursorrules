@@ -33,19 +33,19 @@ Sempre que criar botões, seguir **à risca**:
 
 ## Controles compactos (técnico)
 
-O CSS global faz `button, .btn { width: 100%; … }` — botão sem override vira um tijolo.
+O CSS global (`button, .btn`) é **compacto por padrão** (`width: auto`, padding curto).
 
-1. **Não** use `.btn` / `.btn.secondary` / `<button>` cru para: toggles, chips, filtros, salvar, fechar, ícone de olho, ações em linha de tabela, toolbar, drawer, modal secundário.
-2. Preferir classes do projeto: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `login-forgot-btn`, `admin-side-link`, `grid-chip-btn`, `grid-mode-btn`, etc.
-3. Novo controle compacto:
+1. **Não** use full-width por hábito. Full-width é **opt-in** com a classe `.btn-block`.
+2. Preferir classes do projeto quando o visual for específico: `btn-save-icon`, `password-toggle`, `proto-text-btn`, `login-submit-icon`, `login-submit-compact`, `grid-chip-btn`, `grid-mode-btn`, etc.
+3. Novo controle compacto (se precisar ir além do default):
    - seletor `button.minha-classe` (não só `.minha-classe`)
-   - `width: auto !important; max-width: max-content !important;`
-   - `padding` ≤ `0.35rem 0.75rem` (ícone só: ~`0.35rem`)
+   - padding ≤ `0.35rem 0.75rem` (ícone só: ~`0.35rem`)
    - `font-size` ≈ `0.78–0.85rem`
    - `min-height: 0`
    - `border-radius` ≤ `8px` (evitar pill `999px` em toggles)
-4. Exceção: **uma** CTA primária de formulário longo (Entrar, Enviar) **pode** ser `.btn` full-width — e o rótulo ainda obedece às regras 1–4 acima (curto).
+4. Exceção rara: CTA que **precisa** esticar a largura do container → `class="btn btn-block"` (rótulo ainda curto).
 5. Ao mudar CSS de botão/controle: bump do cache em `templates/base.html` (`style.css?v=N` e JS afetado).
+6. **Nunca** reintroduzir `button, .btn { width: 100%; }` no global.
 
 ## Vetores / ícones (obrigatório)
 

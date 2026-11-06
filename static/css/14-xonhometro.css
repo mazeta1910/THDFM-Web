@@ -540,7 +540,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   height: var(--mais-slot);
   flex-shrink: 0;
 }
-/* Não usa <button>: o CSS global de button (width:100%, padding grande, fundo accent)
+/* Não usa <button>: evita herdar fundo accent / tipografia de CTA do button global
    transformava o + num bloco laranja enorme. */
 .xonha-motivo-mais {
   appearance: none !important;

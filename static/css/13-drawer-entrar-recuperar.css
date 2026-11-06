@@ -109,6 +109,7 @@ body.acesso-drawer-open {
   width: min(100%, 160px);
 }
 .loguin-drawer .loguin-submit {
-  width: 100%;
+  width: auto;
+  align-self: flex-end;
 }
 

@@ -20,8 +20,14 @@
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
 }
-.conta-senha-form button {
+.conta-senha-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.conta-senha-form > button[type="submit"] {
   margin-top: 0.35rem;
+  align-self: flex-end;
 }
 .login-back {
   display: flex;

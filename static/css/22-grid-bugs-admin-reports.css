@@ -742,7 +742,7 @@ button.grid-cell,
   overflow: hidden;
   background: color-mix(in srgb, var(--bg) 88%, var(--accent));
 }
-/* Sobrescreve o `button { width:100%; background: accent }` global */
+/* Sobrescreve fundo accent / tipografia de CTA do button global */
 button.grid-daltonismo-btn,
 .grid-daltonismo-btn {
   appearance: none;
