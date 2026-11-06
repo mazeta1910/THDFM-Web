@@ -19,18 +19,28 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--muted);
   font-weight: 700;
 }
+/* Default COMPACTO. Full-width só com .btn-block (opt-in). */
 button, .btn {
-  display: inline-block;
-  width: 100%;
-  padding: 0.9rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: max-content;
+  min-height: 0;
+  padding: 0.35rem 0.85rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--accent);
   color: #111;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.2;
   cursor: pointer;
   text-align: center;
+  box-sizing: border-box;
+}
+a.btn {
+  text-decoration: none;
 }
 button.secondary, .btn.secondary {
   background: transparent;
@@ -40,6 +50,30 @@ button.secondary, .btn.secondary {
 button.danger {
   background: var(--accent2);
   color: #fff;
+}
+/* CTA que precisa esticar: marque explicitamente */
+button.btn-block,
+.btn.btn-block,
+a.btn.btn-block {
+  display: flex;
+  width: 100%;
+  max-width: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+/* Forms de card/auth: coluna + submit à direita */
+.login-card > form,
+.card.form-inscricao,
+.card > form:not(.conta-form):not(.email-gate-sair):not(.conta-sair-form) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.login-card > form > button[type="submit"],
+.card.form-inscricao > button[type="submit"],
+.card > form:not(.conta-form) > button[type="submit"] {
+  align-self: flex-end;
 }
 .pen-group {
   display: flex;

@@ -1518,19 +1518,15 @@ nav.site-nav-desktop {
   flex-direction: column;
   gap: 0.5rem;
 }
-.conta-actions .btn.secondary,
-.conta-sair-form .secondary {
-  width: 100%;
-  text-align: center;
-  padding: 0.7rem 1rem;
-}
 .conta-sair-form {
   margin: 0;
+  display: flex;
+  justify-content: flex-end;
 }
 .conta-sair-hint {
-  margin: 0 !important;
+  margin: 0.35rem 0 0 !important;
   font-size: 0.75rem;
-  text-align: center;
+  text-align: right;
 }
 @media (max-width: 480px) {
   .conta-top {
@@ -1733,18 +1729,28 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--muted);
   font-weight: 700;
 }
+/* Default COMPACTO. Full-width só com .btn-block (opt-in). */
 button, .btn {
-  display: inline-block;
-  width: 100%;
-  padding: 0.9rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: max-content;
+  min-height: 0;
+  padding: 0.35rem 0.85rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--accent);
   color: #111;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.2;
   cursor: pointer;
   text-align: center;
+  box-sizing: border-box;
+}
+a.btn {
+  text-decoration: none;
 }
 button.secondary, .btn.secondary {
   background: transparent;
@@ -1754,6 +1760,30 @@ button.secondary, .btn.secondary {
 button.danger {
   background: var(--accent2);
   color: #fff;
+}
+/* CTA que precisa esticar: marque explicitamente */
+button.btn-block,
+.btn.btn-block,
+a.btn.btn-block {
+  display: flex;
+  width: 100%;
+  max-width: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+/* Forms de card/auth: coluna + submit à direita */
+.login-card > form,
+.card.form-inscricao,
+.card > form:not(.conta-form):not(.email-gate-sair):not(.conta-sair-form) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.login-card > form > button[type="submit"],
+.card.form-inscricao > button[type="submit"],
+.card > form:not(.conta-form) > button[type="submit"] {
+  align-self: flex-end;
 }
 .pen-group {
   display: flex;
@@ -7262,6 +7292,11 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
   line-height: 1.45;
   margin: 0 0 1rem;
 }
+.form-login {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
 .form-login label {
   display: block;
   margin-bottom: 0.35rem;
@@ -7269,9 +7304,13 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
 }
 .form-login input {
   margin-bottom: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
 }
-.form-login button {
+.form-login > button[type="submit"],
+.form-login > button:not([class]) {
   margin-top: 0.25rem;
+  align-self: flex-end;
 }
 /* Campo + botão na mesma linha (botão à direita do input) */
 .form-login-row {
@@ -7605,8 +7644,14 @@ a.btn.loguin-entry-btn:hover {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
 }
-.conta-senha-form button {
+.conta-senha-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.conta-senha-form > button[type="submit"] {
   margin-top: 0.35rem;
+  align-self: flex-end;
 }
 .login-back {
   display: flex;
@@ -7776,7 +7821,8 @@ body.acesso-drawer-open {
   width: min(100%, 160px);
 }
 .loguin-drawer .loguin-submit {
-  width: 100%;
+  width: auto;
+  align-self: flex-end;
 }
 
 /* ——— Xonhômetro ——— */
@@ -8321,7 +8367,7 @@ html[data-theme="light"] .xonha-weekday-bar {
   height: var(--mais-slot);
   flex-shrink: 0;
 }
-/* Não usa <button>: o CSS global de button (width:100%, padding grande, fundo accent)
+/* Não usa <button>: evita herdar fundo accent / tipografia de CTA do button global
    transformava o + num bloco laranja enorme. */
 .xonha-motivo-mais {
   appearance: none !important;
@@ -13910,7 +13956,7 @@ button.grid-cell,
   overflow: hidden;
   background: color-mix(in srgb, var(--bg) 88%, var(--accent));
 }
-/* Sobrescreve o `button { width:100%; background: accent }` global */
+/* Sobrescreve fundo accent / tipografia de CTA do button global */
 button.grid-daltonismo-btn,
 .grid-daltonismo-btn {
   appearance: none;
@@ -16116,7 +16162,7 @@ button.grid-admin-drawer-btn--err:hover,
   flex: 0 0 auto;
 }
 /*
-  O seletor global `button, .btn { width:100%; padding:0.9rem; background:accent }`
+  Controles do Grid: não usar .btn-block; manter compacto mesmo com accent global
   transforma qualquer <button> num bloco laranja enorme. Precisa de
   `button.classe` + !important (mesmo padrão de .xonha-motivo-mais / daltonismo).
 */
@@ -17141,11 +17187,35 @@ summary.acervo-icon-btn::marker { content: ""; }
   margin: 0 0 0.65rem;
   font-size: 0.88rem;
 }
-.email-gate-resend {
-  margin: 0 0 0.75rem;
+.email-gate-resend-form {
+  display: none;
 }
-.email-gate-resend .login-submit-compact {
-  width: auto;
+/* “reenvie o link” como hiperlink inline (não botão CTA) */
+button.email-gate-resend-link {
+  display: inline !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  color: var(--accent) !important;
+  font: inherit !important;
+  font-size: inherit !important;
+  font-weight: 600 !important;
+  line-height: inherit !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+  box-shadow: none !important;
+  vertical-align: baseline;
+}
+button.email-gate-resend-link:hover,
+button.email-gate-resend-link:focus-visible {
+  opacity: 0.9;
 }
 .email-gate-change-label {
   margin: 0 0 0.35rem;
@@ -17168,7 +17238,7 @@ summary.acervo-icon-btn::marker { content: ""; }
   margin: 0;
   z-index: 1;
 }
-/* Override do `button { width:100%; padding:0.9rem }` global */
+/* Ícone X: não herdar padding/fundo accent do button global */
 button.email-gate-sair-btn {
   display: inline-flex !important;
   align-items: center;

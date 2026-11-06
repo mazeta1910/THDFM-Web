@@ -80,7 +80,7 @@
   flex: 0 0 auto;
 }
 /*
-  O seletor global `button, .btn { width:100%; padding:0.9rem; background:accent }`
+  Controles do Grid: não usar .btn-block; manter compacto mesmo com accent global
   transforma qualquer <button> num bloco laranja enorme. Precisa de
   `button.classe` + !important (mesmo padrão de .xonha-motivo-mais / daltonismo).
 */

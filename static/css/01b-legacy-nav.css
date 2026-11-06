@@ -163,19 +163,15 @@ nav.site-nav-desktop {
   flex-direction: column;
   gap: 0.5rem;
 }
-.conta-actions .btn.secondary,
-.conta-sair-form .secondary {
-  width: 100%;
-  text-align: center;
-  padding: 0.7rem 1rem;
-}
 .conta-sair-form {
   margin: 0;
+  display: flex;
+  justify-content: flex-end;
 }
 .conta-sair-hint {
-  margin: 0 !important;
+  margin: 0.35rem 0 0 !important;
   font-size: 0.75rem;
-  text-align: center;
+  text-align: right;
 }
 @media (max-width: 480px) {
   .conta-top {

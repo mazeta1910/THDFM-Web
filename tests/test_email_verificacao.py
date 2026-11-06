@@ -89,12 +89,14 @@ def test_verificar_envia_token_e_confirma(client):
     assert row
     token = row["token"]
 
-    r2 = client.get(f"/confirmar-email/{token}")
-    assert r2.status_code == 200
-    assert "E-mail confirmado" in r2.text
+    r2 = client.get(f"/confirmar-email/{token}", follow_redirects=False)
+    assert r2.status_code == 303
+    loc = unquote(r2.headers["location"])
+    assert "E-mail confirmado" in loc or "email confirmado" in loc.casefold()
     assert db.email_esta_confirmado(db.get_participante(part["id"]))
 
-    r3 = client.get("/")
+    r3 = client.get(f"/p/{part['token']}")
+    assert r3.status_code == 200
     assert 'id="email-gate-dialog"' not in r3.text
 
 

@@ -8,6 +8,11 @@
   line-height: 1.45;
   margin: 0 0 1rem;
 }
+.form-login {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
 .form-login label {
   display: block;
   margin-bottom: 0.35rem;
@@ -15,9 +20,13 @@
 }
 .form-login input {
   margin-bottom: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
 }
-.form-login button {
+.form-login > button[type="submit"],
+.form-login > button:not([class]) {
   margin-top: 0.25rem;
+  align-self: flex-end;
 }
 /* Campo + botão na mesma linha (botão à direita do input) */
 .form-login-row {

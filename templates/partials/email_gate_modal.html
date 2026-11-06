@@ -18,10 +18,14 @@
 
     <h2 id="email-gate-title">E-mail obrigatório</h2>
     {% if email_pendente %}
+    <form id="email-gate-resend-form" method="post" action="/conta/email/reenviar" class="email-gate-resend-form" hidden>
+      <input type="hidden" name="next" value="{{ request.url.path }}" />
+    </form>
     <p class="email-gate-lead">
       Enviamos um link pra confirmar
       <strong>{{ email_pendente }}</strong>.
-      Abra seu e-mail ou reenvie o link.
+      Abra seu e-mail ou
+      <button type="submit" form="email-gate-resend-form" class="email-gate-resend-link">reenvie o link</button>.
     </p>
     {% else %}
     <p class="email-gate-lead">Salve um e-mail para continuar.</p>
@@ -31,10 +35,6 @@
     {% if email_erro %}<p class="erro email-gate-flash">{{ email_erro }}</p>{% endif %}
 
     {% if email_pendente %}
-    <form method="post" action="/conta/email/reenviar" class="email-gate-resend">
-      <input type="hidden" name="next" value="{{ request.url.path }}" />
-      <button type="submit" class="login-submit-compact">Reenviar link</button>
-    </form>
     <p class="email-gate-change-label">Trocar e-mail</p>
     {% endif %}
 
