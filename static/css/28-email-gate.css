@@ -50,9 +50,12 @@
 }
 .email-gate-resend {
   margin: 0 0 0.75rem;
+  display: flex;
+  justify-content: flex-end;
 }
 .email-gate-resend .login-submit-compact {
   width: auto;
+  margin: 0;
 }
 .email-gate-change-label {
   margin: 0 0 0.35rem;
@@ -75,7 +78,7 @@
   margin: 0;
   z-index: 1;
 }
-/* Override do `button { width:100%; padding:0.9rem }` global */
+/* Ícone X: não herdar padding/fundo accent do button global */
 button.email-gate-sair-btn {
   display: inline-flex !important;
   align-items: center;

@@ -1183,15 +1183,15 @@ def confirmar_email_get(request: Request, token: str):
             ok=False,
             erro=str(exc),
         )
-    # Garante sessão se já estava logado noutro dispositivo; se não, só confirma.
+    # Sessão fresca + redirect pra página útil (não fica preso no modal da aba antiga).
     if part.get("token"):
         _remember_participante(request, part["token"])
-    return render(
-        request,
-        "confirmar_email.html",
-        ok=True,
-        erro="",
-        nome=part.get("nome") or "",
+        dest = f"/p/{part['token']}"
+    else:
+        dest = "/"
+    return RedirectResponse(
+        dest + "?msg=" + quote("E-mail confirmado — pode usar o site"),
+        status_code=303,
     )
 
 
