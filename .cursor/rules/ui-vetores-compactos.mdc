@@ -16,7 +16,7 @@ alwaysApply: true
 3. Preferir botão pequeno **só com ícone SVG** (`ico()` ou SVG inline) quando a ação for visual.
 4. Se precisar de texto: **1–2 palavras** no máximo (“Salvar”, “Excluir”).
 5. Só-ícone: sempre `title` e/ou `aria-label`.
-6. Em formulários: ações (salvar/enviar) **à direita**.
+6. Em formulários: ações **à direita**; campo único → botão **na mesma linha**, à direita do input.
 
 # Técnico
 

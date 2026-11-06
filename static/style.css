@@ -7284,6 +7284,24 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
 .form-login-actions > button {
   margin-top: 0;
 }
+/* Campo + botão na mesma linha (botão à direita do input) */
+.form-login-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+.form-login-row > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0 !important;
+  width: auto !important;
+}
+.form-login-row > button {
+  margin-top: 0 !important;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
 /* Submit de login/esqueci/redefinir: compacto (não full-width) */
 button.login-submit-compact {
   width: auto !important;
