@@ -178,6 +178,9 @@ def test_menu_portal_minimizado_e_loguin_capitalizacao(client: TestClient):
 def test_alterar_senha_na_conta(client: TestClient):
     part = db.criar_participante("TrocaSenha", status="liberado", celular="11999334455")
     db.definir_credenciais(part["id"], "troca.senha", "antiga123")
+    from tests.conftest import confirmar_email_teste
+
+    confirmar_email_teste(part["id"], "troca.senha@example.com")
     client.get(f"/p/{part['token']}")
 
     r = client.post(

@@ -124,6 +124,8 @@ def _path_publico(path: str, method: str = "GET") -> bool:
         return True
     if path.startswith("/redefinir-senha/"):
         return True
+    if path.startswith("/confirmar-email/"):
+        return True
     # Inscrição: página só mostra “encerrada”; POST também precisa chegar no handler
     if path == "/inscricao":
         return True
@@ -169,12 +171,80 @@ def _rota_existe(request: Request) -> bool:
     return False
 
 
+def _path_livre_sem_email(path: str, method: str = "GET") -> bool:
+    """Rotas permitidas com sessão mas sem e-mail confirmado.
+
+    GET/HEAD sempre ok (o modal cobre a UI). Mutações só no fluxo de
+    verificação/logout — mesmo em paths que o gate de login considera públicos
+    (ex.: /p/...), para o e-mail obrigatório valer de verdade.
+    """
+    method = (method or "GET").upper()
+    if method in ("GET", "HEAD"):
+        return True
+    if path in (
+        "/conta/email/verificar",
+        "/conta/email/reenviar",
+        "/conta/sair",
+        "/admin/logout",
+        "/entrar",
+        "/login",
+        "/loguin",
+        "/esqueci-senha",
+        "/admin/login",
+        "/health",
+        "/inscricao",
+    ):
+        return True
+    if path.startswith("/confirmar-email/") or path.startswith("/redefinir-senha/"):
+        return True
+    if (
+        path.startswith("/static/")
+        or path.startswith("/emblemas/")
+        or path.startswith("/emblemas-fm/")
+        or path.startswith("/avatars/")
+        or path.startswith("/bandeiras-uf/")
+        or path.startswith("/hall-hero/")
+        or path.startswith("/bug-reports/")
+    ):
+        return True
+    # Conta: gravar e-mail pelo link mágico (dispara verificação)
+    if path.startswith("/p/") and path.endswith("/conta/email"):
+        return True
+    # Primeiro acesso: criar username/senha pelo link mágico (antes do e-mail)
+    if path.startswith("/p/") and path.endswith("/credenciais"):
+        return True
+    return False
+
+
 @app.middleware("http")
 async def gate_login_middleware(request: Request, call_next):
     path = request.url.path
+    # E-mail obrigatório: aplica mesmo em rotas “públicas” (ex. /p/), se houver sessão.
+    if request.session.get("participante_token") or request.session.get("admin_login"):
+        part = _voter_sessao(request)
+        if (
+            part
+            and part.get("status") == "liberado"
+            and not db.email_esta_confirmado(part)
+            and not _path_livre_sem_email(path, request.method)
+        ):
+            accept = (request.headers.get("accept") or "").lower()
+            if (
+                "application/json" in accept
+                or path.startswith("/grid/api/")
+                or path.startswith("/perfil/")
+            ):
+                return JSONResponse(
+                    {"erro": "Confirme seu e-mail para continuar", "motivo": "email"},
+                    status_code=403,
+                )
+            dest = request.headers.get("referer") or path or "/"
+            return RedirectResponse(
+                dest.split("?")[0] + "?email=obrigatorio",
+                status_code=303,
+            )
     if _path_publico(path, request.method):
         return await call_next(request)
-    # Sessão de participante ou admin (SessionMiddleware roda por fora).
     if request.session.get("participante_token") or request.session.get("admin_login"):
         return await call_next(request)
     # URL inexistente: deixa o handler 404 responder (não disfarça como login).
@@ -467,6 +537,26 @@ def render(request: Request, name: str, **ctx):
         part_nav["hall_borda"] = (lenda_nav or {}).get("borda")
         part_nav["is_lenda"] = bool(lenda_nav)
     ctx.setdefault("participante_nav", part_nav)
+    ctx.setdefault(
+        "precisa_verificar_email",
+        bool(part_nav and part_nav.get("status") == "liberado" and not db.email_esta_confirmado(part_nav)),
+    )
+    ctx.setdefault(
+        "email_pendente",
+        ((part_nav or {}).get("email") or "").strip() if part_nav else "",
+    )
+    ctx.setdefault(
+        "email_msg",
+        (request.query_params.get("email_msg") or "").replace("+", " "),
+    )
+    ctx.setdefault(
+        "email_erro",
+        (request.query_params.get("email_erro") or "").replace("+", " "),
+    )
+    ctx.setdefault(
+        "email_obrigatorio_qs",
+        (request.query_params.get("email") or "").strip() == "obrigatorio",
+    )
     ctx.setdefault(
         "public_base_url",
         (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/"),
@@ -979,6 +1069,23 @@ async def entrar_post(
     return RedirectResponse("/bolao/meus-palpites", status_code=303)
 
 
+def _enviar_link_verificacao_email(request: Request, part: dict, token: str) -> None:
+    from src.mail import enviar_email
+
+    base = (PUBLIC_BASE_URL or str(request.base_url).rstrip("/")).rstrip("/")
+    link = f"{base}/confirmar-email/{token}"
+    enviar_email(
+        para=part["email"],
+        assunto="THDFM — confirme seu e-mail",
+        texto=(
+            f"Olá {part.get('nome') or ''}!\n\n"
+            f"Confirme o e-mail da sua conta THDFM abrindo o link (válido por 24 horas):\n"
+            f"{link}\n\n"
+            f"Se não foi você, ignore este e-mail.\n"
+        ),
+    )
+
+
 @app.get("/esqueci-senha", response_class=HTMLResponse)
 def esqueci_senha_get(request: Request):
     return render(
@@ -987,6 +1094,104 @@ def esqueci_senha_get(request: Request):
         erro=request.query_params.get("erro"),
         msg=request.query_params.get("msg"),
         form_usuario=request.query_params.get("usuario") or "",
+    )
+
+
+@app.post("/conta/email/verificar")
+async def conta_email_verificar(
+    request: Request,
+    email: str = Form(""),
+    next_url: str = Form("", alias="next"),
+):
+    part = _voter_sessao(request)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    ip = _client_ip(request)
+    rate_key = f"email-verify:{ip}:{part['id']}"
+    dest = (next_url or "/").strip() or "/"
+    if not dest.startswith("/"):
+        dest = "/"
+
+    def _back(msg: str = "", erro: str = "") -> RedirectResponse:
+        q = []
+        if msg:
+            q.append("email_msg=" + quote(msg))
+        if erro:
+            q.append("email_erro=" + quote(erro))
+        q.append("email=obrigatorio")
+        sep = "&" if "?" in dest else "?"
+        return RedirectResponse(dest + sep + "&".join(q), status_code=303)
+
+    if not _auth_rate_ok(rate_key):
+        return _back(erro="Muitas tentativas. Aguarde alguns minutos.")
+    _auth_rate_hit(rate_key)
+    try:
+        updated, token = db.solicitar_verificacao_email(part["id"], email)
+        _enviar_link_verificacao_email(request, updated, token)
+    except ValueError as exc:
+        return _back(erro=str(exc))
+    except Exception:
+        return _back(erro="Não foi possível enviar o e-mail. Tente de novo.")
+    return _back(msg="Enviamos um link de confirmação. Abra seu e-mail.")
+
+
+@app.post("/conta/email/reenviar")
+async def conta_email_reenviar(
+    request: Request,
+    next_url: str = Form("", alias="next"),
+):
+    part = _voter_sessao(request)
+    if not part or part.get("status") != "liberado":
+        return RedirectResponse("/?acesso=entrar", status_code=303)
+    ip = _client_ip(request)
+    rate_key = f"email-resend:{ip}:{part['id']}"
+    dest = (next_url or "/").strip() or "/"
+    if not dest.startswith("/"):
+        dest = "/"
+
+    def _back(msg: str = "", erro: str = "") -> RedirectResponse:
+        q = []
+        if msg:
+            q.append("email_msg=" + quote(msg))
+        if erro:
+            q.append("email_erro=" + quote(erro))
+        q.append("email=obrigatorio")
+        sep = "&" if "?" in dest else "?"
+        return RedirectResponse(dest + sep + "&".join(q), status_code=303)
+
+    if not _auth_rate_ok(rate_key):
+        return _back(erro="Muitas tentativas. Aguarde alguns minutos.")
+    _auth_rate_hit(rate_key)
+    try:
+        updated, token = db.reenviar_verificacao_email(part["id"])
+        _enviar_link_verificacao_email(request, updated, token)
+    except ValueError as exc:
+        return _back(erro=str(exc))
+    except Exception:
+        return _back(erro="Não foi possível reenviar. Tente de novo.")
+    return _back(msg="Link reenviado. Confira sua caixa de entrada.")
+
+
+@app.get("/confirmar-email/{token}")
+def confirmar_email_get(request: Request, token: str):
+    try:
+        part = db.confirmar_email_por_token(token)
+    except ValueError as exc:
+        return render(
+            request,
+            "confirmar_email.html",
+            ok=False,
+            erro=str(exc),
+        )
+    # Garante sessão se já estava logado noutro dispositivo; se não, só confirma.
+    if part.get("token"):
+        _remember_participante(request, part["token"])
+    return render(
+        request,
+        "confirmar_email.html",
+        ok=True,
+        erro="",
+        nome=part.get("nome") or "",
     )
 
 
@@ -5633,11 +5838,18 @@ async def conta_definir_email(
     if gate:
         return gate
     try:
-        db.definir_email_participante(part["id"], email)
+        updated, verify_token = db.solicitar_verificacao_email(part["id"], email)
+        _enviar_link_verificacao_email(request, updated, verify_token)
     except ValueError as exc:
         return _redirect_after_conta(token, next_url=next_url, erro=str(exc))
+    except Exception:
+        return _redirect_after_conta(
+            token, next_url=next_url, erro="Não foi possível enviar o e-mail"
+        )
     return _redirect_after_conta(
-        token, next_url=next_url, msg="E-mail salvo — use-o em Esqueci minha senha"
+        token,
+        next_url=next_url,
+        msg="Enviamos um link de confirmação — abra seu e-mail",
     )
 
 

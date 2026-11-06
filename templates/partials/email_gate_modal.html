@@ -1,0 +1,74 @@
+{# Modal bloqueante: logado sem e-mail confirmado. X = sair da conta. #}
+{% if precisa_verificar_email %}
+<dialog
+  class="email-gate-dialog"
+  id="email-gate-dialog"
+  open
+  aria-modal="true"
+  aria-labelledby="email-gate-title"
+>
+  <div class="email-gate-card">
+    <form method="post" action="/conta/sair" class="email-gate-sair">
+      <button type="submit" class="email-gate-sair-btn" title="Sair desta conta" aria-label="Sair desta conta">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </form>
+
+    <h2 id="email-gate-title">E-mail obrigatório</h2>
+    {% if email_pendente %}
+    <p class="email-gate-lead">
+      Enviamos um link pra confirmar
+      <strong>{{ email_pendente }}</strong>.
+      Abra seu e-mail ou reenvie o link.
+    </p>
+    {% else %}
+    <p class="email-gate-lead">Salve um e-mail para continuar.</p>
+    {% endif %}
+
+    {% if email_msg %}<p class="msg email-gate-flash">{{ email_msg }}</p>{% endif %}
+    {% if email_erro %}<p class="erro email-gate-flash">{{ email_erro }}</p>{% endif %}
+
+    {% if email_pendente %}
+    <form method="post" action="/conta/email/reenviar" class="email-gate-resend">
+      <input type="hidden" name="next" value="{{ request.url.path }}" />
+      <button type="submit" class="login-submit-compact">Reenviar link</button>
+    </form>
+    <p class="email-gate-change-label">Trocar e-mail</p>
+    {% endif %}
+
+    <form method="post" action="/conta/email/verificar" class="form-login email-gate-form" novalidate>
+      <input type="hidden" name="next" value="{{ request.url.path }}" />
+      <label for="email-gate-input">E-mail</label>
+      <div class="form-login-row">
+        <input
+          id="email-gate-input"
+          class="input-compact"
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          value="{{ email_pendente }}"
+          placeholder="voce@email.com"
+        />
+        <button type="submit" class="login-submit-icon" title="Enviar link" aria-label="Enviar link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>
+<script>
+(function () {
+  var d = document.getElementById("email-gate-dialog");
+  if (!d) return;
+  // Impede Escape / cancel nativo do <dialog>
+  d.addEventListener("cancel", function (e) { e.preventDefault(); });
+  try { d.showModal(); } catch (_) { /* já open no markup */ }
+})();
+</script>
+{% endif %}

@@ -482,12 +482,12 @@ a.recados-toggle {
   top: auto;
   right: auto;
   z-index: auto;
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
   margin: 0;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--card);
   color: var(--accent);
   cursor: pointer;
@@ -495,7 +495,7 @@ a.recados-toggle {
   align-items: center;
   justify-content: center;
   line-height: 0;
-  box-shadow: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   flex-shrink: 0;
@@ -504,9 +504,9 @@ a.recados-toggle {
 }
 .chrome-mode-toggle {
   width: auto;
-  min-width: 32px;
-  padding: 0 0.55rem;
-  font-size: 0.75rem;
+  min-width: 42px;
+  padding: 0 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -715,8 +715,8 @@ body.is-moderador #btn-recusar-todos {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -7272,17 +7272,6 @@ html[data-theme="light"] .home-ctas .btn.home-cta-secondary:hover {
 }
 .form-login button {
   margin-top: 0.25rem;
-}
-/* Ações do form: sempre à direita */
-.form-login-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
-}
-.form-login-actions > button {
-  margin-top: 0;
 }
 /* Campo + botão na mesma linha (botão à direita do input) */
 .form-login-row {
@@ -17101,4 +17090,114 @@ summary.acervo-icon-btn::marker { content: ""; }
 .form-inscricao.is-submitting button[type="submit"] {
   opacity: 0.75;
   cursor: wait;
+}
+/* —— Gate: e-mail obrigatório (modal bloqueante) —— */
+.email-gate-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 1rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10050;
+  box-sizing: border-box;
+}
+.email-gate-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.email-gate-card {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 1.1rem 1.15rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card, var(--bg-elevated, #141414));
+  color: var(--text);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.email-gate-card h2 {
+  margin: 0 1.75rem 0.4rem 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.25;
+}
+.email-gate-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.email-gate-flash {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+}
+.email-gate-resend {
+  margin: 0 0 0.75rem;
+}
+.email-gate-resend .login-submit-compact {
+  width: auto;
+}
+.email-gate-change-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.email-gate-form {
+  margin: 0;
+}
+.email-gate-form label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+.email-gate-sair {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  margin: 0;
+  z-index: 1;
+}
+/* Override do `button { width:100%; padding:0.9rem }` global */
+button.email-gate-sair-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  line-height: 0 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+button.email-gate-sair-btn svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+button.email-gate-sair-btn:hover,
+button.email-gate-sair-btn:focus-visible {
+  color: var(--text) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+body:has(.email-gate-dialog[open]) {
+  overflow: hidden;
 }

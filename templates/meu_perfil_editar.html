@@ -237,7 +237,12 @@
   <section class="proto-edit-section proto-edit-senha" id="email">
     <h2 class="proto-edit-section-title">E-mail (recuperação de senha)</h2>
     <p class="proto-edit-senha-lead">
-      Cadastre um e-mail para usar em <a href="/esqueci-senha">Esqueci minha senha</a>.
+      Cadastre e confirme um e-mail para usar em <a href="/esqueci-senha">Esqueci minha senha</a>.
+      {% if participante_nav.email and participante_nav.email_confirmado_em %}
+      Confirmado: <strong>{{ participante_nav.email }}</strong>.
+      {% elif participante_nav.email %}
+      Pendente: abra o link enviado para <strong>{{ participante_nav.email }}</strong>.
+      {% endif %}
     </p>
     <form
       method="post"
@@ -259,7 +264,7 @@
           placeholder="voce@email.com"
         />
       </div>
-      <button type="submit" class="proto-text-btn proto-text-btn--accent">Salvar e-mail</button>
+      <button type="submit" class="proto-text-btn proto-text-btn--accent">Enviar confirmação</button>
     </form>
   </section>
   {% endif %}
