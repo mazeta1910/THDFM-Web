@@ -20,6 +20,7 @@
   background: rgba(0, 0, 0, 0.55);
 }
 .email-gate-card {
+  position: relative;
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
@@ -31,7 +32,7 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 .email-gate-card h2 {
-  margin: 0 0 0.4rem;
+  margin: 0 1.75rem 0.4rem 0;
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--accent);
@@ -68,38 +69,41 @@
   font-size: 0.9rem;
 }
 .email-gate-sair {
-  margin: 0.55rem 0 0;
-  display: flex;
-  justify-content: flex-end;
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  margin: 0;
+  z-index: 1;
 }
 /* Override do `button { width:100%; padding:0.9rem }` global */
 button.email-gate-sair-btn {
-  display: inline !important;
-  width: auto !important;
-  max-width: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
   min-width: 0 !important;
   min-height: 0 !important;
-  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
-  border-radius: 0 !important;
-  background: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
   color: var(--muted) !important;
-  font: inherit !important;
-  font-size: 0.8rem !important;
-  font-weight: 600 !important;
-  line-height: 1.2 !important;
-  text-align: right !important;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+  line-height: 0 !important;
   cursor: pointer;
   box-shadow: none !important;
+}
+button.email-gate-sair-btn svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 button.email-gate-sair-btn:hover,
 button.email-gate-sair-btn:focus-visible {
   color: var(--text) !important;
-  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 body:has(.email-gate-dialog[open]) {
   overflow: hidden;
