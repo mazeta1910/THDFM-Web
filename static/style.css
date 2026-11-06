@@ -17161,11 +17161,38 @@ summary.acervo-icon-btn::marker { content: ""; }
   font-size: 0.9rem;
 }
 .email-gate-sair {
-  margin: 0.85rem 0 0;
+  margin: 0.55rem 0 0;
+  display: flex;
+  justify-content: flex-end;
 }
-.email-gate-sair button {
-  width: 100%;
-  font-size: 0.88rem;
+/* Override do `button { width:100%; padding:0.9rem }` global */
+button.email-gate-sair-btn {
+  display: inline !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  color: var(--muted) !important;
+  font: inherit !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  text-align: right !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+button.email-gate-sair-btn:hover,
+button.email-gate-sair-btn:focus-visible {
+  color: var(--text) !important;
+  opacity: 0.9;
 }
 body:has(.email-gate-dialog[open]) {
   overflow: hidden;
