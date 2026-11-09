@@ -549,6 +549,38 @@ def _linha_do_participante(
     return None
 
 
+def _pts_dos_jogos(jogos: list[dict] | None) -> int:
+    return sum(int(j.get("pts") or 0) for j in (jogos or []))
+
+
+def _rod_para_resumo(
+    rod_hist: int,
+    jogos: list[dict] | None,
+    *,
+    ao_vivo: bool,
+    fase: str,
+    janela: str,
+    pernas_confirmadas: set[tuple[str, str]] | None = None,
+) -> int:
+    """Pts da rodada no perfil.
+
+    O ``rod`` do snapshot é ``soma - baseline``. Se a Volta já tinha placar
+    quando a Ida foi confirmada, esses pontos entram no baseline e a Volta ao
+    vivo fica com rod=0 — embora os jogos da perna tenham pontuado. Nesse caso
+    (e em histórico gravado zerado), usa a soma dos pts dos jogos da perna.
+
+    Não reaplica pts de uma perna já arquivada no ao vivo (evita R3 fantasma
+    repetindo a Volta confirmada).
+    """
+    pts_jogos = _pts_dos_jogos(jogos)
+    rod_n = int(rod_hist or 0)
+    if rod_n == 0 and pts_jogos != 0:
+        if ao_vivo and pernas_confirmadas and (fase, janela) in pernas_confirmadas:
+            return 0
+        return pts_jogos
+    return rod_n
+
+
 def _entrada_resumo_rodada(
     *,
     rotulo: str,
@@ -558,6 +590,7 @@ def _entrada_resumo_rodada(
     ao_vivo: bool = False,
     numero: int | None = None,
     jogos: list[dict] | None = None,
+    pernas_confirmadas: set[tuple[str, str]] | None = None,
 ) -> dict:
     # Ao vivo também vira "Rodada N" (ex.: Quartas Ida = Rodada 3).
     if numero is not None:
@@ -566,6 +599,8 @@ def _entrada_resumo_rodada(
         rotulo_curto = "Ao vivo"
     else:
         rotulo_curto = rotulo
+    jogos_n = jogos or []
+    rod_hist = int(linha.get("rod") or 0) if linha else 0
     return {
         "rotulo": rotulo,
         "rotulo_curto": rotulo_curto,
@@ -578,12 +613,19 @@ def _entrada_resumo_rodada(
             if fase_formato(fase or "") == "unico"
             else _JANELA_LABEL.get(janela or "", janela or "")
         ),
-        "rod": int(linha.get("rod") or 0) if linha else 0,
+        "rod": _rod_para_resumo(
+            rod_hist,
+            jogos_n,
+            ao_vivo=ao_vivo,
+            fase=fase or "",
+            janela=janela or "",
+            pernas_confirmadas=pernas_confirmadas,
+        ),
         "soma": int(linha.get("soma") or 0) if linha else 0,
         "posicao": int(linha["posicao"]) if linha and linha.get("posicao") is not None else None,
         "movimento": linha.get("movimento") if linha else None,
         "ao_vivo": ao_vivo,
-        "jogos": jogos or [],
+        "jogos": jogos_n,
     }
 
 
@@ -812,6 +854,7 @@ def resumo_pontuacao_por_participante(
                     jogos=_jogos_detalhe_participante(
                         pid, fase=fase_r, perna=janela_r
                     ),
+                    pernas_confirmadas=vistos,
                 )
             )
         n_ao_vivo = len(rodadas_unicas) + 1
@@ -826,6 +869,7 @@ def resumo_pontuacao_por_participante(
                 jogos=_jogos_detalhe_participante(
                     pid, fase=fase_ao_vivo, perna=janela_ao_vivo
                 ),
+                pernas_confirmadas=vistos,
             )
         )
         out[pid] = entradas
