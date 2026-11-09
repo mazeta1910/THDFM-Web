@@ -11,9 +11,11 @@ from src.db import (
 )
 from src.fidelidade import FidelidadeDetalhe, calcular_fidelidade
 from src.models import PontosParticipante
+from src.config import fase_formato
 from src.scoring import (
     pontos_detalhados,
     quem_classifica_agregado,
+    quem_classifica_jogo_unico,
     pesos_para_fase,
 )
 
@@ -84,6 +86,59 @@ def calcular_classificacao() -> list[dict]:
 
         for c in confrontos:
             fase_c = c.get("fase") or "oitavas"
+            unico = _jogo_por_perna(c, "unico")
+            if unico or fase_formato(fase_c) == "unico":
+                if not unico:
+                    continue
+                if unico["gols_mandante"] is None or unico["gols_visitante"] is None:
+                    continue
+                acc = fid_acc[fase_c]
+                acc["jogos"] += 1
+                acc["real_casa"] += int(unico["gols_mandante"])
+                acc["real_fora"] += int(unico["gols_visitante"])
+                pj = palpites["jogos"].get(unico["id"])
+                if pj:
+                    acc["prev_casa"] += int(pj["gols_mandante"])
+                    acc["prev_fora"] += int(pj["gols_visitante"])
+                    det = pontos_detalhados(
+                        pj["gols_mandante"],
+                        pj["gols_visitante"],
+                        unico["gols_mandante"],
+                        unico["gols_visitante"],
+                        fase=fase_c,
+                        clube_casa_id=unico["mandante_clube_id"],
+                        palpite_penaltis=None,
+                        real_penaltis=None,
+                        permite_empate=True,
+                    )
+                    pts.adicionar(det)
+                    if _acertou_vencedor_jogo(
+                        pj["gols_mandante"],
+                        pj["gols_visitante"],
+                        unico["gols_mandante"],
+                        unico["gols_visitante"],
+                        mandante_clube_id=unico["mandante_clube_id"],
+                        palpite_pen=None,
+                        real_pen=None,
+                        permite_empate=True,
+                    ):
+                        acc["acertos_venc"] += 1
+                    # Empate no 90' + pênaltis: bônus de quem leva o título.
+                    if int(unico["gols_mandante"]) == int(unico["gols_visitante"]):
+                        real_cls = quem_classifica_jogo_unico(
+                            int(unico["gols_mandante"]),
+                            int(unico["gols_visitante"]),
+                            mandante_clube_id=unico.get("mandante_clube_id") or "a",
+                            penaltis_clube_id=unico.get("penaltis_clube_id"),
+                        )
+                        pen_palpite = palpites["penaltis"].get(c["id"], {}).get(
+                            "penaltis_clube_id"
+                        )
+                        if real_cls in ("a", "b") and pen_palpite == real_cls:
+                            pesos = pesos_para_fase(fase_c)
+                            pts.vencedor += pesos.vencedor
+                continue
+
             ida = _jogo_por_perna(c, "ida")
             volta = _jogo_por_perna(c, "volta")
             if not ida or not volta:
@@ -410,8 +465,12 @@ def confirmar_rodada() -> dict:
     )
     save_snapshot(snapshot_atual(linhas))
     # Fecha a Ida: Meus Palpites e o rótulo ao vivo do perfil passam para a Volta.
+    # Final (jogo único): fecha os palpites — não há Volta.
     if janela_hist == "ida" and not _rodada_historico_vazia({"linhas": linhas}):
-        set_janela("volta")
+        if fase_formato(fase) == "unico":
+            set_janela("fechado")
+        else:
+            set_janela("volta")
     return hist
 
 
@@ -430,6 +489,7 @@ _FASE_LABEL_CURTA = {
 _JANELA_LABEL = {
     "ida": "Ida",
     "volta": "Volta",
+    "unico": "Jogo",
 }
 # Ordem das fases eliminatórias (Oitavas permite pular Volta ao avançar).
 _ORDEM_FASES: tuple[str, ...] = ("oitavas", "quartas", "semis", "final")
@@ -459,8 +519,12 @@ def _corrigir_slot_pulando_volta(
         f = _ORDEM_FASES[i]
         if f == "oitavas":
             continue
+        if fase_formato(f) == "unico":
+            continue
         if (f, "ida") in concluidas and (f, "volta") not in concluidas:
             return f, "volta"
+    if fase_formato(fase_n) == "unico":
+        return fase_n, "ida"
     if (fase_n, "ida") not in concluidas:
         return fase_n, "ida"
     return fase_n, janela_n
@@ -509,7 +573,11 @@ def _entrada_resumo_rodada(
         "fase_label": _FASE_LABEL.get(fase or "", fase or ""),
         "fase_label_curta": _FASE_LABEL_CURTA.get(fase or "", _FASE_LABEL.get(fase or "", fase or "")),
         "janela": janela or "",
-        "janela_label": _JANELA_LABEL.get(janela or "", janela or ""),
+        "janela_label": (
+            "Jogo"
+            if fase_formato(fase or "") == "unico"
+            else _JANELA_LABEL.get(janela or "", janela or "")
+        ),
         "rod": int(linha.get("rod") or 0) if linha else 0,
         "soma": int(linha.get("soma") or 0) if linha else 0,
         "posicao": int(linha["posicao"]) if linha and linha.get("posicao") is not None else None,
@@ -547,20 +615,23 @@ def _jogos_detalhe_participante(
     from src.scoring import classificar_palpite
     from src.seed_data import emblema_url, nome_clube_curto
 
-    if perna not in ("ida", "volta") or not fase:
+    if perna not in ("ida", "volta", "unico") or not fase:
+        return []
+    perna_jogo = "unico" if fase_formato(fase) == "unico" else perna
+    if perna_jogo not in ("ida", "volta", "unico"):
         return []
     palpites = palpites_do_participante(participante_id)
     out: list[dict] = []
     for c in list_confrontos_completos(fase):
-        jogo = _jogo_por_perna(c, perna)
+        jogo = _jogo_por_perna(c, perna_jogo)
         if not jogo:
             continue
         if jogo.get("gols_mandante") is None or jogo.get("gols_visitante") is None:
             continue
         real_m = int(jogo["gols_mandante"])
         real_v = int(jogo["gols_visitante"])
-        # Na volta o mandante é o clube B.
-        if perna == "volta":
+        # Na volta o mandante é o clube B. Final (unico) manda o clube A.
+        if perna_jogo == "volta":
             casa_nome = c.get("clube_b") or "?"
             fora_nome = c.get("clube_a") or "?"
         else:

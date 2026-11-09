@@ -103,6 +103,14 @@ FASES = (
 )
 FASE_IDS = tuple(f["id"] for f in FASES)
 
+# Oitavas/quartas/semis = ida+volta. Só a Final é jogo único.
+FASES_JOGO_UNICO = frozenset({"final"})
+
+
+def fase_formato(fase: str) -> str:
+    """`ida_volta` ou `unico`."""
+    return "unico" if (fase or "").strip().lower() in FASES_JOGO_UNICO else "ida_volta"
+
 
 def fase_anterior(fase: str) -> str | None:
     if fase not in FASE_IDS:

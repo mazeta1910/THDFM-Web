@@ -22,32 +22,24 @@
 <div class="fases-panel-body">
 <div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
+  {% set fase_fmt = (formato_por_fase|default({})).get(f.id, 'ida_volta') %}
+  {% set perna_link = perna if f.id == fase else ('unico' if fase_fmt == 'unico' else 'ida') %}
   <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}">
     {% if f.unlocked %}
     <a
-      href="/admin/cobranca?fase={{ f.id }}&perna={{ perna if f.id == fase else 'ida' }}"
+      href="/admin/cobranca?fase={{ f.id }}&perna={{ perna_link }}"
       class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
     >{{ f.label }}</a>
-    <div class="transparencia-nav-pernas">
-      <a
-        href="/admin/cobranca?fase={{ f.id }}&perna=ida"
-        class="{% if f.id == fase and perna == 'ida' %}active{% endif %}"
-      ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></a>
-      {% if volta_liberada %}
-      <a
-        href="/admin/cobranca?fase={{ f.id }}&perna=volta"
-        class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
-      ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></a>
-      {% else %}
-      <span class="is-disabled" title="Volta ainda não liberada"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
-      {% endif %}
-    </div>
+    {% set modo = 'link' %}
+    {% set base_href = '/admin/cobranca' %}
+    {% set fase_bloqueada = false %}
+    {% include "partials/nav_pernas.html" %}
     {% else %}
     <span class="transparencia-nav-fase is-disabled" title="Aguardando liberação desta fase">{{ f.label }}</span>
-    <div class="transparencia-nav-pernas">
-      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></span>
-      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
-    </div>
+    {% set modo = 'link' %}
+    {% set base_href = '/admin/cobranca' %}
+    {% set fase_bloqueada = true %}
+    {% include "partials/nav_pernas.html" %}
     {% endif %}
   </div>
   {% endfor %}

@@ -451,12 +451,13 @@ def montar_portal(fase: str, *, exigir_resultado: bool = True) -> list[dict]:
 
                 pen_row = palp["penaltis"].get(c["id"])
                 palpite_pen = pen_row["penaltis_clube_id"] if pen_row else None
-                # Pênaltis só existem na volta — na ida ignoramos escolha/exibição.
-                pen_efetivo = palpite_pen if perna == "volta" else None
-                real_pen_efetivo = real_pen if perna == "volta" else None
+                # Pênaltis na volta (agregado) ou no jogo único da Final.
+                usa_pen = perna in ("volta", "unico")
+                pen_efetivo = palpite_pen if usa_pen else None
+                real_pen_efetivo = real_pen if usa_pen else None
                 pen_label = ""
                 if (
-                    perna == "volta"
+                    usa_pen
                     and pj["gols_mandante"] == pj["gols_visitante"]
                     and pen_efetivo in ("a", "b")
                 ):

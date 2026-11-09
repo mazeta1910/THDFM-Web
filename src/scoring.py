@@ -190,3 +190,24 @@ def quem_classifica_agregado(
     if penaltis_clube_id in ("a", "b"):
         return penaltis_clube_id
     return None
+
+
+def quem_classifica_jogo_unico(
+    gols_mandante: int,
+    gols_visitante: int,
+    *,
+    mandante_clube_id: str = "a",
+    penaltis_clube_id: str | None = None,
+) -> str | None:
+    """Vencedor de um jogo único (`perna=unico`). Devolve `a`/`b`."""
+    mandante = (mandante_clube_id or "a").strip().lower()
+    if mandante not in ("a", "b"):
+        mandante = "a"
+    visitante = "b" if mandante == "a" else "a"
+    if gols_mandante > gols_visitante:
+        return mandante
+    if gols_visitante > gols_mandante:
+        return visitante
+    if penaltis_clube_id in ("a", "b"):
+        return penaltis_clube_id
+    return None

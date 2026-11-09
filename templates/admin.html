@@ -182,17 +182,22 @@
             <p class="fases-panel-summary" data-fases-summary></p>
           </div>
           {% set fase_aberta_label = fases|selectattr('ativa')|map(attribute='label')|first|default('Fase') %}
+          {% set formato_atual = (formato_por_fase|default({})).get(fase_atual, 'ida_volta') %}
           <form method="post" action="/admin/janela" id="form-janela" class="admin-janela-padrao">
             <label for="select-janela">Abrir Meus Palpites em</label>
             <div class="select-wrap admin-janela-padrao-wrap">
               <select name="janela" id="select-janela" aria-describedby="admin-janela-hint">
+                {% if formato_atual == 'unico' %}
+                <option value="ida"{% if janela in ('ida', 'volta') %} selected{% endif %}>{{ fase_aberta_label }}</option>
+                {% else %}
                 <option value="ida"{% if janela == 'ida' %} selected{% endif %}>{{ fase_aberta_label }} · Ida</option>
                 <option value="volta"{% if janela == 'volta' %} selected{% endif %}>{{ fase_aberta_label }} · Volta</option>
+                {% endif %}
                 <option value="fechado"{% if janela == 'fechado' %} selected{% endif %}>Palpites fechados</option>
               </select>
             </div>
             <button type="button" class="secondary" id="btn-atualizar-janela">Aplicar</button>
-            <p class="admin-janela-hint" id="admin-janela-hint">Card inicial em Meus Palpites e rótulo ao vivo no perfil. Fechar a Ida também avança para a Volta.</p>
+            <p class="admin-janela-hint" id="admin-janela-hint">{% if formato_atual == 'unico' %}Card inicial em Meus Palpites (jogo único) e rótulo ao vivo no perfil.{% else %}Card inicial em Meus Palpites e rótulo ao vivo no perfil. Fechar a Ida também avança para a Volta.{% endif %}</p>
           </form>
         </div>
         <div class="fases-panel-body">
@@ -207,22 +212,11 @@
                 {% if f.ativa %}aria-current="true"{% endif %}
                 title="{% if f.encerrada %}Fase encerrada (somente leitura){% elif not f.unlocked %}Prévia — libere a fase para editar{% else %}{{ f.label }}{% endif %}"
               >{{ f.label }}{% if f.encerrada %} · fechada{% endif %}</button>
-              <div class="transparencia-nav-pernas">
-                <button
-                  type="button"
-                  data-fase="{{ f.id }}"
-                  data-tab="ida"
-                  class="{% if f.ativa and perna_f == 'ida' %}active{% endif %}"
-                  {% if f.ativa and perna_f == 'ida' %}aria-current="true"{% endif %}
-                ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
-                <button
-                  type="button"
-                  data-fase="{{ f.id }}"
-                  data-tab="volta"
-                  class="{% if f.ativa and perna_f == 'volta' %}active{% endif %}"
-                  {% if f.ativa and perna_f == 'volta' %}aria-current="true"{% endif %}
-                ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
-              </div>
+              {% set fase = fase_atual %}
+              {% set perna = perna_f %}
+              {% set modo = 'button' %}
+              {% set fase_bloqueada = false %}
+              {% include "partials/nav_pernas.html" %}
             </div>
             {% endfor %}
           </div>
@@ -235,9 +229,34 @@
       {% set fase_encerrada = f.encerrada|default(false) %}
       <div class="fase-panel {% if not f.ativa %}hidden{% endif %}" data-fase-panel="{{ f.id }}">
 
+        {% set fmt_f = (formato_por_fase|default({})).get(f.id, 'ida_volta') %}
         {% if not f.unlocked %}
         <div class="admin-resultados-form locked-card">
-          <p class="locked-msg" style="margin:0">Prévia da fase. Use <strong>Liberar {{ f.label }}</strong> para abrir no bolão. Ida e Volta já aparecem abaixo.</p>
+          <p class="locked-msg" style="margin:0">Prévia da fase. Use <strong>Liberar {{ f.label }}</strong> para abrir no bolão.{% if fmt_f == 'unico' %} Jogo único abaixo.{% else %} Ida e Volta já aparecem abaixo.{% endif %}</p>
+          {% if fmt_f == 'unico' %}
+          <div class="match-panel" data-panel="unico">
+            <p class="admin-perna-caption">Jogo único — rascunho</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
           <div class="match-panel" data-panel="ida">
             <p class="admin-perna-caption">Jogo 1 (Ida) — rascunho</p>
             <div class="match-grid admin-match-grid locked-grid">
@@ -282,6 +301,7 @@
               {% endfor %}
             </div>
           </div>
+          {% endif %}
         </div>
 
         {% else %}
@@ -295,6 +315,29 @@
           {% if confrontos %}
           <div class="admin-dash-wrap" data-admin-dash-wrap>
             {% include "partials/admin_confronto_dash.html" %}
+          </div>
+          {% elif fmt_f == 'unico' %}
+          <div class="match-panel {% if perna_f != 'unico' %}hidden{% endif %}" data-panel="unico">
+            <p class="locked-msg">Confrontos ainda não montados — use a Árvore abaixo. Esqueleto do jogo único:</p>
+            <div class="match-grid admin-match-grid locked-grid">
+              {% for i in range(f.slots) %}
+              <div class="match-cell locked">
+                <span class="planilha-jogo-tag match-jogo-tag">JOGO ({{ i + 1 }})</span>
+                <div class="match-teams">
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                  <div class="match-team-row">
+                    <span class="match-emblema-ph" aria-hidden="true"></span>
+                    <span>A definir</span>
+                    <input type="number" disabled placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
           {% else %}
           <div class="match-panel {% if perna_f != 'ida' %}hidden{% endif %}" data-panel="ida">
@@ -378,7 +421,7 @@
           <p class="admin-arvore-status">Já cadastrado: {{ bloco.existentes|length }} confronto(s). Remontar substitui os atuais desta fase (apaga placares/palpites da fase).</p>
           <ul class="admin-arvore-existentes">
             {% for c in bloco.existentes %}
-            <li>{{ c.clube_a }} × {{ c.clube_b }} <span class="muted">(volta em casa: {{ c.clube_b }})</span></li>
+            <li>{{ c.clube_a }} × {{ c.clube_b }} <span class="muted">{% if bloco.formato == 'unico' %}(jogo único){% else %}(volta em casa: {{ c.clube_b }}){% endif %}</span></li>
             {% endfor %}
           </ul>
           {% endif %}
@@ -409,6 +452,8 @@
               {% set chave_b = ex.clube_b if ex else '' %}
               {% set ida_em = inicio_em_input_value(ex.ida.inicio_em) if ex and ex.ida else '' %}
               {% set volta_em = inicio_em_input_value(ex.volta.inicio_em) if ex and ex.volta else '' %}
+              {% set unico_em = inicio_em_input_value(ex.unico.inicio_em) if ex and ex.unico else '' %}
+              {% set formato = bloco.formato|default('ida_volta') %}
               {% include "partials/admin_arvore_chave.html" %}
               {% endfor %}
             </div>
@@ -1372,8 +1417,8 @@ if (placaresNav) {
   const syncZerarForm = (fase, perna) => {
     if (zerarFase) zerarFase.value = fase;
     if (zerarPerna) zerarPerna.value = perna;
-    const label = perna === "volta" ? "Volta" : "Ida";
-    const jogo = perna === "volta" ? "2" : "1";
+    const label = perna === "unico" ? "Jogo" : (perna === "volta" ? "Volta" : "Ida");
+    const jogo = perna === "unico" ? "único" : (perna === "volta" ? "2" : "1");
     const faseLabel = {
       oitavas: "Oitavas",
       quartas: "Quartas",
@@ -1625,10 +1670,50 @@ modalRecusarTodos?.addEventListener("click", (e) => {
 });
 
 function updateAdminPens(card) {
-  const m = card.querySelector(".volta-m");
-  const v = card.querySelector(".volta-v");
   const pen = card.querySelector("[data-pen]");
   const preview = card.querySelector("[data-classificado-out]");
+  const clubeA = card.dataset.clubeA || "";
+  const clubeB = card.dataset.clubeB || "";
+
+  // Final (jogo único): pênaltis se empatar no 90'.
+  if (card.dataset.jogoUnico === "1" || card.dataset.dashPerna === "unico") {
+    const m = card.querySelector(".unico-m");
+    const v = card.querySelector(".unico-v");
+    if (!m || !v) return;
+    if (m.value === "" || v.value === "") {
+      pen?.classList.add("hidden");
+      pen?.querySelectorAll("input").forEach((i) => (i.checked = false));
+      if (preview) {
+        preview.hidden = true;
+        preview.textContent = "—";
+      }
+      return;
+    }
+    const gm = Number(m.value);
+    const gv = Number(v.value);
+    const penChecked = pen?.querySelector("input:checked")?.value;
+    if (gm === gv) {
+      pen?.classList.remove("hidden");
+    } else {
+      pen?.classList.add("hidden");
+      pen?.querySelectorAll("input").forEach((i) => (i.checked = false));
+    }
+    if (preview) {
+      let winner = null;
+      if (gm > gv) winner = clubeA;
+      else if (gv > gm) winner = clubeB;
+      else if (penChecked === "a") winner = clubeA;
+      else if (penChecked === "b") winner = clubeB;
+      preview.hidden = false;
+      preview.textContent = winner
+        ? `Campeão (preview): ${winner}`
+        : "Empate — escolha nos pênaltis";
+    }
+    return;
+  }
+
+  const m = card.querySelector(".volta-m");
+  const v = card.querySelector(".volta-v");
   if (!m || !v) return;
   let idaA = m.dataset.idaA;
   let idaB = m.dataset.idaB;
@@ -1640,8 +1725,6 @@ function updateAdminPens(card) {
     if (idaM && idaM.value !== "") idaA = idaM.value;
     if (idaV && idaV.value !== "") idaB = idaV.value;
   }
-  const clubeA = card.dataset.clubeA || "";
-  const clubeB = card.dataset.clubeB || "";
   if (idaA === "" || idaB === "" || m.value === "" || v.value === "") {
     pen?.classList.add("hidden");
     pen?.querySelectorAll("input").forEach((i) => (i.checked = false));
@@ -1677,7 +1760,7 @@ function updateAdminPens(card) {
 }
 
 document.querySelectorAll("[data-confronto-admin]").forEach((card) => {
-  card.querySelectorAll(".volta-m, .volta-v").forEach((input) => {
+  card.querySelectorAll(".volta-m, .volta-v, .unico-m, .unico-v").forEach((input) => {
     input.addEventListener("input", () => updateAdminPens(card));
   });
   card.querySelectorAll('[data-pen] input[type="radio"]').forEach((input) => {

@@ -1,0 +1,72 @@
+{# Abas Ida/Volta ou Jogo único.
+   Vars: f, fase (ativa), perna (atual), modo ('link'|'button'),
+         base_href (só link), volta_liberada, fase_bloqueada (bool),
+         formato_por_fase, janela (opcional, só button/palpites)
+#}
+{% set fmt = (formato_por_fase|default({})).get(f.id, 'ida_volta') %}
+{% set is_unico = fmt == 'unico' %}
+{% set perna_f = perna if f.id == fase else ('unico' if is_unico else 'ida') %}
+{% set bloqueada = fase_bloqueada|default(false) %}
+<div class="transparencia-nav-pernas">
+  {% if is_unico %}
+    {% if modo == 'button' %}
+    <button
+      type="button"
+      data-fase="{{ f.id }}"
+      data-tab="unico"
+      class="{% if f.id == fase and perna_f == 'unico' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'unico' %}aria-current="true"{% endif %}
+      {% if bloqueada %}disabled title="Aguardando liberação desta fase"
+      {% elif f.id == fase and janela|default('') == 'fechado' %}disabled title="Palpites fechados"{% endif %}
+    ><span class="nav-perna-long">Jogo único</span><span class="nav-perna-short">Jogo</span></button>
+    {% elif bloqueada %}
+    <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo único</span><span class="nav-perna-short">Jogo</span></span>
+    {% else %}
+    <a
+      href="{{ base_href }}?fase={{ f.id }}&perna=unico"
+      class="{% if f.id == fase and perna_f == 'unico' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'unico' %}aria-current="page"{% endif %}
+    ><span class="nav-perna-long">Jogo único</span><span class="nav-perna-short">Jogo</span></a>
+    {% endif %}
+  {% else %}
+    {% if modo == 'button' %}
+    <button
+      type="button"
+      data-fase="{{ f.id }}"
+      data-tab="ida"
+      class="{% if f.id == fase and perna_f == 'ida' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'ida' %}aria-current="true"{% endif %}
+      {% if bloqueada %}disabled title="Aguardando liberação desta fase"
+      {% elif f.id == fase and janela|default('') == 'volta' %}disabled title="Ida encerrada — palpites só na Volta"
+      {% elif f.id == fase and janela|default('') == 'fechado' %}disabled title="Palpites fechados"{% endif %}
+    ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
+    <button
+      type="button"
+      data-fase="{{ f.id }}"
+      data-tab="volta"
+      class="{% if f.id == fase and perna_f == 'volta' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'volta' %}aria-current="true"{% endif %}
+      {% if bloqueada %}disabled title="Aguardando liberação desta fase"
+      {% elif f.id == fase and janela|default('') == 'fechado' %}disabled title="Palpites fechados"{% endif %}
+    ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
+    {% elif bloqueada %}
+    <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></span>
+    <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
+    {% else %}
+    <a
+      href="{{ base_href }}?fase={{ f.id }}&perna=ida"
+      class="{% if f.id == fase and perna_f == 'ida' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'ida' %}aria-current="page"{% endif %}
+    ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></a>
+    {% if volta_liberada|default(true) %}
+    <a
+      href="{{ base_href }}?fase={{ f.id }}&perna=volta"
+      class="{% if f.id == fase and perna_f == 'volta' %}active{% endif %}"
+      {% if f.id == fase and perna_f == 'volta' %}aria-current="page"{% endif %}
+    ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></a>
+    {% else %}
+    <span class="is-disabled" title="Volta ainda não liberada"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
+    {% endif %}
+    {% endif %}
+  {% endif %}
+</div>

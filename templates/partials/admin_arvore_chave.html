@@ -1,14 +1,16 @@
 {# Chave da árvore admin.
-   Vars: i, classificados, chave_a='', chave_b='', ida_em='', volta_em=''
+   Vars: i, classificados, chave_a='', chave_b='', ida_em='', volta_em='', unico_em='', formato='ida_volta'
 #}
+{% set formato = formato|default('ida_volta') %}
+{% set is_unico = formato == 'unico' %}
 <div
-  class="admin-arvore-chave"
+  class="admin-arvore-chave{% if is_unico %} is-unico{% endif %}"
   data-arvore-chave="{{ i }}"
   data-drop-chave
 >
   <span class="planilha-jogo-tag">Chave {{ i + 1 }}</span>
   <label>
-    Mandante Ida
+    {% if is_unico %}Mandante{% else %}Mandante Ida{% endif %}
     <select name="chave_{{ i }}_a" required data-slot="a" class="admin-arvore-select">
       <option value="">—</option>
       {% for c in classificados %}
@@ -16,11 +18,11 @@
       {% endfor %}
     </select>
   </label>
-  <div class="admin-arvore-drop" data-drop-slot="a" tabindex="0" aria-label="Solte o mandante da ida aqui">
+  <div class="admin-arvore-drop" data-drop-slot="a" tabindex="0" aria-label="{% if is_unico %}Solte o mandante aqui{% else %}Solte o mandante da ida aqui{% endif %}">
     <span class="admin-arvore-drop-placeholder">Arraste um classificado</span>
   </div>
   <label>
-    Visitante Ida
+    {% if is_unico %}Visitante{% else %}Visitante Ida{% endif %}
     <select name="chave_{{ i }}_b" required data-slot="b" class="admin-arvore-select">
       <option value="">—</option>
       {% for c in classificados %}
@@ -28,9 +30,15 @@
       {% endfor %}
     </select>
   </label>
-  <div class="admin-arvore-drop" data-drop-slot="b" tabindex="0" aria-label="Solte o visitante da ida aqui">
+  <div class="admin-arvore-drop" data-drop-slot="b" tabindex="0" aria-label="{% if is_unico %}Solte o visitante aqui{% else %}Solte o visitante da ida aqui{% endif %}">
     <span class="admin-arvore-drop-placeholder">Arraste um classificado</span>
   </div>
+  {% if is_unico %}
+  <label>
+    Jogo · data/hora
+    <input type="datetime-local" name="chave_{{ i }}_unico" value="{{ unico_em|default(ida_em)|default('') }}" />
+  </label>
+  {% else %}
   <label>
     Ida · data/hora
     <input type="datetime-local" name="chave_{{ i }}_ida" value="{{ ida_em|default('') }}" />
@@ -39,4 +47,5 @@
     Volta · data/hora
     <input type="datetime-local" name="chave_{{ i }}_volta" value="{{ volta_em|default('') }}" />
   </label>
+  {% endif %}
 </div>

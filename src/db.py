@@ -1677,7 +1677,7 @@ def texto_jogos_proximos_cobranca(
 
 def jogos_ids_fase_perna(fase: str, perna: str) -> list[int]:
     """IDs dos jogos de uma fase/perna (ordem dos confrontos)."""
-    if perna not in ("ida", "volta"):
+    if perna not in ("ida", "volta", "unico"):
         raise ValueError("perna inválida")
     with get_db() as conn:
         rows = conn.execute(
@@ -1705,7 +1705,7 @@ def status_palpites_liberados(
     """
     from src.seed_data import jogo_palpite_travado
 
-    if perna not in ("ida", "volta"):
+    if perna not in ("ida", "volta", "unico"):
         raise ValueError("perna inválida")
 
     confrontos = list_confrontos_completos(fase)
@@ -3017,9 +3017,10 @@ def criar_confronto(
     confronto_id: int | None = None,
     ida_em: str | None = None,
     volta_em: str | None = None,
+    unico_em: str | None = None,
 ) -> int:
-    """Cria chave + jogos ida/volta. Mandante ida=a, volta=b."""
-    from src.config import FASE_IDS
+    """Cria chave. Final = jogo único; demais fases = ida/volta (mando a / decide b)."""
+    from src.config import FASE_IDS, fase_formato
 
     if fase not in FASE_IDS:
         raise ValueError("fase inválida")
@@ -3028,21 +3029,29 @@ def criar_confronto(
     if not a or not b or a == b:
         raise ValueError("clubes inválidos")
     cid = confronto_id or proximo_confronto_id()
+    formato = fase_formato(fase)
     with get_db() as conn:
         conn.execute(
             "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, ?, ?, ?)",
             (cid, fase, a, b),
         )
-        conn.execute(
-            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
-            "VALUES (?, 'ida', 'a', ?)",
-            (cid, ida_em),
-        )
-        conn.execute(
-            "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
-            "VALUES (?, 'volta', 'b', ?)",
-            (cid, volta_em),
-        )
+        if formato == "unico":
+            conn.execute(
+                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                "VALUES (?, 'unico', 'a', ?)",
+                (cid, unico_em if unico_em is not None else ida_em),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                "VALUES (?, 'ida', 'a', ?)",
+                (cid, ida_em),
+            )
+            conn.execute(
+                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                "VALUES (?, 'volta', 'b', ?)",
+                (cid, volta_em),
+            )
     return cid
 
 
@@ -3052,16 +3061,18 @@ def substituir_confrontos_fase(
 ) -> list[int]:
     """Apaga confrontos da fase e recria a partir de pares.
 
-    Cada item: {clube_a, clube_b, ida_em?, volta_em?}.
+    Cada item: {clube_a, clube_b, ida_em?, volta_em?, unico_em?}.
+    Final cria só `perna=unico`. Demais fases: ida+volta.
     Remove palpites ligados aos jogos/confrontos antigos (senão o DELETE
     estoura FK e o Remontar falha depois que alguém já palpitou).
     """
-    from src.config import FASE_IDS
+    from src.config import FASE_IDS, fase_formato
 
     if fase not in FASE_IDS:
         raise ValueError("fase inválida")
     if fase == "oitavas":
         raise ValueError("oitavas não podem ser remontadas por aqui")
+    formato = fase_formato(fase)
     ids: list[int] = []
     with get_db() as conn:
         rows = conn.execute(
@@ -3102,16 +3113,26 @@ def substituir_confrontos_fase(
                 "INSERT INTO confrontos (id, fase, clube_a, clube_b) VALUES (?, ?, ?, ?)",
                 (next_id, fase, a, b),
             )
-            conn.execute(
-                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
-                "VALUES (?, 'ida', 'a', ?)",
-                (next_id, par.get("ida_em")),
-            )
-            conn.execute(
-                "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
-                "VALUES (?, 'volta', 'b', ?)",
-                (next_id, par.get("volta_em")),
-            )
+            if formato == "unico":
+                inicio = par.get("unico_em")
+                if inicio is None:
+                    inicio = par.get("ida_em")
+                conn.execute(
+                    "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                    "VALUES (?, 'unico', 'a', ?)",
+                    (next_id, inicio),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                    "VALUES (?, 'ida', 'a', ?)",
+                    (next_id, par.get("ida_em")),
+                )
+                conn.execute(
+                    "INSERT INTO jogos (confronto_id, perna, mandante_clube_id, inicio_em) "
+                    "VALUES (?, 'volta', 'b', ?)",
+                    (next_id, par.get("volta_em")),
+                )
             ids.append(next_id)
         if fase == "quartas":
             _migrate_quartas_ordem_casa(conn)
@@ -3150,30 +3171,45 @@ def inverter_mandantes_confronto(confronto_id: int) -> dict[str, Any]:
 
 
 def classificados_da_fase(fase: str) -> list[dict[str, Any]]:
-    """Vencedores oficiais das chaves da fase (agregado + pênaltis)."""
-    from src.scoring import quem_classifica_agregado
+    """Vencedores oficiais das chaves da fase (agregado ida/volta ou jogo único)."""
+    from src.config import fase_formato
+    from src.scoring import quem_classifica_agregado, quem_classifica_jogo_unico
 
     out: list[dict[str, Any]] = []
+    formato = fase_formato(fase)
     for c in list_confrontos_completos(fase):
         jogos = {j["perna"]: j for j in c.get("jogos") or []}
-        ida = jogos.get("ida")
-        volta = jogos.get("volta")
-        if not ida or not volta:
-            continue
-        if (
-            ida.get("gols_mandante") is None
-            or ida.get("gols_visitante") is None
-            or volta.get("gols_mandante") is None
-            or volta.get("gols_visitante") is None
-        ):
-            continue
-        lado = quem_classifica_agregado(
-            int(ida["gols_mandante"]),
-            int(ida["gols_visitante"]),
-            int(volta["gols_mandante"]),
-            int(volta["gols_visitante"]),
-            penaltis_clube_id=volta.get("penaltis_clube_id"),
-        )
+        if formato == "unico":
+            unico = jogos.get("unico")
+            if not unico:
+                continue
+            if unico.get("gols_mandante") is None or unico.get("gols_visitante") is None:
+                continue
+            lado = quem_classifica_jogo_unico(
+                int(unico["gols_mandante"]),
+                int(unico["gols_visitante"]),
+                mandante_clube_id=unico.get("mandante_clube_id") or "a",
+                penaltis_clube_id=unico.get("penaltis_clube_id"),
+            )
+        else:
+            ida = jogos.get("ida")
+            volta = jogos.get("volta")
+            if not ida or not volta:
+                continue
+            if (
+                ida.get("gols_mandante") is None
+                or ida.get("gols_visitante") is None
+                or volta.get("gols_mandante") is None
+                or volta.get("gols_visitante") is None
+            ):
+                continue
+            lado = quem_classifica_agregado(
+                int(ida["gols_mandante"]),
+                int(ida["gols_visitante"]),
+                int(volta["gols_mandante"]),
+                int(volta["gols_visitante"]),
+                penaltis_clube_id=volta.get("penaltis_clube_id"),
+            )
         if lado not in ("a", "b"):
             continue
         clube = c["clube_a"] if lado == "a" else c["clube_b"]
