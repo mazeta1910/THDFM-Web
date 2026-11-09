@@ -1,10 +1,11 @@
-{# Dashboard de confrontos (ida | chave | volta) — admin Resultados.
+{# Dashboard de confrontos (ida | chave | volta) ou jogo único — admin Resultados.
    Vars: confrontos, f (fase meta), fase_encerrada
 #}
 {% set fase_label = f.label|default(f.id) %}
+{% set is_unico = (formato_por_fase|default({})).get(f.id, 'ida_volta') == 'unico' %}
 {% set ns = namespace(sem_hora=0, sem_placar=0, confirmados=0) %}
 {% for c in confrontos %}
-  {% for j in [c.ida, c.volta] %}
+  {% for j in ([c.unico] if is_unico else [c.ida, c.volta]) %}
     {% if j %}
       {% if not j.inicio_em %}{% set ns.sem_hora = ns.sem_hora + 1 %}{% endif %}
       {% if j.gols_mandante is none or j.gols_visitante is none %}
@@ -36,7 +37,7 @@
   {% set chave_n = loop.index %}
   {% set chave_rotulo = fase_label|lower ~ ' ' ~ chave_n %}
   <article
-    class="admin-dash-chave"
+    class="admin-dash-chave{% if is_unico %} is-unico{% endif %}"
     data-confronto-dash="{{ c.id }}"
     data-clube-a="{{ c.clube_a }}"
     data-clube-b="{{ c.clube_b }}"
@@ -51,15 +52,23 @@
       </span>
       <span class="admin-dash-chave-actions">
         <span class="admin-dash-chave-meta">
+          {% if is_unico %}
+          Mandante: <strong>{{ nome_clube_curto(c.clube_a) }}</strong>
+          {% else %}
           Decide em casa: <strong>{{ nome_clube_curto(c.clube_b) }}</strong>
+          {% endif %}
         </span>
         {% if not fase_encerrada and f.id != 'oitavas' %}
-        {% set pode_inverter = not ((c.ida and c.ida.confirmado) or (c.volta and c.volta.confirmado)) %}
+        {% set pode_inverter = not (
+          (c.unico and c.unico.confirmado)
+          or (c.ida and c.ida.confirmado)
+          or (c.volta and c.volta.confirmado)
+        ) %}
         <form method="post" action="/admin/confronto/{{ c.id }}/inverter-mando" class="admin-dash-invert-form">
           <button
             type="submit"
             class="secondary admin-dash-invert-btn"
-            title="Inverte quem manda na ida e quem decide em casa na volta (placares e palpites ficam com cada clube)"
+            title="{% if is_unico %}Inverte mandante e visitante (placares e palpites ficam com cada clube){% else %}Inverte quem manda na ida e quem decide em casa na volta (placares e palpites ficam com cada clube){% endif %}"
             {% if not pode_inverter %}disabled{% endif %}
           >Inverter mando</button>
         </form>
@@ -68,6 +77,49 @@
     </header>
 
     <div class="admin-dash-legs">
+      {% if is_unico %}
+      <div class="admin-dash-leg" data-dash-leg="unico">
+        {% if c.unico %}
+        {% set mode = 'admin' %}
+        {% set jogo_num = chave_n %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_a %}
+        {% set clube_v = c.clube_b %}
+        {% set clube_a = c.clube_a %}
+        {% set clube_b = c.clube_b %}
+        {% set name_m = 'jogo_' ~ c.unico.id ~ '_m' %}
+        {% set name_v = 'jogo_' ~ c.unico.id ~ '_v' %}
+        {% set val_m = c.unico.gols_mandante if c.unico.gols_mandante is not none else '' %}
+        {% set val_v = c.unico.gols_visitante if c.unico.gols_visitante is not none else '' %}
+        {% set readonly = fase_encerrada %}
+        {% set inicio_lbl = formatar_inicio_jogo(c.unico.inicio_em) %}
+        {% set travado_tag = none %}
+        {% set confirmado = c.unico.confirmado|default(false) %}
+        {% set jogo_id = c.unico.id %}
+        {% set inicio_input_name = 'jogo_' ~ c.unico.id ~ '_inicio' %}
+        {% set inicio_input_value = inicio_em_input_value(c.unico.inicio_em) %}
+        {% set inicio_label = 'Jogo · início' %}
+        {% set volta_classes_m = 'unico-m' %}
+        {% set volta_classes_v = 'unico-v' %}
+        {% set data_ida_a = none %}
+        {% set data_ida_b = none %}
+        {% set ref_lines = none %}
+        {% set pen = {
+          'name': 'jogo_' ~ c.unico.id ~ '_pen',
+          'checked': c.unico.penaltis_clube_id,
+          'title': 'Empate no tempo normal. Quem leva nos pênaltis?',
+          'hidden': true,
+          'clube_a': c.clube_a,
+          'clube_b': c.clube_b,
+          'disabled': fase_encerrada,
+        } %}
+        {% set admin_attrs = 'data-dash-perna="unico" data-confronto-admin="' ~ c.id ~ '" data-jogo-unico="1"' %}
+        {% set classificado_preview = true %}
+        {% set jogo_tag_override = 'Jogo' %}
+        {% include "partials/match_cell.html" %}
+        {% endif %}
+      </div>
+      {% else %}
       <div class="admin-dash-leg" data-dash-leg="ida">
         {% if c.ida %}
         {% set mode = 'admin' %}
@@ -147,6 +199,7 @@
         {% include "partials/match_cell.html" %}
         {% endif %}
       </div>
+      {% endif %}
     </div>
   </article>
   {% endfor %}

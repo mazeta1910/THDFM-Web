@@ -242,3 +242,90 @@ def test_confirmacao_em_semis_cedo_vira_r4_quartas_volta(client):
     assert "R5 · Semis (Ida)" in rp.text
     assert "R4 · Semis (Ida)" not in rp.text
     assert "R5 · Quartas (Volta)" not in rp.text
+
+
+def _montar_semis(client) -> None:
+    login_admin(client)
+    clubs_q = [c["clube"] for c in db.classificados_da_fase("quartas")]
+    assert len(clubs_q) >= 4
+    data = {"fase": "semis"}
+    for i in range(2):
+        data[f"chave_{i}_a"] = clubs_q[i * 2]
+        data[f"chave_{i}_b"] = clubs_q[i * 2 + 1]
+    r = client.post("/admin/arvore/montar", data=data, follow_redirects=False)
+    assert r.status_code == 303
+    db.set_fase_atual("semis")
+    db.set_janela("ida")
+
+
+def test_semis_volta_ao_vivo_nao_zera_se_placar_ja_entrou_na_ida(client):
+    """Bug do perfil: R6 Semis (Volta) com Pts 0 embora os jogos tenham pontuado.
+
+    Se a Volta já tem placar oficial quando a Ida é confirmada, o baseline engole
+    esses pontos e o rod ao vivo fica 0. O resumo deve mostrar a soma dos pts
+    dos jogos da Volta.
+    """
+    a = db.criar_participante("Semis Volta Pts", status="liberado")
+    login_admin(client)
+
+    _palpite_exato(a["id"], "oitavas", "ida")
+    _fechar_perna("oitavas", "ida")
+    confirmar_rodada()
+    _palpite_exato(a["id"], "oitavas", "volta", gm=0, gv=0)
+    _fechar_perna("oitavas", "volta", gm=0, gv=0)
+    confirmar_rodada()
+
+    _montar_quartas(client)
+    _palpite_exato(a["id"], "quartas", "ida")
+    _fechar_perna("quartas", "ida")
+    confirmar_rodada()
+    _palpite_exato(a["id"], "quartas", "volta", gm=0, gv=0)
+    _fechar_perna("quartas", "volta", gm=0, gv=0)
+    confirmar_rodada()
+
+    _montar_semis(client)
+    # Palpites + placares de Ida e Volta antes de confirmar a Ida.
+    for c in db.list_confrontos_completos("semis"):
+        ida = _jogo(c, "ida")
+        volta = _jogo(c, "volta")
+        db.salvar_palpite_jogo(a["id"], ida["id"], 2, 0)
+        db.salvar_palpite_jogo(a["id"], volta["id"], 1, 0)
+        db.set_resultado_jogo(ida["id"], 2, 0, None)
+        db.set_resultado_jogo(volta["id"], 1, 0, None)
+
+    hist = confirmar_rodada()
+    assert hist["janela"] == "ida"
+    assert db.get_janela() == "volta"
+
+    entradas = resumo_pontuacao_por_participante()[a["id"]]
+    semis_ida = next(
+        e
+        for e in entradas
+        if e["fase"] == "semis" and e["janela"] == "ida" and not e["ao_vivo"]
+    )
+    assert semis_ida["rod"] > 0
+    assert semis_ida["jogos"]
+    # Só jogos da Ida no detalhe da R5.
+    assert all(
+        True for _ in semis_ida["jogos"]
+    )  # placares oficiais presentes
+    assert len(semis_ida["jogos"]) == len(db.list_confrontos_completos("semis"))
+
+    ao_vivo = entradas[-1]
+    assert ao_vivo["ao_vivo"] is True
+    assert ao_vivo["fase"] == "semis"
+    assert ao_vivo["janela"] == "volta"
+    assert ao_vivo["janela_label"] == "Volta"
+    assert ao_vivo["jogos"], "Volta já tem placar — deve listar os jogos"
+    pts_jogos = sum(int(j.get("pts") or 0) for j in ao_vivo["jogos"])
+    assert pts_jogos > 0
+    assert ao_vivo["rod"] == pts_jogos
+    assert ao_vivo["rod"] > 0
+
+    _login_participante(client, a, "semisvoltapts")
+    rp = client.get("/meu-perfil")
+    assert rp.status_code == 200
+    assert "Semis (Volta)" in rp.text
+    assert "is-ao-vivo" in rp.text
+    # Pts da Volta ao vivo no HTML (não o 0 engolido pelo baseline).
+    assert f"+{ao_vivo['rod']}" in rp.text

@@ -84,27 +84,10 @@
       {% if f.ativa %}aria-current="true"{% endif %}
       {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"{% endif %}
     >{{ f.label }}{% if fase_encerrada %} · fechada{% endif %}</button>
-    <div class="transparencia-nav-pernas">
-      <button
-        type="button"
-        data-fase="{{ f.id }}"
-        data-tab="ida"
-        class="{% if f.ativa and perna_ini == 'ida' %}active{% endif %}"
-        {% if f.ativa and perna_ini == 'ida' %}aria-current="true"{% endif %}
-        {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"
-        {% elif f.ativa and janela == 'volta' %}disabled title="Ida encerrada — palpites só na Volta"
-        {% elif f.ativa and janela == 'fechado' %}disabled title="Palpites fechados"{% endif %}
-      ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></button>
-      <button
-        type="button"
-        data-fase="{{ f.id }}"
-        data-tab="volta"
-        class="{% if f.ativa and perna_ini == 'volta' %}active{% endif %}"
-        {% if f.ativa and perna_ini == 'volta' %}aria-current="true"{% endif %}
-        {% if fase_bloqueada %}disabled title="{% if fase_encerrada %}Fase encerrada{% else %}Aguardando liberação desta fase{% endif %}"
-        {% elif f.ativa and janela == 'fechado' %}disabled title="Palpites fechados"{% endif %}
-      ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></button>
-    </div>
+    {% set fase = fase_atual %}
+    {% set perna = perna_ini %}
+    {% set modo = 'button' %}
+    {% include "partials/nav_pernas.html" %}
   </div>
   {% endfor %}
 </div>
@@ -141,7 +124,57 @@
   </div>
 
   {% elif f.ativa %}
+  {% set fmt_ativa = (formato_por_fase|default({})).get(f.id, 'ida_volta') %}
   <form method="post" action="/p/{{ participante.token }}/salvar" id="form-palpites" class="card palpites-card">
+    {% if fmt_ativa == 'unico' %}
+    <div class="match-panel {% if perna_default|default('unico') != 'unico' %}hidden{% endif %}" data-panel="unico">
+      {% if not confrontos %}
+      <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
+      {% else %}
+      <div class="match-grid">
+        {% for c in confrontos %}
+        {% set unico = c.unico %}
+        {% set p_unico = palpites_jogo.get(unico.id) if unico else none %}
+        {% set p_pen = palpites_pen.get(c.id) %}
+        {% if unico %}
+        {% set mode = 'palpite' %}
+        {% set jogo_num = loop.index %}
+        {% set confronto_id = c.id %}
+        {% set clube_m = c.clube_a %}
+        {% set clube_v = c.clube_b %}
+        {% set name_m = 'unico_' ~ c.id ~ '_m' %}
+        {% set name_v = 'unico_' ~ c.id ~ '_v' %}
+        {% set val_m = p_unico.gols_mandante if p_unico else '' %}
+        {% set val_v = p_unico.gols_visitante if p_unico else '' %}
+        {% set readonly = janela == 'fechado' or (unico and unico.travado) %}
+        {% set inicio_lbl = formatar_inicio_jogo(unico.inicio_em) %}
+        {% set travado_tag = 'Fechado' if unico.travado else none %}
+        {% set confirmado = false %}
+        {% set jogo_id = none %}
+        {% set inicio_input_name = none %}
+        {% set volta_classes_m = 'unico-m' %}
+        {% set volta_classes_v = 'unico-v' %}
+        {% set data_ida_a = none %}
+        {% set data_ida_b = none %}
+        {% set ref_lines = none %}
+        {% set pen = {
+          'name': 'pen_' ~ c.id,
+          'checked': p_pen.penaltis_clube_id if p_pen else none,
+          'title': 'Empate no tempo normal. Quem leva nos pênaltis?',
+          'hidden': not p_pen,
+          'clube_a': c.clube_a,
+          'clube_b': c.clube_b,
+          'disabled': janela == 'fechado' or (unico and unico.travado),
+        } %}
+        {% set admin_attrs = 'data-jogo-unico="1"' %}
+        {% set classificado_preview = false %}
+        {% include "partials/match_cell.html" %}
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
     <div class="match-panel {% if perna_default|default('ida') != 'ida' %}hidden{% endif %}" data-panel="ida">
       {% if not confrontos %}
       <p class="locked-msg">Confrontos desta fase ainda não foram cadastrados.</p>
@@ -245,6 +278,7 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
 
     {% if janela != 'fechado' %}
     <div class="sticky-save sticky-save-fab">
@@ -520,6 +554,6 @@
 })();
 </script>
 {% if janela != 'fechado' %}
-<script src="/static/palpites.js?v=198"></script>
+<script src="/static/palpites.js?v=199"></script>
 {% endif %}
 {% endblock %}

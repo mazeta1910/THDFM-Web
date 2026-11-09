@@ -13,32 +13,24 @@
 <div class="fases-panel-body">
 <div class="transparencia-nav" role="navigation" aria-label="Fase e perna">
   {% for f in fases %}
+  {% set fase_fmt = (formato_por_fase|default({})).get(f.id, 'ida_volta') %}
+  {% set perna_link = perna if f.id == fase else ('unico' if fase_fmt == 'unico' else 'ida') %}
   <div class="transparencia-nav-col {% if f.id == fase %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %}">
     {% if f.unlocked %}
     <a
-      href="/admin/palpites?fase={{ f.id }}&perna={{ perna if f.id == fase else 'ida' }}"
+      href="/admin/palpites?fase={{ f.id }}&perna={{ perna_link }}"
       class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
     >{{ f.label }}</a>
-    <div class="transparencia-nav-pernas">
-      <a
-        href="/admin/palpites?fase={{ f.id }}&perna=ida"
-        class="{% if f.id == fase and perna == 'ida' %}active{% endif %}"
-      ><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></a>
-      {% if volta_liberada %}
-      <a
-        href="/admin/palpites?fase={{ f.id }}&perna=volta"
-        class="{% if f.id == fase and perna == 'volta' %}active{% endif %}"
-      ><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></a>
-      {% else %}
-      <span class="is-disabled" title="Volta ainda não liberada"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
-      {% endif %}
-    </div>
+    {% set modo = 'link' %}
+    {% set base_href = '/admin/palpites' %}
+    {% set fase_bloqueada = false %}
+    {% include "partials/nav_pernas.html" %}
     {% else %}
     <span class="transparencia-nav-fase is-disabled" title="Aguardando liberação desta fase">{{ f.label }}</span>
-    <div class="transparencia-nav-pernas">
-      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 1 (Ida)</span><span class="nav-perna-short">Ida</span></span>
-      <span class="is-disabled" title="Aguardando liberação desta fase"><span class="nav-perna-long">Jogo 2 (Volta)</span><span class="nav-perna-short">Volta</span></span>
-    </div>
+    {% set modo = 'link' %}
+    {% set base_href = '/admin/palpites' %}
+    {% set fase_bloqueada = true %}
+    {% include "partials/nav_pernas.html" %}
     {% endif %}
   </div>
   {% endfor %}
@@ -201,7 +193,7 @@
             {{ emblema(t.clube_fora, alt=t.clube_fora) }}
             <span class="sr-only">{{ t.clube_fora }}</span>
           </th>
-          {% if perna == 'volta' %}
+          {% if perna in ('volta', 'unico') %}
           <th>Pênaltis</th>
           {% endif %}
           {% if t.tem_resultado %}
@@ -215,7 +207,7 @@
         {% for row in t.linhas %}
         {% if row.tipo == 'grupo' %}
         <tr class="planilha-grupo planilha-grupo--{{ row.grupo }}" data-planilha-grupo="{{ row.grupo }}">
-          <td colspan="{% if t.tem_resultado %}{{ 8 if perna == 'volta' else 7 }}{% else %}{{ 5 if perna == 'volta' else 4 }}{% endif %}">
+          <td colspan="{% if t.tem_resultado %}{{ 8 if perna in ('volta', 'unico') else 7 }}{% else %}{{ 5 if perna in ('volta', 'unico') else 4 }}{% endif %}">
             <div class="planilha-grupo-row">
               <span class="planilha-grupo-label">
                 {% if row.grupo == 'casa' %}
@@ -257,7 +249,7 @@
           <td class="planilha-num">{{ row.gols_m }}</td>
           <td class="planilha-x">x</td>
           <td class="planilha-num">{{ row.gols_v }}</td>
-          {% if perna == 'volta' %}
+          {% if perna in ('volta', 'unico') %}
           <td>{{ row.penaltis }}</td>
           {% endif %}
           {% if t.tem_resultado %}

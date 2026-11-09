@@ -73,6 +73,7 @@ from src.config import (
     TRAVA_PALPITE_ANTES_MIN,
     WHATSAPP_GROUP_URL,
     fase_anterior,
+    fase_formato,
     inscricao_aberta,
 )
 from src.estilo_palpites import trofeus_hall
@@ -594,7 +595,7 @@ def render(request: Request, name: str, **ctx):
         try:
             fase_meta = db.get_fase_atual()
             janela_meta = db.get_janela()
-            perna_meta = "volta" if janela_meta == "volta" else "ida"
+            perna_meta = _perna_default_fase(fase_meta, janela_meta)
             st = db.status_palpites_liberados(
                 fase_meta, perna_meta, so_abertos=True, janela=janela_meta
             )
@@ -707,17 +708,19 @@ def _enrich_confrontos(confrontos: list, *, janela: str | None = None) -> list:
     for c in confrontos:
         c["ida"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "ida"), None)
         c["volta"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "volta"), None)
-        if c["ida"] is not None:
-            c["ida"]["travado"] = jogo_palpite_travado(c["ida"].get("inicio_em"), janela=j)
-            c["ida"]["confirmado"] = db.jogo_confirmado(c["ida"])
-        if c["volta"] is not None:
-            c["volta"]["travado"] = jogo_palpite_travado(c["volta"].get("inicio_em"), janela=j)
-            c["volta"]["confirmado"] = db.jogo_confirmado(c["volta"])
+        c["unico"] = next((jogo for jogo in c["jogos"] if jogo["perna"] == "unico"), None)
+        for key in ("ida", "volta", "unico"):
+            jogo = c.get(key)
+            if jogo is not None:
+                jogo["travado"] = jogo_palpite_travado(jogo.get("inicio_em"), janela=j)
+                jogo["confirmado"] = db.jogo_confirmado(jogo)
     return confrontos
 
 
 def _perna_default_confrontos(confrontos: list) -> str:
-    """Volta se todos os jogos de ida da fase já têm placar oficial."""
+    """Perna padrão da fase: `unico` na Final; senão Volta se todas as Idas têm placar."""
+    if any(c.get("unico") for c in confrontos):
+        return "unico"
     idas = [c.get("ida") for c in confrontos if c.get("ida")]
     if not idas:
         return "ida"
@@ -727,6 +730,18 @@ def _perna_default_confrontos(confrontos: list) -> str:
     ):
         return "volta"
     return "ida"
+
+
+def _perna_default_fase(fase: str, janela: str | None = None) -> str:
+    """Perna efetiva da fase: Final → `unico`; demais seguem a janela meta."""
+    if fase_formato(fase) == "unico":
+        return "unico"
+    j = janela if janela is not None else db.get_janela()
+    return "volta" if j == "volta" else "ida"
+
+
+def _perna_label(perna: str) -> str:
+    return {"ida": "Ida", "volta": "Volta", "unico": "Jogo"}.get(perna, perna)
 
 
 def _volta_liberada(janela: str | None = None) -> bool:
@@ -3845,16 +3860,18 @@ def transparencia(request: Request):
     # Fases futuras bloqueadas — igual Resultados / Meus Palpites
     janela = db.get_janela()
     volta_liberada = _volta_liberada(janela)
-    perna_default = "volta" if janela == "volta" else "ida"
+    perna_default = _perna_default_fase(fase_atual, janela)
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
             f"/transparencia?fase={fase_atual}&perna={perna_default}",
             status_code=303,
         )
 
-    perna = request.query_params.get("perna") or perna_default
-    if perna not in ("ida", "volta"):
-        perna = perna_default
+    perna = request.query_params.get("perna") or _perna_default_fase(fase, janela)
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase, janela)
     if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/transparencia?fase={fase}&perna=ida",
@@ -3869,6 +3886,7 @@ def transparencia(request: Request):
         perna=perna,
         janela=janela,
         volta_liberada=volta_liberada,
+        formato_por_fase={f["id"]: fase_formato(f["id"]) for f in FASES},
         tabelas=tabelas,
     )
 
@@ -3894,16 +3912,18 @@ def admin_palpites(request: Request):
         fase = fase_atual
     janela = db.get_janela()
     volta_liberada = _volta_liberada(janela)
-    perna_default = "volta" if janela == "volta" else "ida"
+    perna_default = _perna_default_fase(fase_atual, janela)
     if FASE_IDS.index(fase) > fase_idx:
         return RedirectResponse(
             f"/admin/palpites?fase={fase_atual}&perna={perna_default}",
             status_code=303,
         )
 
-    perna = request.query_params.get("perna") or perna_default
-    if perna not in ("ida", "volta"):
-        perna = perna_default
+    perna = request.query_params.get("perna") or _perna_default_fase(fase, janela)
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase, janela)
     if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/admin/palpites?fase={fase}&perna=ida",
@@ -3924,6 +3944,7 @@ def admin_palpites(request: Request):
         perna=perna,
         janela=janela,
         volta_liberada=volta_liberada,
+        formato_por_fase={f["id"]: fase_formato(f["id"]) for f in FASES},
         tabelas=tabelas,
         metricas_gerais=metricas_gerais(tabelas),
         ranking=ranking_apostadores(tabelas_geral),
@@ -3958,10 +3979,11 @@ def admin_cobranca(request: Request):
 
     janela = db.get_janela()
     volta_liberada = _volta_liberada(janela)
-    perna_default = "volta" if janela == "volta" else "ida"
-    perna = request.query_params.get("perna") or perna_default
-    if perna not in ("ida", "volta"):
-        perna = perna_default
+    perna = request.query_params.get("perna") or _perna_default_fase(fase, janela)
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase, janela)
     if perna == "volta" and not volta_liberada:
         return RedirectResponse(
             f"/admin/cobranca?fase={fase}&perna=ida",
@@ -3972,7 +3994,7 @@ def admin_cobranca(request: Request):
         fase, perna, so_abertos=True, janela=janela
     )
     fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
-    perna_label = "Ida" if perna == "ida" else "Volta"
+    perna_label = _perna_label(perna)
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     n_sem_wa = 0
     for p in status["incompletos"]:
@@ -4008,6 +4030,7 @@ def admin_cobranca(request: Request):
         perna=perna,
         janela=janela,
         volta_liberada=volta_liberada,
+        formato_por_fase={f["id"]: fase_formato(f["id"]) for f in FASES},
         fase_label=fase_label,
         perna_label=perna_label,
         status=status,
@@ -4034,8 +4057,10 @@ def admin_cobranca_celular(
     fase_atual = db.get_fase_atual()
     if fase not in FASE_IDS:
         fase = fase_atual
-    if perna not in ("ida", "volta"):
-        perna = "volta" if db.get_janela() == "volta" else "ida"
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase)
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
         return RedirectResponse(
@@ -4066,10 +4091,11 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
     if fase not in FASE_IDS:
         fase = fase_atual
     janela = db.get_janela()
-    perna_default = "volta" if janela == "volta" else "ida"
-    perna = request.query_params.get("perna") or perna_default
-    if perna not in ("ida", "volta"):
-        perna = perna_default
+    perna = request.query_params.get("perna") or _perna_default_fase(fase, janela)
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase, janela)
 
     part = db.get_participante(participante_id)
     if not part or part.get("status") != "liberado":
@@ -4092,7 +4118,7 @@ def admin_cobranca_avisar(request: Request, participante_id: int):
         )
 
     fase_label = next((f["label"] for f in FASES if f["id"] == fase), fase)
-    perna_label = "Ida" if perna == "ida" else "Volta"
+    perna_label = _perna_label(perna)
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     msg = db.mensagem_whatsapp_cobranca_palpite(
         part["nome"],
@@ -5579,8 +5605,7 @@ def _render_meus_palpites(request: Request, part: dict):
         for f in FASES
     ]
     janela = db.get_janela()
-    # Ida só editável na fase atual e quando a janela ainda é ida.
-    perna_default = "volta" if janela == "volta" else "ida"
+    perna_default = _perna_default_fase(fase_atual, janela)
     part = _participante_com_hall(dict(part))
     return render(
         request,
@@ -5590,6 +5615,7 @@ def _render_meus_palpites(request: Request, part: dict):
         fase_atual=fase_atual,
         fases=fases_ui,
         perna_default=perna_default,
+        formato_por_fase={f["id"]: fase_formato(f["id"]) for f in FASES},
         confrontos=_enrich_confrontos(
             db.list_confrontos_completos(fase_atual), janela=janela
         ),
@@ -5948,6 +5974,28 @@ async def salvar_palpites(request: Request, token: str):
     faltando_penaltis: list[int] = []
     try:
         for c in confrontos:
+            unico = next((j for j in c["jogos"] if j["perna"] == "unico"), None)
+            if unico or fase_formato(fase_atual) == "unico":
+                if not unico or janela == "fechado":
+                    continue
+                gm = form.get(f"unico_{c['id']}_m")
+                gv = form.get(f"unico_{c['id']}_v")
+                if gm is None or gv is None or str(gm) == "" or str(gv) == "":
+                    continue
+                if jogo_palpite_travado(unico.get("inicio_em"), janela=janela):
+                    continue
+                db.salvar_palpite_jogo(part["id"], unico["id"], int(gm), int(gv))
+                empate = int(gm) == int(gv)
+                pen = form.get(f"pen_{c['id']}")
+                if empate:
+                    if pen not in ("a", "b"):
+                        faltando_penaltis.append(int(c["id"]))
+                    else:
+                        db.salvar_palpite_penaltis(part["id"], c["id"], str(pen))
+                else:
+                    db.limpar_palpite_penaltis(part["id"], c["id"])
+                continue
+
             ida = next(j for j in c["jogos"] if j["perna"] == "ida")
             volta = next(j for j in c["jogos"] if j["perna"] == "volta")
 
@@ -6101,10 +6149,15 @@ def admin_home(request: Request):
         for f in FASES
     }
     perna_default_por_fase = {
-        f["id"]: _perna_default_confrontos(confrontos_por_fase.get(f["id"]) or [])
+        f["id"]: (
+            "unico"
+            if fase_formato(f["id"]) == "unico"
+            else _perna_default_confrontos(confrontos_por_fase.get(f["id"]) or [])
+        )
         for f in FASES
     }
     perna_default = perna_default_por_fase.get(fase_atual, "ida")
+    formato_por_fase = {f["id"]: fase_formato(f["id"]) for f in FASES}
     proxima_fase = None
     if fase_idx + 1 < len(FASE_IDS):
         pid = FASE_IDS[fase_idx + 1]
@@ -6130,6 +6183,7 @@ def admin_home(request: Request):
                 "n_clubes": n_chaves * 2,
                 "pronto": pronto,
                 "existentes": existentes,
+                "formato": fase_formato(f["id"]),
             }
         )
     return render(
@@ -6142,6 +6196,7 @@ def admin_home(request: Request):
         confrontos_por_fase=confrontos_por_fase,
         perna_default=perna_default,
         perna_default_por_fase=perna_default_por_fase,
+        formato_por_fase=formato_por_fase,
         proxima_fase=proxima_fase,
         arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
@@ -6769,7 +6824,7 @@ async def admin_resultados(request: Request):
             if _admin_wants_json(request):
                 return JSONResponse({"ok": False, "erro": erro}, status_code=400)
             return RedirectResponse(f"/admin?erro={quote(erro)}", status_code=303)
-    if perna and perna not in ("ida", "volta"):
+    if perna and perna not in ("ida", "volta", "unico"):
         if _admin_wants_json(request):
             return JSONResponse({"ok": False, "erro": "Perna inválida"}, status_code=400)
         return RedirectResponse("/admin?erro=Perna+invalida", status_code=303)
@@ -6951,14 +7006,18 @@ async def admin_arvore_montar(request: Request):
                 )
             usados.add(a)
             usados.add(b)
+            ida_em = normalizar_inicio_em(str(form.get(f"chave_{i}_ida") or ""))
+            volta_em = normalizar_inicio_em(str(form.get(f"chave_{i}_volta") or ""))
+            unico_em = normalizar_inicio_em(
+                str(form.get(f"chave_{i}_unico") or form.get(f"chave_{i}_ida") or "")
+            )
             pares.append(
                 {
                     "clube_a": a,
                     "clube_b": b,
-                    "ida_em": normalizar_inicio_em(str(form.get(f"chave_{i}_ida") or "")),
-                    "volta_em": normalizar_inicio_em(
-                        str(form.get(f"chave_{i}_volta") or "")
-                    ),
+                    "ida_em": ida_em,
+                    "volta_em": volta_em,
+                    "unico_em": unico_em,
                 }
             )
         db.substituir_confrontos_fase(fase, pares)
@@ -7050,7 +7109,9 @@ def admin_zerar_resultados(
         return _redirect_acesso("entrar")
     if fase not in FASE_IDS:
         return RedirectResponse("/admin?erro=Fase+invalida", status_code=303)
-    if perna not in ("ida", "volta"):
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    if perna not in ("ida", "volta", "unico"):
         return RedirectResponse("/admin?erro=Perna+invalida", status_code=303)
     try:
         n = db.limpar_resultados_oficiais(fase=fase, perna=perna)

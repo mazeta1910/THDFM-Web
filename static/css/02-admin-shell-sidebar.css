@@ -670,6 +670,10 @@ html[data-theme="light"] .admin-main {
   align-items: stretch;
   position: relative;
 }
+.admin-dash-chave.is-unico .admin-dash-legs {
+  grid-template-columns: 1fr;
+  max-width: 28rem;
+}
 .admin-dash-badge {
   display: flex;
   align-items: center;
