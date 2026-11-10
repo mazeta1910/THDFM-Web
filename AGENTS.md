@@ -32,6 +32,8 @@ Skills **suggest** pytest targets; the agent **decides** what to run.
 
 Prefer the narrowest suite that covers the change. Full `pytest -q` only when the change is cross-cutting or you are unsure.
 
+**UI chrome / layout regressions** (nav width, grid columns, compact-button overrides): prefer a **pytest contract** on HTML class markers + CSS rules (see `tests/test_nav_pernas_unico.py`) over multi-step browser/VNC setup. Screenshots/videos are optional proof, not a substitute for the automated gate.
+
 ## Git / Cloud branches
 
 - Feature branches: `cursor/<kebab-description>-0365`
