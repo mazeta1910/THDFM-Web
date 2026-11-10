@@ -7,7 +7,7 @@
 {% set is_unico = fmt == 'unico' %}
 {% set perna_f = perna if f.id == fase else ('unico' if is_unico else 'ida') %}
 {% set bloqueada = fase_bloqueada|default(false) %}
-<div class="transparencia-nav-pernas">
+<div class="transparencia-nav-pernas{% if is_unico %} is-unico{% endif %}">
   {% if is_unico %}
     {% if modo == 'button' %}
     <button

@@ -4579,7 +4579,9 @@ html[data-theme="light"] .admin-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  /* Sobrescreve button { width:auto; max-width:max-content } do global compacto. */
+  width: 100% !important;
+  max-width: none !important;
   margin: 0;
   padding: 0.7rem 0.4rem;
   font-size: 0.9rem;
@@ -4622,13 +4624,19 @@ html[data-theme="light"] .admin-main {
   background: var(--bg);
   flex: 1;
 }
+/* Final (jogo único): um botão sob a fase — preenche a coluna, como Ida+Volta juntos. */
+.transparencia-nav-pernas.is-unico {
+  grid-template-columns: 1fr;
+}
 .transparencia-nav-pernas a,
 .transparencia-nav-pernas button,
 .transparencia-nav-pernas span.is-disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  /* Célula do grid 1fr/1fr (ou 1fr no is-unico) — não encolher com o default compacto. */
+  width: 100% !important;
+  max-width: none !important;
   margin: 0;
   padding: 0.45rem 0.25rem;
   text-align: center;
