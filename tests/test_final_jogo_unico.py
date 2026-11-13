@@ -110,8 +110,9 @@ def test_admin_final_sem_abas_ida_volta(client):
     db.set_janela("ida")
     r = client.get("/admin")
     assert r.status_code == 200
-    # Nav da Final: jogo único; Semis ainda mostram Ida/Volta
+    # Nav da Final: jogo único em coluna cheia; Semis ainda mostram Ida/Volta
     assert 'data-tab="unico"' in r.text
+    assert "transparencia-nav-pernas is-unico" in r.text
     assert "Jogo único" in r.text or 'nav-perna-short">Jogo</span>' in r.text
     assert 'data-fase="semis"' in r.text
     assert 'data-tab="ida"' in r.text
@@ -176,6 +177,7 @@ def test_transparencia_final_perna_unico(client):
     db.set_resultado_jogo(unico["id"], 2, 0, None)
     r = client.get("/transparencia?fase=final&perna=unico")
     assert r.status_code == 200
+    assert "transparencia-nav-pernas is-unico" in r.text
     assert "Jogo único" in r.text or 'perna=unico"' in r.text
     r2 = client.get("/transparencia?fase=final&perna=ida")
     assert r2.status_code == 200

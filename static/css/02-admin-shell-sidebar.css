@@ -497,6 +497,12 @@ html[data-theme="light"] .admin-main {
   max-width: 100%;
   margin-inline: auto;
 }
+/* Um único card: ocupa faixa confortável e centraliza (sem 2ª coluna vazia). */
+.admin-match-grid.match-grid:has(> .match-cell:only-child),
+.admin-resultados-form .match-grid.admin-match-grid:has(> .match-cell:only-child) {
+  grid-template-columns: minmax(280px, min(40rem, 100%));
+  justify-content: center;
+}
 .admin-match-grid .match-cell,
 .admin-resultados-form .admin-match-grid .match-cell {
   border: 1px solid var(--border);
@@ -518,6 +524,10 @@ html[data-theme="light"] .admin-main {
   .admin-match-grid.match-grid .match-cell:nth-last-child(2):nth-child(odd),
   .admin-resultados-form .admin-match-grid .match-cell:nth-last-child(2):nth-child(odd) {
     border-bottom: 1px solid var(--border);
+  }
+  .admin-match-grid.match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd),
+  .admin-resultados-form .admin-match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd) {
+    border-right: 1px solid var(--border);
   }
 }
 .admin-resultados-form .match-inicio-compact {
@@ -671,8 +681,15 @@ html[data-theme="light"] .admin-main {
   position: relative;
 }
 .admin-dash-chave.is-unico .admin-dash-legs {
-  grid-template-columns: 1fr;
-  max-width: 28rem;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: min(40rem, 100%);
+  margin-inline: auto;
+  justify-items: stretch;
+}
+.admin-dash-chave.is-unico {
+  /* Sem coluna fantasma ao lado do jogo único. */
+  max-width: 100%;
 }
 .admin-dash-badge {
   display: flex;

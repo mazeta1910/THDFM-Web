@@ -20,7 +20,10 @@
     {% if f.unlocked %}
     <a
       href="/transparencia?fase={{ f.id }}&perna={{ perna_link }}"
+      role="tab"
       class="transparencia-nav-fase {% if f.id == fase %}active{% endif %}"
+      aria-selected="{% if f.id == fase %}true{% else %}false{% endif %}"
+      {% if f.id == fase %}aria-current="page"{% endif %}
     >{{ f.label }}</a>
     {% set modo = 'link' %}
     {% set base_href = '/transparencia' %}

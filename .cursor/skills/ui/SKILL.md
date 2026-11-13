@@ -27,8 +27,10 @@ If this skill conflicts with `.cursorrules`, **ask Mazeta**.
 ## Suggested tests
 
 ```bash
-.venv/bin/pytest tests/test_css_build.py tests/test_base_chrome_modules.py tests/test_sidebar_ordem.py -q
+.venv/bin/pytest tests/test_css_build.py tests/test_base_chrome_modules.py tests/test_sidebar_ordem.py tests/test_nav_pernas_unico.py -q
 ```
+
+For layout invariants (alignment, grid columns, anti-shrink under compact `button` defaults), **write/extend a pytest CSS+HTML contract** instead of a long admin login + VNC walkthrough. Manual browser demos stay optional evidence, not the primary gate.
 
 ## Hard rules (short)
 
