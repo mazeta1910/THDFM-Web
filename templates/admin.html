@@ -207,8 +207,10 @@
             <div class="transparencia-nav-col {% if f.ativa %}is-active{% endif %} {% if not f.unlocked %}is-locked{% endif %} {% if f.encerrada %}is-encerrada{% endif %}" data-fase-col="{{ f.id }}">
               <button
                 type="button"
+                role="tab"
                 class="transparencia-nav-fase {% if f.ativa %}active{% endif %}"
                 data-fase="{{ f.id }}"
+                aria-selected="{% if f.ativa %}true{% else %}false{% endif %}"
                 {% if f.ativa %}aria-current="true"{% endif %}
                 title="{% if f.encerrada %}Fase encerrada (somente leitura){% elif not f.unlocked %}Prévia — libere a fase para editar{% else %}{{ f.label }}{% endif %}"
               >{{ f.label }}{% if f.encerrada %} · fechada{% endif %}</button>
@@ -1451,11 +1453,13 @@ if (placaresNav) {
       col.classList.toggle("is-active", on);
       const faseBtn = col.querySelector(".transparencia-nav-fase");
       faseBtn?.classList.toggle("active", on);
+      faseBtn?.setAttribute("aria-selected", on ? "true" : "false");
       if (on) faseBtn?.setAttribute("aria-current", "true");
       else faseBtn?.removeAttribute("aria-current");
       col.querySelectorAll("[data-tab]").forEach((b) => {
         const active = on && b.dataset.tab === perna;
         b.classList.toggle("active", active);
+        b.setAttribute("aria-selected", active ? "true" : "false");
         if (active) b.setAttribute("aria-current", "true");
         else b.removeAttribute("aria-current");
       });
@@ -1488,6 +1492,13 @@ if (placaresNav) {
       if (!perna) {
         const cur = placaresNav.querySelector(".transparencia-nav-col.is-active [data-tab].active");
         perna = cur?.dataset.tab || "ida";
+      }
+      // Final (jogo único): não herdar Ida/Volta da fase anterior.
+      const dest = placaresNav.querySelector(`[data-fase-col="${fase}"]`);
+      if (dest?.querySelector('[data-tab="unico"]') && !dest.querySelector('[data-tab="ida"]')) {
+        perna = "unico";
+      } else if (perna === "unico" && dest?.querySelector('[data-tab="ida"]')) {
+        perna = "ida";
       }
       showFasePerna(fase, perna);
     });

@@ -71,6 +71,8 @@ def test_css_nav_unico_coluna_cheia_e_anti_encolhimento():
         bloco_unico = _trecho(css, ".transparencia-nav-pernas.is-unico", 0, 120)
         assert "grid-template-columns: 1fr" in bloco_unico
         assert "1fr 1fr" not in bloco_unico
+        # Nav de fases: 4 colunas iguais sem encolher ao texto
+        assert "repeat(4, minmax(0, 1fr))" in css
 
         # Comentários âncora amarram a regra certa (há outro `.transparencia-nav-fase` no bundle).
         bloco_fase = _trecho(
@@ -92,6 +94,9 @@ def test_css_nav_unico_coluna_cheia_e_anti_encolhimento():
         assert ".transparencia-nav-pernas button," in bloco_pernas
         assert "width: 100% !important" in bloco_pernas
         assert "max-width: none !important" in bloco_pernas
+
+    # Regra do card único vive no partial 01d / bundle — não no 03.
+    assert ".match-grid:has(> .match-cell:only-child)" in CSS.read_text(encoding="utf-8")
 
 
 def test_html_nav_final_is_unico_nas_rotas_admin_e_transparencia(client):

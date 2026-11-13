@@ -70,3 +70,28 @@ O CSS global (`button, .btn`) é **compacto por padrão** (`width: auto`, paddin
 ## Referência Grid
 
 Detalhes extras do Grid: `.cursor/rules/compact-controls.mdc`.
+
+# Diretrizes Estritas de UI e Layout (CSS / Tailwind)
+
+## 1. Barras de Navegação e Abas (Tabs / Segmented Controls)
+
+- Sempre que criar grupos de abas ou botões horizontais dentro de um container delimitado, distribua a largura igualmente usando `grid-template-columns: repeat(N, minmax(0, 1fr))` / `flex: 1` em cada item (ou equivalente).
+- Nunca deixe abas encolherem apenas ao tamanho do seu texto (`width: auto`) se o container pai tiver largura total, evitando espaços em branco residuais na direita. Em `<button>` sob o CSS compacto global, use `width: 100% !important` / `max-width: none !important` no escopo da nav.
+- Sempre aplique `overflow: hidden` no container pai que possui `border-radius` quando elementos filhos tiverem cores de fundo sólidas nas extremidades.
+- Abas ativas: `aria-selected` (e `aria-current` quando fizer sentido).
+
+## 2. Grids Dinâmicos e Cards de Partida
+
+- Nunca force um layout de 2 colunas (`grid-template-columns: 1fr 1fr` / `grid-cols-2`) estático quando a lista de itens puder conter apenas 1 elemento (ex.: Jogo Único / Final). Preferir `:has(> :only-child)` / `grid-cols-1` / `auto-fit` que colapsa faixas vazias.
+- Quando houver apenas 1 card no container, centralize-o (`justify-content: center` / `margin-inline: auto`) ou adapte o grid dinamicamente.
+- Proibido deixar colunas fantasmas vazias com bordas divisórias aparentes quando não houver conteúdo no lado adjacente.
+
+## 3. Prevenção de Truncamento Precoce
+
+- Antes de aplicar `truncate` / `text-overflow: ellipsis`, garanta que o elemento de texto tenha espaço flexível suficiente (`minmax(0, 1fr)` / `min-width: 0`) e que o card pai não esteja artificialmente comprimido em metade da tela sem necessidade (especialmente com 1 item).
+
+## 4. Verificação Pós-Implementação
+
+- Ao criar ou alterar layouts de cards e menus, verifique matematicamente (pytest + Playwright `getBoundingClientRect`) se a soma das larguras dos filhos preenche ~100% do container pai (±2px) ou se estão devidamente alinhados ao centro.
+- Gate preferido: `tests/test_fases_layout_e2e.py` + contratos CSS/HTML (`tests/test_nav_pernas_unico.py`). Não substituir por ritual manual de browser/VNC.
+- Viewports mínimos a checar: 375×667, 768×1024, 1440×900 — zero overflow horizontal (`scrollWidth <= innerWidth`).

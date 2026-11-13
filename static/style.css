@@ -3060,6 +3060,14 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
   .match-grid .match-cell:nth-child(odd) {
     border-right: 1px solid var(--border);
   }
+  /* Um único jogo (Final): sem coluna fantasma vazia. */
+  .match-grid:has(> .match-cell:only-child) {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd) {
+    border-right: none;
+  }
 }
 .match-cell {
   border: none;
@@ -3092,7 +3100,7 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
 }
 .match-team-row {
   display: grid;
-  grid-template-columns: 28px 1fr 48px;
+  grid-template-columns: 28px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 0.4rem;
 }
@@ -3101,15 +3109,25 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
   height: 24px;
   object-fit: contain;
 }
-.match-team-row span {
+.match-team-row span,
+.match-team-row .clube-nome {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
   min-width: 0;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
+}
+/* Card único (Final): prioriza nome completo — evita "Palmeir..." precoce. */
+.match-grid:has(> .match-cell:only-child) .match-team-row .clube-nome,
+.admin-dash-chave.is-unico .match-team-row .clube-nome {
+  text-overflow: clip;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .match-team-row input[type="number"] {
   width: 48px;
@@ -3825,6 +3843,12 @@ html[data-theme="light"] .admin-main {
   max-width: 100%;
   margin-inline: auto;
 }
+/* Um único card: ocupa faixa confortável e centraliza (sem 2ª coluna vazia). */
+.admin-match-grid.match-grid:has(> .match-cell:only-child),
+.admin-resultados-form .match-grid.admin-match-grid:has(> .match-cell:only-child) {
+  grid-template-columns: minmax(280px, min(40rem, 100%));
+  justify-content: center;
+}
 .admin-match-grid .match-cell,
 .admin-resultados-form .admin-match-grid .match-cell {
   border: 1px solid var(--border);
@@ -3846,6 +3870,10 @@ html[data-theme="light"] .admin-main {
   .admin-match-grid.match-grid .match-cell:nth-last-child(2):nth-child(odd),
   .admin-resultados-form .admin-match-grid .match-cell:nth-last-child(2):nth-child(odd) {
     border-bottom: 1px solid var(--border);
+  }
+  .admin-match-grid.match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd),
+  .admin-resultados-form .admin-match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd) {
+    border-right: 1px solid var(--border);
   }
 }
 .admin-resultados-form .match-inicio-compact {
@@ -3999,8 +4027,15 @@ html[data-theme="light"] .admin-main {
   position: relative;
 }
 .admin-dash-chave.is-unico .admin-dash-legs {
-  grid-template-columns: 1fr;
-  max-width: 28rem;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: min(40rem, 100%);
+  margin-inline: auto;
+  justify-items: stretch;
+}
+.admin-dash-chave.is-unico {
+  /* Sem coluna fantasma ao lado do jogo único. */
+  max-width: 100%;
 }
 .admin-dash-badge {
   display: flex;
@@ -4558,7 +4593,7 @@ html[data-theme="light"] .admin-main {
 }
 .transparencia-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -4695,6 +4730,7 @@ html[data-theme="light"] .admin-main {
     order: 1;
     padding: 0.5rem 0.15rem;
     font-size: 0.78rem;
+    min-height: 44px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
   }
@@ -4712,6 +4748,12 @@ html[data-theme="light"] .admin-main {
   .transparencia-nav-pernas span.is-disabled {
     padding: 0.4rem 0.3rem;
     font-size: 0.78rem;
+    min-height: 44px;
+  }
+  .match-team-row input[type="number"],
+  .pen-choice {
+    min-height: 44px;
+    min-width: 44px;
   }
   .nav-perna-long {
     display: none;

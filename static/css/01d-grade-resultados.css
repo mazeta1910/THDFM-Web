@@ -377,6 +377,14 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
   .match-grid .match-cell:nth-child(odd) {
     border-right: 1px solid var(--border);
   }
+  /* Um único jogo (Final): sem coluna fantasma vazia. */
+  .match-grid:has(> .match-cell:only-child) {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .match-grid:has(> .match-cell:only-child) .match-cell:nth-child(odd) {
+    border-right: none;
+  }
 }
 .match-cell {
   border: none;
@@ -409,7 +417,7 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
 }
 .match-team-row {
   display: grid;
-  grid-template-columns: 28px 1fr 48px;
+  grid-template-columns: 28px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 0.4rem;
 }
@@ -418,15 +426,25 @@ html[data-theme="light"] .wrap.palpites-page .palpites-save-hint {
   height: 24px;
   object-fit: contain;
 }
-.match-team-row span {
+.match-team-row span,
+.match-team-row .clube-nome {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
   min-width: 0;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
+}
+/* Card único (Final): prioriza nome completo — evita "Palmeir..." precoce. */
+.match-grid:has(> .match-cell:only-child) .match-team-row .clube-nome,
+.admin-dash-chave.is-unico .match-team-row .clube-nome {
+  text-overflow: clip;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .match-team-row input[type="number"] {
   width: 48px;

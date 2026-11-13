@@ -21,10 +21,10 @@ Changing whether a phase is single-leg vs home/away, `perna` values, Ida/Volta/J
 ## Suggested tests
 
 ```bash
-.venv/bin/pytest tests/test_final_jogo_unico.py tests/test_nav_pernas_unico.py tests/test_janela_padrao_palpites.py -q
+.venv/bin/pytest tests/test_final_jogo_unico.py tests/test_nav_pernas_unico.py tests/test_fases_layout_e2e.py tests/test_janela_padrao_palpites.py -q
 ```
 
-Prefer these pytest contracts over browser/VNC walkthroughs for nav chrome (Final `is-unico`, full-width cells).
+Prefer these pytest contracts (+ Playwright geometry in `test_fases_layout_e2e.py`) over manual browser/VNC walkthroughs for nav chrome.
 
 ## Invariants
 

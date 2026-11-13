@@ -58,7 +58,7 @@
 }
 .transparencia-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -195,6 +195,7 @@
     order: 1;
     padding: 0.5rem 0.15rem;
     font-size: 0.78rem;
+    min-height: 44px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
   }
@@ -212,6 +213,12 @@
   .transparencia-nav-pernas span.is-disabled {
     padding: 0.4rem 0.3rem;
     font-size: 0.78rem;
+    min-height: 44px;
+  }
+  .match-team-row input[type="number"],
+  .pen-choice {
+    min-height: 44px;
+    min-width: 44px;
   }
   .nav-perna-long {
     display: none;
