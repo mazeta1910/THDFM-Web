@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sem permissão — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <span>Sem permissão</span>
+</nav>
+<div>
+  <h1>Sem permissão</h1>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page admin-state admin-state--erro">
+  <p class="badge">Erro 403</p>
+  <p class="admin-state-msg">{{ mensagem or 'Você não tem permissão para esta área do painel.' }}</p>
+  <p class="admin-state-actions">
+    <a class="btn" href="{{ voltar_href or '/admin' }}">{{ voltar_label or 'Voltar ao painel' }}</a>
+  </p>
+</section>
+{% endblock %}

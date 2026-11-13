@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Rotas — Sistema — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin/sistema/rotas">Sistema</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Rotas</span>
+</nav>
+<div class="admin-topbar-title-row">
+  <h1>Rotas</h1>
+  <span class="admin-period-pill">{{ total_filtrado }} / {{ total_all }}</span>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <form class="admin-table-filters" method="get" action="/admin/sistema/rotas">
+    <label class="admin-filter-field">
+      <span>Busca</span>
+      <input type="search" name="q" value="{{ filtros.q }}" placeholder="path ou nome" autocomplete="off" />
+    </label>
+    <label class="admin-filter-field">
+      <span>Método</span>
+      <select name="metodo">
+        <option value="">Todos</option>
+        {% for m in metodos %}
+        <option value="{{ m }}" {% if filtros.metodo == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="admin-filter-field">
+      <span>Auth</span>
+      <select name="auth">
+        <option value="">Todas</option>
+        <option value="publico" {% if filtros.auth == 'publico' %}selected{% endif %}>publico</option>
+        <option value="sessao" {% if filtros.auth == 'sessao' %}selected{% endif %}>sessao</option>
+        <option value="token" {% if filtros.auth == 'token' %}selected{% endif %}>token</option>
+      </select>
+    </label>
+    <label class="admin-filter-field">
+      <span>Papel</span>
+      <select name="papel">
+        <option value="">Todos</option>
+        <option value="dono" {% if filtros.papel == 'dono' %}selected{% endif %}>dono</option>
+        <option value="admin" {% if filtros.papel == 'admin' %}selected{% endif %}>admin</option>
+      </select>
+    </label>
+    <label class="admin-filter-field">
+      <span>Domínio</span>
+      <select name="dominio">
+        <option value="">Todos</option>
+        {% for d in dominios %}
+        <option value="{{ d }}" {% if filtros.dominio == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="admin-filter-check">
+      <input type="checkbox" name="sem_auth" value="1" {% if filtros.sem_auth %}checked{% endif %} />
+      <span>Sem auth</span>
+    </label>
+    <div class="admin-filter-actions">
+      <button type="submit" class="btn">Filtrar</button>
+      {% if tem_filtro %}
+      <a class="proto-text-btn" href="/admin/sistema/rotas">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="admin-table-toolbar">
+    <div class="admin-table-toolbar-left">
+      {% if diff.tem_snapshot %}
+      <span class="admin-muted" title="Snapshot em {{ diff.em }}">
+        Diff: +{{ diff.adicionadas|length }} / −{{ diff.removidas|length }}
+        (desde {{ diff.em }})
+      </span>
+      {% else %}
+      <span class="admin-muted">Sem snapshot ainda — grave um para comparar no próximo deploy.</span>
+      {% endif %}
+    </div>
+    <div class="admin-table-toolbar-right">
+      <a class="btn secondary" href="/admin/sistema/rotas.csv?{{ query_string }}">CSV</a>
+      <a class="btn secondary" href="/admin/sistema/rotas.json?{{ query_string }}">JSON</a>
+      <form method="post" action="/admin/sistema/rotas/snapshot" class="admin-inline-form">
+        <button type="submit" class="btn" title="Gravar snapshot atual">Snapshot</button>
+      </form>
+    </div>
+  </div>
+
+  {% if msg %}
+  <p class="msg">{{ msg }}</p>
+  {% endif %}
+
+  {% if not rows %}
+  <div class="admin-state admin-state--filtro">
+    <p class="admin-state-msg">Nenhuma rota com esses filtros.</p>
+    <p class="admin-state-actions">
+      <a class="btn secondary" href="/admin/sistema/rotas">Limpar filtros</a>
+    </p>
+  </div>
+  {% else %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Método</th>
+          <th scope="col">Path</th>
+          <th scope="col">Auth</th>
+          <th scope="col">Papel</th>
+          <th scope="col">Domínio</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><span class="admin-method-badge">{{ r.method }}</span></td>
+          <td class="admin-mono">{{ r.path }}</td>
+          <td>{{ r.auth }}</td>
+          <td>{{ r.papel }}</td>
+          <td>{{ r.dominio }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if diff.adicionadas or diff.removidas %}
+  <details class="admin-diff-panel">
+    <summary>Detalhe do diff</summary>
+    {% if diff.adicionadas %}
+    <h3 class="admin-panel-h3">Adicionadas</h3>
+    <ul class="admin-mono-list">
+      {% for s in diff.adicionadas %}
+      <li>{{ s }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if diff.removidas %}
+    <h3 class="admin-panel-h3">Removidas</h3>
+    <ul class="admin-mono-list">
+      {% for s in diff.removidas %}
+      <li>{{ s }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </details>
+  {% endif %}
+</section>
+{% endblock %}
