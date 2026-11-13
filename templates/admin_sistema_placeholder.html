@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} — Sistema — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin/sistema/rotas">Sistema</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">{{ titulo }}</span>
+</nav>
+<div>
+  <h1>{{ titulo }}</h1>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <div class="admin-state admin-state--vazio">
+    <p class="admin-state-msg">Em breve — Fase B/C do painel.</p>
+    <p class="admin-state-actions">
+      <a class="btn secondary" href="/admin/sistema/rotas">Ir para Rotas</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

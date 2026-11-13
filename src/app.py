@@ -478,6 +478,22 @@ def require_dono(request: Request) -> RedirectResponse | None:
     return None
 
 
+def require_sistema(request: Request):
+    """Módulo Sistema: só Dono. 403 HTML (não redirect) se moderador entrar por URL."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    if is_dono(request) and has_cap(request, "sistema.ver"):
+        return None
+    return render(
+        request,
+        "admin_403.html",
+        _status_code=403,
+        mensagem="Só o Dono acessa o módulo Sistema.",
+        voltar_href="/admin/visao",
+        voltar_label="Voltar à visão geral",
+    )
+
+
 def get_ui_mode(request: Request) -> str:
     """Chrome Admin vs Site. Só o Dono pode pré-visualizar o site."""
     if not admin_ok(request):
@@ -6069,6 +6085,228 @@ async def salvar_palpites(request: Request, token: str):
     )
 
 
+def _sistema_rotas_filtros(request: Request) -> dict:
+    qp = request.query_params
+    return {
+        "q": (qp.get("q") or "").strip(),
+        "metodo": (qp.get("metodo") or "").strip().upper(),
+        "auth": (qp.get("auth") or "").strip().lower(),
+        "papel": (qp.get("papel") or "").strip().lower(),
+        "dominio": (qp.get("dominio") or "").strip().lower(),
+        "sem_auth": (qp.get("sem_auth") or "").strip() in ("1", "true", "on", "yes"),
+    }
+
+
+def _sistema_rotas_query_string(filtros: dict) -> str:
+    from urllib.parse import urlencode
+
+    parts: dict[str, str] = {}
+    if filtros.get("q"):
+        parts["q"] = filtros["q"]
+    if filtros.get("metodo"):
+        parts["metodo"] = filtros["metodo"]
+    if filtros.get("auth"):
+        parts["auth"] = filtros["auth"]
+    if filtros.get("papel"):
+        parts["papel"] = filtros["papel"]
+    if filtros.get("dominio"):
+        parts["dominio"] = filtros["dominio"]
+    if filtros.get("sem_auth"):
+        parts["sem_auth"] = "1"
+    return urlencode(parts)
+
+
+@app.get("/admin/visao", response_class=HTMLResponse)
+def admin_visao(request: Request):
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    pendentes = sum(
+        1
+        for p in db.list_participantes()
+        if p.get("status") != "liberado" and not p.get("recusado_em")
+    )
+    fase = db.get_fase_atual()
+    fase_label = next((f.get("label") or f["id"] for f in FASES if f["id"] == fase), fase)
+    precisa = []
+    if pendentes:
+        precisa.append(
+            {
+                "texto": f"{pendentes} inscrição(ões) aguardando aprovação",
+                "modulo": "Operação",
+                "acao": "revisar",
+                "href": "/admin?sec=inscricoes",
+            }
+        )
+    reports = 0
+    if has_cap(request, "grid.bugs"):
+        try:
+            reports = db.contar_bug_reports_abertos()
+        except Exception:
+            reports = 0
+        if reports:
+            precisa.append(
+                {
+                    "texto": f"{reports} report(s) aberto(s) no Grid",
+                    "modulo": "Grid",
+                    "acao": "triagem",
+                    "href": "/admin/reports",
+                }
+            )
+    return render(
+        request,
+        "admin_visao.html",
+        pendentes=pendentes,
+        fase_aberta_n=1,
+        fase_aberta_label=f"{fase_label} aberta",
+        reports_abertos=reports,
+        precisa=precisa,
+    )
+
+
+@app.get("/admin/sistema", response_class=HTMLResponse)
+def admin_sistema_home(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    return RedirectResponse("/admin/sistema/rotas", status_code=303)
+
+
+@app.get("/admin/sistema/rotas", response_class=HTMLResponse)
+def admin_sistema_rotas(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import admin_sistema as sis
+
+    filtros = _sistema_rotas_filtros(request)
+    all_rows = sis.introspect_routes(app)
+    rows = sis.filter_routes(
+        all_rows,
+        metodo=filtros["metodo"] or None,
+        auth=filtros["auth"] or None,
+        papel=filtros["papel"] or None,
+        dominio=filtros["dominio"] or None,
+        q=filtros["q"] or None,
+        sem_auth=bool(filtros["sem_auth"]),
+    )
+    prev = sis.load_snapshot()
+    diff = sis.diff_snapshot(all_rows, prev)
+    dominios = sorted({r["dominio"] for r in all_rows})
+    tem_filtro = any(
+        [
+            filtros["q"],
+            filtros["metodo"],
+            filtros["auth"],
+            filtros["papel"],
+            filtros["dominio"],
+            filtros["sem_auth"],
+        ]
+    )
+    return render(
+        request,
+        "admin_sistema_rotas.html",
+        rows=rows,
+        total_filtrado=len(rows),
+        total_all=len(all_rows),
+        metodos=sis.metodos_presentes(all_rows),
+        dominios=dominios,
+        filtros=filtros,
+        tem_filtro=tem_filtro,
+        diff=diff,
+        query_string=_sistema_rotas_query_string(filtros),
+        msg=(request.query_params.get("msg") or "").replace("+", " "),
+    )
+
+
+@app.get("/admin/sistema/rotas.csv")
+def admin_sistema_rotas_csv(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import admin_sistema as sis
+
+    filtros = _sistema_rotas_filtros(request)
+    rows = sis.filter_routes(
+        sis.introspect_routes(app),
+        metodo=filtros["metodo"] or None,
+        auth=filtros["auth"] or None,
+        papel=filtros["papel"] or None,
+        dominio=filtros["dominio"] or None,
+        q=filtros["q"] or None,
+        sem_auth=bool(filtros["sem_auth"]),
+    )
+    body = sis.rows_to_csv(rows)
+    return PlainTextResponse(
+        body,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="thdfm-rotas.csv"',
+        },
+    )
+
+
+@app.get("/admin/sistema/rotas.json")
+def admin_sistema_rotas_json(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import admin_sistema as sis
+
+    filtros = _sistema_rotas_filtros(request)
+    rows = sis.filter_routes(
+        sis.introspect_routes(app),
+        metodo=filtros["metodo"] or None,
+        auth=filtros["auth"] or None,
+        papel=filtros["papel"] or None,
+        dominio=filtros["dominio"] or None,
+        q=filtros["q"] or None,
+        sem_auth=bool(filtros["sem_auth"]),
+    )
+    return PlainTextResponse(
+        sis.rows_to_json(rows),
+        media_type="application/json; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="thdfm-rotas.json"',
+        },
+    )
+
+
+@app.post("/admin/sistema/rotas/snapshot")
+def admin_sistema_rotas_snapshot(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import admin_sistema as sis
+
+    sis.save_snapshot(sis.introspect_routes(app))
+    return RedirectResponse(
+        "/admin/sistema/rotas?msg=" + quote("Snapshot gravado."),
+        status_code=303,
+    )
+
+
+@app.get("/admin/sistema/access-log", response_class=HTMLResponse)
+@app.get("/admin/sistema/atividade", response_class=HTMLResponse)
+@app.get("/admin/sistema/assets", response_class=HTMLResponse)
+@app.get("/admin/sistema/saude", response_class=HTMLResponse)
+def admin_sistema_placeholder(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    titulo = {
+        "/admin/sistema/access-log": "Access log",
+        "/admin/sistema/atividade": "Atividade",
+        "/admin/sistema/assets": "Assets",
+        "/admin/sistema/saude": "Saúde",
+    }.get(request.url.path, "Sistema")
+    return render(
+        request,
+        "admin_sistema_placeholder.html",
+        titulo=titulo,
+        path_atual=request.url.path,
+    )
+
+
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_page(request: Request):
     """Login do painel é o mesmo Entrar da home — sem formulário separado."""
@@ -6303,6 +6541,8 @@ async def admin_permissoes_salvar(request: Request):
             status_code=303,
         )
     for cap in CAPABILITIES:
+        if cap.startswith("sistema."):
+            continue
         key = f"cap_{cap}"
         concedido = form.get(key) in ("1", "on", "true", "yes")
         db.set_admin_capability(alvo, cap, concedido)

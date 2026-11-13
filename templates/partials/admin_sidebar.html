@@ -1,7 +1,12 @@
 {% set path = request.url.path %}
 {% set on_admin = path.startswith('/admin') and path != '/admin/login' %}
 {% set on_admin_home = path.rstrip('/') == '/admin' %}
-{% set on_palpites = participante_nav and path == '/p/' ~ participante_nav.token %}
+{% set on_admin_visao = path.startswith('/admin/visao') %}
+{% set on_palpites = participante_nav and (
+  path == '/bolao/meus-palpites'
+  or path == '/bolao/meuspalpites'
+  or path == '/p/' ~ participante_nav.token
+) %}
 {% set on_meu_perfil = path.startswith('/meu-perfil') %}
 {% set on_classificacao = path.startswith('/classificacao') %}
 {% set on_transparencia = path.startswith('/transparencia') %}
@@ -23,13 +28,17 @@
 {% set on_grupo_copypastas = path.startswith('/grupo/copypastas') %}
 {% set on_grupo_cardapio = path.startswith('/grupo/cardapio') %}
 {% set on_acervo_xonha = on_xonhometro or on_grupo_cardapio or on_admin_xonhometro %}
-{% set on_grupo_whatsapp = on_grupo_bans or on_grupo_listra or on_grupo_copypastas or on_acervo_xonha %}
-{# Inscrições/Resultados só na home do painel — evita 2 itens ativos em /admin/credenciais etc. #}
+{% set on_comunidade = on_grupo_bans or on_grupo_listra or on_grupo_copypastas or on_acervo_xonha %}
+{% set on_sistema = path.startswith('/admin/sistema') %}
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
+{% set on_operacao = on_admin_resultados or on_admin_inscricoes or on_admin_palpites or on_admin_cobranca or on_admin_credenciais or path.startswith('/admin/permissoes') %}
+{% set on_dados = on_admin_acervo %}
+{% set on_grid_mod = on_grid or on_grid_ranking or on_admin_reports or on_hall_lendas or on_admin_hall_lendas %}
 {% set pend_n = admin_pendentes_count|default(0) %}
 {% set cobranca_n = admin_cobranca_count|default(0) %}
 {% set reports_n = admin_bug_reports_count|default(0) %}
+{% set operacao_n = pend_n + cobranca_n %}
 {% from "partials/nav_icons.html" import ico %}
 {% from "macros/avatar.html" import avatar_face, avatar_camera, lenda_frame_mod %}
 
@@ -43,7 +52,7 @@
 >
   <div class="admin-brand">
     <div class="admin-brand-top">
-      <strong>Painel de Admin — Bolão THDFM</strong>
+      <strong>Painel de Admin — THDFM</strong>
       <button type="button" class="admin-sidebar-close" id="admin-sidebar-close" aria-label="Fechar menu">×</button>
     </div>
     {% if participante_nav %}
@@ -79,44 +88,55 @@
   <nav class="admin-side-nav" aria-label="Menu do painel">
     <div class="admin-side-nav-scroll">
       <div class="admin-menu-fixed" data-menu-fixed>
-        <details class="admin-menu-group" data-group="admin" data-menu-pinned open>
-          <summary class="admin-menu-summary">{{ ico('admin', 13) }}<span>Admin</span></summary>
+        <a
+          href="/admin/visao"
+          class="admin-side-link {% if on_admin_visao %}active{% endif %}"
+          {% if on_admin_visao %}aria-current="page"{% endif %}
+        >{{ ico('admin') }}<span>Visão geral</span>{% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}</a>
+
+        <details class="admin-menu-group" data-group="operacao" {% if on_operacao %}open{% endif %} data-menu-pinned>
+          <summary class="admin-menu-summary">{{ ico('competicao', 13) }}<span>Operação</span>{% if operacao_n %}<span class="admin-badge">{{ operacao_n }}</span>{% endif %}</summary>
           <div class="admin-menu-items">
-            <details class="admin-menu-subgroup" data-group="admin-competicao" open>
-              <summary class="admin-menu-subsummary">{{ ico('competicao', 13) }}<span>Competição</span></summary>
-              <div class="admin-menu-items admin-menu-items--nested">
-                <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
-                <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
-              </div>
-            </details>
-            <details class="admin-menu-subgroup" data-group="admin-participantes" open>
-              <summary class="admin-menu-subsummary">{{ ico('participantes', 13) }}<span>Participantes</span></summary>
-              <div class="admin-menu-items admin-menu-items--nested">
-                <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
-                  {{ ico('inscricoes') }}<span>Inscrições</span>
-                  {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
-                </a>
-                <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
-                  {{ ico('whatsapp') }}<span>Quem palpitou</span>
-                  {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
-                </a>
-                {% if is_dono %}
-                <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
-                {% endif %}
-                {% if is_dono or ('usuarios.permissoes' in admin_caps) %}
-                <a class="admin-side-link {% if path.startswith('/admin/permissoes') %}active{% endif %}" href="/admin/permissoes">{{ ico('acesso') }}<span>Permissões</span></a>
-                {% endif %}
-              </div>
-            </details>
+            <a href="/admin?sec=inscricoes" class="admin-side-link {% if on_admin_inscricoes %}active{% endif %}" data-sec="inscricoes">
+              {{ ico('inscricoes') }}<span>Inscrições</span>
+              {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
+            </a>
+            <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados">{{ ico('resultados') }}<span>Resultados</span></a>
+            <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites">{{ ico('palpites') }}<span>Palpites</span></a>
+            <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca">
+              {{ ico('whatsapp') }}<span>Quem palpitou</span>
+              {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
+            </a>
+            {% if is_dono %}
+            <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais">{{ ico('acesso') }}<span>Credenciais</span></a>
+            {% endif %}
+            {% if is_dono or ('usuarios.permissoes' in admin_caps) %}
+            <a class="admin-side-link {% if path.startswith('/admin/permissoes') %}active{% endif %}" href="/admin/permissoes">{{ ico('acesso') }}<span>Permissões</span></a>
+            {% endif %}
           </div>
         </details>
       </div>
 
       <div class="admin-menu-sortable" data-menu-sortable>
-      <details class="admin-menu-group" data-group="jogos-passatempos" {% if on_grid or on_grid_ranking or on_hall_lendas or on_admin_hall_lendas or on_admin_reports or on_admin_acervo %}open{% endif %}>
+      <details class="admin-menu-group" data-group="dados" {% if on_dados %}open{% endif %}>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
-          {{ ico('competicao', 13) }}<span>Jogos e Passatempos</span>
+          {{ ico('transparencia', 13) }}<span>Dados</span>
+        </summary>
+        <div class="admin-menu-items">
+          {% if 'acervo.gestir' in admin_caps %}
+          <a class="admin-side-link {% if on_admin_acervo %}active{% endif %}" href="/admin/acervo">{{ ico('transparencia') }}<span>Clubes · Competições</span></a>
+          {% else %}
+          <span class="admin-side-link admin-side-disabled" title="Sem permissão">{{ ico('transparencia') }}<span>Clubes · Competições</span></span>
+          {% endif %}
+          <span class="admin-side-link admin-side-disabled" title="Fase E">{{ ico('participantes') }}<span>Jogadores · Treinadores</span></span>
+        </div>
+      </details>
+
+      <details class="admin-menu-group" data-group="grid" {% if on_grid_mod %}open{% endif %}>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('competicao', 13) }}<span>Grid</span>{% if reports_n %}<span class="admin-badge">{{ reports_n }}</span>{% endif %}
         </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grid or on_grid_ranking %}active{% endif %}" href="/grid">{{ ico('competicao') }}<span>THDFM Grid</span></a>
@@ -126,16 +146,13 @@
             {% if reports_n %}<span class="admin-badge">{{ reports_n }}</span>{% endif %}
           </a>
           {% endif %}
-          {% if 'acervo.gestir' in admin_caps %}
-          <a class="admin-side-link {% if on_admin_acervo %}active{% endif %}" href="/admin/acervo">{{ ico('transparencia') }}<span>Acervo</span></a>
-          {% endif %}
           {% if 'hall.gestir' in admin_caps %}
           <a class="admin-side-link {% if on_hall_lendas or on_admin_hall_lendas %}active{% endif %}" href="/admin/hall-lendas">{{ ico('classificacao') }}<span>Hall das Lendas</span></a>
           {% endif %}
         </div>
       </details>
 
-      <details class="admin-menu-group" data-group="competicao" open>
+      <details class="admin-menu-group" data-group="bolao-publico" open>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
           {{ ico('classificacao', 13) }}<span>Bolão</span>
@@ -147,10 +164,10 @@
         </div>
       </details>
 
-      <details class="admin-menu-group" data-group="grupo-whatsapp" {% if on_grupo_whatsapp or on_admin_xonhometro %}open{% endif %}>
+      <details class="admin-menu-group" data-group="comunidade" {% if on_comunidade %}open{% endif %}>
         <summary class="admin-menu-summary">
           <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
-          {{ ico('whatsapp', 13) }}<span>Grupo do WhatsApp</span>
+          {{ ico('whatsapp', 13) }}<span>Comunidade</span>
         </summary>
         <div class="admin-menu-items">
           <a class="admin-side-link {% if on_grupo_bans %}active{% endif %}" href="/grupo/bans">{{ ico('bans') }}<span>Contador de Bans</span></a>
@@ -165,6 +182,22 @@
           </details>
         </div>
       </details>
+
+      {% if is_dono and ('sistema.ver' in admin_caps) %}
+      <details class="admin-menu-group" data-group="sistema" {% if on_sistema %}open{% endif %}>
+        <summary class="admin-menu-summary">
+          <span class="site-menu-drag" draggable="false" title="Arrastar para reordenar" aria-label="Arrastar submenu">⋮⋮</span>
+          {{ ico('acesso', 13) }}<span>Sistema</span>
+        </summary>
+        <div class="admin-menu-items">
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/rotas') %}active{% endif %}" href="/admin/sistema/rotas" {% if path.startswith('/admin/sistema/rotas') %}aria-current="page"{% endif %}>{{ ico('regras') }}<span>Rotas</span></a>
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/access-log') %}active{% endif %}" href="/admin/sistema/access-log">{{ ico('transparencia') }}<span>Access log</span></a>
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/atividade') %}active{% endif %}" href="/admin/sistema/atividade">{{ ico('classificacao') }}<span>Atividade</span><span class="admin-badge admin-badge--novo">novo</span></a>
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/assets') %}active{% endif %}" href="/admin/sistema/assets">{{ ico('inscricao') }}<span>Assets</span></a>
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/saude') %}active{% endif %}" href="/admin/sistema/saude">{{ ico('admin') }}<span>Saúde</span></a>
+        </div>
+      </details>
+      {% endif %}
 
       <details class="admin-menu-group" data-group="meu-bolao" open>
         <summary class="admin-menu-summary">
@@ -182,6 +215,10 @@
       </div>
     </div>
 
-    <a class="admin-side-link admin-side-sair admin-side-sair-fixed" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
+    <div class="admin-side-footer">
+      <span class="admin-side-footer-meta">{% if is_dono %}dono{% else %}moderador{% endif %}</span>
+      <a class="admin-side-link admin-side-sair" href="/admin/logout">{{ ico('sair') }}<span>Sair</span></a>
+      <a class="admin-side-link" href="/">{{ ico('inicio') }}<span>Voltar ao site</span></a>
+    </div>
   </nav>
 </aside>
