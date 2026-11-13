@@ -45,7 +45,8 @@ def test_setup_credenciais_e_entrar(client: TestClient):
     assert updated["credenciais_em"]
 
     r_palpites = client.get(f"/p/{part['token']}", follow_redirects=False)
-    assert r_palpites.status_code == 200
+    assert r_palpites.status_code == 303
+    assert (r_palpites.headers.get("location") or "").startswith("/bolao/meus-palpites")
 
     client.post("/conta/sair", follow_redirects=False)
 

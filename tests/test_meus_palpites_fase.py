@@ -10,9 +10,10 @@ def _login_participante(client, nome="Palpiteiro", username="palpiteiro1"):
     # Limpa sessão admin se houver e entra pelo link mágico
     client.cookies.clear()
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
-    assert r.status_code in (200, 303)
-    if r.status_code == 303:
-        assert "/credenciais" not in (r.headers.get("location") or "")
+    assert r.status_code == 303
+    loc = r.headers.get("location") or ""
+    assert loc.startswith("/bolao/meus-palpites")
+    assert "/credenciais" not in loc
     return part
 
 
@@ -113,3 +114,19 @@ def test_salvar_volta_com_janela_ida(client):
     assert palp[ida["id"]]["gols_visitante"] == 1
     assert palp[volta["id"]]["gols_mandante"] == 0
     assert palp[volta["id"]]["gols_visitante"] == 3
+
+
+def test_link_magico_redireciona_para_meus_palpites(client):
+    """/p/{token} grava sessão e manda para a URL limpa, preservando query."""
+    part = db.criar_participante("Redirect MP", status="liberado")
+    db.definir_credenciais(part["id"], "redirect.mp", "senha12345")
+    client.cookies.clear()
+    r = client.get(f"/p/{part['token']}?msg=ola", follow_redirects=False)
+    assert r.status_code == 303
+    loc = r.headers.get("location") or ""
+    assert loc.startswith("/bolao/meus-palpites")
+    assert "msg=ola" in loc
+
+    r2 = client.get("/bolao/meus-palpites")
+    assert r2.status_code == 200
+    assert "form-palpites" in r2.text or "Palpites" in r2.text
