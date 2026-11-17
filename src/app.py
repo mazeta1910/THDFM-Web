@@ -6377,19 +6377,24 @@ def admin_visao(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
 
+    partes = db.list_participantes()
     pendentes = sum(
         1
-        for p in db.list_participantes()
+        for p in partes
         if p.get("status") != "liberado" and not p.get("recusado_em")
     )
-    fase = db.get_fase_atual()
-    fase_label = next((f.get("label") or f["id"] for f in FASES if f["id"] == fase), fase)
-    janela = db.get_janela()
-    janela_label = {"ida": "Ida", "volta": "Volta", "fechado": "Fechado"}.get(
-        janela, janela
+    n_liberados = sum(1 for p in partes if db.participante_ativo_no_bolao(p))
+    fase = db.get_fase_atual() or "oitavas"
+    fase_label = next(
+        (f.get("label") or f["id"] for f in FASES if f["id"] == fase),
+        fase or "—",
     )
-    perna = _perna_default_fase(fase, janela)
-    perna_label = _perna_label(perna)
+    janela = db.get_janela() or "ida"
+    janela_label = {"ida": "Ida", "volta": "Volta", "fechado": "Fechado"}.get(
+        janela, janela or "—"
+    )
+    perna = _perna_default_fase(fase, janela) or "ida"
+    perna_label = _perna_label(perna) or perna
 
     cobranca_n = 0
     try:
@@ -6400,7 +6405,8 @@ def admin_visao(request: Request):
     except Exception:
         cobranca_n = 0
 
-    confrontos = db.list_confrontos_completos(fase)
+    confrontos = db.list_confrontos_completos(fase) or []
+    n_confrontos = len(confrontos)
     jogos_perna: list[dict] = []
     for c in confrontos:
         for j in c.get("jogos") or []:
@@ -6537,27 +6543,29 @@ def admin_visao(request: Request):
     return render(
         request,
         "admin_visao.html",
-        pendentes=pendentes,
-        cobranca_n=cobranca_n,
-        sem_placar=sem_placar,
-        reports_abertos=reports,
-        health_ok=health_ok,
-        rev=rev,
+        pendentes=int(pendentes),
+        cobranca_n=int(cobranca_n),
+        sem_placar=int(sem_placar),
+        reports_abertos=int(reports),
+        health_ok=bool(health_ok),
+        rev=rev or "unknown",
         fase=fase,
         fase_label=fase_label,
         janela=janela,
         janela_label=janela_label,
         perna=perna,
         perna_label=perna_label,
-        n_jogos=n_jogos,
-        n_com_placar=n_com_placar,
-        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
-        ultima_rodada_rotulo=ultima_rodada_rotulo,
+        n_jogos=int(n_jogos),
+        n_com_placar=int(n_com_placar),
+        n_confrontos=int(n_confrontos),
+        n_liberados=int(n_liberados),
+        trava_antes_min=int(TRAVA_PALPITE_ANTES_MIN),
+        ultima_rodada_rotulo=ultima_rodada_rotulo or "—",
         precisa=precisa,
         ultimos_acessos=ultimos_acessos,
         atividade=atividade,
         sistema=sistema,
-        admin_cobranca_count=cobranca_n,
+        admin_cobranca_count=int(cobranca_n),
     )
 
 
