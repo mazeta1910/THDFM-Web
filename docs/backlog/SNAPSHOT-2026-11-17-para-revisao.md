@@ -58,22 +58,18 @@ Decisão de produto por trás: **não precisamos mais “liberar link”** para 
 
 ## 3. Em voo / próximo óbvio
 
-### 3.1 Cadastro / login para usuários do site (prioridade de produto alinhada, ainda não implementada)
+### 3.1 Cadastro / login para usuários do site
 
-Mazeta deixou claro na conversa:
+**Canônico:** [`docs/conta-site.md`](../conta-site.md) (dois funis + campos fechados).
 
-1. **Cadastro no site** (conta para usar features existentes) ≠ inscrição no bolão com PIX.
-2. PIX + comprovante + liberação admin permanece o modelo para **participar do bolão** nos próximos ciclos.
-3. Escopo desejado do cadastro de conta (rascunho alinhado, **não codado**):
-   - nome, sobrenome, username, e-mail, senha + confirmar
-   - time do coração (permitir **mais de um**)
-   - aceite de termos / avisos padrão de cadastro
-   - tag/opção: “Quer entrar no grupo de WhatsApp da página?”
-   - captcha (Turnstile etc.) considerado interessante
-   - externos podem **ver** Listra / Bans / Copypastas (leitura ok)
-4. Doc antigo `docs/sprint-seguinte-cadastro-externo.md` ainda fala em **externo = pagante PIX + liberação** como decisão recomendada para o **bolão**. Isso precisa ser **reconciliado** com o cadastro gratuito de conta do site (dois fluxos).
+Resumo:
 
-**Estado no backlog md:** item ainda como `ideia` / “depois dos lembretes”. Lembretes (#405) já mergearam → este vira o candidato natural a `agora`, **depois de alinhar o escopo em 1 página** (conta vs bolão).
+1. **Conta do site** ≠ inscrição no bolão com PIX.
+2. PIX + comprovante + liberação admin = funil **bolão** (`docs/sprint-seguinte-cadastro-externo.md`, superseded só para “conta”).
+3. Campos fechados: nome, sobrenome, username, e-mail, senha+confirmar, time(s) do coração (só perfil, não Grid), termos, tag Zap, captcha.
+4. Listra / Bans / Copypastas: **só com conta** logada.
+
+**Estado:** docs reconciliados; implementação só após Canvas `/cadastro` + “pode implementar”.
 
 ### 3.2 Regras permanentes de UI (sempre `agora`)
 
@@ -132,10 +128,11 @@ No `.env` de produção:
 | `docs/backlog/ui.md` | Compact controls, modais, reforma portal |
 | `docs/backlog/ranking.md` | Resumo / classificação |
 | `docs/backlog/grid.md` | Skill fina de Grid |
-| `docs/sprint-seguinte-cadastro-externo.md` | Checklist legado (PIX) — reconciliar com conta site |
+| `docs/conta-site.md` | Canônico: conta site ≠ bolão PIX |
+| `docs/sprint-seguinte-cadastro-externo.md` | Checklist funil bolão PIX (superseded para conta site) |
 
 ---
 
 ## 8. Resumo executivo (1 parágrafo)
 
-Acabamos de limpar Inscrições do modelo “liberar link”, padronizar modais/inputs, e **ligar lembrete automático de palpites por e-mail (14d/7d/24h)** (#405). O próximo tema grande alinhado verbalmente é **cadastro/login de conta no site** (não confundir com PIX do bolão), ainda sem implementação e com o sprint doc antigo pedindo reconciliação. Estacionados de propósito: reforma portal unificado e `/admin/backlog` até consenso de Canvas. Ops: garantir `CRON_SECRET`+SMTP na VPS.
+Inscrições limpas do “liberar link”; lembrete de palpites por e-mail (#405). **Dois funis documentados** em `docs/conta-site.md` (conta site ≠ bolão PIX); sprint PIX reconciliado. Próximo passo de produto: Canvas `/cadastro` → implementar conta (sem misturar Inscrições). Estacionados: reforma portal unificado e `/admin/backlog` até Canvas. Ops: `CRON_SECRET`+SMTP na VPS.
