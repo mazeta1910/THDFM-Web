@@ -30,6 +30,7 @@ Sempre que criar botões, seguir **à risca**:
    (ex.: “Salvar”, “Excluir”).
 5. Botão só-ícone: sempre `title` e/ou `aria-label` (tooltip / acessibilidade).
 6. Em formulários, ações de submit/salvar ficam **à direita**. Em campo único (ex.: e-mail), o botão fica **na mesma linha, à direita do input** — nunca abaixo à esquerda.
+7. Modais de **feedback/confirmação** (ex.: “Palpites salvos!”): botão **Ok compacto à direita** (`.modal-ok-row` + `button.modal-ok`) — **nunca** full-width nem grudado à esquerda. Sucesso **fecha sozinho** (~2,2s) via `data-modal-feedback` em `site-chrome.js`; erro pode usar `data-modal-autoclose="0"` e Ok manual à direita.
 
 ## Controles compactos (técnico)
 

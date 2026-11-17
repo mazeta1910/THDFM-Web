@@ -406,3 +406,43 @@
       wireToggle(btn, input);
     });
   })();
+
+/** Feedback modals: Ok à direita + sucesso fecha sozinho (data-modal-feedback). */
+(() => {
+  const dismiss = (modal) => {
+    if (!modal || modal.dataset.modalClosed === "1") return;
+    modal.dataset.modalClosed = "1";
+    modal.classList.remove("is-open");
+    modal.setAttribute("hidden", "");
+    const param = modal.dataset.modalClearParam;
+    if (param) {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete(param);
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+  };
+
+  document.querySelectorAll(".modal-backdrop[data-modal-feedback]").forEach((modal) => {
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+    modal.querySelectorAll("[data-modal-dismiss]").forEach((btn) => {
+      btn.addEventListener("click", () => dismiss(modal));
+    });
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) dismiss(modal);
+    });
+
+    const isSucesso = !!modal.querySelector(".sucesso-modal");
+    const raw = modal.getAttribute("data-modal-autoclose");
+    let ms = 0;
+    if (raw === "0") ms = 0;
+    else if (raw != null && raw !== "") ms = Number(raw) || 0;
+    else if (isSucesso) ms = 2200;
+
+    if (ms > 0) setTimeout(() => dismiss(modal), ms);
+  });
+})();

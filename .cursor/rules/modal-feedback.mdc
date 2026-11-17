@@ -1,0 +1,14 @@
+---
+description: Modais de feedback — Ok à direita e sucesso auto-fecha
+globs: templates/**/*.html,static/site-chrome.js,static/style.css,static/css/**/*.css
+alwaysApply: false
+---
+
+# Modais de feedback / confirmação
+
+- Ok: compacto, **à direita** (`.modal-ok-row` + `button.modal-ok`). Proibido full-width / esquerda.
+- Sucesso (`.sucesso-modal`): marca o backdrop com `data-modal-feedback` — **fecha sozinho** (~2,2s) em `site-chrome.js`.
+- Erro de feedback: `data-modal-feedback` + `data-modal-autoclose="0"` + Ok à direita.
+- Limpar query: `data-modal-clear-param="msg"` (etc.).
+- Não reinventar bindModal local para sucesso — use o chrome global.
+- Detalhe: `.cursorrules` § Botões item 7.
