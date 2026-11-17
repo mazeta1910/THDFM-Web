@@ -271,15 +271,21 @@ def test_admin_apagar_pedido_recuperacao(client: TestClient, monkeypatch: pytest
 
     page = client.get("/admin?sec=inscricoes")
     assert page.status_code == 200
-    assert f'/admin/recuperacao/{pedido_id}/apagar' in page.text
+    assert f'href="/admin/recuperacao/{pedido_id}/apagar"' in page.text
     assert "recuperacao-apagar-btn" in page.text
 
-    r = client.post(f"/admin/recuperacao/{pedido_id}/apagar", follow_redirects=False)
+    r = client.get(f"/admin/recuperacao/{pedido_id}/apagar", follow_redirects=False)
     assert r.status_code == 303
     assert "Pedido+de+link+apagado" in (r.headers.get("location") or "")
     assert db.list_pedidos_recuperacao_pendentes() == []
     updated = db.get_participante(part["id"])
     assert updated and not (updated.get("link_enviado_em") or "").strip()
+
+    # POST antigo continua válido (mesmo handler).
+    pedido_id2 = db.criar_pedido_recuperacao(part["id"], "11955443399", ip="9.9.9.8")
+    r2 = client.post(f"/admin/recuperacao/{pedido_id2}/apagar", follow_redirects=False)
+    assert r2.status_code == 303
+    assert db.list_pedidos_recuperacao_pendentes() == []
 
 def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     part = db.criar_participante("LogadoX", status="liberado", celular="11990003344")

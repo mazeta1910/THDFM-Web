@@ -7629,11 +7629,7 @@ button.login-submit-icon svg {
   gap: 0.35rem;
   flex-shrink: 0;
 }
-.recuperacao-apagar-form {
-  margin: 0;
-  display: inline-flex;
-}
-button.recuperacao-apagar-btn {
+a.recuperacao-apagar-btn {
   width: auto !important;
   max-width: max-content !important;
   min-height: 0 !important;
@@ -7645,10 +7641,11 @@ button.recuperacao-apagar-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
 }
-button.recuperacao-apagar-btn:hover,
-button.recuperacao-apagar-btn:focus-visible {
+a.recuperacao-apagar-btn:hover,
+a.recuperacao-apagar-btn:focus-visible {
   color: var(--accent2, #c44);
   border-color: color-mix(in srgb, var(--accent2, #c44) 40%, var(--border));
 }

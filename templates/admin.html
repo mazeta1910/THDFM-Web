@@ -569,16 +569,14 @@
                 <span class="recuperacao-quando">Pedido em {{ r.criado_em }}</span>
               </div>
               <div class="recuperacao-item-actions">
-                <form method="post" action="/admin/recuperacao/{{ r.id }}/apagar" class="recuperacao-apagar-form">
-                  <button
-                    type="submit"
-                    class="recuperacao-apagar-btn"
-                    title="Apagar pedido"
-                    aria-label="Apagar pedido de link de {{ r.nome }}"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </form>
+                <a
+                  class="recuperacao-apagar-btn"
+                  href="/admin/recuperacao/{{ r.id }}/apagar"
+                  title="Apagar pedido"
+                  aria-label="Apagar pedido de link de {{ r.nome }}"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </a>
                 <a
                   class="btn-whatsapp-mini"
                   href="/admin/recuperacao/{{ r.id }}/atender"
