@@ -1555,11 +1555,14 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
         return;
       }
       if (window.thdfmBindAvatarCrop) {
+        // Autosave após o crop — senão só a prévia muda e some no reload
+        // (o disquete ainda serve para nome/celular).
         window.thdfmBindAvatarCrop(input, {
           preview: wrap || card?.querySelector(".participante-edit-avatar"),
           nameEl: null,
           nameEmpty: "Trocar foto",
           previewAttr: "data-avatar-preview",
+          autoSubmitForm: card || null,
         });
       }
       input.addEventListener("change", () => {
@@ -1593,6 +1596,8 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
         }
         removeBtn.hidden = true;
         if (input) input.value = "";
+        if (card && typeof card.requestSubmit === "function") card.requestSubmit();
+        else if (card) card.submit();
       });
     });
   };
