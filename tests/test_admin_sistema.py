@@ -35,6 +35,20 @@ def test_moderador_nao_ve_menu_sistema(client: TestClient):
     assert "Visão geral" in r.text
 
 
+def test_dono_sistema_fica_no_menu_fixo(client: TestClient):
+    """Sistema não entra no sortable (ordem salva empurrava para o fim)."""
+    login_admin(client, "mazeta", "senha-dono")
+    r = client.get("/admin")
+    assert r.status_code == 200
+    html = r.text
+    i_fixed = html.find('data-menu-fixed')
+    i_sistema = html.find('data-group="sistema"')
+    i_sortable = html.find('data-menu-sortable')
+    assert i_fixed != -1 and i_sistema != -1 and i_sortable != -1
+    assert i_fixed < i_sistema < i_sortable
+    assert 'data-menu-pinned' in html[i_sistema : i_sistema + 80]
+
+
 def test_dono_ve_rotas_e_filtro_sem_auth(client: TestClient):
     login_admin(client, "mazeta", "senha-dono")
     r = client.get("/admin/sistema/rotas")
