@@ -5569,13 +5569,18 @@ def pagina_palpites(request: Request, token: str):
     if gate:
         return gate
 
-    return _render_meus_palpites(request, part)
+    # Link mágico autentica a sessão; a URL limpa fica em /bolao/meus-palpites.
+    qs = request.url.query
+    dest = "/bolao/meus-palpites"
+    if qs:
+        dest = f"{dest}?{qs}"
+    return RedirectResponse(dest, status_code=303)
 
 
 @app.get("/bolao/meus-palpites", response_class=HTMLResponse)
 @app.get("/bolao/meuspalpites", response_class=HTMLResponse)
 def pagina_meus_palpites(request: Request):
-    """Rota limpa: usa a sessão. O link mágico /p/{token} continua valendo."""
+    """Rota limpa via sessão. /p/{token} autentica e redireciona para cá."""
     token = request.session.get("participante_token")
     if not token:
         return RedirectResponse("/?acesso=entrar", status_code=303)

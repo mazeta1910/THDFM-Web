@@ -81,7 +81,8 @@ def test_raiz_mostra_home_mesmo_com_sessao_participante(client: TestClient):
     part = db.criar_participante("Fulano", status="liberado", celular="11999887766")
     db.definir_credenciais(part["id"], "fulano.ok", "senha1234")
     r = client.get(f"/p/{part['token']}", follow_redirects=False)
-    assert r.status_code == 200
+    assert r.status_code == 303
+    assert (r.headers.get("location") or "").startswith("/bolao/meus-palpites")
     r2 = client.get("/", follow_redirects=False)
     assert r2.status_code == 200
     assert "Técnicos Horríveis do Futebol Mundial" in r2.text
