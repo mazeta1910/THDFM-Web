@@ -47,6 +47,16 @@ O CSS global (`button, .btn`) é **compacto por padrão** (`width: auto`, paddin
 5. Ao mudar CSS de botão/controle: bump do cache em `templates/base.html` (`style.css?v=N` e JS afetado).
 6. **Nunca** reintroduzir `button, .btn { width: 100%; }` no global.
 
+## Formulários nativos / `<select>` (tema)
+
+O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de `<option>`) **não** herdam o tema só com `color: var(--text)`.
+
+1. Todo `<select>` (e preferência inputs de formulário) deve ter `color-scheme: dark` no tema padrão; em `html.theme-light` / `html[data-theme="light"]`, `color-scheme: light`.
+2. Fundo do controle: `var(--bg)` ou `var(--card)` — **nunca** `background: transparent` em `<select>` (quebra o popup nativo: lista clara + texto claro).
+3. Estilizar `select option` / `optgroup` com `background-color: var(--card)` e `color: var(--text)`.
+4. Novos filtros admin (`admin-filter-field` etc.) reutilizam essas regras; não reinventar select “invisível”.
+5. Ao adicionar CSS de form: bump `style.css?v=` em `templates/base.html`.
+
 ## Vetores / ícones (obrigatório)
 
 1. Preferir **SVG inline** (`currentColor`, `viewBox="0 0 24 24"`) a PNG/emoji decorativo.
