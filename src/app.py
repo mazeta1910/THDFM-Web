@@ -6831,24 +6831,38 @@ def admin_sistema_atividade(request: Request):
 
 
 @app.get("/admin/sistema/assets", response_class=HTMLResponse)
-@app.get("/admin/sistema/saude", response_class=HTMLResponse)
 def admin_sistema_placeholder(request: Request):
     gate = require_sistema(request)
     if gate:
         return gate
-    titulo = {
-        "/admin/sistema/assets": "Assets",
-        "/admin/sistema/saude": "Saúde",
-    }.get(request.url.path, "Sistema")
-    fase_hint = {
-        "/admin/sistema/assets": "Em breve — Assets do painel.",
-        "/admin/sistema/saude": "Em breve — Saúde do sistema.",
-    }.get(request.url.path, "Em breve.")
     return render(
         request,
         "admin_sistema_placeholder.html",
-        titulo=titulo,
-        fase_hint=fase_hint,
+        titulo="Assets",
+        fase_hint="Em breve — Assets do painel.",
+        path_atual=request.url.path,
+    )
+
+
+@app.get("/admin/sistema/saude", response_class=HTMLResponse)
+def admin_sistema_saude(request: Request):
+    """Saúde em HTML (o JSON bruto fica em GET /health para monitor)."""
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    health_ok = False
+    try:
+        with db.get_db() as conn:
+            conn.execute("SELECT 1").fetchone()
+        health_ok = True
+    except Exception:
+        health_ok = False
+    return render(
+        request,
+        "admin_sistema_saude.html",
+        health_ok=health_ok,
+        rev=_app_revision(),
+        db_size=_db_size_label(),
         path_atual=request.url.path,
     )
 

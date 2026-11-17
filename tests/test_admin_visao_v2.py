@@ -29,6 +29,8 @@ def test_visao_dono_ve_seis_blocos(client: TestClient):
     assert 'aria-label="Sistema"' in html
     assert "admin-visao-ficha" in html
     assert "/admin/cobranca?fase=" in html
+    assert 'href="/admin/sistema/saude"' in html
+    assert 'href="/health"' not in html.split("admin-kpi-row", 1)[1].split("Precisa de mim", 1)[0]
 
 
 def test_visao_moderador_sem_sistema(client: TestClient):
@@ -68,3 +70,16 @@ def test_visao_css_contract():
     assert ".admin-kpi-n--bad" in css
     base = (ROOT_DIR / "templates/base.html").read_text(encoding="utf-8")
     assert "style.css?v=381" in base
+
+
+def test_sistema_saude_html_nao_json(client: TestClient):
+    login_admin(client, "mazeta", "senha-dono")
+    r = client.get("/admin/sistema/saude")
+    assert r.status_code == 200
+    assert "text/html" in (r.headers.get("content-type") or "")
+    assert "<h1>Saúde</h1>" in r.text
+    assert "admin-visao-ficha" in r.text
+    # JSON bruto continua só em /health
+    raw = client.get("/health")
+    assert raw.status_code == 200
+    assert "application/json" in (raw.headers.get("content-type") or "")
