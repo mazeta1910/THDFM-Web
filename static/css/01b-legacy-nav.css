@@ -223,7 +223,14 @@ p, li { color: var(--muted); line-height: 1.45; }
 .erro { background: var(--erro-bg); color: var(--danger); padding: 0.7rem 1rem; border-radius: 10px; border: 1px solid var(--erro-border); }
 
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
-input[type="number"], input[type="text"], input[type="password"], input[type="tel"], input[type="search"], select {
+input[type="number"],
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="password"],
+input[type="tel"],
+input[type="search"],
+select {
   width: 100%;
   padding: 0.75rem;
   border-radius: 10px;
