@@ -35,6 +35,7 @@
   <input type="hidden" name="participante_id" value="{{ p.id }}" />
   <input type="hidden" name="remover_avatar" value="" data-remover-avatar />
   <div class="participante-edit-top">
+    {% set avatar_input_id = 'participante-avatar-' ~ p.id %}
     <div class="participante-edit-avatar" data-avatar-hover>
       {% set av = avatar_url(p.avatar_path) %}
       {% if av %}
@@ -42,17 +43,24 @@
       {% else %}
       <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
       {% endif %}
-      <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" hidden data-avatar-input />
-      <div class="participante-avatar-hover" aria-hidden="true">
-        <button
-          type="button"
+      <input
+        id="{{ avatar_input_id }}"
+        class="participante-avatar-file"
+        type="file"
+        name="avatar"
+        accept=".jpg,.jpeg,.png,.webp,image/*"
+        data-avatar-input
+      />
+      <div class="participante-avatar-hover">
+        <label
           class="participante-avatar-hover-btn"
-          data-avatar-pick
+          for="{{ avatar_input_id }}"
           title="Trocar foto"
           aria-label="Trocar foto de {{ p.nome }}"
+          data-avatar-pick
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </button>
+        </label>
         {% if p.avatar_path %}
         <button
           type="button"
@@ -2060,51 +2068,56 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   filter.addEventListener("search", applyFilter);
 })();
 
-setTimeout(() => {
-  document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
-    const card = input.closest(".participante-edit-card");
-    if (!window.thdfmBindAvatarCrop) return;
-    window.thdfmBindAvatarCrop(input, {
-      preview: card?.querySelector(".participante-edit-avatar"),
-      nameEl: card?.querySelector("[data-avatar-name]"),
-      nameEmpty: "Trocar foto",
-      previewAttr: "data-avatar-preview",
+(function bindParticipanteAvatars() {
+  const run = () => {
+    document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
+      const card = input.closest(".participante-edit-card");
+      const wrap = card?.querySelector("[data-avatar-hover]");
+      if (window.thdfmBindAvatarCrop) {
+        window.thdfmBindAvatarCrop(input, {
+          preview: wrap || card?.querySelector(".participante-edit-avatar"),
+          nameEl: null,
+          nameEmpty: "Trocar foto",
+          previewAttr: "data-avatar-preview",
+        });
+      }
+      input.addEventListener("change", () => {
+        const removerField = card?.querySelector("[data-remover-avatar]");
+        if (removerField) removerField.value = "";
+      });
     });
-  });
 
-  document.querySelectorAll(".participantes-dash [data-avatar-hover]").forEach((wrap) => {
-    const card = wrap.closest(".participante-edit-card");
-    const input = wrap.querySelector("[data-avatar-input]");
-    const pick = wrap.querySelector("[data-avatar-pick]");
-    const removeBtn = wrap.querySelector("[data-avatar-remove]");
-    const removerField = card?.querySelector("[data-remover-avatar]");
-    pick?.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (removerField) removerField.value = "";
-      input?.click();
+    document.querySelectorAll(".participantes-dash [data-avatar-hover]").forEach((wrap) => {
+      if (wrap.dataset.avatarUiBound === "1") return;
+      wrap.dataset.avatarUiBound = "1";
+      const card = wrap.closest(".participante-edit-card");
+      const input = wrap.querySelector("[data-avatar-input]");
+      const removeBtn = wrap.querySelector("[data-avatar-remove]");
+      const removerField = card?.querySelector("[data-remover-avatar]");
+      removeBtn?.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (removerField) removerField.value = "1";
+        const preview = wrap.querySelector("[data-avatar-preview]");
+        const fallback = wrap.querySelector("[data-avatar-fallback]");
+        if (preview) preview.remove();
+        if (!fallback) {
+          const ini = (card?.dataset?.nome || "??").slice(0, 2).toUpperCase();
+          const span = document.createElement("span");
+          span.className = "participante-edit-avatar-fallback";
+          span.setAttribute("data-avatar-fallback", "");
+          span.textContent = ini;
+          const hover = wrap.querySelector(".participante-avatar-hover");
+          wrap.insertBefore(span, hover || input);
+        }
+        removeBtn.hidden = true;
+        if (input) input.value = "";
+      });
     });
-    removeBtn?.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (removerField) removerField.value = "1";
-      const preview = wrap.querySelector("[data-avatar-preview]");
-      const fallback = wrap.querySelector("[data-avatar-fallback]");
-      if (preview) {
-        preview.remove();
-      }
-      if (!fallback) {
-        const ini = (card?.dataset?.nome || "??").slice(0, 2).toUpperCase();
-        const span = document.createElement("span");
-        span.className = "participante-edit-avatar-fallback";
-        span.setAttribute("data-avatar-fallback", "");
-        span.textContent = ini;
-        wrap.insertBefore(span, wrap.querySelector(".participante-avatar-hover"));
-      }
-      removeBtn.hidden = true;
-      if (input) input.value = "";
-    });
-  });
-}, 0);
+  };
+
+  if (window.thdfmBindAvatarCrop) run();
+  else window.addEventListener("load", run);
+})();
 </script>
 {% endblock %}
