@@ -40,6 +40,7 @@ For layout invariants (alignment, grid columns, anti-shrink under compact `butto
 4. Form actions on the **right**; single-field forms keep button on the same row
 5. Reuse `ico()` — do not add another icon library
 6. Card dense tags (`Ok`, `Admin`, `Inativo`, …): **all** top-right with the name left — never glue one tag to the name and park another on the right (see `.cursorrules` § Tags / badges)
+7. Inscrições: only dense participant cards — **do not** bring back `inscricoes-cols` / Sem link / Link enviado / duplicate Inativos column (see `.cursorrules` § Inscrições)
 
 ## Pitfalls
 

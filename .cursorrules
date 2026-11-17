@@ -77,6 +77,13 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 3. Se uma tag já foi para a direita, **as demais do mesmo tipo também** — não misturar Admin colado no nome e Ok à direita.
 4. Generalizar: o mesmo padrão vale para qualquer card denso novo no admin (não reinventar “pill ao lado do título”).
 
+## Inscrições / gestão de participantes (obrigatório)
+
+1. A gestão é pelos **cards densos** em “Gestão de Participantes” (Liberados + Inativos no bolão + pendentes/recusados se houver).
+2. **Não** recriar colunas `inscricoes-cols` (Liberado / Sem link / Link enviado / Inativos / Pendente) nem FABs de “marcar link” / WhatsApp de convite — fluxo morto com login externo a caminho.
+3. Inativos **não** ganham coluna duplicada no topo: já aparecem em “Inativos no bolão” embaixo da lista.
+4. Stats/PIX/link público no cabeçalho ok; listagem operacional = só os cards.
+
 ## Escopo e git
 
 - Mudanças focadas no pedido; sem refatoração oportunista.
