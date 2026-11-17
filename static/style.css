@@ -1578,7 +1578,14 @@ p, li { color: var(--muted); line-height: 1.45; }
 .erro { background: var(--erro-bg); color: var(--danger); padding: 0.7rem 1rem; border-radius: 10px; border: 1px solid var(--erro-border); }
 
 label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
-input[type="number"], input[type="text"], input[type="password"], input[type="tel"], input[type="search"], select {
+input[type="number"],
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="password"],
+input[type="tel"],
+input[type="search"],
+select {
   width: 100%;
   padding: 0.75rem;
   border-radius: 10px;
@@ -1593,12 +1600,16 @@ input[type="number"], input[type="text"], input[type="password"], input[type="te
 }
 html.theme-light input[type="number"],
 html.theme-light input[type="text"],
+html.theme-light input[type="email"],
+html.theme-light input[type="url"],
 html.theme-light input[type="password"],
 html.theme-light input[type="tel"],
 html.theme-light input[type="search"],
 html.theme-light select,
 html[data-theme="light"] input[type="number"],
 html[data-theme="light"] input[type="text"],
+html[data-theme="light"] input[type="email"],
+html[data-theme="light"] input[type="url"],
 html[data-theme="light"] input[type="password"],
 html[data-theme="light"] input[type="tel"],
 html[data-theme="light"] input[type="search"],
