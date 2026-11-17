@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Saúde — Sistema — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin/sistema/rotas">Sistema</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Saúde</span>
+</nav>
+<div>
+  <h1>Saúde</h1>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <div class="admin-visao-ficha" aria-label="Status">
+    <dl class="admin-visao-dl">
+      <div>
+        <dt>Status</dt>
+        <dd class="{% if health_ok %}admin-kpi-n--ok{% else %}admin-kpi-n--bad{% endif %}">
+          {% if health_ok %}ok{% else %}erro{% endif %}
+        </dd>
+      </div>
+      <div><dt>Versão</dt><dd class="admin-mono">{{ rev }}</dd></div>
+      <div><dt>DB</dt><dd>{{ db_size }}</dd></div>
+    </dl>
+  </div>
+  <p class="admin-muted">
+    Monitor / load balancer usa o JSON em
+    <a href="/health" class="admin-mono" target="_blank" rel="noopener">/health</a>
+    (não é tela do painel).
+  </p>
+  <p class="admin-panel-foot admin-visao-foot">
+    <a href="/admin/visao">Visão geral</a>
+    <span aria-hidden="true">·</span>
+    <a href="/admin/sistema/rotas">Rotas</a>
+    <span aria-hidden="true">·</span>
+    <a href="/admin/sistema/access-log">Access log</a>
+  </p>
+</section>
+{% endblock %}
