@@ -175,4 +175,6 @@ def test_admin_cobranca_mostra_botao_email(client):
     assert r.status_code == 200
     assert 'action="/admin/cobranca/email-todos"' in r.text
     assert ">E-mail</button>" in r.text
+    assert 'id="modal-email-lote"' in r.text
+    assert "Nenhum e-mail em lote registrado" in r.text or "Último e-mail em lote" in r.text
     assert "14 dias" in r.text

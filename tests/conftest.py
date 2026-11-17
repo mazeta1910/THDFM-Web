@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,6 +13,43 @@ import src.db as db
 from src.config import ROOT_DIR
 
 DEFAULT_ADMIN_USERS = "mazeta=senha-dono=Mazeta:dono"
+_CSRF_META_RE = re.compile(
+    r'<meta\s+name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']',
+    re.I,
+)
+
+
+def csrf_token_for(client: TestClient, path: str = "/admin/visao") -> str:
+    """Lê o token CSRF da meta do HTML (após login admin)."""
+    cached = getattr(client, "_thdfm_csrf", None)
+    if cached:
+        return str(cached)
+    r = client.get(path)
+    m = _CSRF_META_RE.search(r.text or "")
+    assert m, f"csrf-token meta ausente em {path} (status={r.status_code})"
+    token = m.group(1)
+    setattr(client, "_thdfm_csrf", token)
+    return token
+
+
+def _inject_csrf(client: TestClient, url: str, data: Any, headers: dict | None) -> tuple[Any, dict]:
+    """Injeta csrf_token em POSTs /admin (exceto login/logout)."""
+    path = str(url or "")
+    if not path.startswith("/admin"):
+        return data, headers or {}
+    if path.startswith("/admin/login") or path.startswith("/admin/logout"):
+        return data, headers or {}
+    token = csrf_token_for(client)
+    hdrs = dict(headers or {})
+    if "x-csrf-token" not in {k.lower() for k in hdrs}:
+        hdrs["X-CSRF-Token"] = token
+    if data is None:
+        return data, hdrs
+    if isinstance(data, dict):
+        out = dict(data)
+        out.setdefault("csrf_token", token)
+        return out, hdrs
+    return data, hdrs
 
 
 @pytest.fixture()
@@ -78,6 +117,20 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, admin_users: str):
     from src.app import app
 
     with TestClient(app) as c:
+        _orig_post = c.post
+
+        def post_with_csrf(url, content=None, data=None, files=None, json=None, **kwargs):
+            headers = kwargs.pop("headers", None)
+            if json is None and files is None:
+                data, headers = _inject_csrf(c, str(url), data, headers)
+            elif json is not None or files is not None:
+                # JSON/multipart: só header
+                _, headers = _inject_csrf(c, str(url), None, headers)
+            if headers is not None:
+                kwargs["headers"] = headers
+            return _orig_post(url, content=content, data=data, files=files, json=json, **kwargs)
+
+        c.post = post_with_csrf  # type: ignore[method-assign]
         yield c
 
 
@@ -95,3 +148,6 @@ def login_admin(
     # Admin também passa pelo gate de e-mail — confirma no fixture.
     part = db.garantir_participante_admin(login, login.capitalize())
     confirmar_email_teste(part["id"], f"{login}@thdfm.test")
+    # Esquenta CSRF na sessão (meta em /admin/visao).
+    setattr(client, "_thdfm_csrf", None)
+    csrf_token_for(client)

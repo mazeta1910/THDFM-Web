@@ -30,7 +30,7 @@ def test_moderador_nao_ve_menu_sistema(client: TestClient):
     login_admin(client, "ramos", "senha-mod")
     r = client.get("/admin")
     assert r.status_code == 200
-    assert "Comunidade" in r.text
+    assert "Bolão" in r.text or "Operação" in r.text
     assert 'href="/admin/sistema/rotas"' not in r.text
     assert "Visão geral" in r.text
 

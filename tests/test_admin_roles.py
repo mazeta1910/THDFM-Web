@@ -85,7 +85,7 @@ def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
             'data-group="dados"', 1
         )[0]
         return re.findall(
-            r'class="admin-side-link active"[^>]*>.*?>(Inscrições|Resultados|Palpites|Credenciais|Quem palpitou)<',
+            r'class="admin-side-link active"[^>]*>.*?>(Inscrições|Resultados|Palpites|Credenciais|Cobranças)<',
             block,
             flags=re.S,
         )
@@ -105,7 +105,7 @@ def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
     assert active_operacao_items(r4.text) == ["Palpites"]
 
     r5 = client.get("/admin/cobranca")
-    assert active_operacao_items(r5.text) == ["Quem palpitou"]
+    assert active_operacao_items(r5.text) == ["Cobranças"]
 
 def test_classificacao_mantem_menu_admin_apos_painel(client: TestClient):
     """Depois de usar o painel, Classificação continua no menu admin."""

@@ -24,6 +24,9 @@
   <link rel="apple-touch-icon" href="/static/img/thdfm-logo.png" />
   <script src="/static/theme-boot.js?v=1"></script>
   <link rel="stylesheet" href="/static/style.css?v=380" />
+  {% if csrf_token %}
+  <meta name="csrf-token" content="{{ csrf_token }}" />
+  {% endif %}
   {% if ADSENSE_CLIENT %}
   <meta name="thdfm-adsense-client" content="{{ ADSENSE_CLIENT }}" />
   {% endif %}
@@ -120,7 +123,7 @@
 
   <script src="/static/theme.js?v=1"></script>
   <script src="/static/collapse-panels.js?v=1"></script>
-  <script src="/static/site-chrome.js?v=4"></script>
+  <script src="/static/site-chrome.js?v=5"></script>
   <script src="/static/avatar-crop.js?v=2"></script>
   <script src="/static/drawers.js?v=3"></script>
   <script src="/static/cookie-consent.js?v=1" defer></script>

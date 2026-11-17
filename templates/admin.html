@@ -787,13 +787,6 @@ document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
   link.addEventListener("click", (e) => {
     if (!document.querySelector(`.admin-panel[data-panel="${link.dataset.sec}"]`)) return;
     e.preventDefault();
-    showSection(link.dataset.sec, true);
-  });
-});
-document.querySelectorAll(".admin-side-link[data-sec]").forEach((link) => {
-  link.addEventListener("click", (e) => {
-    if (!document.querySelector(`.admin-panel[data-panel="${link.dataset.sec}"]`)) return;
-    e.preventDefault();
     e.stopPropagation();
     showSection(link.dataset.sec, true);
   });
@@ -920,13 +913,20 @@ const checkDirty = () => {
   setDirty(snapshotForm(form) !== formBaseline);
 };
 
+const csrfToken = () =>
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+
 const postJson = async (url, body) => {
+  const headers = { Accept: "application/json" };
+  const tok = csrfToken();
+  if (tok) headers["X-CSRF-Token"] = tok;
   const opts = {
     method: "POST",
-    headers: { Accept: "application/json" },
+    headers,
     credentials: "same-origin",
   };
   if (body instanceof FormData) {
+    if (tok && !body.has("csrf_token")) body.append("csrf_token", tok);
     opts.body = body;
   } else if (body) {
     opts.body = body;
@@ -1049,8 +1049,10 @@ if (placaresNav) {
     syncZerarForm(fase, perna);
   };
 
+  let autosaveTimer = null;
+
   placaresNav.querySelectorAll("button[data-fase]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const fase = btn.dataset.fase;
       let perna = btn.dataset.tab;
       if (!perna) {
@@ -1063,6 +1065,12 @@ if (placaresNav) {
         perna = "unico";
       } else if (perna === "unico" && dest?.querySelector('[data-tab="ida"]')) {
         perna = "ida";
+      }
+      // Flush autosave antes de trocar fase/perna (evita perder edição < debounce).
+      clearTimeout(autosaveTimer);
+      const dirty = document.querySelector(".admin-panel[data-panel='resultados'].is-dirty");
+      if (dirty) {
+        await salvarPlacaresAtivos();
       }
       showFasePerna(fase, perna);
     });
@@ -1098,7 +1106,6 @@ if (placaresNav) {
   });
 
   // Autosave com debounce quando há alterações
-  let autosaveTimer = null;
   document.querySelectorAll("form.admin-resultados-form").forEach((form) => {
     form.addEventListener("input", () => {
       clearTimeout(autosaveTimer);

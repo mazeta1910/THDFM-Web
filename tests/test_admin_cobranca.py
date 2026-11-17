@@ -126,7 +126,7 @@ def test_admin_cobranca_lista_e_whatsapp(client):
     login_admin(client)
     r = client.get("/admin/cobranca?fase=oitavas&perna=ida")
     assert r.status_code == 200
-    assert "Quem palpitou" in r.text
+    assert "Cobranças" in r.text
     assert "Falta WA" in r.text
     assert "Completo WA" in r.text
     digitos = db.celular_whatsapp(falta["celular"])
