@@ -18122,6 +18122,46 @@ html[data-theme="light"] .admin-filter-field select {
   gap: 0.35rem 0.5rem;
   align-items: center;
 }
+.admin-visao-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+.admin-visao-atalhos a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.admin-visao-atalhos a:hover {
+  text-decoration: underline;
+}
+.admin-visao-okline {
+  margin: 0 0 0.85rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.admin-visao-okline strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.admin-visao-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0 0 0.5rem;
+}
+.admin-visao-col .admin-panel-h2 {
+  margin-top: 0.85rem;
+}
+.admin-visao .admin-kpi-n {
+  min-height: 1.35em;
+}
+@media (max-width: 900px) {
+  .admin-visao-cols {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 480px) {
   .admin-kpi-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -22,15 +22,22 @@ def test_visao_dono_ve_seis_blocos(client: TestClient):
     html = r.text
     assert "Cobrança de palpite" in html
     assert "Jogos sem placar" in html
+    assert "Liberados" in html
+    assert "admin-visao-atalhos" in html
     assert "Precisa de mim agora" in html
     assert "Fase atual" in html
+    assert "Confrontos" in html
     assert "Últimos acessos" in html
     assert "Atividade recente" in html
     assert 'aria-label="Sistema"' in html
     assert "admin-visao-ficha" in html
+    assert "admin-visao-cols" in html
     assert "/admin/cobranca?fase=" in html
     assert 'href="/admin/sistema/saude"' in html
     assert 'href="/health"' not in html.split("admin-kpi-row", 1)[1].split("Precisa de mim", 1)[0]
+    # Números da ficha não podem ficar só com "/" / "min"
+    assert "Oitavas" in html or "oitavas" in html.lower()
+    assert "30 min" in html
 
 
 def test_visao_moderador_sem_sistema(client: TestClient):
@@ -68,8 +75,10 @@ def test_visao_css_contract():
     assert ".admin-visao-ficha" in css
     assert ".admin-visao-dl" in css
     assert ".admin-kpi-n--bad" in css
+    assert ".admin-visao-atalhos" in css
+    assert ".admin-visao-cols" in css
     base = (ROOT_DIR / "templates/base.html").read_text(encoding="utf-8")
-    assert "style.css?v=381" in base
+    assert "style.css?v=382" in base
 
 
 def test_sistema_saude_html_nao_json(client: TestClient):
