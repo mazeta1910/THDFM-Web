@@ -96,6 +96,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.85rem;
+  align-items: stretch;
+}
+.participantes-grid > .participante-edit-wrap,
+.participantes-grid > .participante-create-wrap {
+  height: 100%;
 }
 .participante-create-padrao-form {
   display: contents;
@@ -103,26 +108,28 @@
 .participante-edit-card {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.35rem;
   margin: 0;
-  padding: 0.9rem 0.95rem 0.95rem;
-  min-height: 100%;
+  padding: 0.7rem 0.75rem 0.55rem;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 .participante-edit-card[hidden] {
   display: none !important;
 }
 .participante-edit-card label {
-  margin-top: 0.55rem;
+  margin-top: 0;
 }
 .participante-edit-top {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  margin-bottom: 0.25rem;
+  gap: 0.55rem;
+  margin-bottom: 0.1rem;
 }
 .participante-edit-avatar {
-  width: 52px;
-  height: 52px;
+  position: relative;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -131,6 +138,97 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.participante-avatar-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.participante-avatar-hover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  pointer-events: none;
+}
+.participante-edit-avatar:hover .participante-avatar-hover,
+.participante-edit-avatar:focus-within .participante-avatar-hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .participante-avatar-hover {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+.participante-avatar-hover-btn,
+button.participante-avatar-hover-btn,
+label.participante-avatar-hover-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  padding: 0.32rem !important;
+  border-radius: 6px !important;
+  border: 0;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+  line-height: 0;
+  box-sizing: border-box;
+}
+.participante-avatar-hover-btn:hover,
+.participante-avatar-hover-btn:focus-visible,
+button.participante-avatar-hover-btn:hover,
+button.participante-avatar-hover-btn:focus-visible,
+label.participante-avatar-hover-btn:hover,
+label.participante-avatar-hover-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.3);
+}
+.participante-edit-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.participante-edit-fields .participante-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+}
+.participante-edit-fields input {
+  margin: 0;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.45rem;
+}
+.participante-edit-nome-inline {
+  font-size: 0.86rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
 }
 .participante-edit-avatar-novo {
   border-style: dashed;
@@ -148,19 +246,31 @@
 }
 .participante-status-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+}
+.participante-status-trailing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.3rem;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .participante-edit-meta {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
+  flex: 1 1 auto;
 }
 .participante-status-tag {
   display: inline-flex;
-  align-self: flex-start;
+  align-self: center;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -168,6 +278,7 @@
   border: 1px solid var(--border);
   color: var(--muted);
   background: var(--bg);
+  flex: 0 0 auto;
 }
 .participante-status-tag.status-liberado {
   color: var(--accent);
@@ -201,20 +312,28 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
 .participante-edit-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0;
   min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card, var(--bg));
+  overflow: hidden;
 }
 .participante-edit-wrap > .participante-edit-card {
-  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 .participante-bolao-status-form {
   margin: 0;
+  display: inline-flex;
 }
 .participante-inativar-btn,
 .participante-reativar-btn {
-  width: 100%;
-  font-size: 0.82rem;
-  padding: 0.45rem 0.65rem;
+  width: auto;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
 }
 .participante-edit-card-inativo {
   opacity: 0.92;
@@ -247,27 +366,75 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   flex: 0 0 auto;
 }
 .participante-create-check {
-  margin-top: 0.85rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  gap: 0.35rem;
+}
+.participante-create-wrap .participante-edit-card {
+  flex: 1 1 auto;
 }
 .participante-edit-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
-  margin-top: auto;
-  padding-top: 0.85rem;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.45rem 0.75rem 0.55rem;
+  border-top: 1px solid var(--border);
 }
-.participante-create-card .participante-edit-actions button {
-  width: auto;
-  min-width: 5.5rem;
+.participante-edit-actions-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+button.participante-status-icon,
+button.participante-save-icon.btn-save-icon {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  height: auto;
+  margin: 0 !important;
+  padding: 0.35rem !important;
+  border-radius: 7px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  align-self: auto;
+}
+button.participante-status-icon {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+button.participante-status-icon:hover,
+button.participante-status-icon:focus-visible {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+button.participante-status-icon-reopen {
+  color: var(--accent);
+}
+button.participante-create-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 7px !important;
+  font-size: 0.78rem !important;
 }
 .participante-create-spacer {
   flex: 1;
 }
 .participante-link-btn {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.82rem;
+  padding: 0.3rem 0.55rem !important;
+  font-size: 0.78rem;
   text-decoration: none;
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
 }
 .participantes-check {
   display: inline-flex;

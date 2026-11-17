@@ -240,7 +240,32 @@ select {
   font-size: 1.05rem;
   margin-bottom: 0.65rem;
   font-family: inherit;
-  color-scheme: inherit;
+  /* Nativo <select>/<option>: color-scheme alinha o popup do SO ao tema. */
+  color-scheme: dark;
+}
+html.theme-light input[type="number"],
+html.theme-light input[type="text"],
+html.theme-light input[type="email"],
+html.theme-light input[type="url"],
+html.theme-light input[type="password"],
+html.theme-light input[type="tel"],
+html.theme-light input[type="search"],
+html.theme-light select,
+html[data-theme="light"] input[type="number"],
+html[data-theme="light"] input[type="text"],
+html[data-theme="light"] input[type="email"],
+html[data-theme="light"] input[type="url"],
+html[data-theme="light"] input[type="password"],
+html[data-theme="light"] input[type="tel"],
+html[data-theme="light"] input[type="search"],
+html[data-theme="light"] select {
+  color-scheme: light;
+}
+/* Popup nativo: fundo + texto do tema (evita lista branca com texto claro). */
+select option,
+select optgroup {
+  background-color: var(--card);
+  color: var(--text);
 }
 .password-field {
   position: relative;

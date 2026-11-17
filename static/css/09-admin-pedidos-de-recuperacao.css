@@ -50,12 +50,40 @@
 .recuperacao-quando {
   font-size: 0.78rem !important;
 }
-.recuperacao-item .btn-whatsapp-mini {
-  width: auto;
+.recuperacao-item-actions {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.45rem 0.7rem;
+  flex-shrink: 0;
+}
+a.recuperacao-apagar-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  padding: 0.35rem !important;
+  border-radius: 7px !important;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+a.recuperacao-apagar-btn:hover,
+a.recuperacao-apagar-btn:focus-visible {
+  color: var(--accent2, #c44);
+  border-color: color-mix(in srgb, var(--accent2, #c44) 40%, var(--border));
+}
+.recuperacao-item .btn-whatsapp-mini {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem !important;
   text-decoration: none;
 }
 
