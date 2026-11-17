@@ -7,5 +7,6 @@
 | feito | Admin Sistema Fase C — Atividade / auditoria | admin | — | `admin_audit` + tela Atividade; fora do access log; marcar feito no merge |
 | depois | Admin read-only backlog page `/admin/backlog` | admin, ui | — | Dense table reading `docs/backlog/*.md` + Issue links; only after Canvas go-ahead |
 | depois | Favicon / deploy smoke | admin | — | Favicon OK in prod; `/health` 200 |
-| feito | Inscrições: apagar Pedidos de link + densificar cards Liberado/Inativos | admin, ui | — | Apagar pedido sem atender; inativar à esq. do disquete; foto lápis/lixeira no hover |
+| feito | Inscrições: densificar cards Liberado/Inativos | admin, ui | — | Inativar à esq. do disquete; foto lápis/lixeira no hover; badge Ok |
+| feito | Desligar Pedidos de link (WhatsApp) | admin | — | Fluxo coberto por Esqueci minha senha; caixa admin e /login legado removidos |
 

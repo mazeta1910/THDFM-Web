@@ -206,86 +206,34 @@ def test_token_sem_senha_abre_setup(client: TestClient):
     assert r2.status_code == 200
     assert "Criar senha" in r2.text or "/credenciais" in r2.text
 
-def test_login_cria_pedido_para_liberado(client: TestClient):
-    part = db.criar_participante("Beltrano", status="liberado", celular="11988776655")
+def test_login_legado_redireciona_para_esqueci_senha(client: TestClient):
+    db.criar_participante("Beltrano", status="liberado", celular="11988776655")
     r = client.post("/login", data={"celular": "(11) 98877-6655"}, follow_redirects=False)
     assert r.status_code == 303
-    assert "enviado=1" in r.headers["location"]
-    assert "acesso=recuperar" in r.headers["location"]
-    pedidos = db.list_pedidos_recuperacao_pendentes()
-    assert len(pedidos) == 1
-    assert pedidos[0]["participante_id"] == part["id"]
-    assert pedidos[0]["nome"] == "Beltrano"
-
-def test_login_celular_inexistente_nao_cria_pedido(client: TestClient):
-    r = client.post("/login", data={"celular": "11911112222"}, follow_redirects=False)
-    assert r.status_code == 303
-    assert "enviado=1" in r.headers["location"]
-    assert "acesso=recuperar" in r.headers["location"]
+    assert "/esqueci-senha" in (r.headers.get("location") or "")
     assert db.list_pedidos_recuperacao_pendentes() == []
 
-def test_login_pendente_nao_cria_pedido(client: TestClient):
-    db.criar_participante("Pendente", status="pendente", celular="11977665544")
-    r = client.post("/login", data={"celular": "11977665544"}, follow_redirects=False)
-    assert r.status_code == 303
-    assert db.list_pedidos_recuperacao_pendentes() == []
 
-def test_login_rate_limit(client: TestClient):
-    db.criar_participante("Rate", status="liberado", celular="11966554433")
-    for _ in range(3):
-        r = client.post("/login", data={"celular": "11966554433"}, follow_redirects=False)
-        assert r.status_code == 303
-    assert len(db.list_pedidos_recuperacao_pendentes()) == 3
-    r = client.post("/login", data={"celular": "11966554433"}, follow_redirects=False)
-    assert r.status_code == 303
-    assert "enviado=1" in r.headers["location"]
-    assert len(db.list_pedidos_recuperacao_pendentes()) == 3
-
-def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+def test_admin_inscricoes_nao_mostra_pedidos_de_link(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     import src.app as app_mod
 
     part = db.criar_participante("Zap", status="liberado", celular="11955443322")
-    pedido_id = db.criar_pedido_recuperacao(part["id"], "11955443322", ip="1.2.3.4")
-
+    db.criar_pedido_recuperacao(part["id"], "11955443322", ip="1.2.3.4")
     login_admin(client)
     monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
-
-    r = client.get(f"/admin/recuperacao/{pedido_id}/atender", follow_redirects=False)
-    assert r.status_code == 303
-    loc = unquote(r.headers["location"])
-    assert "api.whatsapp.com/send?phone=5511955443322" in loc
-    assert f"/p/{part['token']}" in loc
-    assert db.list_pedidos_recuperacao_pendentes() == []
-    updated = db.get_participante(part["id"])
-    assert updated and updated.get("link_enviado_em")
-
-
-def test_admin_apagar_pedido_recuperacao(client: TestClient, monkeypatch: pytest.MonkeyPatch):
-    import src.app as app_mod
-
-    part = db.criar_participante("Descarta", status="liberado", celular="11955443399")
-    pedido_id = db.criar_pedido_recuperacao(part["id"], "11955443399", ip="9.9.9.9")
-
-    login_admin(client)
-    monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
-
     page = client.get("/admin?sec=inscricoes")
     assert page.status_code == 200
-    assert f'href="/admin/recuperacao/{pedido_id}/apagar"' in page.text
-    assert "recuperacao-apagar-btn" in page.text
+    assert "Pedidos de link" not in page.text
+    assert "recuperacao-box" not in page.text
 
-    r = client.get(f"/admin/recuperacao/{pedido_id}/apagar", follow_redirects=False)
-    assert r.status_code == 303
-    assert "Pedido+de+link+apagado" in (r.headers.get("location") or "")
-    assert db.list_pedidos_recuperacao_pendentes() == []
-    updated = db.get_participante(part["id"])
-    assert updated and not (updated.get("link_enviado_em") or "").strip()
 
-    # POST antigo continua válido (mesmo handler).
-    pedido_id2 = db.criar_pedido_recuperacao(part["id"], "11955443399", ip="9.9.9.8")
-    r2 = client.post(f"/admin/recuperacao/{pedido_id2}/apagar", follow_redirects=False)
-    assert r2.status_code == 303
-    assert db.list_pedidos_recuperacao_pendentes() == []
+def test_health_expoe_rev(client: TestClient):
+    r = client.get("/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("ok") is True
+    assert "rev" in data
+    assert data["rev"]
 
 def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     part = db.criar_participante("LogadoX", status="liberado", celular="11990003344")
@@ -334,7 +282,7 @@ def test_loguin_so_aceita_marlon(client: TestClient):
     bolao_block = r_home.text.split('data-group="bolao"', 1)[1].split("data-group=", 1)[0]
     assert 'data-acesso-open="entrar"' not in bolao_block
     assert 'href="/inscricao"' not in bolao_block
-    assert "Recuperar link" in bolao_block
+    assert "Esqueci a senha" in bolao_block or "/esqueci-senha" in bolao_block
     r2 = client.post(
         "/loguin",
         data={"usuario": "João", "senha": "123"},

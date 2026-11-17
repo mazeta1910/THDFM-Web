@@ -8,14 +8,18 @@
     const tabs = root.querySelectorAll("[data-acesso-tab]");
     const panels = root.querySelectorAll("[data-acesso-panel]");
 
-    const setTab = (modo) => {
-      const m = modo === "recuperar" ? "recuperar" : "entrar";
-      tabs.forEach((t) => t.classList.toggle("is-active", t.getAttribute("data-acesso-tab") === m));
-      panels.forEach((p) => p.classList.toggle("is-active", p.getAttribute("data-acesso-panel") === m));
-      if (titleEl) titleEl.textContent = m === "recuperar" ? "Recuperar link" : "Entrar";
+    const setTab = () => {
+      tabs.forEach((t) => t.classList.toggle("is-active", t.getAttribute("data-acesso-tab") === "entrar"));
+      panels.forEach((p) => p.classList.toggle("is-active", p.getAttribute("data-acesso-panel") === "entrar"));
+      if (titleEl) titleEl.textContent = "Entrar";
     };
 
     const abrir = (modo) => {
+      // Legado: Recuperar link → Esqueci minha senha
+      if (modo === "recuperar" || modo === "login") {
+        location.assign("/esqueci-senha");
+        return;
+      }
       // Fecha LOGUIN / Minha conta se estiverem abertos
       ["loguin-drawer-root"].forEach((id) => {
         const el = document.getElementById(id);
@@ -23,12 +27,11 @@
         el.classList.remove("is-open");
         el.hidden = true;
       });
-      setTab(modo);
+      setTab();
       root.hidden = false;
       root.classList.add("is-open");
       document.body.classList.add("acesso-drawer-open");
-      const focusId = modo === "recuperar" ? "drawer-celular" : "drawer-usuario";
-      window.setTimeout(() => document.getElementById(focusId)?.focus(), 50);
+      window.setTimeout(() => document.getElementById("drawer-usuario")?.focus(), 50);
     };
 
     const fechar = () => {
@@ -66,8 +69,12 @@
 
     const params = new URLSearchParams(location.search);
     const acesso = params.get("acesso");
-    if (acesso === "entrar" || acesso === "recuperar" || acesso === "login") {
-      abrir(acesso === "login" ? "recuperar" : acesso);
+    if (acesso === "recuperar" || acesso === "login") {
+      location.replace("/esqueci-senha");
+      return;
+    }
+    if (acesso === "entrar") {
+      abrir("entrar");
     }
 
     // Esqueci senha agora é página /esqueci-senha (link no formulário).

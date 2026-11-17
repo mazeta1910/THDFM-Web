@@ -1,51 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Recuperar link — Bolão THDFM{% endblock %}
+{% block title %}Recuperar acesso — Bolão THDFM{% endblock %}
 {% block content %}
 <div class="card login-card">
-  <h1>Recuperar link</h1>
+  <h1>Recuperar acesso</h1>
   <p class="login-lead">
-    Perdeu o link do WhatsApp e ainda não tem username/senha?
-    Informe o celular da inscrição. Se houver conta liberada, o admin reenvia o link no Zap.
-  </p>
-
-  {% if erro %}
-  <p class="erro">{{ erro.replace('+', ' ') }}</p>
-  {% endif %}
-
-  {% if enviado %}
-  <p class="msg">
-    Se houver inscrição liberada com esse número, o admin vai reenviar o link no WhatsApp.
-    Fica de olho nas mensagens.
+    Pedidos de link por celular foram desligados.
+    Use <strong>Esqueci minha senha</strong> com username ou e-mail cadastrado.
   </p>
   <p class="login-back">
-    <a class="btn secondary" href="/entrar">Ir para Entrar</a>
-    <a class="btn secondary" href="/">Voltar ao início</a>
+    <a class="btn" href="/esqueci-senha">Esqueci minha senha</a>
+    <a class="btn secondary" href="/entrar">Entrar</a>
   </p>
-  {% else %}
-  <form method="post" action="/login" class="form-login" novalidate>
-    <label for="celular">Celular da inscrição</label>
-    <input
-      id="celular"
-      class="input-compact"
-      type="tel"
-      name="celular"
-      required
-      placeholder="(11) 99999-9999"
-      inputmode="tel"
-      autocomplete="tel"
-    />
-    <button type="submit">Pedir meu link</button>
-  </form>
-  <p class="login-alt">
-    Já tem username e senha? <a href="/entrar">Entrar</a>
-  </p>
-  <p class="login-alt">
-    Ainda não se inscreveu? <a href="/inscricao">Fazer inscrição</a>
-  </p>
-  <p class="login-loguin-cta">
-    <a class="btn loguin-entry-btn" href="/?acesso=loguin" data-loguin-open>Fazer Loguin</a>
-    <span class="login-loguin-hint">Exclusivo Marlon Wietzikowski</span>
-  </p>
-  {% endif %}
 </div>
 {% endblock %}
