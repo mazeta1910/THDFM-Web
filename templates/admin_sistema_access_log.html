@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Access log — Sistema — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin/sistema/rotas">Sistema</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Access log</span>
+</nav>
+<div class="admin-topbar-title-row">
+  <h1>Access log</h1>
+  <span class="admin-period-pill">retenção {{ retencao_dias }}d · {{ total }}</span>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <form class="admin-table-filters" method="get" action="/admin/sistema/access-log">
+    {% if view_agg %}
+    <input type="hidden" name="view" value="agregados" />
+    {% endif %}
+    <label class="admin-filter-field">
+      <span>Usuário</span>
+      <input type="search" name="quem" value="{{ filtros.quem }}" placeholder="login ou nick" autocomplete="off" {% if view_agg %}disabled{% endif %} />
+    </label>
+    <label class="admin-filter-field">
+      <span>Path</span>
+      <input type="search" name="path" value="{{ filtros.path }}" placeholder="/admin" autocomplete="off" />
+    </label>
+    <label class="admin-filter-field">
+      <span>Método</span>
+      <select name="metodo">
+        <option value="">Todos</option>
+        {% for m in ['GET','POST','PUT','PATCH','DELETE'] %}
+        <option value="{{ m }}" {% if filtros.metodo == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="admin-filter-field">
+      <span>Dia</span>
+      <input type="date" name="dia" value="{{ filtros.dia }}" />
+    </label>
+    <div class="admin-filter-actions">
+      <button type="submit" class="btn">Filtrar</button>
+      {% if tem_filtro or view_agg %}
+      <a class="proto-text-btn" href="/admin/sistema/access-log">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="admin-table-toolbar">
+    <div class="admin-table-toolbar-left">
+      <span class="admin-muted">
+        Detalhe: autenticados + /admin/* + escritas. Anônimos públicos → agregados.
+      </span>
+      {% if ultimo_purge %}
+      <span class="admin-muted" title="{{ ultimo_purge.em }}">
+        Último purge: {{ ultimo_purge.em }}
+        (−{{ ultimo_purge.removidos_detalhe|default(0) }}/−{{ ultimo_purge.removidos_agregado|default(0) }})
+        · {{ ultimo_purge.por }}
+      </span>
+      {% else %}
+      <span class="admin-muted">Nenhum purge registrado ainda.</span>
+      {% endif %}
+    </div>
+    <div class="admin-table-toolbar-right">
+      {% if view_agg %}
+      <a class="btn secondary" href="/admin/sistema/access-log{% if query_detail %}?{{ query_detail }}{% endif %}">Detalhe</a>
+      {% else %}
+      <a class="btn secondary" href="/admin/sistema/access-log?{{ query_agg }}">Agregados</a>
+      {% endif %}
+      <form method="post" action="/admin/sistema/access-log/purge" class="admin-inline-form">
+        <button type="submit" class="btn" title="Remover hits além da retenção">Purge</button>
+      </form>
+    </div>
+  </div>
+
+  {% if msg %}
+  <p class="msg">{{ msg }}</p>
+  {% endif %}
+
+  {% if not rows %}
+  <div class="admin-state {% if tem_filtro %}admin-state--filtro{% else %}admin-state--vazio{% endif %}">
+    <p class="admin-state-msg">
+      {% if tem_filtro %}
+      Nenhum hit com esses filtros.
+      {% else %}
+      Sem acessos gravados ainda. Navegue autenticado ou no /admin para gerar hits.
+      {% endif %}
+    </p>
+    <p class="admin-state-actions">
+      {% if tem_filtro %}
+      <a class="btn secondary" href="/admin/sistema/access-log">Limpar filtros</a>
+      {% else %}
+      <a class="btn secondary" href="/admin/visao">Visão geral</a>
+      {% endif %}
+    </p>
+  </div>
+  {% elif view_agg %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Dia</th>
+          <th scope="col">Método</th>
+          <th scope="col">Path</th>
+          <th scope="col">Status</th>
+          <th scope="col">Hits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.dia }}</td>
+          <td><span class="admin-method-badge">{{ r.method }}</span></td>
+          <td class="admin-mono">{{ r.path }}</td>
+          <td>{{ r.status_cls }}</td>
+          <td>{{ r.hits }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Quando</th>
+          <th scope="col">Quem</th>
+          <th scope="col">Método</th>
+          <th scope="col">Path</th>
+          <th scope="col">Status</th>
+          <th scope="col">IP</th>
+          <th scope="col">UA</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <time datetime="{{ r.quando.iso }}" title="{{ r.quando.iso }}{% if r.quando.relativo %} · {{ r.quando.relativo }}{% endif %}">
+              {{ r.quando.label }}
+            </time>
+            {% if r.quando.relativo %}
+            <span class="admin-muted admin-rel">{{ r.quando.relativo }}</span>
+            {% endif %}
+          </td>
+          <td>{{ r.quem }}</td>
+          <td><span class="admin-method-badge">{{ r.method }}</span></td>
+          <td class="admin-mono">{{ r.path }}</td>
+          <td>{{ r.status }}</td>
+          <td class="admin-mono">{{ r.ip_trunc }}</td>
+          <td class="admin-mono admin-ua" title="{{ r.ua_curto }}">{{ r.ua_curto }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
