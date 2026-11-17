@@ -107,6 +107,9 @@ def test_visao_geral(client: TestClient):
     assert "Visão geral" in r.text
     assert "admin-breadcrumb" in r.text
     assert "Precisa de mim agora" in r.text
+    assert "Cobrança de palpite" in r.text
+    assert "Fase atual" in r.text
+    assert "Últimos acessos" in r.text
 
 
 def test_sistema_cap_nao_grava_em_moderador():

@@ -8,21 +8,26 @@
 </nav>
 <div class="admin-topbar-title-row">
   <h1>Visão geral</h1>
-  <span class="admin-period-pill">últimas 24h</span>
+  <span class="admin-period-pill">{{ fase_label }} · {{ perna_label }}</span>
 </div>
 {% endblock %}
 {% block content %}
-<section class="admin-panel-page">
+<section class="admin-panel-page admin-visao">
   <div class="admin-kpi-row" role="list">
     <a class="admin-kpi" href="/admin?sec=inscricoes" role="listitem">
       <strong class="admin-kpi-n">{{ pendentes }}</strong>
       <span class="admin-kpi-label">Inscrições pendentes</span>
-      <span class="admin-kpi-go">aprovar</span>
+      <span class="admin-kpi-go">ver</span>
+    </a>
+    <a class="admin-kpi" href="/admin/cobranca?fase={{ fase }}&perna={{ perna }}" role="listitem">
+      <strong class="admin-kpi-n">{{ cobranca_n }}</strong>
+      <span class="admin-kpi-label">Cobrança de palpite</span>
+      <span class="admin-kpi-go">avisar</span>
     </a>
     <a class="admin-kpi" href="/admin?sec=resultados" role="listitem">
-      <strong class="admin-kpi-n">{{ fase_aberta_n }}</strong>
-      <span class="admin-kpi-label">{{ fase_aberta_label }}</span>
-      <span class="admin-kpi-go">resultados</span>
+      <strong class="admin-kpi-n">{{ sem_placar }}</strong>
+      <span class="admin-kpi-label">Jogos sem placar</span>
+      <span class="admin-kpi-go">preencher</span>
     </a>
     {% if 'grid.bugs' in admin_caps %}
     <a class="admin-kpi" href="/admin/reports" role="listitem">
@@ -31,11 +36,15 @@
       <span class="admin-kpi-go">triagem</span>
     </a>
     {% endif %}
-    <a class="admin-kpi" href="/health" role="listitem">
-      <strong class="admin-kpi-n admin-kpi-n--ok">ok</strong>
-      <span class="admin-kpi-label">Saúde</span>
+    {% if 'sistema.ver' in admin_caps %}
+    <a class="admin-kpi" href="/health" role="listitem" title="rev {{ rev }}">
+      <strong class="admin-kpi-n {% if health_ok %}admin-kpi-n--ok{% else %}admin-kpi-n--bad{% endif %}">
+        {% if health_ok %}ok{% else %}erro{% endif %}
+      </strong>
+      <span class="admin-kpi-label">Saúde · {{ rev }}</span>
       <span class="admin-kpi-go">check</span>
     </a>
+    {% endif %}
   </div>
 
   <h2 class="admin-panel-h2">Precisa de mim agora</h2>
@@ -68,9 +77,127 @@
   </div>
   {% endif %}
 
+  <h2 class="admin-panel-h2">Fase atual</h2>
+  <div class="admin-visao-ficha" aria-label="Fase atual">
+    <dl class="admin-visao-dl">
+      <div><dt>Fase</dt><dd>{{ fase_label }}</dd></div>
+      <div><dt>Janela</dt><dd>{{ janela_label }}</dd></div>
+      <div><dt>Perna</dt><dd>{{ perna_label }}</dd></div>
+      <div><dt>Jogos</dt><dd>{{ n_jogos }}</dd></div>
+      <div><dt>Placar</dt><dd>{{ n_com_placar }}/{{ n_jogos }}</dd></div>
+      <div><dt>Trava</dt><dd>{{ trava_antes_min }} min</dd></div>
+      <div><dt>Última rodada</dt><dd>{{ ultima_rodada_rotulo or "—" }}</dd></div>
+    </dl>
+    <div class="admin-visao-ficha-actions">
+      <a class="btn secondary" href="/admin?sec=resultados">Resultados</a>
+      <a class="btn secondary" href="/admin/cobranca?fase={{ fase }}&perna={{ perna }}">Cobranças</a>
+      <a class="btn secondary" href="/admin" title="Abrir painel">Abrir</a>
+    </div>
+  </div>
+
   {% if 'sistema.ver' in admin_caps %}
-  <p class="admin-panel-foot">
-    <a href="/admin/sistema/rotas">Sistema → Rotas</a>
+  <h2 class="admin-panel-h2">Últimos acessos</h2>
+  {% if ultimos_acessos %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Quando</th>
+          <th scope="col">Quem</th>
+          <th scope="col">Método</th>
+          <th scope="col">Path</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in ultimos_acessos %}
+        <tr>
+          <td>
+            <time datetime="{{ h.quando.iso }}" title="{{ h.quando.iso }}">
+              {{ h.quando.relativo or h.quando.label }}
+            </time>
+          </td>
+          <td>{{ h.quem or "—" }}</td>
+          <td><span class="admin-method-badge">{{ h.method }}</span></td>
+          <td class="admin-mono">{{ h.path }}</td>
+          <td>{{ h.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="admin-muted"><a href="/admin/sistema/access-log">Ver access log</a></p>
+  {% else %}
+  <p class="admin-muted">Nenhum hit registrado ainda.</p>
+  {% endif %}
+
+  <h2 class="admin-panel-h2">Atividade recente</h2>
+  {% if atividade %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Quando</th>
+          <th scope="col">Quem</th>
+          <th scope="col">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in atividade %}
+        <tr>
+          <td>
+            <time datetime="{{ ev.quando.iso }}" title="{{ ev.quando.iso }}">
+              {{ ev.quando.relativo or ev.quando.label }}
+            </time>
+          </td>
+          <td>{{ ev.autor or "—" }}</td>
+          <td>
+            <span class="admin-mono">{{ ev.acao }}</span>
+            {% if ev.resumo %}<span class="admin-muted"> — {{ ev.resumo }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="admin-muted"><a href="/admin/sistema/atividade">Ver atividade</a></p>
+  {% else %}
+  <p class="admin-muted">Nenhum evento de auditoria ainda.</p>
+  {% endif %}
+
+  {% if sistema %}
+  <h2 class="admin-panel-h2">Sistema</h2>
+  <div class="admin-visao-ficha" aria-label="Sistema">
+    <dl class="admin-visao-dl">
+      <div><dt>Versão</dt><dd class="admin-mono">{{ sistema.rev }}</dd></div>
+      <div>
+        <dt>Health</dt>
+        <dd class="{% if sistema.health_ok %}admin-kpi-n--ok{% else %}admin-kpi-n--bad{% endif %}">
+          {% if sistema.health_ok %}ok{% else %}erro{% endif %}
+        </dd>
+      </div>
+      <div><dt>DB</dt><dd>{{ sistema.db_size }}</dd></div>
+      <div><dt>Rotas</dt><dd>{{ sistema.n_rotas }}</dd></div>
+      <div><dt>Log</dt><dd>{{ sistema.n_hits }} hit(s)</dd></div>
+      <div>
+        <dt>Purge</dt>
+        <dd>
+          {% if sistema.purge_label %}{{ sistema.purge_label }}{% else %}—{% endif %}
+          <span class="admin-muted">({{ sistema.retencao_dias }}d)</span>
+        </dd>
+      </div>
+    </dl>
+  </div>
+  {% endif %}
+
+  <p class="admin-panel-foot admin-visao-foot">
+    <a href="/admin/sistema/rotas">Rotas</a>
+    <span aria-hidden="true">·</span>
+    <a href="/admin/sistema/access-log">Access log</a>
+    <span aria-hidden="true">·</span>
+    <a href="/admin/sistema/atividade">Atividade</a>
+    <span aria-hidden="true">·</span>
+    <a href="/admin/sistema/saude">Saúde</a>
   </p>
   {% endif %}
 </section>
