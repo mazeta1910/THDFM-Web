@@ -7283,11 +7283,10 @@ def admin_participante(
     request: Request,
     nome: str = Form(...),
     celular: str = Form(""),
-    ja_pago: str = Form(""),
 ):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
-    status = "liberado" if ja_pago == "1" else "pendente"
+    # Cadastro manual no admin já entra Ok — sem fila de liberação.
     celular_ok = None
     if celular.strip():
         try:
@@ -7298,7 +7297,7 @@ def admin_participante(
                 status_code=303,
             )
     try:
-        db.criar_participante(nome, status=status, celular=celular_ok)
+        db.criar_participante(nome, status="liberado", celular=celular_ok)
     except Exception as exc:
         return RedirectResponse(
             f"/admin?sec=inscricoes&erro={exc}", status_code=303

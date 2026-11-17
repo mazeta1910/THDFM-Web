@@ -40,7 +40,7 @@ For layout invariants (alignment, grid columns, anti-shrink under compact `butto
 4. Form actions on the **right**; single-field forms keep button on the same row
 5. Reuse `ico()` — do not add another icon library
 6. Card dense tags (`Ok`, `Admin`, `Inativo`, …): **all** top-right with the name left — never glue one tag to the name and park another on the right (see `.cursorrules` § Tags / badges)
-7. Inscrições: only dense participant cards — **do not** bring back summary Inscrições card, `inscricoes-cols`, or wide Foto padrão; default photo = Cadastro avatar (see `.cursorrules` § Inscrições)
+7. Inscrições: Liberados + Inativos only — **no** liberação/pendentes/recusados/Já pagou; default photo = Cadastro avatar (see `.cursorrules` § Inscrições)
 8. Global form input CSS must include `type=email` and `type=url` (not only text/password/tel) — see `.cursorrules` § Formulários
 9. Feedback modals: Ok compact **right**; success auto-closes via `data-modal-feedback` (`site-chrome.js`) — see `.cursorrules` § Botões / `modal-feedback.mdc`
 

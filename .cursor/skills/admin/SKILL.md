@@ -40,4 +40,4 @@ Changes under `/admin`, permissions/credentials, admin sidebar, or the agent bac
 - Dense admin UI preferred (table/ficha), not chubby cards
 - Compact controls; no full-width secondary actions
 - Dono-only actions must stay gated
-- Inscrições: only dense cards; no summary card / Sem link cols / wide “Foto padrão”; default photo lives on Cadastro avatar; inativos só em “Inativos no bolão”
+- Inscrições: Liberados + Inativos only; no liberação/pendentes/recusados UI; manual create already liberado; default photo on Cadastro avatar

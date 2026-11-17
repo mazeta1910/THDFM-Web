@@ -66,6 +66,12 @@ def test_admin_inativar_e_reativar_ui(client):
     assert 'id="avatar-padrao-form"' in page.text
     assert "data-padrao-auto" in page.text
     assert "Manual · foto padrão" in page.text
+    assert "Aguardando liberação" not in page.text
+    assert "Já pagou" not in page.text
+    assert 'data-participantes-section="pendentes"' not in page.text
+    assert 'data-participantes-section="recusados"' not in page.text
+    assert "/admin/liberar" not in page.text
+    assert "/admin/recusar" not in page.text
     # label for= aponta pro input do avatar (hover editar foto)
     assert 'for="participante-avatar-' in page.text
 
@@ -100,3 +106,16 @@ def test_sidebar_badge_ignora_inativo(client):
     assert after.status_code == 200
     st = db.status_palpites_liberados("oitavas", "ida", so_abertos=True, janela="ida")
     assert all(p["id"] != sai["id"] for p in st["incompletos"])
+
+
+def test_admin_create_manual_ja_liberado(client):
+    login_admin(client)
+    r = client.post(
+        "/admin/participante",
+        data={"nome": "Novo Manual", "celular": "11990006666"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    parts = [p for p in db.list_participantes() if p["nome"] == "Novo Manual"]
+    assert len(parts) == 1
+    assert parts[0]["status"] == "liberado"
