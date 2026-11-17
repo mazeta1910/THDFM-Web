@@ -117,7 +117,7 @@
           {% elif participante_nav %}
           <a class="site-side-link {% if path.startswith('/p/') and '/conta' not in path %}active{% endif %}" href="/p/{{ participante_nav.token }}">{{ ico('inscricao') }}<span>Status da inscrição</span></a>
           {% elif guest %}
-          <a class="site-side-link {% if on_login %}active{% endif %}" href="/?acesso=recuperar" data-acesso-open="recuperar">{{ ico('inscricao') }}<span>Recuperar link</span></a>
+          <a class="site-side-link" href="/esqueci-senha">{{ ico('inscricao') }}<span>Esqueci a senha</span></a>
           {% endif %}
           <a class="site-side-link {% if on_classificacao %}active{% endif %}" href="/classificacao">{{ ico('classificacao') }}<span>Classificação</span></a>
           <a class="site-side-link {% if on_regras %}active{% endif %}" href="/regras">{{ ico('regras') }}<span>Regras</span></a>

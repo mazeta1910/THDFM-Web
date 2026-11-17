@@ -982,6 +982,21 @@ def home(request: Request):
     return _render_home(request)
 
 
+def _app_revision() -> str:
+    """SHA curto do checkout (pra validar se o uvicorn subiu o código certo)."""
+    env_sha = (os.environ.get("GIT_SHA") or os.environ.get("SOURCE_VERSION") or "").strip()
+    if env_sha:
+        return env_sha[:12]
+    try:
+        head = (ROOT_DIR / ".git" / "HEAD").read_text(encoding="utf-8").strip()
+        if head.startswith("ref:"):
+            ref = head.split(":", 1)[1].strip()
+            return (ROOT_DIR / ".git" / ref).read_text(encoding="utf-8").strip()[:12]
+        return head[:12]
+    except Exception:
+        return "unknown"
+
+
 @app.get("/health")
 def health():
     """Healthcheck para VPS / load balancer / cron watchdog."""
@@ -996,7 +1011,12 @@ def health():
         db_ok = False
     status = 200 if db_ok else 503
     return JSONResponse(
-        {"ok": db_ok, "service": "thdfm", "db": db_ok},
+        {
+            "ok": db_ok,
+            "service": "thdfm",
+            "db": db_ok,
+            "rev": _app_revision(),
+        },
         status_code=status,
     )
 
@@ -1569,27 +1589,14 @@ async def loguin_post(
 
 
 @app.post("/login")
-async def login_post(request: Request, celular: str = Form(...)):
-    celular_raw = (celular or "").strip()
-    ip = _client_ip(request)
-
-    try:
-        celular_ok = db.normalizar_celular(celular_raw)
-    except ValueError:
-        return _redirect_acesso(
-            "recuperar",
-            erro="Informe um celular válido com DDD",
-        )
-
-    if not db.recuperacao_rate_limit_ok(celular=celular_ok, ip=ip or None):
-        # Mesma UX pública — não revela se o número existe
-        return _redirect_acesso("recuperar", enviado=True)
-
-    part = db.get_participante_liberado_por_celular(celular_ok)
-    if part:
-        db.criar_pedido_recuperacao(part["id"], celular_ok, ip=ip or None)
-
-    return _redirect_acesso("recuperar", enviado=True)
+async def login_post(request: Request, celular: str = Form("")):
+    """Legado: 'Recuperar link' por celular. Agora aponta pra Esqueci minha senha."""
+    _ = celular  # formulário antigo ainda pode postar; ignoramos
+    return RedirectResponse(
+        "/esqueci-senha?msg="
+        + quote("Use username ou e-mail para redefinir a senha. Pedidos de link foram desligados."),
+        status_code=303,
+    )
 
 
 @app.get("/regras", response_class=HTMLResponse)
@@ -6720,7 +6727,7 @@ def admin_home(request: Request):
         arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         participantes=db.list_participantes(),
-        recuperacao_pedidos=db.list_pedidos_recuperacao_pendentes(),
+        recuperacao_pedidos=[],  # Pedidos de link desligados (Esqueci senha)
         ultima_rodada=db.get_ultima_rodada_historico(),
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
