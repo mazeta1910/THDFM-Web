@@ -6990,9 +6990,12 @@ def admin_recuperacao_atender(request: Request, pedido_id: int):
     return RedirectResponse(wa_url, status_code=303)
 
 
-@app.post("/admin/recuperacao/{pedido_id}/apagar")
+@app.api_route(
+    "/admin/recuperacao/{pedido_id}/apagar",
+    methods=["GET", "POST"],
+)
 def admin_recuperacao_apagar(request: Request, pedido_id: int):
-    """Descarta o pedido de link sem abrir WhatsApp."""
+    """Descarta o pedido de link sem abrir WhatsApp (GET como marcar-link/atender)."""
     if not admin_ok(request):
         return _redirect_acesso("entrar")
     pedido = db.get_pedido_recuperacao(pedido_id)
