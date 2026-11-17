@@ -166,7 +166,7 @@ def test_admin_registra_saida_e_volta_e_stats(client: TestClient):
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "Altura fixa de 3 linhas" in css
     assert "transformava o + num bloco laranja enorme" in css
-    assert "style.css?v=361" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "style.css?v=380" in (ROOT_DIR / "templates" / "base.html").read_text(encoding="utf-8")
     assert "overflow-x: hidden" in css
     assert "overscroll-behavior-x: contain" in css
     assert ".xonha-timeline-loading" in css
@@ -350,9 +350,15 @@ def test_admin_xonhometro_nao_duplica_no_menu(client: TestClient):
     _login_admin(client)
     r = client.get("/admin")
     assert r.status_code == 200
-    admin_block = r.text.split('data-group="admin"', 1)[1].split("data-group=", 1)[0]
-    assert "Xonhômetro" not in admin_block
-    assert "Acervo Xonha" in r.text
+    # Admin v2: Xonhômetro só em Site (visualização), não nos grupos Operação/Sistema/Dados/Grid
+    for group in ("operacao", "sistema", "dados", "grid"):
+        if f'data-group="{group}"' not in r.text:
+            continue
+        block = r.text.split(f'data-group="{group}"', 1)[1].split("data-group=", 1)[0]
+        assert "Xonhômetro" not in block
+    assert 'data-group="site-visualizacao"' in r.text
+    site_block = r.text.split('data-group="site-visualizacao"', 1)[1].split("</details>", 1)[0]
+    assert "Xonhômetro" in site_block
     assert r.text.count(">Xonhômetro<") == 1
 
 def test_paginas_grupo_placeholder(client: TestClient):

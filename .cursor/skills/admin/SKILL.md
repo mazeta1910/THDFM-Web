@@ -33,7 +33,8 @@ Changes under `/admin`, permissions/credentials, admin sidebar, or the agent bac
 ## PRs / merge
 
 - Auto-merge agent PRs when CI is green (or no checks) and mergeable — do not wait for “pode mergear”
-- Hold only on draft, red CI, conflicts, or explicit “não mergear”
+- Conflicts/dirty: rebase onto base, resolve, push, then merge (see `.cursor/rules/git-auto-merge.mdc`)
+- Hold only on draft, red CI (until fixed), or explicit “não mergear”
 
 ## Pitfalls
 

@@ -44,9 +44,10 @@ Prefer the narrowest suite that covers the change. Full `pytest -q` only when th
 
 - **Merge PRs automatically** when ready — do **not** wait for Mazeta to say “pode mergear”.
 - Ready = CI green (or repo has no required checks) + mergeable / no conflicts + PR matches the ask.
-- Use `gh pr merge <n> --merge --delete-branch`; if CI is still running, enable GitHub auto-merge and wait for the green event.
+- Prefer `gh pr merge <n> --squash --delete-branch`. If GitHub auto-merge API is disabled on the repo, merge directly when green (or when there are no checks).
+- **Conflicts / dirty branch:** do not wait — rebase (preferred) or merge onto the base, resolve, push, then merge. Conflict alone is not a hold.
 - After merge: tell Mazeta (PR/merge link); for product UI, remind `git pull` + uvicorn restart in `~/THDFM-Web` when relevant.
-- Do **not** merge: draft PRs, red CI, conflicts, or when Mazeta explicitly said to hold.
+- Do **not** merge: draft PRs, red CI (until fixed), or when Mazeta explicitly said to hold.
 
 ## Backlog
 
