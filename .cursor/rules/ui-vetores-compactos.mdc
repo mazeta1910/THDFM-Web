@@ -25,5 +25,6 @@ alwaysApply: true
 - CSS: `button.classe { width: auto !important; max-width: max-content !important; padding curto; }`
 - Uma CTA primária de form longo pode ser `.btn` full-width, mas o rótulo continua curto.
 - Bump `style.css?v=` / JS em `base.html` ao mudar estilo.
+- `<select>`: `color-scheme` alinhado ao tema; fundo `var(--bg)`/`var(--card)` — **nunca** `transparent` (popup nativo fica ilegível). Ver `.cursorrules` § Formulários nativos.
 
 Detalhes: `.cursorrules` · Grid: `.cursor/rules/compact-controls.mdc`.
