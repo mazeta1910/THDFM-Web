@@ -2280,6 +2280,7 @@ def list_admin_permissoes_rows(admin_login: str) -> dict[str, bool]:
 
 
 def set_admin_capability(admin_login: str, capability: str, concedido: bool) -> None:
+    from src.admins import get_admin
     from src.permissoes import CAPABILITIES
 
     login = (admin_login or "").strip().lower()
@@ -2287,6 +2288,11 @@ def set_admin_capability(admin_login: str, capability: str, concedido: bool) -> 
         raise ValueError("capability inválida")
     if not login:
         raise ValueError("login vazio")
+    # Caps sistema.* são exclusivas do Dono — não gravar override em moderador.
+    if capability.startswith("sistema."):
+        alvo = get_admin(login)
+        if not alvo or not alvo.is_dono:
+            raise ValueError("sistema.* só para Dono")
     with get_db() as conn:
         conn.execute(
             "INSERT INTO admin_permissoes (admin_login, capability, concedido, atualizado_em) "

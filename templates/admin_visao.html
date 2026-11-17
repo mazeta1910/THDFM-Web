@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Visão geral — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Visão geral</span>
+</nav>
+<div class="admin-topbar-title-row">
+  <h1>Visão geral</h1>
+  <span class="admin-period-pill">últimas 24h</span>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <div class="admin-kpi-row" role="list">
+    <a class="admin-kpi" href="/admin?sec=inscricoes" role="listitem">
+      <strong class="admin-kpi-n">{{ pendentes }}</strong>
+      <span class="admin-kpi-label">Inscrições pendentes</span>
+      <span class="admin-kpi-go">aprovar</span>
+    </a>
+    <a class="admin-kpi" href="/admin?sec=resultados" role="listitem">
+      <strong class="admin-kpi-n">{{ fase_aberta_n }}</strong>
+      <span class="admin-kpi-label">{{ fase_aberta_label }}</span>
+      <span class="admin-kpi-go">resultados</span>
+    </a>
+    {% if 'grid.bugs' in admin_caps %}
+    <a class="admin-kpi" href="/admin/reports" role="listitem">
+      <strong class="admin-kpi-n">{{ reports_abertos }}</strong>
+      <span class="admin-kpi-label">Reports no Grid</span>
+      <span class="admin-kpi-go">triagem</span>
+    </a>
+    {% endif %}
+    <a class="admin-kpi" href="/health" role="listitem">
+      <strong class="admin-kpi-n admin-kpi-n--ok">ok</strong>
+      <span class="admin-kpi-label">Saúde</span>
+      <span class="admin-kpi-go">check</span>
+    </a>
+  </div>
+
+  <h2 class="admin-panel-h2">Precisa de mim agora</h2>
+  {% if precisa %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table">
+      <thead>
+        <tr>
+          <th scope="col">Item</th>
+          <th scope="col">Módulo</th>
+          <th scope="col" class="admin-data-table-actions">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in precisa %}
+        <tr>
+          <td>{{ item.texto }}</td>
+          <td>{{ item.modulo }}</td>
+          <td class="admin-data-table-actions">
+            <a class="btn secondary" href="{{ item.href }}">{{ item.acao }}</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="admin-state admin-state--vazio">
+    <p class="admin-state-msg">Nada urgente no momento.</p>
+  </div>
+  {% endif %}
+
+  {% if 'sistema.ver' in admin_caps %}
+  <p class="admin-panel-foot">
+    <a href="/admin/sistema/rotas">Sistema → Rotas</a>
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

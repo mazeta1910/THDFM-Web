@@ -13,6 +13,8 @@ CAPABILITIES: dict[str, str] = {
     "hall.gestir": "Hall das Lendas — gestão",
     "grid.bugs": "Grid — reports de bugs",
     "usuarios.permissoes": "Usuários — editar permissões de operadores",
+    # Só o Dono (não entra no DEFAULT_MODERADOR). Guard no backend em /admin/sistema/*.
+    "sistema.ver": "Sistema — rotas, access log, atividade, assets, saúde",
 }
 
 # O que um moderador ganha por padrão (sem linha no DB).

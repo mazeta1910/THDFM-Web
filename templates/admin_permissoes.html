@@ -21,6 +21,7 @@
       <input type="hidden" name="admin_login" value="{{ op.login }}" />
       <ul style="list-style:none;padding:0;margin:0 0 1rem;">
         {% for cap, label in capabilities.items() %}
+        {% if not cap.startswith('sistema.') %}
         <li style="margin:0.35rem 0;">
           <label>
             <input
@@ -33,6 +34,7 @@
             {% if cap in default_moderador %}<small>(padrão moderador)</small>{% endif %}
           </label>
         </li>
+        {% endif %}
         {% endfor %}
       </ul>
       <button type="submit">Salvar {{ op.nome }}</button>
