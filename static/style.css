@@ -17567,6 +17567,23 @@ a.admin-kpi:hover {
   color: var(--muted);
   padding: 0 0.35rem 0.2rem;
 }
+.admin-rel {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+.admin-ua {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-table-toolbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
 .admin-badge--novo {
   background: var(--accent2);
   text-transform: lowercase;

@@ -1107,6 +1107,58 @@ def _backfill_acervo_fases(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_access_log(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS access_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT NOT NULL,
+            quem TEXT NOT NULL,
+            quem_tipo TEXT NOT NULL DEFAULT 'anon',
+            method TEXT NOT NULL,
+            path TEXT NOT NULL,
+            status INTEGER NOT NULL,
+            ip_trunc TEXT NOT NULL,
+            ua_curto TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_access_log_ts ON access_log(ts DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_access_log_path ON access_log(path)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_access_log_quem ON access_log(quem)"
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS access_log_agg (
+            dia TEXT NOT NULL,
+            method TEXT NOT NULL,
+            path TEXT NOT NULL,
+            status_cls TEXT NOT NULL,
+            hits INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (dia, method, path, status_cls)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS access_log_purge (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            em TEXT NOT NULL,
+            por TEXT NOT NULL,
+            antes_de TEXT NOT NULL,
+            removidos_detalhe INTEGER NOT NULL DEFAULT 0,
+            removidos_agregado INTEGER NOT NULL DEFAULT 0,
+            payload_json TEXT NOT NULL
+        )
+        """
+    )
+
+
 def _migrate_bug_reports(conn: sqlite3.Connection) -> None:
     """Reports de bugs do Grid — usuário envia; Mazeta responde/atualiza status."""
     conn.execute(
@@ -1285,6 +1337,7 @@ def init_db() -> None:
         _migrate_hall_lendas(conn)
         _migrate_acervo(conn)
         _migrate_bug_reports(conn)
+        _migrate_access_log(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
         _purge_grid_progresso_pre_ranking(conn)

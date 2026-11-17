@@ -254,6 +254,48 @@ async def gate_login_middleware(request: Request, call_next):
     return RedirectResponse("/?acesso=entrar", status_code=303)
 
 
+@app.middleware("http")
+async def access_log_middleware(request: Request, call_next):
+    """Fase B: grava hits seletivos (não interrompe a resposta se falhar)."""
+    response = await call_next(request)
+    try:
+        from src import access_log as alog
+
+        admin_login = (request.session.get("admin_login") or "").strip().lower()
+        part = None
+        token = request.session.get("participante_token")
+        if token:
+            part = db.get_participante_por_token(token)
+        autenticado = bool(admin_login or part)
+        if admin_login:
+            quem = admin_login
+            quem_tipo = "admin"
+        elif part:
+            quem = (part.get("username") or part.get("nome") or f"#{part.get('id')}").strip()
+            quem_tipo = "participante"
+        else:
+            quem = "—"
+            quem_tipo = "anon"
+        ip_raw = alog.client_ip_from_headers(
+            client_host=(request.client.host if request.client else None),
+            x_forwarded_for=request.headers.get("x-forwarded-for"),
+            x_real_ip=request.headers.get("x-real-ip"),
+        )
+        alog.record_hit(
+            method=request.method,
+            path=request.url.path,
+            status=int(getattr(response, "status_code", 0) or 0),
+            quem=quem,
+            quem_tipo=quem_tipo,
+            ip_raw=ip_raw,
+            ua_raw=request.headers.get("user-agent"),
+            autenticado=autenticado,
+        )
+    except Exception:
+        pass
+    return response
+
+
 # Session por fora do gate (último add_middleware = mais externo).
 app.add_middleware(
     SessionMiddleware,
@@ -6291,6 +6333,94 @@ def admin_sistema_rotas_snapshot(request: Request):
 
 
 @app.get("/admin/sistema/access-log", response_class=HTMLResponse)
+def admin_sistema_access_log(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import access_log as alog
+
+    # Purge automático ao abrir se houver dado além da retenção.
+    try:
+        oldest = alog.oldest_ts()
+        if oldest and oldest < alog.cutoff_ts():
+            alog.purge_expired(por="auto")
+    except Exception:
+        pass
+
+    filtros = {
+        "quem": (request.query_params.get("quem") or "").strip(),
+        "path": (request.query_params.get("path") or "").strip(),
+        "metodo": (request.query_params.get("metodo") or "").strip().upper(),
+        "dia": (request.query_params.get("dia") or "").strip()[:10],
+        "view": (request.query_params.get("view") or "").strip().lower(),
+    }
+    tem_filtro = bool(
+        filtros["quem"] or filtros["path"] or filtros["metodo"] or filtros["dia"]
+    )
+    view_agg = filtros["view"] == alog.AGG_VIEW
+    filtros_detail = {**filtros, "view": ""}
+    filtros_agg = {**filtros, "view": alog.AGG_VIEW}
+    if view_agg:
+        rows_raw = alog.list_agg(
+            path=filtros["path"] or None,
+            method=filtros["metodo"] or None,
+            dia=filtros["dia"] or None,
+        )
+        rows = rows_raw
+        total = len(rows_raw)
+    else:
+        total = alog.count_hits(
+            quem=filtros["quem"] or None,
+            path=filtros["path"] or None,
+            method=filtros["metodo"] or None,
+            dia=filtros["dia"] or None,
+        )
+        rows_raw = alog.list_hits(
+            quem=filtros["quem"] or None,
+            path=filtros["path"] or None,
+            method=filtros["metodo"] or None,
+            dia=filtros["dia"] or None,
+        )
+        rows = []
+        for r in rows_raw:
+            quando = alog.format_quando(r["ts"])
+            rows.append({**r, "quando": quando})
+
+    return render(
+        request,
+        "admin_sistema_access_log.html",
+        filtros=filtros,
+        tem_filtro=tem_filtro,
+        view_agg=view_agg,
+        rows=rows,
+        total=total,
+        retencao_dias=alog.RETENCAO_DIAS,
+        ultimo_purge=alog.ultimo_purge(),
+        oldest_ts=alog.oldest_ts(),
+        query_detail=alog.query_string(filtros_detail),
+        query_agg=alog.query_string(filtros_agg),
+        msg=request.query_params.get("msg"),
+        path_atual=request.url.path,
+    )
+
+
+@app.post("/admin/sistema/access-log/purge")
+def admin_sistema_access_log_purge(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import access_log as alog
+
+    por = admin_login_atual(request) or "dono"
+    reg = alog.purge_expired(por=por, force_record=True)
+    n = reg.get("removidos_detalhe", 0) + reg.get("removidos_agregado", 0)
+    return RedirectResponse(
+        "/admin/sistema/access-log?msg="
+        + quote(f"Purge: {n} removido(s) antes de {reg.get('antes_de')}."),
+        status_code=303,
+    )
+
+
 @app.get("/admin/sistema/atividade", response_class=HTMLResponse)
 @app.get("/admin/sistema/assets", response_class=HTMLResponse)
 @app.get("/admin/sistema/saude", response_class=HTMLResponse)
@@ -6299,15 +6429,20 @@ def admin_sistema_placeholder(request: Request):
     if gate:
         return gate
     titulo = {
-        "/admin/sistema/access-log": "Access log",
         "/admin/sistema/atividade": "Atividade",
         "/admin/sistema/assets": "Assets",
         "/admin/sistema/saude": "Saúde",
     }.get(request.url.path, "Sistema")
+    fase_hint = {
+        "/admin/sistema/atividade": "Em breve — Fase C (auditoria de mudanças).",
+        "/admin/sistema/assets": "Em breve — Assets do painel.",
+        "/admin/sistema/saude": "Em breve — Saúde do sistema.",
+    }.get(request.url.path, "Em breve.")
     return render(
         request,
         "admin_sistema_placeholder.html",
         titulo=titulo,
+        fase_hint=fase_hint,
         path_atual=request.url.path,
     )
 
