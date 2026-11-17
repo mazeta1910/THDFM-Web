@@ -27,8 +27,13 @@ Changes under `/admin`, permissions/credentials, admin sidebar, or the agent bac
 
 - Edit `docs/backlog/*.md` in the PR; link GitHub Issues when present
 - Agent may **add** rows
-- Set status `feito` only when Mazeta **asks to merge**
+- Set status `feito` when the related PR **merges** (Mazeta prefers auto-merge; see `.cursorrules` / `AGENTS.md`)
 - `/admin/backlog` UI: prototype first, implement only after consensus
+
+## PRs / merge
+
+- Auto-merge agent PRs when CI is green (or no checks) and mergeable — do not wait for “pode mergear”
+- Hold only on draft, red CI, conflicts, or explicit “não mergear”
 
 ## Pitfalls
 

@@ -73,9 +73,17 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 ## Escopo e git
 
 - Mudanças focadas no pedido; sem refatoração oportunista.
-- Branches Cloud: `cursor/<descricao>-0365`.
+- Branches Cloud: `cursor/<descricao>-0365` (ou sufixo Cloud do run, ex. `-0928`).
 - Não editar plano/requisitos fechados sem o usuário pedir.
 - Não implementar a reforma portal/feed/admin unificado até pedido **explícito** de implementação.
+
+## Merge automático (preferência Mazeta)
+
+- **Sempre** mergear PRs do agente assim que estiverem prontos — **não** esperar o Mazeta pedir merge.
+- Critérios: CI verde (ou repo sem checks) + `mergeable` / sem conflitos + escopo do PR alinhado ao pedido.
+- Preferir `gh pr merge <n> --merge --delete-branch` (ou auto-merge do GitHub se CI ainda estiver rodando).
+- Após merge: avisar o Mazeta (link do merge) e, se for feature de produto, lembrar `git pull` + restart em `~/THDFM-Web` quando fizer sentido.
+- Exceção: PR draft, conflito, CI vermelho, ou o Mazeta pediu para **não** mergear / manter aberto.
 
 ## Referência Grid
 

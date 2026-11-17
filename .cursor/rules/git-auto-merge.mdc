@@ -1,0 +1,11 @@
+# Merge automático
+
+Preferência permanente do Mazeta (também em `.cursorrules` e `AGENTS.md`):
+
+1. **Mergear PRs do agente automaticamente** quando prontos — não perguntar “posso mergear?”.
+2. Pronto = CI verde (ou repo sem checks) + mergeable / sem conflitos + escopo alinhado ao pedido.
+3. Comando típico: `gh pr merge <n> --merge --delete-branch`. Se o CI ainda roda, ligar auto-merge do GitHub e mergear no evento verde.
+4. Depois do merge: avisar (link) e, se UI/produto, lembrar pull + restart em `~/THDFM-Web`.
+5. **Não** mergear: draft, CI vermelho, conflito, ou pedido explícito de manter aberto.
+
+Backlog `feito`: marcar **após** o merge do PR relacionado.
