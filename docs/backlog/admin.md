@@ -12,9 +12,9 @@
 | feito | Inscrições: remover cols Liberado/Sem link/Inativos | admin, ui | — | Só gestão por cards; sem coluna duplicada de inativos; sem Sem link / Link enviado |
 | feito | Inscrições: sem resumo; foto padrão no Cadastro | admin, ui | — | Remove card taxa/PIX/link e faixa Foto padrão; avatar do Cadastro define padrão |
 | feito | Inscrições: limpeza residual liberação | admin, ui | — | Sem Aguardando/Recusados/Liberar/Já pagou; create manual já liberado |
-| agora | CSRF token nos POSTs de admin | admin | — | Token + rejeição sem token; ver `docs/revisoes/deepseek-revisao-admin-rotas-2026-11-17.md` |
-| agora | Autosave placares × troca de fase | admin | — | Trocar fase <1,8s não perde edição; teste de regressão |
-| agora | Cobrança: confirm e-mail em lote + último envio | admin | — | Modal com contagem N; cooldown/último envio visível |
+| feito | CSRF token nos POSTs de admin | admin | #413 | Token + rejeição sem token; ver `docs/revisoes/deepseek-revisao-admin-rotas-2026-11-17.md` |
+| feito | Autosave placares × troca de fase | admin | #413 | Trocar fase <1,8s não perde edição; teste de regressão |
+| feito | Cobrança: confirm e-mail em lote + último envio | admin | #413 | Modal com contagem N; cooldown/último envio visível |
 | depois | Separar `/admin/resultados` e `/admin/inscricoes` | admin | — | Rotas/templates próprios; `/admin` deixa de ser monolítico |
 | depois | Palpites: ordenar/filtrar/CSV + a11y | admin | — | Contrato de tabela; sem `<th>` vazio; CSV do filtro |
 | depois | Unificar confirmação (Inativar = modal, não `confirm()`) | admin, ui | — | Mesmo padrão dos outros modais de Inscrições |
