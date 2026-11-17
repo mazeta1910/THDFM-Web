@@ -1,12 +1,13 @@
 ---
-description: Inscrições — só cards densos; sem colunas Liberado/Sem link/Inativos
+description: Inscrições — só cards densos; foto padrão no Cadastro
 globs: templates/admin.html,static/style.css,.cursorrules
 alwaysApply: false
 ---
 
 # Inscrições = gestão por cards
 
-- Cabeçalho: stats / PIX / link público.
-- Listagem: **só** “Gestão de Participantes” (cards Liberados + Inativos no bolão + pendentes/recusados).
-- **Proibido** recriar `inscricoes-cols`, abas Sem link / Link enviado, FABs de marcar link / Zap de convite, ou coluna Inativos no topo (duplica “Inativos no bolão”).
+- Sem card-resumo Inscrições (taxa / stats / PIX / link público) e sem faixa “Gestão de Participantes”.
+- Listagem: Liberados (+ Inativos no bolão / pendentes / recusados se houver).
+- **Proibido** recriar `inscricoes-cols`, Sem link / Link enviado, FABs de marcar link / Zap de convite, ou coluna Inativos no topo.
+- Foto padrão: avatar do card **Cadastro** (auto-submit `/admin/avatar-padrao`) — **não** card largo “Foto padrão do bolão”.
 - Detalhe: `.cursorrules` § Inscrições.

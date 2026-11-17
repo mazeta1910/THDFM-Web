@@ -542,68 +542,7 @@
     </section>
 
     <section class="admin-panel{% if admin_sec == 'inscricoes' %} active{% endif %}" data-panel="inscricoes">
-      <div class="card inscricoes-card" id="inscricoes-card">
-        <div class="inscricoes-head">
-          <div class="inscricoes-title-row">
-            <div class="inscricoes-title-main">
-              <div class="inscricoes-title-line">
-                <h2>Inscrições <span class="col-count">{{ taxa_valor_label }}</span></h2>
-                <div class="inscricoes-stats">
-                  <span class="inscricoes-stat-pill liberados">{{ liberados|length }} liberados</span>
-                  <span class="inscricoes-stat-pill pendentes">{{ liberacao_pendente|length }} pendentes</span>
-                  {% if liberados_inativos %}
-                  <span class="inscricoes-stat-pill inativos">{{ liberados_inativos|length }} inativos</span>
-                  {% endif %}
-                  {% if liberacao_recusada %}
-                  <span class="inscricoes-stat-pill recusados">{{ liberacao_recusada|length }} recusados</span>
-                  {% endif %}
-                </div>
-              </div>
-              <p class="inscricoes-pix">PIX: {{ taxa_pix }}</p>
-            </div>
-          </div>
-          <div class="inscricoes-link-box">
-            <strong>Link público</strong>
-            <code id="inscricao-url">{{ inscricao_url }}</code>
-            {% if not public_url_configurada %}
-            <span class="inscricoes-hint">Defina <code>PUBLIC_BASE_URL</code> no .env para trocar o IP pela URL do túnel.</span>
-            {% endif %}
-          </div>
-        </div>
-
-      </div>
-
       <div class="participantes-dash inscricoes-gestao-block">
-        <h2 class="participantes-gestao-title">Gestão de Participantes</h2>
-        <div class="participantes-toolbar">
-          <p class="participantes-lead">Edite nome na tabela, celular e foto. Quem saiu do bolão pode ficar <strong>inativo</strong> (some da classificação e do aviso na lateral).</p>
-        </div>
-
-        <form method="post" action="/admin/avatar-padrao" enctype="multipart/form-data" class="card avatar-padrao-card">
-          <div class="avatar-padrao-preview">
-            {% set padrao = avatar_padrao_url() %}
-            {% if padrao %}
-            <img src="{{ padrao }}" alt="Foto padrão atual" />
-            {% else %}
-            <span class="participante-edit-avatar-fallback">?</span>
-            {% endif %}
-          </div>
-          <div class="avatar-padrao-copy">
-            <strong>Foto padrão do bolão</strong>
-            <p>Usada na classificação, menu e gestão quando o participante ainda não enviou foto própria.</p>
-            <label class="file-pick conta-file-pick participante-file-pick">
-              <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" required hidden />
-              <span class="file-pick-btn" title="Escolher foto padrão" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                </svg>
-              </span>
-              <span class="file-pick-name">Escolher a foto que você mandou</span>
-            </label>
-          </div>
-          <button type="submit" class="avatar-padrao-save">Definir padrão</button>
-        </form>
-
         <section class="participantes-section" data-participantes-section="liberados">
           <div class="participantes-section-head">
             <h2 class="participantes-section-title">
@@ -617,18 +556,45 @@
           </div>
           <div class="participantes-grid" data-participantes-grid>
             <div class="participante-edit-wrap participante-create-wrap">
-            <form
-              id="participante-create-form"
-              method="post"
-              action="/admin/participante"
-              class="card participante-edit-card participante-create-card"
-              data-nome="novo"
-              data-celular=""
-            >
+            <div class="card participante-edit-card participante-create-card" data-nome="novo" data-celular="">
               <div class="participante-edit-top">
-                <div class="participante-edit-avatar participante-edit-avatar-novo" aria-hidden="true">
-                  <span class="participante-edit-avatar-fallback">+</span>
-                </div>
+                <form
+                  id="avatar-padrao-form"
+                  method="post"
+                  action="/admin/avatar-padrao"
+                  enctype="multipart/form-data"
+                  class="participante-create-padrao-form"
+                >
+                  {% set padrao = avatar_padrao_url() %}
+                  <div class="participante-edit-avatar{% if not padrao %} participante-edit-avatar-novo{% endif %}" data-avatar-hover data-padrao-avatar>
+                    {% if padrao %}
+                    <img src="{{ padrao }}" alt="" data-avatar-preview />
+                    {% else %}
+                    <span class="participante-edit-avatar-fallback" data-avatar-fallback>+</span>
+                    {% endif %}
+                    <input
+                      id="avatar-padrao-file"
+                      class="participante-avatar-file"
+                      type="file"
+                      name="avatar"
+                      accept=".jpg,.jpeg,.png,.webp,image/*"
+                      required
+                      data-avatar-input
+                      data-padrao-auto
+                    />
+                    <div class="participante-avatar-hover">
+                      <label
+                        class="participante-avatar-hover-btn"
+                        for="avatar-padrao-file"
+                        title="Foto padrão"
+                        aria-label="Definir foto padrão do bolão"
+                        data-avatar-pick
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      </label>
+                    </div>
+                  </div>
+                </form>
                 <div class="participante-edit-meta">
                   <div class="participante-status-row">
                     <strong class="participante-edit-nome-inline">Cadastro</strong>
@@ -636,26 +602,32 @@
                       <span class="participante-status-tag status-novo">Novo</span>
                     </div>
                   </div>
-                  <span class="participante-meta-line">Manual</span>
+                  <span class="participante-meta-line">Manual · foto padrão</span>
                 </div>
               </div>
 
-              <div class="participante-edit-fields">
-                <label class="participante-field" for="novo-nome">
-                  <span class="sr-only">Nome exibido</span>
-                  <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome" title="Nome (máx. 30)" autocomplete="off" />
-                </label>
-                <label class="participante-field" for="novo-celular">
-                  <span class="sr-only">Celular</span>
-                  <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" title="Celular" autocomplete="off" />
-                </label>
-              </div>
+              <form
+                id="participante-create-form"
+                method="post"
+                action="/admin/participante"
+              >
+                <div class="participante-edit-fields">
+                  <label class="participante-field" for="novo-nome">
+                    <span class="sr-only">Nome exibido</span>
+                    <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome" title="Nome (máx. 30)" autocomplete="off" />
+                  </label>
+                  <label class="participante-field" for="novo-celular">
+                    <span class="sr-only">Celular</span>
+                    <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" title="Celular" autocomplete="off" />
+                  </label>
+                </div>
 
-              <label class="participantes-check participante-create-check">
-                <input type="checkbox" name="ja_pago" value="1" />
-                Já pagou
-              </label>
-            </form>
+                <label class="participantes-check participante-create-check">
+                  <input type="checkbox" name="ja_pago" value="1" />
+                  Já pagou
+                </label>
+              </form>
+            </div>
             <div class="participante-edit-actions">
               <span class="participante-create-spacer" aria-hidden="true"></span>
               <div class="participante-edit-actions-end">
@@ -1636,7 +1608,20 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   const run = () => {
     document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
       const card = input.closest(".participante-edit-card");
-      const wrap = card?.querySelector("[data-avatar-hover]");
+      const wrap = input.closest("[data-avatar-hover]") || card?.querySelector("[data-avatar-hover]");
+      if (input.hasAttribute("data-padrao-auto")) {
+        const form = document.getElementById("avatar-padrao-form");
+        if (window.thdfmBindAvatarCrop) {
+          window.thdfmBindAvatarCrop(input, {
+            preview: wrap || card?.querySelector(".participante-edit-avatar"),
+            nameEl: null,
+            nameEmpty: "Foto padrão",
+            previewAttr: "data-avatar-preview",
+            autoSubmitForm: form,
+          });
+        }
+        return;
+      }
       if (window.thdfmBindAvatarCrop) {
         window.thdfmBindAvatarCrop(input, {
           preview: wrap || card?.querySelector(".participante-edit-avatar"),

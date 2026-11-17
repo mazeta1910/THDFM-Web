@@ -60,6 +60,12 @@ def test_admin_inativar_e_reativar_ui(client):
     assert 'data-participantes-section="inativos"' in page.text
     assert "inscricoes-cols" not in page.text
     assert "Sem link" not in page.text
+    assert "inscricoes-card" not in page.text
+    assert "avatar-padrao-card" not in page.text
+    assert "Definir padrão" not in page.text
+    assert 'id="avatar-padrao-form"' in page.text
+    assert "data-padrao-auto" in page.text
+    assert "Manual · foto padrão" in page.text
     # label for= aponta pro input do avatar (hover editar foto)
     assert 'for="participante-avatar-' in page.text
 

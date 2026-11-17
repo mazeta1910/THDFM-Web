@@ -6673,6 +6673,9 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
 .participantes-grid > .participante-create-wrap {
   height: 100%;
 }
+.participante-create-padrao-form {
+  display: contents;
+}
 .participante-edit-card {
   display: flex;
   flex-direction: column;

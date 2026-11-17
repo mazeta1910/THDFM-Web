@@ -97,6 +97,9 @@
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.85rem;
 }
+.participante-create-padrao-form {
+  display: contents;
+}
 .participante-edit-card {
   display: flex;
   flex-direction: column;
