@@ -116,8 +116,24 @@ def test_admin_sidebar_admin_fixo_e_sortable(client: TestClient):
     r = client.get("/admin")
     assert r.status_code == 200
     html = r.text
-    assert 'data-group="admin"' in html
+    assert 'data-menu-fixed' in html
     assert "data-menu-sortable" in html
-    assert html.index('data-group="admin"') < html.index("data-menu-sortable")
+    assert html.index("data-menu-fixed") < html.index("data-menu-sortable")
+    assert 'data-group="operacao"' in html
+    assert 'data-group="dados"' in html
+    assert 'data-group="grid"' in html
+    assert 'data-group="site-visualizacao"' in html
     assert "site-menu-drag" in html
     assert 'draggable="false"' in html
+    # v2: Site no rodapé; sem grupos públicos no sortable
+    assert 'data-group="bolao-publico"' not in html
+    assert 'data-group="comunidade"' not in html
+    assert 'data-group="meu-bolao"' not in html
+    assert "Cobranças" in html
+    assert ">Quem palpitou<" not in html
+    assert "Site (visualização)" in html
+    assert "admin-side-footer-meta" not in html
+    assert "aria-current=" in html
+    # Meus Palpites no brand (avatar), não no menu lateral sortable
+    assert "admin-brand-quick" in html
+    assert html.count("Meus Palpites") >= 1

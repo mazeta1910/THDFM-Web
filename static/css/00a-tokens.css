@@ -3,6 +3,7 @@
   --accent: #e85d04;
   --accent2: #ff2d2d;
   --danger: #ff4d4d;
+  --count: #f0a040;
   --site-header-offset: 3.5rem;
   --scroll-thumb: color-mix(in srgb, var(--accent) 55%, #666);
   --scroll-thumb-hover: var(--accent);
