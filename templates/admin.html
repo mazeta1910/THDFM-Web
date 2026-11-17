@@ -74,7 +74,7 @@
         {% endif %}
         <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
           {% if p.status == 'liberado' and p.inativo_em %}Inativo
-          {% elif p.status == 'liberado' %}Liberado
+          {% elif p.status == 'liberado' %}Ok
           {% elif p.recusado_em %}Recusado
           {% elif p.status == 'comprovante' %}Com comprovante
           {% else %}Pendente{% endif %}
@@ -916,34 +916,52 @@
             </label>
           </div>
           <div class="participantes-grid" data-participantes-grid>
-            <form method="post" action="/admin/participante" class="card participante-edit-card participante-create-card" data-nome="novo" data-celular="">
+            <div class="participante-edit-wrap participante-create-wrap">
+            <form
+              id="participante-create-form"
+              method="post"
+              action="/admin/participante"
+              class="card participante-edit-card participante-create-card"
+              data-nome="novo"
+              data-celular=""
+            >
               <div class="participante-edit-top">
                 <div class="participante-edit-avatar participante-edit-avatar-novo" aria-hidden="true">
                   <span class="participante-edit-avatar-fallback">+</span>
                 </div>
                 <div class="participante-edit-meta">
-                  <span class="participante-status-tag status-novo">Novo</span>
+                  <div class="participante-status-row">
+                    <span class="participante-status-tag status-novo">Novo</span>
+                  </div>
                   <span class="participante-meta-line">Cadastro manual</span>
                 </div>
               </div>
 
-              <label for="novo-nome">Nome exibido</label>
-              <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome no grupo / classificação" autocomplete="off" />
-              <p class="conta-hint">Máximo 30 caracteres.</p>
-
-              <label for="novo-celular">Celular</label>
-              <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" autocomplete="off" />
+              <div class="participante-edit-fields">
+                <label class="participante-field" for="novo-nome">
+                  <span class="sr-only">Nome exibido</span>
+                  <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome" title="Nome (máx. 30)" autocomplete="off" />
+                </label>
+                <label class="participante-field" for="novo-celular">
+                  <span class="sr-only">Celular</span>
+                  <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" title="Celular" autocomplete="off" />
+                </label>
+              </div>
 
               <label class="participantes-check participante-create-check">
                 <input type="checkbox" name="ja_pago" value="1" />
-                Já pagou — liberar agora
+                Já pagou
               </label>
-
-              <div class="participante-edit-actions">
-                <span class="participante-create-spacer"></span>
-                <button type="submit">Criar</button>
-              </div>
             </form>
+            <div class="participante-edit-actions">
+              <span class="participante-create-spacer" aria-hidden="true"></span>
+              <div class="participante-edit-actions-end">
+                <button type="submit" form="participante-create-form" class="participante-create-btn" title="Criar" aria-label="Criar participante">
+                  Criar
+                </button>
+              </div>
+            </div>
+            </div>
 
             {% for p in liberados %}
             {{ participante_edit_card(p) }}

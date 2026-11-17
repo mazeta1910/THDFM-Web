@@ -52,6 +52,8 @@ def test_admin_inativar_e_reativar_ui(client):
     assert 'aria-label="Reativar Inativo UI"' in page.text or "Reativar" in page.text
     assert "participante-status-icon" in page.text
     assert "participante-edit-fields" in page.text
+    assert "participante-create-wrap" in page.text
+    assert ">Ok<" in page.text or "status-liberado" in page.text
     assert "data-inscricoes-col=\"inativos\"" in page.text
 
     cob = client.get("/admin/cobranca")
