@@ -76,19 +76,19 @@
     </div>
     <div class="participante-edit-meta">
       <div class="participante-status-row">
-        <div class="participante-status-leading">
-          <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
+        <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
+        <div class="participante-status-trailing">
           {% if p.admin_login %}
           <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
           {% endif %}
+          <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+            {% if p.status == 'liberado' and p.inativo_em %}Inativo
+            {% elif p.status == 'liberado' %}Ok
+            {% elif p.recusado_em %}Recusado
+            {% elif p.status == 'comprovante' %}Com comprovante
+            {% else %}Pendente{% endif %}
+          </span>
         </div>
-        <span class="participante-status-tag participante-status-tag-end status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-          {% if p.status == 'liberado' and p.inativo_em %}Inativo
-          {% elif p.status == 'liberado' %}Ok
-          {% elif p.recusado_em %}Recusado
-          {% elif p.status == 'comprovante' %}Com comprovante
-          {% else %}Pendente{% endif %}
-        </span>
       </div>
       {% if p.inativo_em %}
       <span class="participante-meta-line">Inativo desde {{ p.inativo_em }}</span>
@@ -900,9 +900,12 @@
                 </div>
                 <div class="participante-edit-meta">
                   <div class="participante-status-row">
-                    <span class="participante-status-tag status-novo">Novo</span>
+                    <strong class="participante-edit-nome-inline">Cadastro</strong>
+                    <div class="participante-status-trailing">
+                      <span class="participante-status-tag status-novo">Novo</span>
+                    </div>
                   </div>
-                  <span class="participante-meta-line">Cadastro manual</span>
+                  <span class="participante-meta-line">Manual</span>
                 </div>
               </div>
 

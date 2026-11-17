@@ -6821,13 +6821,13 @@ label.participante-avatar-hover-btn:focus-visible {
   width: 100%;
   min-width: 0;
 }
-.participante-status-leading {
-  display: flex;
+.participante-status-trailing {
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.3rem;
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .participante-edit-meta {
   display: flex;
@@ -6846,10 +6846,7 @@ label.participante-avatar-hover-btn:focus-visible {
   border: 1px solid var(--border);
   color: var(--muted);
   background: var(--bg);
-}
-.participante-status-tag-end {
   flex: 0 0 auto;
-  margin-left: auto;
 }
 .participante-status-tag.status-liberado {
   color: var(--accent);

@@ -70,6 +70,13 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 3. Sidebar/nav: links compactos com ícone + label (padrão atual `site-side-link` / `admin-side-link`).
 4. Não colocar stats, promo strips ou chips demais no primeiro viewport de landing.
 
+## Tags / badges em cards (obrigatório)
+
+1. Em fichas/cards de gestão (ex.: participantes): **nome à esquerda**; **todas** as tags de status/papel (`Ok`, `Inativo`, `Admin`, `Novo`, etc.) no **canto superior direito**, na mesma linha do nome.
+2. Tags **não** grudam no nome — `space-between` / grupo trailing à direita.
+3. Se uma tag já foi para a direita, **as demais do mesmo tipo também** — não misturar Admin colado no nome e Ok à direita.
+4. Generalizar: o mesmo padrão vale para qualquer card denso novo no admin (não reinventar “pill ao lado do título”).
+
 ## Escopo e git
 
 - Mudanças focadas no pedido; sem refatoração oportunista.
