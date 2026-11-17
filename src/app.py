@@ -387,6 +387,10 @@ def _audit_map_participantes(*, per_id: int = 4) -> dict[str, list]:
         return {}
 
 
+# CSRF fica *dentro* da Session (Session adicionada por último = mais externa).
+from src.csrf import AdminCsrfMiddleware, ensure_csrf_token
+
+app.add_middleware(AdminCsrfMiddleware)
 # Session por fora do gate (último add_middleware = mais externo).
 app.add_middleware(
     SessionMiddleware,
@@ -768,6 +772,10 @@ def render(request: Request, name: str, **ctx):
         except Exception:
             ctx["admin_bug_reports_count"] = 0
     ctx.setdefault("bug_status_label", BUG_REPORT_STATUS_LABEL)
+    try:
+        ctx.setdefault("csrf_token", ensure_csrf_token(request))
+    except Exception:
+        ctx.setdefault("csrf_token", "")
     status_code = int(ctx.pop("_status_code", 200) or 200)
     resp = TEMPLATES.TemplateResponse(request, name, ctx, status_code=status_code)
     if force_admin_cookie:
@@ -4212,6 +4220,10 @@ def admin_cobranca(request: Request):
         for p in status["incompletos"]
         if not ((p.get("email") or "").strip() and "@" in (p.get("email") or ""))
     )
+    n_com_email = max(0, int(status.get("n_incompletos") or 0) - n_sem_email)
+    from src.lembrete_palpites import MARCO_MANUAL
+
+    ultimo_lote = db.lembrete_palpites_ultimo_envio(fase, perna, marco=MARCO_MANUAL)
     db.anexar_hall_borda(status.get("incompletos") or [], id_key="id")
     db.anexar_hall_borda(status.get("completos") or [], id_key="id")
 
@@ -4231,6 +4243,8 @@ def admin_cobranca(request: Request):
         admin_cobranca_count=status.get("n_incompletos") or 0,
         n_sem_wa=n_sem_wa,
         n_sem_email=n_sem_email,
+        n_com_email=n_com_email,
+        ultimo_lote_em=ultimo_lote,
         base_url=base,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),

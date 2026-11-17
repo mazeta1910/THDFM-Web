@@ -446,3 +446,70 @@
     if (ms > 0) setTimeout(() => dismiss(modal), ms);
   });
 })();
+
+/** CSRF: injeta token em forms POST /admin e no header de fetch same-origin. */
+(() => {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  const token = (meta && meta.getAttribute("content")) || "";
+  if (!token) return;
+
+  const ensureField = (form) => {
+    if (!form || (form.getAttribute("method") || "get").toLowerCase() !== "post") return;
+    const action = (form.getAttribute("action") || window.location.pathname || "").trim();
+    let path = action;
+    try {
+      path = new URL(action, window.location.origin).pathname;
+    } catch (_) {
+      /* relative ok */
+    }
+    if (!path.startsWith("/admin") || path.startsWith("/admin/login") || path.startsWith("/admin/logout")) {
+      return;
+    }
+    let input = form.querySelector('input[name="csrf_token"]');
+    if (!input) {
+      input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "csrf_token";
+      form.appendChild(input);
+    }
+    input.value = token;
+  };
+
+  document.querySelectorAll("form").forEach(ensureField);
+  document.addEventListener(
+    "submit",
+    (e) => {
+      const form = e.target;
+      if (form && form.tagName === "FORM") ensureField(form);
+    },
+    true
+  );
+
+  const origFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const opts = init ? { ...init } : {};
+    let url = typeof input === "string" ? input : input && input.url;
+    let method = (opts.method || (typeof input !== "string" && input && input.method) || "GET").toUpperCase();
+    let path = "";
+    try {
+      path = new URL(url || "", window.location.origin).pathname;
+    } catch (_) {
+      path = String(url || "");
+    }
+    if (
+      path.startsWith("/admin") &&
+      !path.startsWith("/admin/login") &&
+      !path.startsWith("/admin/logout") &&
+      method !== "GET" &&
+      method !== "HEAD"
+    ) {
+      const headers = new Headers(opts.headers || (typeof input !== "string" && input.headers) || undefined);
+      if (!headers.has("X-CSRF-Token")) headers.set("X-CSRF-Token", token);
+      opts.headers = headers;
+      if (opts.body instanceof FormData && !opts.body.has("csrf_token")) {
+        opts.body.append("csrf_token", token);
+      }
+    }
+    return origFetch(input, opts);
+  };
+})();

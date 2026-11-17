@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/avatar.html" import avatar %}
-{% block title %}Quem palpitou — Admin THDFM{% endblock %}
+{% block title %}Cobranças — Admin THDFM{% endblock %}
 {% block wrap_class %}wide{% endblock %}
 {% block content %}
-<h1>Quem palpitou</h1>
+<h1>Cobranças</h1>
 <p class="cobranca-lead">
   Veja quem já completou e quem ainda falta na <strong>{{ fase_label }}</strong> ({{ perna_label }}).
   WhatsApp individual ou e-mail em lote. Automático: <strong>14 dias</strong>, <strong>7 dias</strong> e <strong>24&nbsp;h</strong> antes do jogo mais próximo que falta.
@@ -58,18 +58,44 @@
   <span class="cobranca-pill cobranca-pill-wa-warn">Sem e-mail <strong>{{ n_sem_email }}</strong></span>
   {% endif %}
   {% if status.n_incompletos %}
-  <form method="post" action="/admin/cobranca/email-todos" class="cobranca-email-lote">
+  <form method="post" action="/admin/cobranca/email-todos" class="cobranca-email-lote" id="form-email-lote">
     <input type="hidden" name="fase" value="{{ fase }}" />
     <input type="hidden" name="perna" value="{{ perna }}" />
     <button
-      type="submit"
+      type="button"
       class="proto-text-btn"
+      id="btn-email-lote"
       title="Enviar e-mail aos incompletos com e-mail (cooldown 24h)"
       aria-label="Avisar incompletos por e-mail"
+      {% if n_com_email|default(0) == 0 %}disabled{% endif %}
     >E-mail</button>
   </form>
   {% endif %}
 </div>
+{% if ultimo_lote_em %}
+<p class="cobranca-hint-wa" id="cobranca-ultimo-lote">
+  Último e-mail em lote ({{ fase_label }} · {{ perna_label }}): <strong>{{ ultimo_lote_em }}</strong>
+  (cooldown 24h por pessoa).
+</p>
+{% elif status.n_incompletos %}
+<p class="cobranca-hint-wa" id="cobranca-ultimo-lote">
+  Nenhum e-mail em lote registrado nesta fase/perna ainda.
+</p>
+{% endif %}
+
+<dialog class="cobranca-email-dialog" id="modal-email-lote">
+  <form method="dialog" class="cobranca-email-dialog-inner">
+    <p>
+      Enviar e-mail para <strong id="email-lote-n">{{ n_com_email|default(0) }}</strong> pessoa(s)
+      incompleta(s) com e-mail cadastrado?
+    </p>
+    <p class="cobranca-hint-wa">Quem já recebeu nas últimas 24h será pulado.</p>
+    <div class="modal-ok-row">
+      <button type="submit" value="cancel" class="proto-text-btn">Cancelar</button>
+      <button type="button" class="proto-text-btn" id="email-lote-confirmar">Enviar</button>
+    </div>
+  </form>
+</dialog>
 {% if n_sem_wa %}
 <p class="cobranca-hint-wa">
   Alguns contatos estão sem celular válido. Corrija o número no formulário abaixo
@@ -216,6 +242,21 @@
       }
     });
   });
+
+  var form = document.getElementById("form-email-lote");
+  var btn = document.getElementById("btn-email-lote");
+  var dlg = document.getElementById("modal-email-lote");
+  var conf = document.getElementById("email-lote-confirmar");
+  if (form && btn && dlg) {
+    btn.addEventListener("click", function () {
+      if (typeof dlg.showModal === "function") dlg.showModal();
+      else if (window.confirm("Enviar e-mail em lote?")) form.submit();
+    });
+    conf && conf.addEventListener("click", function () {
+      dlg.close();
+      form.submit();
+    });
+  }
 })();
 </script>
 {% endblock %}

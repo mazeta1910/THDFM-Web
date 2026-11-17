@@ -1798,6 +1798,24 @@ def registrar_lembrete_palpites(
         )
 
 
+def lembrete_palpites_ultimo_envio(
+    fase: str,
+    perna: str,
+    *,
+    marco: str = "manual",
+) -> str | None:
+    """Retorna `enviado_em` mais recente do marco (ex.: lote manual) ou None."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT MAX(enviado_em) AS ultimo FROM lembrete_palpites_envios "
+            "WHERE fase = ? AND perna = ? AND marco = ?",
+            (fase, perna, marco),
+        ).fetchone()
+        if not row or row["ultimo"] is None:
+            return None
+        return str(row["ultimo"])
+
+
 def texto_jogos_proximos_cobranca(
     jogos: list[dict[str, Any]],
     *,
