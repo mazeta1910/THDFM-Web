@@ -123,6 +123,9 @@ def _path_publico(path: str, method: str = "GET") -> bool:
         "/em-desenvolvimento",
     ):
         return True
+    # Cron / jobs internos (autenticados por CRON_SECRET no handler)
+    if path.startswith("/internal/jobs/"):
+        return True
     if path.startswith("/redefinir-senha/"):
         return True
     if path.startswith("/confirmar-email/"):
@@ -195,6 +198,8 @@ def _path_livre_sem_email(path: str, method: str = "GET") -> bool:
         "/health",
         "/inscricao",
     ):
+        return True
+    if path.startswith("/internal/jobs/"):
         return True
     if path.startswith("/confirmar-email/") or path.startswith("/redefinir-senha/"):
         return True
@@ -995,6 +1000,34 @@ def _app_revision() -> str:
         return head[:12]
     except Exception:
         return "unknown"
+
+
+@app.get("/internal/jobs/lembrete-palpites")
+@app.post("/internal/jobs/lembrete-palpites")
+def job_lembrete_palpites(request: Request):
+    """Cron: e-mails 14d / 7d / 24h para quem ainda não palpitou.
+
+    Auth: header `X-Cron-Secret` ou query `?token=` == env `CRON_SECRET`.
+    Sem segredo configurado → 503.
+    """
+    from src.lembrete_palpites import cron_secret, rodar_job
+
+    esperado = cron_secret()
+    if not esperado:
+        return JSONResponse(
+            {"ok": False, "erro": "CRON_SECRET não configurado"},
+            status_code=503,
+        )
+    recebido = (
+        (request.headers.get("x-cron-secret") or "").strip()
+        or (request.query_params.get("token") or "").strip()
+    )
+    if not recebido or recebido != esperado:
+        return JSONResponse({"ok": False, "erro": "não autorizado"}, status_code=401)
+
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    resultado = rodar_job(base_url=base, forcar_manual=False)
+    return JSONResponse(resultado)
 
 
 @app.get("/health")
@@ -4170,6 +4203,11 @@ def admin_cobranca(request: Request):
         if not diag["ok"]:
             n_sem_wa += 1
 
+    n_sem_email = sum(
+        1
+        for p in status["incompletos"]
+        if not ((p.get("email") or "").strip() and "@" in (p.get("email") or ""))
+    )
     db.anexar_hall_borda(status.get("incompletos") or [], id_key="id")
     db.anexar_hall_borda(status.get("completos") or [], id_key="id")
 
@@ -4188,9 +4226,56 @@ def admin_cobranca(request: Request):
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         admin_cobranca_count=status.get("n_incompletos") or 0,
         n_sem_wa=n_sem_wa,
+        n_sem_email=n_sem_email,
         base_url=base,
         msg=request.query_params.get("msg"),
         erro=request.query_params.get("erro"),
+    )
+
+
+@app.post("/admin/cobranca/email-todos")
+def admin_cobranca_email_todos(
+    request: Request,
+    fase: str = Form(""),
+    perna: str = Form(""),
+):
+    """Disparo manual: e-mail a incompletos da fase/perna (cooldown 24h)."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    from src.lembrete_palpites import rodar_job
+
+    fase_atual = db.get_fase_atual()
+    if fase not in FASE_IDS:
+        fase = fase_atual
+    if fase_formato(fase) == "unico":
+        perna = "unico"
+    elif perna not in ("ida", "volta"):
+        perna = _perna_default_fase(fase)
+    base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    try:
+        r = rodar_job(
+            base_url=base,
+            forcar_manual=True,
+            fase=fase,
+            perna=perna,
+        )
+    except Exception:
+        return RedirectResponse(
+            f"/admin/cobranca?fase={fase}&perna={perna}"
+            f"&erro={quote('Falha ao enviar e-mails')}",
+            status_code=303,
+        )
+    enviados = int(r.get("enviados") or 0)
+    sem = int(r.get("sem_email") or 0)
+    pulados = int(r.get("pulados") or 0)
+    msg = f"E-mails: {enviados} enviados"
+    if sem:
+        msg += f", {sem} sem e-mail"
+    if pulados:
+        msg += f", {pulados} pulados (cooldown/prazo)"
+    return RedirectResponse(
+        f"/admin/cobranca?fase={fase}&perna={perna}&msg={quote(msg)}",
+        status_code=303,
     )
 
 

@@ -10759,6 +10759,21 @@ html[data-theme="light"] .listra-perm-table th {
   flex-wrap: wrap;
   gap: 0.45rem;
   margin: 0 0 0.85rem;
+  align-items: center;
+}
+form.cobranca-email-lote {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+}
+button.cobranca-email-lote,
+form.cobranca-email-lote button {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
 }
 .cobranca-pill {
   display: inline-flex;

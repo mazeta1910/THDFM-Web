@@ -8,6 +8,7 @@
 | `bolao.service` | Uvicorn em `127.0.0.1:8000`, `Restart=always` |
 | `nginx-thdfm.conf` | Proxy reverso + (após certbot) HTTPS |
 | `backup-bolao.sh` | Cópia diária de `bolao.db` + comprovantes |
+| `lembrete-palpites.sh` | Cron horário: e-mail 14d/7d/24h a quem não palpitou |
 
 ## Checklist pós-setup
 
@@ -27,10 +28,12 @@ journalctl -u bolao -n 50 --no-pager
 # */5 * * * * systemctl is-active --quiet bolao || echo "bolao down" | mail -s "THDFM" voce@exemplo.com
 ```
 
-## E-mail transacional (esqueci senha)
+## E-mail transacional (esqueci senha + lembrete de palpites)
 
 No `.env` (ver `.env.example`):
 
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
 - `SMTP_FROM` (ex.: `THDFM <noreply@thdfm.com.br>`)
-- Sem SMTP configurado, o reset grava o link no log do serviço (dev/teste).
+- `CRON_SECRET` — autentica `POST /internal/jobs/lembrete-palpites` (cron horário)
+- Sem SMTP configurado, o reset/lembrete grava o texto no log do serviço (dev/teste).
+- Cadência automática: faixas **14 dias**, **7 dias** e **24 h** antes do jogo mais próximo que falta; admin pode forçar lote em `/admin/cobranca`.

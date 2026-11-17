@@ -289,6 +289,29 @@ def _migrate_email_verify(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_lembrete_palpites(conn: sqlite3.Connection) -> None:
+    """Idempotência dos lembretes automáticos (14d / 7d / 24h / manual)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS lembrete_palpites_envios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            participante_id INTEGER NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+            fase TEXT NOT NULL,
+            perna TEXT NOT NULL,
+            marco TEXT NOT NULL,
+            email TEXT NOT NULL,
+            prazo_inicio_em TEXT,
+            enviado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            UNIQUE (participante_id, fase, perna, marco)
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lembrete_palpites_part "
+        "ON lembrete_palpites_envios(participante_id, fase, perna)"
+    )
+
+
 def _migrate_admin_permissoes(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -1350,6 +1373,7 @@ def init_db() -> None:
         _migrate_recuperacao(conn)
         _migrate_senha_reset(conn)
         _migrate_email_verify(conn)
+        _migrate_lembrete_palpites(conn)
         _migrate_admin_permissoes(conn)
         _migrate_xonhometro(conn)
         _migrate_listra(conn)
@@ -1708,6 +1732,72 @@ def mensagem_whatsapp_cobranca_palpite(
     )
 
 
+def lembrete_palpites_ja_enviado(
+    participante_id: int, fase: str, perna: str, marco: str
+) -> bool:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM lembrete_palpites_envios "
+            "WHERE participante_id = ? AND fase = ? AND perna = ? AND marco = ?",
+            (int(participante_id), fase, perna, marco),
+        ).fetchone()
+        return row is not None
+
+
+def lembrete_palpites_enviado_recente(
+    participante_id: int,
+    fase: str,
+    perna: str,
+    marco: str,
+    *,
+    horas: int = 24,
+) -> bool:
+    """True se já houve envio do mesmo marco na janela recente (cooldown manual)."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM lembrete_palpites_envios "
+            "WHERE participante_id = ? AND fase = ? AND perna = ? AND marco = ? "
+            "AND enviado_em >= datetime('now', 'localtime', ?)",
+            (
+                int(participante_id),
+                fase,
+                perna,
+                marco,
+                f"-{int(horas)} hours",
+            ),
+        ).fetchone()
+        return row is not None
+
+
+def registrar_lembrete_palpites(
+    *,
+    participante_id: int,
+    fase: str,
+    perna: str,
+    marco: str,
+    email: str,
+    prazo_inicio_em: str | None = None,
+) -> None:
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO lembrete_palpites_envios "
+            "(participante_id, fase, perna, marco, email, prazo_inicio_em) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(participante_id, fase, perna, marco) DO UPDATE SET "
+            "email = excluded.email, "
+            "prazo_inicio_em = excluded.prazo_inicio_em, "
+            "enviado_em = datetime('now', 'localtime')",
+            (
+                int(participante_id),
+                fase,
+                perna,
+                marco,
+                (email or "").strip(),
+                prazo_inicio_em,
+            ),
+        )
+
+
 def texto_jogos_proximos_cobranca(
     jogos: list[dict[str, Any]],
     *,
@@ -1855,6 +1945,7 @@ def status_palpites_liberados(
             "id": pid,
             "nome": p.get("nome") or "",
             "celular": p.get("celular"),
+            "email": (p.get("email") or "").strip(),
             "token": p.get("token"),
             "avatar_path": p.get("avatar_path"),
             "n_feitos": n_feitos,

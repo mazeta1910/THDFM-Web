@@ -6,8 +6,8 @@
 <h1>Quem palpitou</h1>
 <p class="cobranca-lead">
   Veja quem já completou e quem ainda falta na <strong>{{ fase_label }}</strong> ({{ perna_label }}).
-  Cada botão do WhatsApp abre a conversa individual com um lembrete:
-  os palpites ficam disponíveis até <strong>{{ trava_antes_min }}&nbsp;min antes</strong> do início de cada jogo.
+  WhatsApp individual ou e-mail em lote. Automático: <strong>14 dias</strong>, <strong>7 dias</strong> e <strong>24&nbsp;h</strong> antes do jogo mais próximo que falta.
+  Palpites abertos até <strong>{{ trava_antes_min }}&nbsp;min antes</strong> do início.
 </p>
 
 {% if msg %}
@@ -53,6 +53,21 @@
   <span class="cobranca-pill">Jogos considerados <strong>{{ status.n_jogos }}</strong></span>
   {% if n_sem_wa %}
   <span class="cobranca-pill cobranca-pill-wa-warn">Sem WhatsApp ok <strong>{{ n_sem_wa }}</strong></span>
+  {% endif %}
+  {% if n_sem_email %}
+  <span class="cobranca-pill cobranca-pill-wa-warn">Sem e-mail <strong>{{ n_sem_email }}</strong></span>
+  {% endif %}
+  {% if status.n_incompletos %}
+  <form method="post" action="/admin/cobranca/email-todos" class="cobranca-email-lote">
+    <input type="hidden" name="fase" value="{{ fase }}" />
+    <input type="hidden" name="perna" value="{{ perna }}" />
+    <button
+      type="submit"
+      class="proto-text-btn"
+      title="Enviar e-mail aos incompletos com e-mail (cooldown 24h)"
+      aria-label="Avisar incompletos por e-mail"
+    >E-mail</button>
+  </form>
   {% endif %}
 </div>
 {% if n_sem_wa %}
