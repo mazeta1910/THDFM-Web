@@ -98,9 +98,10 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 
 - **Sempre** mergear PRs do agente assim que estiverem prontos — **não** esperar o Mazeta pedir merge.
 - Critérios: CI verde (ou repo sem checks) + `mergeable` / sem conflitos + escopo do PR alinhado ao pedido.
-- Preferir `gh pr merge <n> --merge --delete-branch` (ou auto-merge do GitHub se CI ainda estiver rodando).
+- Preferir `gh pr merge <n> --squash --delete-branch` (ou `--merge` se o histórico do PR exigir). Se a API de auto-merge do GitHub estiver desligada no repo, mergear direto no verde / sem checks.
+- **Conflitos / dirty:** não esperar o Mazeta. Rebase (ou merge) em cima da base (`master`), resolver conflitos, push na branch do PR e mergear. Repetir até limpo.
 - Após merge: avisar o Mazeta (link do merge) e, se for feature de produto, lembrar `git pull` + restart em `~/THDFM-Web` quando fizer sentido.
-- Exceção: PR draft, conflito, CI vermelho, ou o Mazeta pediu para **não** mergear / manter aberto.
+- Exceção: PR draft, CI vermelho sem correção possível nesta rodada, ou o Mazeta pediu para **não** mergear / manter aberto. Conflito **não** é exceção — é para resolver e mergear.
 
 ## Referência Grid
 
