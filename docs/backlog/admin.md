@@ -11,4 +11,5 @@
 | feito | Desligar Pedidos de link (WhatsApp) | admin | — | Fluxo coberto por Esqueci minha senha; caixa admin e /login legado removidos |
 | feito | Inscrições: remover cols Liberado/Sem link/Inativos | admin, ui | — | Só gestão por cards; sem coluna duplicada de inativos; sem Sem link / Link enviado |
 | feito | Inscrições: sem resumo; foto padrão no Cadastro | admin, ui | — | Remove card taxa/PIX/link e faixa Foto padrão; avatar do Cadastro define padrão |
+| feito | Inscrições: limpeza residual liberação | admin, ui | — | Sem Aguardando/Recusados/Liberar/Já pagou; create manual já liberado |
 

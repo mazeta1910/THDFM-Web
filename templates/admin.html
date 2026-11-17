@@ -11,9 +11,6 @@
 {% set liberados_todos = participantes | selectattr('status', 'equalto', 'liberado') | list %}
 {% set liberados = liberados_todos | rejectattr('inativo_em') | list %}
 {% set liberados_inativos = liberados_todos | selectattr('inativo_em') | list %}
-{% set nao_liberados = participantes | rejectattr('status', 'equalto', 'liberado') | list %}
-{% set liberacao_pendente = nao_liberados | rejectattr('recusado_em') | list %}
-{% set liberacao_recusada = nao_liberados | selectattr('recusado_em') | list %}
 {# Admins primeiro (já vem ordenado do backend; reforça no template) #}
 {% set liberados = (liberados | selectattr('admin_login') | list) + (liberados | rejectattr('admin_login') | list) %}
 {% set recuperacao_pedidos = recuperacao_pedidos|default([]) %}
@@ -123,32 +120,6 @@
       <input type="hidden" name="participante_id" value="{{ p.id }}" />
       <button type="submit" class="participante-status-icon participante-status-icon-reopen" title="Reativar no bolão" aria-label="Reativar {{ p.nome }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-    </form>
-    {% elif p.recusado_em %}
-    <form method="post" action="/admin/reabrir" class="participante-bolao-status-form">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon" title="Reabrir" aria-label="Reabrir {{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
-      </button>
-    </form>
-    <form method="post" action="/admin/liberar" class="participante-bolao-status-form">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon participante-status-icon-reopen" title="Ok" aria-label="Liberar {{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      </button>
-    </form>
-    {% else %}
-    <form method="post" action="/admin/liberar" class="participante-bolao-status-form">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon participante-status-icon-reopen" title="Ok" aria-label="Liberar {{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      </button>
-    </form>
-    <form method="post" action="/admin/recusar" class="participante-bolao-status-form form-recusar">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon" title="Recusar" aria-label="Recusar {{ p.nome }}" data-nome="{{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </form>
     {% endif %}
@@ -622,10 +593,6 @@
                   </label>
                 </div>
 
-                <label class="participantes-check participante-create-check">
-                  <input type="checkbox" name="ja_pago" value="1" />
-                  Já pagou
-                </label>
               </form>
             </div>
             <div class="participante-edit-actions">
@@ -659,35 +626,6 @@
         </section>
         {% endif %}
 
-        <section class="participantes-section" data-participantes-section="pendentes">
-          <h2 class="participantes-section-title">
-            Aguardando liberação
-            <span class="participantes-count">{{ liberacao_pendente|length }}</span>
-          </h2>
-          {% if liberacao_pendente %}
-          <div class="participantes-grid" data-participantes-grid>
-            {% for p in liberacao_pendente %}
-            {{ participante_edit_card(p) }}
-            {% endfor %}
-          </div>
-          {% else %}
-          <p class="participantes-empty">Ninguém aguardando liberação.</p>
-          {% endif %}
-        </section>
-
-        {% if liberacao_recusada %}
-        <section class="participantes-section" data-participantes-section="recusados">
-          <h2 class="participantes-section-title">
-            Recusados
-            <span class="participantes-count">{{ liberacao_recusada|length }}</span>
-          </h2>
-          <div class="participantes-grid" data-participantes-grid>
-            {% for p in liberacao_recusada %}
-            {{ participante_edit_card(p) }}
-            {% endfor %}
-          </div>
-        </section>
-        {% endif %}
       </div>
     </section>
 
@@ -1274,12 +1212,6 @@ modalApagar?.addEventListener("click", (e) => {
   if (e.target === modalApagar) fecharApagar();
 });
 
-document.querySelectorAll(".form-recusar").forEach((form) => {
-  form.addEventListener("submit", (e) => {
-    const nome = form.querySelector("button[type=submit]")?.dataset?.nome || "este participante";
-    if (!confirm(`Recusar a inscrição de ${nome}? Ela vai para Liberação recusada (não apaga).`)) e.preventDefault();
-  });
-});
 document.querySelectorAll(".form-inativar").forEach((form) => {
   form.addEventListener("submit", (e) => {
     if (!confirm("Marcar como inativo? Some da classificação e do aviso Quem palpitou (pode reativar depois).")) {
