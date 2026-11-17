@@ -192,15 +192,21 @@
         let el = preview.querySelector("img");
         if (!el) {
           const cam = preview.querySelector(".avatar-edit-camera");
-          preview.querySelectorAll("img, .avatar-placeholder").forEach((n) => n.remove());
+          const hover = preview.querySelector(".participante-avatar-hover");
+          const file = preview.querySelector("[data-avatar-input], .participante-avatar-file");
+          preview
+            .querySelectorAll("img, .avatar-placeholder, .participante-edit-avatar-fallback, [data-avatar-fallback]")
+            .forEach((n) => n.remove());
           el = document.createElement("img");
           el.alt = "Prévia da foto";
           if (previewAttr) el.setAttribute(previewAttr, "");
-          if (cam) preview.insertBefore(el, cam);
+          const before = cam || hover || file;
+          if (before) preview.insertBefore(el, before);
           else preview.appendChild(el);
         }
         if (previewImgId) el.id = previewImgId;
         if (previewImgClass) el.className = previewImgClass;
+        if (previewAttr) el.setAttribute(previewAttr, "");
         el.src = url;
       };
 

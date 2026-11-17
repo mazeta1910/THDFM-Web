@@ -6707,15 +6707,28 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   align-items: center;
   justify-content: center;
 }
+.participante-avatar-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .participante-avatar-hover {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  background: rgba(0, 0, 0, 0.5);
+  gap: 0.15rem;
+  background: rgba(0, 0, 0, 0.55);
   opacity: 0;
   transition: opacity 0.14s ease;
   pointer-events: none;
@@ -6725,23 +6738,40 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   opacity: 1;
   pointer-events: auto;
 }
-button.participante-avatar-hover-btn {
+@media (hover: none) {
+  .participante-avatar-hover {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+.participante-avatar-hover-btn,
+button.participante-avatar-hover-btn,
+label.participante-avatar-hover-btn {
   width: auto !important;
   max-width: max-content !important;
   min-height: 0 !important;
-  padding: 0.28rem !important;
+  min-width: 0 !important;
+  padding: 0.32rem !important;
   border-radius: 6px !important;
   border: 0;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  margin: 0;
+  line-height: 0;
+  box-sizing: border-box;
 }
+.participante-avatar-hover-btn:hover,
+.participante-avatar-hover-btn:focus-visible,
 button.participante-avatar-hover-btn:hover,
-button.participante-avatar-hover-btn:focus-visible {
-  background: rgba(255, 255, 255, 0.28);
+button.participante-avatar-hover-btn:focus-visible,
+label.participante-avatar-hover-btn:hover,
+label.participante-avatar-hover-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.3);
 }
 .participante-edit-fields {
   display: grid;

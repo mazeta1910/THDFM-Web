@@ -54,7 +54,11 @@ def test_admin_inativar_e_reativar_ui(client):
     assert "participante-edit-fields" in page.text
     assert "participante-create-wrap" in page.text
     assert ">Ok<" in page.text or "status-liberado" in page.text
+    assert "participante-avatar-file" in page.text
+    assert 'data-avatar-pick' in page.text
     assert "data-inscricoes-col=\"inativos\"" in page.text
+    # label for= aponta pro input do avatar (hover editar foto)
+    assert 'for="participante-avatar-' in page.text
 
     cob = client.get("/admin/cobranca")
     assert cob.status_code == 200
