@@ -149,50 +149,63 @@
 .site-side-nav {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
+  padding: 0.85rem 0.65rem 0.65rem;
+  overflow: hidden;
+  flex: 1;
   min-height: 0;
-  padding: 0.65rem 0.55rem;
 }
 .site-side-nav-scroll {
-  overflow: auto;
-  flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.35rem;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.site-side-nav-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.site-side-nav-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.site-side-nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+.site-side-footer,
 .site-side-sair-wrap {
   flex: 0 0 auto;
   margin-top: 0.35rem;
-  padding-top: 0.55rem;
   border-top: 1px solid var(--border-soft);
+  padding-top: 0.55rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 .site-sair-form {
   margin: 0;
   padding: 0;
-  width: auto;
+  width: 100%;
   display: flex;
-  justify-content: flex-end;
 }
 .site-sair-form .site-side-sair {
-  width: auto;
+  width: 100%;
   border: none;
   background: transparent;
   font: inherit;
-  text-align: right;
+  text-align: left;
   cursor: pointer;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 .site-side-sair {
-  color: var(--accent2) !important;
-  width: auto;
-  justify-content: flex-end;
-  margin-left: auto;
+  color: var(--text) !important;
 }
 .site-side-sair:hover {
   color: var(--accent) !important;
@@ -324,38 +337,49 @@ a.site-hall-lendas.active {
   border-radius: 8px;
 }
 .site-menu-group {
-  margin: 0;
+  flex: 0 0 auto;
+  margin: 0 0 0.35rem;
   border: none;
   background: transparent;
+  width: 100%;
+}
+.site-menu-group + .site-menu-group {
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-soft);
 }
 .site-menu-group > summary {
   list-style: none;
 }
 .site-menu-group > summary::-webkit-details-marker { display: none; }
 .site-menu-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: 100%;
-  margin: 0;
-  padding: 0.55rem 0.65rem;
-  border-radius: 8px;
+  list-style: none;
   cursor: pointer;
-  color: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 800;
+  margin: 0.15rem 0.5rem 0.35rem;
+  padding: 0.35rem 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--muted);
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+.site-menu-summary > span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .site-menu-summary .nav-ico {
-  opacity: 0.95;
+  opacity: 0.75;
 }
 .site-menu-summary::after {
   content: "▾";
-  margin-left: auto;
-  color: var(--muted);
   font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.7;
   transition: transform 0.15s ease;
 }
 .site-menu-group:not([open]) > .site-menu-summary::after {
@@ -516,6 +540,8 @@ a.site-hall-lendas.active {
   text-align: left;
   cursor: pointer;
   text-decoration: none;
+  flex: 0 0 auto;
+  position: relative;
 }
 .site-side-link > span {
   flex: 1 1 auto;
@@ -528,13 +554,38 @@ a.site-hall-lendas.active {
   display: block;
   opacity: 0.85;
 }
+a.site-side-link {
+  color: var(--text);
+}
 .site-side-link:hover {
   background: var(--hover-bg);
   color: var(--accent);
   text-decoration: none;
 }
+.site-side-link:focus-visible,
+.site-menu-summary:focus-visible,
+.site-menu-subsummary:focus-visible,
+.site-hall-lendas:focus-visible,
+.site-brand-user:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .site-side-link.active {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: rgba(232, 93, 4, 0.10);
+  color: var(--accent);
+}
+.site-side-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.site-side-link.active .nav-ico {
+  opacity: 1;
   color: var(--accent);
 }
 .site-main {
