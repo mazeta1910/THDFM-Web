@@ -580,9 +580,23 @@ button.secondary:hover, .btn.secondary:hover {
 .inscricao-modal ul li {
   margin-bottom: 0.25rem;
 }
-.inscricao-modal .modal-ok {
-  width: 100%;
-  margin: 0;
+/* Ok de feedback: compacto e à direita (nunca full-width / esquerda) */
+.modal-ok-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+button.modal-ok {
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem;
+  line-height: 1.2;
 }
 .sucesso-modal .sucesso-titulo {
   color: var(--accent);
