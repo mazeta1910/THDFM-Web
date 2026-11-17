@@ -8,7 +8,7 @@ Dual source of truth:
 ## Rules
 
 - Agent **may add** suggested items
-- Mark `feito` **only when Mazeta asks to merge** (not when a PR opens or tests pass)
+- Mark `feito` when the related PR **merges** (Mazeta prefers auto-merge; not when a PR merely opens or tests pass)
 - Keep rows short: title, status, skill, issue, one-line acceptance
 - Do not invent product work (portal reform, paid signup) without an explicit ask — those stay as `ideia` until prioritized
 
@@ -19,7 +19,7 @@ Dual source of truth:
 | `agora` | Active / in flight |
 | `depois` | Next, not blocking |
 | `ideia` | Parked; align before coding |
-| `feito` | Merged after Mazeta asked to merge |
+| `feito` | Merged (auto-merge OK) |
 
 ## Admin UI
 

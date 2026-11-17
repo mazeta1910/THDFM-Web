@@ -36,16 +36,24 @@ Prefer the narrowest suite that covers the change. Full `pytest -q` only when th
 
 ## Git / Cloud branches
 
-- Feature branches: `cursor/<kebab-description>-0365`
+- Feature branches: `cursor/<kebab-description>-0365` (or the Cloud run suffix, e.g. `-0928`)
 - Focused diffs; no opportunistic refactors
 - Do **not** implement portal/feed/admin unification until Mazeta asks explicitly
+
+## Auto-merge (Mazeta standing preference)
+
+- **Merge PRs automatically** when ready — do **not** wait for Mazeta to say “pode mergear”.
+- Ready = CI green (or repo has no required checks) + mergeable / no conflicts + PR matches the ask.
+- Use `gh pr merge <n> --merge --delete-branch`; if CI is still running, enable GitHub auto-merge and wait for the green event.
+- After merge: tell Mazeta (PR/merge link); for product UI, remind `git pull` + uvicorn restart in `~/THDFM-Web` when relevant.
+- Do **not** merge: draft PRs, red CI, conflicts, or when Mazeta explicitly said to hold.
 
 ## Backlog
 
 - Source files: `docs/backlog/*.md` (by area)
 - Tracking: GitHub Issues (link from the md row when an issue exists)
 - Agent **may add** suggested items in PRs
-- Mark status `feito` **only when Mazeta asks to merge** (not on open PR / green tests alone)
+- Mark status `feito` when the related PR **merges** (auto-merge counts; not on open PR / green tests alone)
 - Admin read-only page (`/admin/backlog`) is planned; ship only after Canvas prototype consensus
 
 ## New / redesigned UI
