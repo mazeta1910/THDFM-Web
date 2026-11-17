@@ -7,6 +7,5 @@
 | depois | Admin Sistema Fase C — Atividade / auditoria | admin | — | `admin_audit` + tela Atividade; fora do access log |
 | depois | Admin read-only backlog page `/admin/backlog` | admin, ui | — | Dense table reading `docs/backlog/*.md` + Issue links; only after Canvas go-ahead |
 | depois | Favicon / deploy smoke | admin | — | Favicon OK in prod; `/health` 200 |
-| ideia | Inscrições: apagar Pedidos de link + densificar Liberado/Inativos | admin, ui | — | Apagar pedido sem atender; inativo/salvar no card (canto inf. dir.); foto com lápis/lixeira no hover; prototype first |
-| ideia | Ficha participante: inativar à esquerda do disquete; trocar/remover foto → ícones na avatar | admin, ui | — | Ver item Inscrições acima; mesmo redesign de card |
+| ideia | Inscrições: apagar Pedidos de link + densificar cards Liberado/Inativos | admin, ui | — | Apagar pedido sem atender; inativar à esq. do disquete (canto inf. dir.); foto com lápis/lixeira no hover; prototype first |
 
