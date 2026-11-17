@@ -6765,6 +6765,7 @@ button.participante-avatar-hover-btn:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
   max-width: 100%;
 }
 .participante-edit-avatar-novo {
@@ -6783,19 +6784,31 @@ button.participante-avatar-hover-btn:focus-visible {
 }
 .participante-status-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+}
+.participante-status-leading {
+  display: flex;
   align-items: center;
   gap: 0.3rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 .participante-edit-meta {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
+  flex: 1 1 auto;
 }
 .participante-status-tag {
   display: inline-flex;
-  align-self: flex-start;
+  align-self: center;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -6803,6 +6816,10 @@ button.participante-avatar-hover-btn:focus-visible {
   border: 1px solid var(--border);
   color: var(--muted);
   background: var(--bg);
+}
+.participante-status-tag-end {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .participante-status-tag.status-liberado {
   color: var(--accent);
