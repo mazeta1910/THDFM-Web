@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Atividade — Sistema — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin/sistema/rotas">Sistema</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Atividade</span>
+</nav>
+<div class="admin-topbar-title-row">
+  <h1>Atividade</h1>
+  <span class="admin-period-pill">{{ total }} evento(s)</span>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page">
+  <p class="admin-muted" style="margin:0 0 0.75rem">
+    Auditoria de mudanças do painel (antes/depois). Separado do Access log.
+  </p>
+
+  <form class="admin-table-filters" method="get" action="/admin/sistema/atividade">
+    <label class="admin-filter-field">
+      <span>Autor</span>
+      <input type="search" name="autor" value="{{ filtros.autor }}" placeholder="login admin" autocomplete="off" />
+    </label>
+    <label class="admin-filter-field">
+      <span>Entidade</span>
+      <select name="entidade">
+        <option value="">Todas</option>
+        {% for e in entidades %}
+        <option value="{{ e }}" {% if filtros.entidade == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="admin-filter-field">
+      <span>ID</span>
+      <input type="search" name="entidade_id" value="{{ filtros.entidade_id }}" placeholder="ex. 12" autocomplete="off" />
+    </label>
+    <label class="admin-filter-field">
+      <span>De</span>
+      <input type="date" name="de" value="{{ filtros.de }}" />
+    </label>
+    <label class="admin-filter-field">
+      <span>Até</span>
+      <input type="date" name="ate" value="{{ filtros.ate }}" />
+    </label>
+    <label class="admin-filter-field">
+      <span>Busca</span>
+      <input type="search" name="q" value="{{ filtros.q }}" placeholder="ação ou resumo" autocomplete="off" />
+    </label>
+    <div class="admin-filter-actions">
+      <button type="submit" class="btn">Filtrar</button>
+      {% if tem_filtro %}
+      <a class="proto-text-btn" href="/admin/sistema/atividade">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if not rows %}
+  <div class="admin-state {% if tem_filtro %}admin-state--filtro{% else %}admin-state--vazio{% endif %}">
+    <p class="admin-state-msg">
+      {% if tem_filtro %}
+      Nenhum evento com esses filtros.
+      {% else %}
+      Sem atividade ainda. Ações no painel (liberar, inativar, salvar…) aparecem aqui.
+      {% endif %}
+    </p>
+    <p class="admin-state-actions">
+      {% if tem_filtro %}
+      <a class="btn secondary" href="/admin/sistema/atividade">Limpar filtros</a>
+      {% else %}
+      <a class="btn secondary" href="/admin?sec=inscricoes">Inscrições</a>
+      {% endif %}
+    </p>
+  </div>
+  {% else %}
+  <div class="admin-table-wrap">
+    <table class="admin-data-table admin-data-table--compact">
+      <thead>
+        <tr>
+          <th scope="col">Quando</th>
+          <th scope="col">Autor</th>
+          <th scope="col">Ação</th>
+          <th scope="col">Entidade</th>
+          <th scope="col">Resumo</th>
+          <th scope="col">Diff</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <time datetime="{{ r.quando.iso }}" title="{{ r.quando.iso }}{% if r.quando.relativo %} · {{ r.quando.relativo }}{% endif %}">
+              {{ r.quando.label }}
+            </time>
+            {% if r.quando.relativo %}
+            <span class="admin-muted admin-rel">{{ r.quando.relativo }}</span>
+            {% endif %}
+          </td>
+          <td>{{ r.autor }}</td>
+          <td><span class="admin-method-badge">{{ r.acao }}</span></td>
+          <td class="admin-mono">
+            {{ r.entidade }}{% if r.entidade_id %}#{{ r.entidade_id }}{% endif %}
+          </td>
+          <td>{{ r.resumo }}</td>
+          <td class="admin-data-table-actions">
+            {% if r.antes_json or r.depois_json %}
+            <details class="admin-audit-diff">
+              <summary>ver</summary>
+              {% if r.antes_json %}
+              <p class="admin-muted">Antes</p>
+              <pre class="admin-audit-pre">{{ r.antes_json }}</pre>
+              {% endif %}
+              {% if r.depois_json %}
+              <p class="admin-muted">Depois</p>
+              <pre class="admin-audit-pre">{{ r.depois_json }}</pre>
+              {% endif %}
+            </details>
+            {% else %}
+            <span class="admin-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

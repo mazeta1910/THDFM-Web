@@ -131,12 +131,12 @@ def test_purge_endpoint_dono(client: TestClient):
     assert alog.ultimo_purge() is not None
 
 
-def test_atividade_ainda_placeholder(client: TestClient):
+def test_atividade_nao_e_mais_placeholder(client: TestClient):
     login_admin(client, "mazeta", "senha-dono")
     r = client.get("/admin/sistema/atividade")
     assert r.status_code == 200
-    assert "Fase C" in r.text
-    assert "auditoria" in r.text.lower()
+    assert "Fase C (auditoria" not in r.text
+    assert "Atividade" in r.text
 
 
 def test_middleware_grava_admin_hit(client: TestClient):
