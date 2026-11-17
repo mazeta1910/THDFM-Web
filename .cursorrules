@@ -79,10 +79,10 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 
 ## Inscrições / gestão de participantes (obrigatório)
 
-1. A gestão é pelos **cards densos** em “Gestão de Participantes” (Liberados + Inativos no bolão + pendentes/recusados se houver).
+1. A gestão é pelos **cards densos** (Liberados + Inativos no bolão + pendentes/recusados se houver) — sem card-resumo “Inscrições” (taxa/stats/PIX/link) nem faixa “Gestão de Participantes”.
 2. **Não** recriar colunas `inscricoes-cols` (Liberado / Sem link / Link enviado / Inativos / Pendente) nem FABs de “marcar link” / WhatsApp de convite — fluxo morto com login externo a caminho.
-3. Inativos **não** ganham coluna duplicada no topo: já aparecem em “Inativos no bolão” embaixo da lista.
-4. Stats/PIX/link público no cabeçalho ok; listagem operacional = só os cards.
+3. Inativos **não** ganham coluna duplicada no topo: já aparecem em “Inativos no bolão”.
+4. Foto padrão do bolão: **só** no avatar do card **Cadastro** (hover → arquivo → envia `/admin/avatar-padrao`). **Não** recriar o card largo “Foto padrão do bolão” / “Definir padrão”.
 
 ## Escopo e git
 
