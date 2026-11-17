@@ -259,6 +259,28 @@ def test_admin_atender_recuperacao(client: TestClient, monkeypatch: pytest.Monke
     updated = db.get_participante(part["id"])
     assert updated and updated.get("link_enviado_em")
 
+
+def test_admin_apagar_pedido_recuperacao(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    import src.app as app_mod
+
+    part = db.criar_participante("Descarta", status="liberado", celular="11955443399")
+    pedido_id = db.criar_pedido_recuperacao(part["id"], "11955443399", ip="9.9.9.9")
+
+    login_admin(client)
+    monkeypatch.setattr(app_mod, "admin_ok", lambda request: True)
+
+    page = client.get("/admin?sec=inscricoes")
+    assert page.status_code == 200
+    assert f'/admin/recuperacao/{pedido_id}/apagar' in page.text
+    assert "recuperacao-apagar-btn" in page.text
+
+    r = client.post(f"/admin/recuperacao/{pedido_id}/apagar", follow_redirects=False)
+    assert r.status_code == 303
+    assert "Pedido+de+link+apagado" in (r.headers.get("location") or "")
+    assert db.list_pedidos_recuperacao_pendentes() == []
+    updated = db.get_participante(part["id"])
+    assert updated and not (updated.get("link_enviado_em") or "").strip()
+
 def test_loguin_menu_oculto_para_usuario_logado(client: TestClient):
     part = db.criar_participante("LogadoX", status="liberado", celular="11990003344")
     db.definir_credenciais(part["id"], "logado.x", "senha1234")

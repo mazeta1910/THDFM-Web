@@ -6990,6 +6990,36 @@ def admin_recuperacao_atender(request: Request, pedido_id: int):
     return RedirectResponse(wa_url, status_code=303)
 
 
+@app.post("/admin/recuperacao/{pedido_id}/apagar")
+def admin_recuperacao_apagar(request: Request, pedido_id: int):
+    """Descarta o pedido de link sem abrir WhatsApp."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    pedido = db.get_pedido_recuperacao(pedido_id)
+    if not pedido:
+        return RedirectResponse(
+            "/admin?sec=inscricoes&erro=Pedido+nao+encontrado", status_code=303
+        )
+    if (pedido.get("atendido_em") or "").strip():
+        return RedirectResponse("/admin?sec=inscricoes", status_code=303)
+    db.marcar_pedido_recuperacao_atendido(pedido_id)
+    _audit(
+        request,
+        acao="apagar",
+        entidade="recuperacao",
+        entidade_id=pedido_id,
+        resumo=f"Descartou pedido de link de {pedido.get('nome') or pedido_id}",
+        antes={
+            "pedido_id": pedido_id,
+            "participante_id": pedido.get("participante_id"),
+            "nome": pedido.get("nome"),
+        },
+    )
+    return RedirectResponse(
+        "/admin?sec=inscricoes&msg=Pedido+de+link+apagado", status_code=303
+    )
+
+
 @app.get("/admin/marcar-link/{participante_id}")
 def admin_marcar_link(
     request: Request,
