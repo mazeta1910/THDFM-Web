@@ -39,6 +39,7 @@ For layout invariants (alignment, grid columns, anti-shrink under compact `butto
 3. Never restore global `button, .btn { width: 100%; }` — full-width is `.btn-block` opt-in
 4. Form actions on the **right**; single-field forms keep button on the same row
 5. Reuse `ico()` — do not add another icon library
+6. Card dense tags (`Ok`, `Admin`, `Inativo`, …): **all** top-right with the name left — never glue one tag to the name and park another on the right (see `.cursorrules` § Tags / badges)
 
 ## Pitfalls
 

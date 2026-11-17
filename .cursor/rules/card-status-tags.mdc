@@ -1,0 +1,8 @@
+# Tags de status em cards densos
+
+Preferência permanente do Mazeta (também em `.cursorrules` e skill `ui`):
+
+1. **Nome à esquerda**; **todas** as pills/tags (`Ok`, `Admin`, `Inativo`, `Novo`, `Pendente`, …) no **canto superior direito**, mesma linha.
+2. Não grudar tag no nome — grupo trailing (`margin-left: auto` / `space-between`).
+3. Se uma tag do card foi para a direita, **as outras do mesmo header também**.
+4. Não inventar layout misto (Admin no nome + Ok à direita).
