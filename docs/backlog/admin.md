@@ -15,7 +15,7 @@
 | feito | CSRF token nos POSTs de admin | admin | #413 | Token + rejeição sem token; ver `docs/revisoes/deepseek-revisao-admin-rotas-2026-11-17.md` |
 | feito | Autosave placares × troca de fase | admin | #413 | Trocar fase <1,8s não perde edição; teste de regressão |
 | feito | Cobrança: confirm e-mail em lote + último envio | admin | #413 | Modal com contagem N; cooldown/último envio visível |
-| agora | Visão geral v2 — popular `/admin/visao` | admin | — | KPIs reais + fase + acessos/atividade/sistema (cap); densos; links filtrados |
+| feito | Visão geral v2 — popular `/admin/visao` | admin | #415 | KPIs reais + fase + acessos/atividade/sistema (cap); densos; links filtrados |
 | depois | Separar `/admin/resultados` e `/admin/inscricoes` | admin | — | Rotas/templates próprios; `/admin` deixa de ser monolítico |
 | depois | Palpites: ordenar/filtrar/CSV + a11y | admin | — | Contrato de tabela; sem `<th>` vazio; CSV do filtro |
 | depois | Unificar confirmação (Inativar = modal, não `confirm()`) | admin, ui | — | Mesmo padrão dos outros modais de Inscrições |
