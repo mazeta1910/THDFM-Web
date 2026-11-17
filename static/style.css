@@ -17617,6 +17617,48 @@ html[data-theme="light"] .admin-filter-field select {
   gap: 0.2rem;
   min-width: 0;
 }
+.admin-audit-diff summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.admin-audit-pre {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.35rem 0.45rem;
+  max-width: 22rem;
+  max-height: 8rem;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  background: var(--bg2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.participante-audit-block {
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.participante-audit-block summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+.participante-audit-list {
+  margin: 0.35rem 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.participante-audit-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  line-height: 1.25;
+}
 .admin-badge--novo {
   background: var(--accent2);
   text-transform: lowercase;

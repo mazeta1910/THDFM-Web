@@ -1107,6 +1107,35 @@ def _backfill_acervo_fases(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_admin_audit(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admin_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT NOT NULL,
+            autor TEXT NOT NULL,
+            acao TEXT NOT NULL,
+            entidade TEXT NOT NULL,
+            entidade_id TEXT NOT NULL DEFAULT '',
+            resumo TEXT NOT NULL DEFAULT '',
+            antes_json TEXT,
+            depois_json TEXT,
+            path TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_audit_ts ON admin_audit(ts DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_audit_entidade "
+        "ON admin_audit(entidade, entidade_id)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_audit_autor ON admin_audit(autor)"
+    )
+
+
 def _migrate_access_log(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -1338,6 +1367,7 @@ def init_db() -> None:
         _migrate_acervo(conn)
         _migrate_bug_reports(conn)
         _migrate_access_log(conn)
+        _migrate_admin_audit(conn)
         _migrate_quartas_ordem_casa(conn)
         _reset_grid_progresso_lancamento(conn)
         _purge_grid_progresso_pre_ranking(conn)

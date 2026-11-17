@@ -296,6 +296,92 @@ async def access_log_middleware(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def admin_audit_middleware(request: Request, call_next):
+    """Fase C: fallback — POST/PUT/PATCH/DELETE em /admin/* sem audit explícito."""
+    response = await call_next(request)
+    try:
+        method = request.method.upper()
+        path = request.url.path
+        if method not in {"POST", "PUT", "PATCH", "DELETE"}:
+            return response
+        if not path.startswith("/admin"):
+            return response
+        from src import admin_audit as audit
+
+        if audit.should_skip_path(path):
+            return response
+        if getattr(request.state, "audit_recorded", False):
+            return response
+        status = int(getattr(response, "status_code", 0) or 0)
+        # 2xx/3xx = sucesso (redirect 303 típico); 4xx/5xx não audita.
+        if status >= 400:
+            return response
+        autor = (request.session.get("admin_login") or "").strip().lower()
+        if not autor:
+            return response
+        entidade, eid = audit.infer_entidade(path)
+        audit.record(
+            autor=autor,
+            acao=method.lower(),
+            entidade=entidade,
+            entidade_id=eid or None,
+            resumo=f"{method} {path} → {status}",
+            path=path,
+        )
+    except Exception:
+        pass
+    return response
+
+
+def _audit(
+    request: Request,
+    *,
+    acao: str,
+    entidade: str,
+    entidade_id: str | int | None = None,
+    resumo: str = "",
+    antes=None,
+    depois=None,
+) -> None:
+    """Marca a request e grava evento (Fase C)."""
+    try:
+        from src import admin_audit as audit
+
+        request.state.audit_recorded = True
+        audit.record(
+            autor=admin_login_atual(request) or "—",
+            acao=acao,
+            entidade=entidade,
+            entidade_id=entidade_id,
+            resumo=resumo,
+            antes=antes,
+            depois=depois,
+            path=request.url.path,
+        )
+    except Exception:
+        pass
+
+
+def _audit_map_participantes(*, per_id: int = 4) -> dict[str, list]:
+    """Últimos eventos por participante_id para o bloco nas fichas."""
+    try:
+        from src import admin_audit as audit
+
+        events = audit.list_events(entidade="participante", limit=400)
+        out: dict[str, list] = {}
+        for ev in events:
+            eid = (ev.get("entidade_id") or "").strip()
+            if not eid:
+                continue
+            bucket = out.setdefault(eid, [])
+            if len(bucket) < per_id:
+                bucket.append(ev)
+        return out
+    except Exception:
+        return {}
+
+
 # Session por fora do gate (último add_middleware = mais externo).
 app.add_middleware(
     SessionMiddleware,
@@ -6326,6 +6412,12 @@ def admin_sistema_rotas_snapshot(request: Request):
     from src import admin_sistema as sis
 
     sis.save_snapshot(sis.introspect_routes(app))
+    _audit(
+        request,
+        acao="snapshot",
+        entidade="sistema",
+        resumo="Snapshot de rotas gravado",
+    )
     return RedirectResponse(
         "/admin/sistema/rotas?msg=" + quote("Snapshot gravado."),
         status_code=303,
@@ -6414,6 +6506,13 @@ def admin_sistema_access_log_purge(request: Request):
     por = admin_login_atual(request) or "dono"
     reg = alog.purge_expired(por=por, force_record=True)
     n = reg.get("removidos_detalhe", 0) + reg.get("removidos_agregado", 0)
+    _audit(
+        request,
+        acao="purge",
+        entidade="sistema",
+        resumo=f"Purge access log (−{n})",
+        depois=reg,
+    )
     return RedirectResponse(
         "/admin/sistema/access-log?msg="
         + quote(f"Purge: {n} removido(s) antes de {reg.get('antes_de')}."),
@@ -6422,6 +6521,50 @@ def admin_sistema_access_log_purge(request: Request):
 
 
 @app.get("/admin/sistema/atividade", response_class=HTMLResponse)
+def admin_sistema_atividade(request: Request):
+    gate = require_sistema(request)
+    if gate:
+        return gate
+    from src import admin_audit as audit
+
+    filtros = {
+        "autor": (request.query_params.get("autor") or "").strip(),
+        "entidade": (request.query_params.get("entidade") or "").strip(),
+        "entidade_id": (request.query_params.get("entidade_id") or "").strip(),
+        "de": (request.query_params.get("de") or "").strip()[:10],
+        "ate": (request.query_params.get("ate") or "").strip()[:10],
+        "q": (request.query_params.get("q") or "").strip(),
+    }
+    tem_filtro = any(filtros.values())
+    total = audit.count_events(
+        autor=filtros["autor"] or None,
+        entidade=filtros["entidade"] or None,
+        entidade_id=filtros["entidade_id"] or None,
+        dia_de=filtros["de"] or None,
+        dia_ate=filtros["ate"] or None,
+        q=filtros["q"] or None,
+    )
+    rows = audit.list_events(
+        autor=filtros["autor"] or None,
+        entidade=filtros["entidade"] or None,
+        entidade_id=filtros["entidade_id"] or None,
+        dia_de=filtros["de"] or None,
+        dia_ate=filtros["ate"] or None,
+        q=filtros["q"] or None,
+    )
+    return render(
+        request,
+        "admin_sistema_atividade.html",
+        filtros=filtros,
+        tem_filtro=tem_filtro,
+        rows=rows,
+        total=total,
+        entidades=audit.entidades_conhecidas()
+        or ["participante", "sistema", "bolao", "resultado", "admin"],
+        path_atual=request.url.path,
+    )
+
+
 @app.get("/admin/sistema/assets", response_class=HTMLResponse)
 @app.get("/admin/sistema/saude", response_class=HTMLResponse)
 def admin_sistema_placeholder(request: Request):
@@ -6429,12 +6572,10 @@ def admin_sistema_placeholder(request: Request):
     if gate:
         return gate
     titulo = {
-        "/admin/sistema/atividade": "Atividade",
         "/admin/sistema/assets": "Assets",
         "/admin/sistema/saude": "Saúde",
     }.get(request.url.path, "Sistema")
     fase_hint = {
-        "/admin/sistema/atividade": "Em breve — Fase C (auditoria de mudanças).",
         "/admin/sistema/assets": "Em breve — Assets do painel.",
         "/admin/sistema/saude": "Em breve — Saúde do sistema.",
     }.get(request.url.path, "Em breve.")
@@ -6586,6 +6727,7 @@ def admin_home(request: Request):
         base_url=base,
         inscricao_url=f"{base}/inscricao",
         public_url_configurada=bool(PUBLIC_BASE_URL),
+        audit_por_participante=_audit_map_participantes(),
         **_taxa_ctx(),
     )
 
@@ -6778,7 +6920,20 @@ def _limpar_arquivos_participante(part: dict) -> None:
 def admin_liberar(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(db.get_participante(participante_id))
     db.liberar_participante(participante_id)
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="liberar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Liberou {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Inscricao+liberada", status_code=303
     )
@@ -6890,12 +7045,24 @@ def admin_apagar(request: Request, participante_id: int = Form(...)):
             "/admin?sec=inscricoes&erro=Nao+da+para+apagar+o+admin+logado",
             status_code=303,
         )
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(part)
     apagado = db.apagar_participante(participante_id)
     if not apagado:
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Participante+nao+encontrado", status_code=303
         )
     _limpar_arquivos_participante(apagado)
+    _audit(
+        request,
+        acao="apagar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Apagou {(antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=None,
+    )
     msg = "Inscricao+apagada"
     if part_login:
         msg = "Admin+removido+do+bolao.+So+volta+se+ele+entrar+de+novo+no+admin"
@@ -6907,10 +7074,23 @@ def admin_recusar(request: Request, participante_id: int = Form(...)):
     """Recusar = marca como recusada (não apaga; use o × para excluir)."""
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(db.get_participante(participante_id))
     if not db.recusar_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+recusar", status_code=303
         )
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="recusar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Recusou {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Inscricao+recusada", status_code=303
     )
@@ -6921,10 +7101,23 @@ def admin_inativar(request: Request, participante_id: int = Form(...)):
     """Inativa liberado: some da classificação e do aviso Quem palpitou."""
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(db.get_participante(participante_id))
     if not db.inativar_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+inativar", status_code=303
         )
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="inativar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Inativou {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Participante+inativo", status_code=303
     )
@@ -6934,10 +7127,23 @@ def admin_inativar(request: Request, participante_id: int = Form(...)):
 def admin_reativar(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(db.get_participante(participante_id))
     if not db.reativar_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+reativar", status_code=303
         )
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="reativar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Reativou {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Participante+reativado", status_code=303
     )
@@ -6947,10 +7153,23 @@ def admin_reativar(request: Request, participante_id: int = Form(...)):
 def admin_reabrir(request: Request, participante_id: int = Form(...)):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
+    antes = audit.snap_participante(db.get_participante(participante_id))
     if not db.reabrir_participante(participante_id):
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Nao+foi+possivel+reabrir", status_code=303
         )
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="reabrir",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Reabriu {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Inscricao+reaberta", status_code=303
     )
@@ -6972,6 +7191,7 @@ def admin_recusar_todos(request: Request):
 def admin_janela(request: Request, janela: str = Form(...)):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    antes = db.get_janela()
     try:
         db.set_janela(janela)
     except ValueError:
@@ -6980,6 +7200,14 @@ def admin_janela(request: Request, janela: str = Form(...)):
         )
     labels = {"ida": "Ida", "volta": "Volta", "fechado": "Fechado"}
     label = labels.get(janela, janela)
+    _audit(
+        request,
+        acao="janela",
+        entidade="bolao",
+        resumo=f"Janela {antes} → {janela}",
+        antes={"janela": antes},
+        depois={"janela": janela},
+    )
     return RedirectResponse(
         f"/admin?sec=resultados&msg={quote('Meus Palpites abre em ' + label)}",
         status_code=303,
@@ -6990,12 +7218,21 @@ def admin_janela(request: Request, janela: str = Form(...)):
 def admin_fase(request: Request, fase: str = Form(...)):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    antes = db.get_fase_atual()
     try:
         db.set_fase_atual(fase)
     except ValueError:
         return RedirectResponse(
             "/admin?sec=resultados&erro=Fase+invalida", status_code=303
         )
+    _audit(
+        request,
+        acao="fase",
+        entidade="bolao",
+        resumo=f"Fase {antes} → {fase}",
+        antes={"fase": antes},
+        depois={"fase": fase},
+    )
     return RedirectResponse(
         f"/admin?sec=resultados&msg={quote('Fase ' + fase)}", status_code=303
     )
@@ -7073,12 +7310,15 @@ async def admin_atualizar_participante(
 
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+    from src import admin_audit as audit
+
     part = db.get_participante(participante_id)
     if not part:
         return RedirectResponse(
             "/admin?sec=inscricoes&erro=Participante+nao+encontrado",
             status_code=303,
         )
+    antes = audit.snap_participante(part)
     try:
         db.atualizar_nome_participante(participante_id, nome)
         db.atualizar_celular_participante(participante_id, celular)
@@ -7125,6 +7365,16 @@ async def admin_atualizar_participante(
         (AVATARES_DIR / rel).write_bytes(data)
         db.salvar_avatar(participante_id, rel)
 
+    depois = audit.snap_participante(db.get_participante(participante_id))
+    _audit(
+        request,
+        acao="atualizar",
+        entidade="participante",
+        entidade_id=participante_id,
+        resumo=f"Atualizou {(depois or antes or {}).get('nome') or participante_id}",
+        antes=antes,
+        depois=depois,
+    )
     return RedirectResponse(
         "/admin?sec=inscricoes&msg=Participante+atualizado", status_code=303
     )

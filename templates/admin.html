@@ -112,6 +112,22 @@
   <button type="submit" class="participante-reativar-btn" title="Volta à classificação e à cobrança de palpites">Reativar no bolão</button>
 </form>
 {% endif %}
+{% set evs = (audit_por_participante or {}).get(p.id|string, []) %}
+{% if evs and (is_dono and ('sistema.ver' in admin_caps)) %}
+<details class="participante-audit-block">
+  <summary>Atividade</summary>
+  <ul class="participante-audit-list">
+    {% for ev in evs %}
+    <li>
+      <time datetime="{{ ev.quando.iso }}" title="{{ ev.quando.iso }}">{{ ev.quando.label }}</time>
+      <span>{{ ev.autor }} · {{ ev.acao }}</span>
+      {% if ev.resumo %}<span class="admin-muted">{{ ev.resumo }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <a class="proto-text-btn" href="/admin/sistema/atividade?entidade=participante&amp;entidade_id={{ p.id }}">Ver tudo</a>
+</details>
+{% endif %}
 </div>
 {%- endmacro %}
 

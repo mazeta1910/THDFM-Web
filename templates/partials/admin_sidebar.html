@@ -192,7 +192,7 @@
         <div class="admin-menu-items">
           <a class="admin-side-link {% if path.startswith('/admin/sistema/rotas') %}active{% endif %}" href="/admin/sistema/rotas" {% if path.startswith('/admin/sistema/rotas') %}aria-current="page"{% endif %}>{{ ico('regras') }}<span>Rotas</span></a>
           <a class="admin-side-link {% if path.startswith('/admin/sistema/access-log') %}active{% endif %}" href="/admin/sistema/access-log">{{ ico('transparencia') }}<span>Access log</span></a>
-          <a class="admin-side-link {% if path.startswith('/admin/sistema/atividade') %}active{% endif %}" href="/admin/sistema/atividade">{{ ico('classificacao') }}<span>Atividade</span><span class="admin-badge admin-badge--novo">novo</span></a>
+          <a class="admin-side-link {% if path.startswith('/admin/sistema/atividade') %}active{% endif %}" href="/admin/sistema/atividade" {% if path.startswith('/admin/sistema/atividade') %}aria-current="page"{% endif %}>{{ ico('classificacao') }}<span>Atividade</span></a>
           <a class="admin-side-link {% if path.startswith('/admin/sistema/assets') %}active{% endif %}" href="/admin/sistema/assets">{{ ico('inscricao') }}<span>Assets</span></a>
           <a class="admin-side-link {% if path.startswith('/admin/sistema/saude') %}active{% endif %}" href="/admin/sistema/saude">{{ ico('admin') }}<span>Saúde</span></a>
         </div>
