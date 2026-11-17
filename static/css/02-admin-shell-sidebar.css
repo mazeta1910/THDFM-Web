@@ -88,6 +88,13 @@ body.admin-body .wrap.admin-wrap {
   background: var(--hover-bg);
   border-color: var(--border);
 }
+.admin-brand-user-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .admin-brand-user {
   display: flex;
   align-items: center;
@@ -99,6 +106,31 @@ body.admin-body .wrap.admin-wrap {
   text-decoration: none;
   color: inherit;
   border: none;
+}
+a.admin-brand-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto !important;
+  max-width: max-content !important;
+  margin: 0 0.25rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+a.admin-brand-quick:hover,
+a.admin-brand-quick.active {
+  color: var(--accent);
+  background: var(--hover-bg);
+  text-decoration: none;
+}
+a.admin-brand-quick .nav-ico {
+  width: 13px;
+  height: 13px;
+  opacity: 0.85;
 }
 .admin-brand-user:hover,
 .admin-brand-user.active {
@@ -185,6 +217,18 @@ body.admin-body .wrap.admin-wrap {
   overflow-y: auto;
   padding-bottom: 0.35rem;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.admin-side-nav-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.admin-side-nav-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.admin-side-nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 .admin-side-label {
   margin: 0.75rem 0.5rem 0.35rem;
@@ -261,9 +305,27 @@ body.admin-body .wrap.admin-wrap {
   display: none;
 }
 .admin-side-disabled {
-  opacity: 0.4;
+  opacity: 0.55;
   cursor: not-allowed;
   pointer-events: none;
+}
+.admin-side-disabled .admin-side-tag {
+  opacity: 1;
+}
+.admin-side-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--hover-bg);
+  border: 1px solid var(--border-soft);
+  flex: 0 0 auto;
 }
 .admin-side-link {
   display: flex;
@@ -283,8 +345,9 @@ body.admin-body .wrap.admin-wrap {
   cursor: pointer;
   text-decoration: none;
   flex: 0 0 auto;
+  position: relative;
 }
-.admin-side-link > span:not(.admin-badge) {
+.admin-side-link > span:not(.admin-badge):not(.admin-side-tag) {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -298,6 +361,13 @@ body.admin-body .wrap.admin-wrap {
   display: block;
   opacity: 0.85;
 }
+.admin-side-link .nav-ico:last-child:not(:first-child) {
+  flex: 0 0 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  opacity: 0.5;
+  margin-left: 0.15rem;
+}
 a.admin-side-link {
   color: var(--text);
 }
@@ -306,12 +376,35 @@ a.admin-side-link {
   color: var(--accent);
   text-decoration: none;
 }
+.admin-side-link:focus-visible,
+.admin-menu-summary:focus-visible,
+a.admin-brand-quick:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .admin-side-link.active {
-  background: rgba(232, 93, 4, 0.18);
+  background: rgba(232, 93, 4, 0.10);
+  color: var(--accent);
+}
+.admin-side-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.admin-side-link.active .nav-ico {
+  opacity: 1;
   color: var(--accent);
 }
 .admin-side-sair {
-  color: var(--accent2) !important;
+  color: var(--text) !important;
+}
+.admin-side-sair:hover {
+  color: var(--accent) !important;
 }
 .admin-side-sair-fixed {
   flex: 0 0 auto;
@@ -333,10 +426,33 @@ a.admin-side-link {
   height: 1.35rem;
   padding: 0 0.35rem;
   border-radius: 999px;
-  background: var(--accent2);
-  color: #fff;
+  background: color-mix(in srgb, var(--count) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--count) 34%, transparent);
+  color: var(--count);
   font-size: 0.72rem;
   font-weight: 800;
+}
+/* Agregado só no summary quando o grupo está colapsado */
+.admin-menu-group[open] > .admin-menu-summary > .admin-badge {
+  display: none;
+}
+.admin-side-footer {
+  flex: 0 0 auto;
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.admin-side-site-block {
+  padding: 0.15rem 0 0.25rem;
+}
+.admin-side-site-block .admin-menu-group {
+  margin-bottom: 0.15rem;
+}
+.admin-side-footer-meta {
+  display: none;
 }
 .admin-main {
   flex: 1;

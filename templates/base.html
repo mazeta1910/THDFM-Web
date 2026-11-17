@@ -23,7 +23,7 @@
   <link rel="icon" href="/static/img/thdfm-logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/static/img/thdfm-logo.png" />
   <script src="/static/theme-boot.js?v=1"></script>
-  <link rel="stylesheet" href="/static/style.css?v=378" />
+  <link rel="stylesheet" href="/static/style.css?v=379" />
   {% if ADSENSE_CLIENT %}
   <meta name="thdfm-adsense-client" content="{{ ADSENSE_CLIENT }}" />
   {% endif %}
@@ -54,7 +54,6 @@
 {% set on_inscricao = path.startswith('/inscricao') %}
 {% set on_palpites = participante_nav and (
   path == '/bolao/meus-palpites'
-  or path == '/bolao/meuspalpites'
   or (path == '/p/' + participante_nav.token and '/conta' not in path)
 ) %}
 {% set on_competicao = on_classificacao or on_transparencia or on_regras %}
