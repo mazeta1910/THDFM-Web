@@ -458,7 +458,11 @@ def avatar_url(avatar_path: str | None) -> str | None:
     if rel and "/" not in rel and "\\" not in rel and ".." not in rel:
         path = AVATARES_DIR / rel
         if path.is_file():
-            return f"/avatars/{rel}"
+            try:
+                v = int(path.stat().st_mtime)
+            except OSError:
+                v = 0
+            return f"/avatars/{rel}?v={v}"
     return avatar_padrao_url()
 
 
@@ -7481,13 +7485,24 @@ async def admin_atualizar_participante(
                 "/admin?sec=inscricoes&erro=Foto+invalida+ou+maior+que+3MB",
                 status_code=303,
             )
-        if part.get("avatar_path"):
-            old = AVATARES_DIR / part["avatar_path"]
-            if old.is_file():
-                old.unlink(missing_ok=True)
-        rel = f"{participante_id}_{int(time.time())}{ext}"
-        (AVATARES_DIR / rel).write_bytes(data)
-        db.salvar_avatar(participante_id, rel)
+        try:
+            AVATARES_DIR.mkdir(parents=True, exist_ok=True)
+            if part.get("avatar_path"):
+                old = AVATARES_DIR / part["avatar_path"]
+                if old.is_file():
+                    old.unlink(missing_ok=True)
+            rel = f"{participante_id}_{int(time.time())}{ext}"
+            dest = AVATARES_DIR / rel
+            dest.write_bytes(data)
+            if not dest.is_file() or dest.stat().st_size <= 0:
+                raise OSError("arquivo de avatar não gravou")
+            db.salvar_avatar(participante_id, rel)
+        except OSError:
+            return RedirectResponse(
+                "/admin?sec=inscricoes&erro="
+                + quote("Não foi possível gravar a foto (disco/permissão)"),
+                status_code=303,
+            )
 
     depois = audit.snap_participante(db.get_participante(participante_id))
     _audit(
