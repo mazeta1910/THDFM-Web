@@ -49,6 +49,12 @@ cat >/etc/cron.d/thdfm-watchdog <<'CRON'
 */5 * * * * root systemctl is-active --quiet bolao || systemctl start bolao
 CRON
 
+# Lembrete de palpites (14d / 7d / 24h) — a cada hora; exige CRON_SECRET no .env
+cat >/etc/cron.d/thdfm-lembrete-palpites <<'CRON'
+5 * * * * root APP_DIR=/var/www/thdfm /usr/local/bin/thdfm-lembrete-palpites >>/var/log/thdfm-lembrete-palpites.log 2>&1
+CRON
+install -m 0755 "$APP_DIR/deploy/lembrete-palpites.sh" /usr/local/bin/thdfm-lembrete-palpites
+
 nginx -t
 systemctl daemon-reload
 systemctl enable --now bolao
