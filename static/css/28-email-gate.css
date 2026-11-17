@@ -456,3 +456,52 @@ html[data-theme="light"] .admin-filter-field select {
   cursor: not-allowed;
   pointer-events: none;
 }
+.admin-kpi-n--bad {
+  color: #d64545;
+}
+.admin-visao-ficha {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  margin: 0 0 0.75rem;
+}
+.admin-visao-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+}
+.admin-visao-dl > div {
+  min-width: 0;
+}
+.admin-visao-dl dt {
+  margin: 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.admin-visao-dl dd {
+  margin: 0.05rem 0 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.admin-visao-ficha-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  margin-top: 0.55rem;
+}
+.admin-visao-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+}
+@media (max-width: 480px) {
+  .admin-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

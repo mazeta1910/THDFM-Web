@@ -6359,10 +6359,24 @@ def _sistema_rotas_query_string(filtros: dict) -> str:
     return urlencode(parts)
 
 
+def _db_size_label() -> str:
+    """Tamanho do SQLite em texto curto (ex.: 1,2 MB)."""
+    try:
+        n = int(Path(db.DB_PATH).stat().st_size)
+    except OSError:
+        return "—"
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.1f} KB".replace(".", ",")
+    return f"{n / (1024 * 1024):.1f} MB".replace(".", ",")
+
+
 @app.get("/admin/visao", response_class=HTMLResponse)
 def admin_visao(request: Request):
     if not admin_ok(request):
         return _redirect_acesso("entrar")
+
     pendentes = sum(
         1
         for p in db.list_participantes()
@@ -6370,39 +6384,180 @@ def admin_visao(request: Request):
     )
     fase = db.get_fase_atual()
     fase_label = next((f.get("label") or f["id"] for f in FASES if f["id"] == fase), fase)
-    precisa = []
-    if pendentes:
-        precisa.append(
-            {
-                "texto": f"{pendentes} inscrição(ões) aguardando aprovação",
-                "modulo": "Operação",
-                "acao": "revisar",
-                "href": "/admin?sec=inscricoes",
-            }
+    janela = db.get_janela()
+    janela_label = {"ida": "Ida", "volta": "Volta", "fechado": "Fechado"}.get(
+        janela, janela
+    )
+    perna = _perna_default_fase(fase, janela)
+    perna_label = _perna_label(perna)
+
+    cobranca_n = 0
+    try:
+        cobranca = db.status_palpites_liberados(
+            fase, perna, so_abertos=True, janela=janela
         )
+        cobranca_n = int(cobranca.get("n_incompletos") or 0)
+    except Exception:
+        cobranca_n = 0
+
+    confrontos = db.list_confrontos_completos(fase)
+    jogos_perna: list[dict] = []
+    for c in confrontos:
+        for j in c.get("jogos") or []:
+            if (j.get("perna") or "") == perna:
+                jogos_perna.append(j)
+    n_jogos = len(jogos_perna)
+    n_com_placar = sum(
+        1
+        for j in jogos_perna
+        if j.get("gols_mandante") is not None and j.get("gols_visitante") is not None
+    )
+    sem_placar = max(0, n_jogos - n_com_placar)
+
     reports = 0
     if has_cap(request, "grid.bugs"):
         try:
             reports = db.contar_bug_reports_abertos()
         except Exception:
             reports = 0
-        if reports:
-            precisa.append(
-                {
-                    "texto": f"{reports} report(s) aberto(s) no Grid",
-                    "modulo": "Grid",
-                    "acao": "triagem",
-                    "href": "/admin/reports",
-                }
-            )
+
+    # Saúde real (mesma lógica de /health).
+    health_ok = False
+    try:
+        with db.get_db() as conn:
+            conn.execute("SELECT 1").fetchone()
+        health_ok = True
+    except Exception:
+        health_ok = False
+    rev = _app_revision()
+
+    precisa: list[dict] = []
+    if pendentes:
+        precisa.append(
+            {
+                "texto": f"{pendentes} inscrição(ões) não liberada(s)",
+                "modulo": "Operação",
+                "acao": "ver",
+                "href": "/admin?sec=inscricoes",
+            }
+        )
+    if cobranca_n:
+        precisa.append(
+            {
+                "texto": f"{cobranca_n} palpite(s) incompleto(s) ({fase_label} · {perna_label})",
+                "modulo": "Cobranças",
+                "acao": "avisar",
+                "href": f"/admin/cobranca?fase={fase}&perna={perna}",
+            }
+        )
+    if sem_placar:
+        precisa.append(
+            {
+                "texto": f"{sem_placar} jogo(s) sem placar ({fase_label} · {perna_label})",
+                "modulo": "Resultados",
+                "acao": "preencher",
+                "href": "/admin?sec=resultados",
+            }
+        )
+    if reports:
+        precisa.append(
+            {
+                "texto": f"{reports} report(s) aberto(s) no Grid",
+                "modulo": "Grid",
+                "acao": "triagem",
+                "href": "/admin/reports",
+            }
+        )
+
+    # Confrontos a montar: fase atual vazia, ou próxima pronta sem chave.
+    if not confrontos:
+        precisa.append(
+            {
+                "texto": f"Montar confrontos de {fase_label}",
+                "modulo": "Resultados",
+                "acao": "montar",
+                "href": "/admin?sec=resultados",
+            }
+        )
+    else:
+        fase_idx = FASE_IDS.index(fase) if fase in FASE_IDS else 0
+        if fase_idx + 1 < len(FASE_IDS):
+            pid = FASE_IDS[fase_idx + 1]
+            prox = next((f for f in FASES if f["id"] == pid), None)
+            if prox:
+                origem = fase_anterior(pid)
+                classificados = db.classificados_da_fase(origem) if origem else []
+                n_chaves = int(prox["slots"])
+                existentes = db.list_confrontos_completos(pid)
+                if len(classificados) >= n_chaves * 2 and not existentes:
+                    prox_label = prox.get("label") or pid
+                    precisa.append(
+                        {
+                            "texto": f"Montar confrontos de {prox_label}",
+                            "modulo": "Resultados",
+                            "acao": "montar",
+                            "href": "/admin?sec=resultados",
+                        }
+                    )
+
+    ultima_rodada = db.get_ultima_rodada_historico()
+    ultima_rodada_rotulo = None
+    if ultima_rodada:
+        ultima_rodada_rotulo = (
+            ultima_rodada.get("rotulo")
+            or f"Rodada {ultima_rodada.get('numero')}"
+        )
+
+    ultimos_acessos: list[dict] = []
+    atividade: list[dict] = []
+    sistema: dict | None = None
+    if has_cap(request, "sistema.ver"):
+        from src import access_log as alog
+        from src import admin_audit as audit
+        from src import admin_sistema as sis
+
+        for r in alog.list_hits(limit=8):
+            ultimos_acessos.append({**r, "quando": alog.format_quando(r["ts"])})
+        atividade = audit.list_events(limit=8)
+        n_rotas = len(sis.introspect_routes(app))
+        purge = alog.ultimo_purge()
+        purge_label = None
+        if purge:
+            purge_label = purge.get("em") or purge.get("antes_de") or str(purge)
+        sistema = {
+            "rev": rev,
+            "health_ok": health_ok,
+            "db_size": _db_size_label(),
+            "n_rotas": n_rotas,
+            "n_hits": alog.count_hits(),
+            "purge_label": purge_label,
+            "retencao_dias": alog.RETENCAO_DIAS,
+        }
+
     return render(
         request,
         "admin_visao.html",
         pendentes=pendentes,
-        fase_aberta_n=1,
-        fase_aberta_label=f"{fase_label} aberta",
+        cobranca_n=cobranca_n,
+        sem_placar=sem_placar,
         reports_abertos=reports,
+        health_ok=health_ok,
+        rev=rev,
+        fase=fase,
+        fase_label=fase_label,
+        janela=janela,
+        janela_label=janela_label,
+        perna=perna,
+        perna_label=perna_label,
+        n_jogos=n_jogos,
+        n_com_placar=n_com_placar,
+        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
+        ultima_rodada_rotulo=ultima_rodada_rotulo,
         precisa=precisa,
+        ultimos_acessos=ultimos_acessos,
+        atividade=atividade,
+        sistema=sistema,
+        admin_cobranca_count=cobranca_n,
     )
 
 
