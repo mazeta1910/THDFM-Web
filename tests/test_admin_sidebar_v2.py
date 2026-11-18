@@ -67,3 +67,21 @@ def test_admin_sidebar_v2_aria_current_em_ativo(client: TestClient):
     chunk = r.text.split('href="/admin/visao"', 1)[1][:240]
     assert "aria-current" in chunk
     assert "active" in chunk
+
+
+def test_admin_menu_groups_persistem_collapsed():
+    """Site (visualização) e demais grupos: localStorage, sem forçar open no load."""
+    js = (ROOT_DIR / "static/site-chrome.js").read_text(encoding="utf-8")
+    assert "thdfm-admin-menu-groups-v2" in js
+    assert "Painel abre com todos os grupos maximizados" not in js
+    assert "group.open = true;" in js  # só quando hasActive
+    # Não deve haver o force-all antigo imediatamente após o data-group loop start
+    admin_block = js.split("thdfm-admin-menu-groups-v2", 1)[1].split("initSidebarSortable", 1)[0]
+    assert "Object.prototype.hasOwnProperty.call(saved, id)" in admin_block
+    assert "hasActive" in admin_block
+    assert "group.open = true;" in admin_block
+    # O force cego `// Painel abre...` + open=true sem hasActive sumiu
+    assert "removeItem(\"thdfm-admin-menu-groups\")" in admin_block or "removeItem('thdfm-admin-menu-groups')" in admin_block
+
+    base = (ROOT_DIR / "templates/base.html").read_text(encoding="utf-8")
+    assert "site-chrome.js?v=6" in base

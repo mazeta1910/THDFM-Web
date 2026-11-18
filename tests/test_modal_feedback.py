@@ -30,4 +30,4 @@ def test_palpites_sucesso_usa_feedback_global():
     assert 'data-modal-feedback' in PALPITES
     assert 'class="modal-ok-row"' in PALPITES
     assert "bindModal(" not in PALPITES
-    assert "site-chrome.js?v=4" in BASE
+    assert "site-chrome.js?v=6" in BASE

@@ -178,9 +178,9 @@
       });
     });
 
-    // Só persiste open/fechado quando o usuário clica no summary.
-    // Não reabre grupos no load (isso fazia o menu "piscar" após navegar).
-    const GROUP_KEY = "thdfm-admin-menu-groups";
+    // Persiste open/fechado no localStorage; restaura no load.
+    // Grupo da página atual permanece aberto (active / aria-current).
+    const GROUP_KEY = "thdfm-admin-menu-groups-v2";
     const readGroups = () => {
       try {
         return JSON.parse(localStorage.getItem(GROUP_KEY) || "{}") || {};
@@ -191,11 +191,20 @@
     const writeGroups = (map) => {
       try { localStorage.setItem(GROUP_KEY, JSON.stringify(map)); } catch (e) {}
     };
+    try { localStorage.removeItem("thdfm-admin-menu-groups"); } catch (e) {}
     document.querySelectorAll(".admin-menu-group[data-group]").forEach((group) => {
       const id = group.getAttribute("data-group");
       if (!id) return;
-      // Painel abre com todos os grupos maximizados
-      group.open = true;
+      const saved = readGroups();
+      if (Object.prototype.hasOwnProperty.call(saved, id)) {
+        group.open = !!saved[id];
+      }
+      const hasActive = !!group.querySelector(
+        ".admin-side-link.active, a.admin-side-link[aria-current='page']"
+      );
+      if (hasActive) {
+        group.open = true;
+      }
       group.addEventListener("toggle", () => {
         const next = readGroups();
         next[id] = group.open;
