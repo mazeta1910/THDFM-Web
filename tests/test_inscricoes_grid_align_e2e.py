@@ -124,8 +124,46 @@ def test_inscricoes_header_alinha_com_rows(inscricoes_live):
         assert metrics["cols"] >= 5
         assert metrics["visible"] == 10, metrics
         for d in metrics["deltas"]:
-            assert d["left"] <= TOL_PX, metrics
-            assert d["width"] <= TOL_PX, metrics
+            assert d["left"] <= TOL_PX, f"col {d['i']} leftΔ={d['left']} widthΔ={d['width']} full={metrics}"
+            assert d["width"] <= TOL_PX, f"col {d['i']} leftΔ={d['left']} widthΔ={d['width']} full={metrics}"
+
+        # Prova visual: labels do head vs conteúdo típico da row (não tags do Nome).
+        labels = page.evaluate(
+            """() => {
+              const lista = document.querySelector('[data-participantes-section="liberados"] [data-participantes-lista]');
+              const head = lista.querySelector('.participante-row-head');
+              const row = lista.querySelector('.participante-edit-wrap:not(.participante-create-wrap) .participante-row');
+              const pick = (el, sel) => {
+                const n = el.querySelector(sel);
+                if (!n) return null;
+                const r = n.getBoundingClientRect();
+                return { left: r.left, width: r.width, text: (n.textContent || '').trim().slice(0, 40) };
+              };
+              return {
+                hUser: pick(head, '.participante-col-user'),
+                rUser: pick(row, '.participante-col-user'),
+                hStatus: pick(head, '.participante-col-status'),
+                rStatus: pick(row, '.participante-col-status'),
+                hCel: pick(head, '.participante-col-celular'),
+                rCel: pick(row, '.participante-col-celular'),
+                hSenha: pick(head, '.participante-col-senha'),
+                rSenha: pick(row, '.participante-col-senha'),
+                hDesde: pick(head, '.participante-col-desde'),
+                rDesde: pick(row, '.participante-col-desde'),
+                hAcoes: pick(head, '.participante-col-acoes'),
+                rAcoes: pick(row, '.participante-col-acoes'),
+                rNomeTags: pick(row, '.participante-col-nome .participante-status-trailing'),
+              };
+            }"""
+        )
+        for key in ("User", "Status", "Cel", "Senha", "Desde", "Acoes"):
+            h, r = labels[f"h{key}"], labels[f"r{key}"]
+            assert h and r, labels
+            assert abs(h["left"] - r["left"]) <= TOL_PX, labels
+            assert abs(h["width"] - r["width"]) <= TOL_PX, labels
+        # Tags Admin/Ok ficam na célula Nome, à esquerda da coluna @username.
+        if labels["rNomeTags"] and labels["hUser"]:
+            assert labels["rNomeTags"]["left"] + labels["rNomeTags"]["width"] <= labels["hUser"]["left"] + TOL_PX, labels
 
         out = ARTIFACTS / "inscricoes-grid-align-desktop.png"
         lista.screenshot(path=str(out))
