@@ -6883,8 +6883,8 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   grid-template-columns: 2.1fr 1.05fr 1.05fr 0.6fr auto;
   gap: 0.35rem 0.55rem;
   align-items: center;
-  min-height: 36px;
-  padding: 0.2rem 0.55rem;
+  min-height: 42px;
+  padding: 0.28rem 0.55rem;
   box-sizing: border-box;
   min-width: 0;
 }
@@ -6973,8 +6973,8 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
 }
 .participante-edit-avatar {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -7029,7 +7029,7 @@ label.participante-avatar-hover-btn {
   max-width: max-content !important;
   min-height: 0 !important;
   min-width: 0 !important;
-  padding: 0.32rem !important;
+  padding: 0.28rem !important;
   border-radius: 6px !important;
   border: 0;
   background: rgba(255, 255, 255, 0.16);
@@ -7041,6 +7041,50 @@ label.participante-avatar-hover-btn {
   margin: 0;
   line-height: 0;
   box-sizing: border-box;
+}
+.participantes-pager {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin: 0.45rem 0 0;
+  width: 100%;
+}
+.participantes-pager[hidden] {
+  display: none !important;
+}
+.participantes-pager-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 2.4rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+button.participantes-pager-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0.28rem !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 0;
+}
+button.participantes-pager-btn:hover:not(:disabled),
+button.participantes-pager-btn:focus-visible:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+}
+button.participantes-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .participante-avatar-hover-btn:hover,
 .participante-avatar-hover-btn:focus-visible,
