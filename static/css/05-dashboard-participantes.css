@@ -98,9 +98,10 @@
   gap: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow: auto;
   background: var(--card, var(--bg));
   min-width: 0;
+  max-height: min(70vh, 52rem);
 }
 .participante-edit-card {
   margin: 0;
@@ -128,6 +129,28 @@
 .participante-row:hover {
   background: var(--hover-bg);
 }
+.participante-row-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 0;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  background: color-mix(in srgb, var(--card, var(--bg)) 88%, var(--hover-bg));
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.participante-row-head:hover {
+  background: color-mix(in srgb, var(--card, var(--bg)) 88%, var(--hover-bg));
+}
+.participante-row-head .participante-col {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .participante-col {
   min-width: 0;
   font-size: 0.78rem;
@@ -135,25 +158,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  align-self: center;
+  min-height: 0;
 }
 .participante-col-nome {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
   overflow: visible;
   white-space: normal;
 }
+.participante-row-head .participante-col-nome {
+  display: flex;
+}
 .participante-row-form {
   margin: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 .participante-nome-stack {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.02rem;
   min-width: 0;
-  flex: 1 1 auto;
 }
 .participante-email-line {
   color: var(--muted);
@@ -178,6 +211,10 @@
   gap: 0.25rem;
   overflow: visible;
   white-space: nowrap;
+}
+.participante-col-status .participante-status-tag,
+.participante-col-senha .participante-status-tag {
+  margin: 0;
 }
 .participante-create-inline {
   display: flex;
@@ -384,7 +421,7 @@ label.participante-avatar-hover-btn:focus-visible {
   justify-content: flex-end;
   gap: 0.3rem;
   flex: 0 0 auto;
-  margin-left: auto;
+  align-self: center;
 }
 .participante-edit-meta {
   display: flex;
