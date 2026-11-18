@@ -6858,27 +6858,19 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   color: var(--muted);
   font-size: 0.88rem;
 }
-.participantes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 0.85rem;
-  align-items: stretch;
-}
-.participantes-grid > .participante-edit-wrap,
-.participantes-grid > .participante-create-wrap {
-  height: 100%;
-}
-.participante-create-padrao-form {
-  display: contents;
-}
-.participante-edit-card {
+.participantes-lista {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card, var(--bg));
+  min-width: 0;
+}
+.participante-edit-card {
   margin: 0;
-  padding: 0.7rem 0.75rem 0.55rem;
   min-height: 0;
-  flex: 1 1 auto;
 }
 .participante-edit-card[hidden] {
   display: none !important;
@@ -6886,16 +6878,103 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
 .participante-edit-card label {
   margin-top: 0;
 }
-.participante-edit-top {
+.participante-row {
+  display: grid;
+  grid-template-columns: 2.1fr 1.05fr 1.05fr 0.6fr auto;
+  gap: 0.35rem 0.55rem;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.2rem 0.55rem;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.participantes-lista.is-dono-lista .participante-row {
+  grid-template-columns: 2.1fr 0.95fr 1.05fr 1.05fr 0.65fr 0.6fr auto;
+}
+.participante-row:hover {
+  background: var(--hover-bg);
+}
+.participante-col {
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.participante-col-nome {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  margin-bottom: 0.1rem;
+  gap: 0.45rem;
+  min-width: 0;
+  overflow: visible;
+  white-space: normal;
+}
+.participante-row-form {
+  margin: 0;
+  flex-shrink: 0;
+}
+.participante-nome-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.02rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.participante-email-line {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.participante-muted {
+  color: var(--muted);
+}
+.participante-col-user code {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.participante-col-acoes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  overflow: visible;
+  white-space: nowrap;
+}
+.participante-create-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  min-width: 0;
+}
+.participante-create-inline .participante-field {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.participante-create-inline input {
+  margin: 0;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.4rem;
+  height: 1.7rem;
+}
+.participante-create-fields {
+  overflow: visible;
+  white-space: normal;
+  grid-column: span 3;
+}
+.participantes-lista.is-dono-lista .participante-create-fields {
+  grid-column: span 4;
 }
 .participante-edit-avatar {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -6972,15 +7051,17 @@ label.participante-avatar-hover-btn:focus-visible {
   background: rgba(255, 255, 255, 0.3);
 }
 .participante-edit-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
 }
 .participante-edit-fields .participante-field {
   display: flex;
   flex-direction: column;
   min-width: 0;
   margin: 0;
+  flex: 1 1 8rem;
 }
 .participante-edit-fields input {
   margin: 0;
@@ -6988,7 +7069,7 @@ label.participante-avatar-hover-btn:focus-visible {
   padding: 0.35rem 0.45rem;
 }
 .participante-edit-nome-inline {
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -7037,14 +7118,15 @@ label.participante-avatar-hover-btn:focus-visible {
 .participante-status-tag {
   display: inline-flex;
   align-self: center;
-  padding: 0.15rem 0.45rem;
+  padding: 0.08rem 0.35rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   border: 1px solid var(--border);
   color: var(--muted);
   background: var(--bg);
   flex: 0 0 auto;
+  line-height: 1.2;
 }
 .participante-status-tag.status-liberado {
   color: var(--accent);
@@ -7080,16 +7162,45 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   flex-direction: column;
   gap: 0;
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--card, var(--bg));
-  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+.participante-edit-wrap:last-child {
+  border-bottom: 0;
 }
 .participante-edit-wrap > .participante-edit-card {
   border: 0;
   border-radius: 0;
   box-shadow: none;
   background: transparent;
+}
+.participante-row-panel {
+  margin: 0;
+  padding: 0.45rem 0.55rem 0.55rem;
+  border-top: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+.participante-row-panel[hidden] {
+  display: none !important;
+}
+button.participante-row-toggle.proto-text-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  padding: 0.2rem 0.4rem !important;
+  font-size: 0.72rem !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+button.participante-row-toggle.is-open {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
 }
 .participante-bolao-status-form {
   margin: 0;
@@ -7117,48 +7228,45 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.participante-meta-line code {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text);
+.participante-status-tag.status-senha-ok {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.participante-status-tag.status-senha-off {
+  color: var(--muted);
+  border-color: var(--border);
+  background: transparent;
 }
 .participante-acesso {
   margin: 0;
-  padding: 0.35rem 0.55rem 0.45rem;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.participante-acesso.participante-row-panel {
+  padding: 0.45rem 0.55rem 0.55rem;
+  border-top: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 .participante-acesso > summary {
   list-style: none;
-  cursor: pointer;
-  width: auto !important;
-  max-width: max-content !important;
-  min-height: 0;
-  padding: 0.2rem 0.45rem;
-  font-size: 0.78rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
+  cursor: default;
 }
 .participante-acesso > summary::-webkit-details-marker {
   display: none;
 }
-.participante-acesso[open] > summary {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  color: var(--accent);
-}
 .participante-acesso-panel {
   display: grid;
   gap: 0.3rem;
-  margin-top: 0.4rem;
+  margin: 0;
 }
 .participante-acesso .cred-dono-row {
   margin: 0;
 }
 .participante-edit-wrap--acesso-flash {
   outline: 2px solid rgba(232, 93, 4, 0.55);
-  outline-offset: 2px;
+  outline-offset: -1px;
 }
 .participante-avatar-row {
   display: flex;
@@ -7180,7 +7288,7 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   gap: 0.35rem;
 }
 .participante-create-wrap .participante-edit-card {
-  flex: 1 1 auto;
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
 }
 .participante-edit-actions {
   display: flex;
@@ -7188,8 +7296,6 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   justify-content: space-between;
   gap: 0.45rem;
   margin: 0;
-  padding: 0.45rem 0.75rem 0.55rem;
-  border-top: 1px solid var(--border);
 }
 .participante-edit-actions-end {
   display: inline-flex;
@@ -7257,6 +7363,32 @@ button.participante-create-btn {
 .participantes-check input {
   width: auto;
   margin: 0;
+}
+@media (max-width: 860px) {
+  .participantes-lista .participante-row,
+  .participantes-lista.is-dono-lista .participante-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .participante-col-status,
+  .participante-col-celular,
+  .participante-col-senha,
+  .participante-col-desde {
+    display: none;
+  }
+  .participantes-lista.is-dono-lista .participante-col-user {
+    display: block;
+  }
+  .participante-create-wrap .participante-create-fields {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .participante-create-wrap .participante-row,
+  .participantes-lista.is-dono-lista .participante-create-wrap .participante-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .participante-create-wrap .participante-col-user {
+    display: none;
+  }
 }
 @media (max-width: 640px) {
   .participantes-filter-wrap {

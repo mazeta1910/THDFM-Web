@@ -17,220 +17,259 @@
 
 {% macro participante_edit_card(p) -%}
 {% set form_id = 'participante-edit-' ~ p.id %}
+{% set panel_edit_id = 'participante-panel-edit-' ~ p.id %}
+{% set panel_acesso_id = 'participante-panel-acesso-' ~ p.id %}
 {% set busca_txt = ((p.nome or '') ~ ' ' ~ (p.username or '') ~ ' ' ~ (p.celular or '') ~ ' ' ~ (p.email or '') ~ ' ' ~ (p.admin_login or ''))|lower %}
+{% set status_label = 'Inativo' if (p.status == 'liberado' and p.inativo_em) else ('Ok' if p.status == 'liberado' else ('Recusado' if p.recusado_em else ('Com comprovante' if p.status == 'comprovante' else 'Pendente'))) %}
 <div class="participante-edit-wrap{% if p.inativo_em %} is-inativo{% endif %}" id="part-{{ p.id }}">
-<form
-  id="{{ form_id }}"
-  method="post"
-  action="/admin/participante/atualizar"
-  enctype="multipart/form-data"
-  class="card participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
-  data-nome="{{ p.nome|e }}"
-  data-celular="{{ (p.celular or '')|e }}"
-  data-username="{{ (p.username or '')|e }}"
-  data-email="{{ (p.email or '')|e }}"
-  data-busca="{{ busca_txt|e }}"
->
-  <input type="hidden" name="participante_id" value="{{ p.id }}" />
-  <input type="hidden" name="remover_avatar" value="" data-remover-avatar />
-  <div class="participante-edit-top">
-    {% set avatar_input_id = 'participante-avatar-' ~ p.id %}
-    <div class="participante-edit-avatar" data-avatar-hover>
-      {% set av = avatar_url(p.avatar_path) %}
-      {% if av %}
-      <img src="{{ av }}" alt="" data-avatar-preview />
-      {% else %}
-      <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
-      {% endif %}
-      <input
-        id="{{ avatar_input_id }}"
-        class="participante-avatar-file"
-        type="file"
-        name="avatar"
-        accept=".jpg,.jpeg,.png,.webp,image/*"
-        data-avatar-input
-      />
-      <div class="participante-avatar-hover">
-        <label
-          class="participante-avatar-hover-btn"
-          for="{{ avatar_input_id }}"
-          title="Trocar foto"
-          aria-label="Trocar foto de {{ p.nome }}"
-          data-avatar-pick
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </label>
-        {% if p.avatar_path %}
-        <button
-          type="button"
-          class="participante-avatar-hover-btn"
-          data-avatar-remove
-          title="Remover foto"
-          aria-label="Remover foto de {{ p.nome }}"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-        </button>
+  <div
+    class="participante-row participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
+    data-nome="{{ p.nome|e }}"
+    data-celular="{{ (p.celular or '')|e }}"
+    data-username="{{ (p.username or '')|e }}"
+    data-email="{{ (p.email or '')|e }}"
+    data-busca="{{ busca_txt|e }}"
+  >
+    <div class="participante-col participante-col-nome">
+      <form
+        id="{{ form_id }}"
+        method="post"
+        action="/admin/participante/atualizar"
+        enctype="multipart/form-data"
+        class="participante-row-form"
+      >
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <input type="hidden" name="remover_avatar" value="" data-remover-avatar />
+        {% set avatar_input_id = 'participante-avatar-' ~ p.id %}
+        <div class="participante-edit-avatar" data-avatar-hover>
+          {% set av = avatar_url(p.avatar_path) %}
+          {% if av %}
+          <img src="{{ av }}" alt="" data-avatar-preview />
+          {% else %}
+          <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
+          {% endif %}
+          <input
+            id="{{ avatar_input_id }}"
+            class="participante-avatar-file"
+            type="file"
+            name="avatar"
+            accept=".jpg,.jpeg,.png,.webp,image/*"
+            data-avatar-input
+          />
+          <div class="participante-avatar-hover">
+            <label
+              class="participante-avatar-hover-btn"
+              for="{{ avatar_input_id }}"
+              title="Trocar foto"
+              aria-label="Trocar foto de {{ p.nome }}"
+              data-avatar-pick
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </label>
+            {% if p.avatar_path %}
+            <button
+              type="button"
+              class="participante-avatar-hover-btn"
+              data-avatar-remove
+              title="Remover foto"
+              aria-label="Remover foto de {{ p.nome }}"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+      <div class="participante-nome-stack">
+        <div class="participante-status-row">
+          <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
+          <div class="participante-status-trailing">
+            {% if p.admin_login %}
+            <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
+            {% endif %}
+            <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+              {{ status_label }}
+            </span>
+          </div>
+        </div>
+        {% if p.email %}
+        <span class="participante-email-line" title="{{ p.email|e }}">{{ p.email }}</span>
         {% endif %}
       </div>
     </div>
-    <div class="participante-edit-meta">
-      <div class="participante-status-row">
-        <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
-        <div class="participante-status-trailing">
-          {% if p.admin_login %}
-          <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
-          {% endif %}
-          <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-            {% if p.status == 'liberado' and p.inativo_em %}Inativo
-            {% elif p.status == 'liberado' %}Ok
-            {% elif p.recusado_em %}Recusado
-            {% elif p.status == 'comprovante' %}Com comprovante
-            {% else %}Pendente{% endif %}
-          </span>
-        </div>
-      </div>
-      {% if is_dono %}
-      <span class="participante-meta-line">
-        {% if p.username %}<code>@{{ p.username }}</code>{% else %}<em>sem username</em>{% endif %}
-        · {% if p.password_hash %}senha ok{% else %}sem senha{% endif %}
-        {% if p.email %} · {{ p.email }}{% endif %}
-      </span>
+
+    {% if is_dono %}
+    <div class="participante-col participante-col-user" title="{% if p.username %}@{{ p.username }}{% else %}sem username{% endif %}">
+      {% if p.username %}<code>@{{ p.username }}</code>{% else %}<span class="participante-muted">—</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="participante-col participante-col-status">
+      <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% endif %}">{{ status_label }}</span>
+    </div>
+
+    <div class="participante-col participante-col-celular" title="{{ p.celular|celular_fmt if p.celular else '' }}">
+      {% if p.celular %}{{ p.celular|celular_fmt }}{% else %}<span class="participante-muted">—</span>{% endif %}
+    </div>
+
+    {% if is_dono %}
+    <div class="participante-col participante-col-senha">
+      {% if p.password_hash %}
+      <span class="participante-status-tag status-senha-ok">ok</span>
+      {% else %}
+      <span class="participante-status-tag status-senha-off">sem</span>
       {% endif %}
-      {% if p.inativo_em %}
-      <span class="participante-meta-line">Inativo desde {{ p.inativo_em }}</span>
-      {% elif p.criado_em %}
-      <span class="participante-meta-line">Desde {{ p.criado_em }}</span>
+    </div>
+    {% endif %}
+
+    <div class="participante-col participante-col-desde" title="{% if p.inativo_em %}Inativo desde {{ p.inativo_em }}{% elif p.criado_em %}Desde {{ p.criado_em }}{% endif %}">
+      {% if p.inativo_em %}{{ p.inativo_em|data_curta }}
+      {% elif p.criado_em %}{{ p.criado_em|data_curta }}
+      {% else %}<span class="participante-muted">—</span>{% endif %}
+    </div>
+
+    <div class="participante-col participante-col-acoes">
+      <a class="btn secondary participante-link-btn" href="/p/{{ p.token }}" title="Abrir link privado" target="_blank" rel="noopener">Link</a>
+      {% if p.status == 'liberado' and not p.inativo_em %}
+      <form method="post" action="/admin/inativar" class="participante-bolao-status-form form-inativar">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <button type="submit" class="participante-status-icon" title="Inativar (some da classificação e do Quem palpitou)" aria-label="Inativar {{ p.nome }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        </button>
+      </form>
+      {% elif p.status == 'liberado' and p.inativo_em %}
+      <form method="post" action="/admin/reativar" class="participante-bolao-status-form">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <button type="submit" class="participante-status-icon participante-status-icon-reopen" title="Reativar no bolão" aria-label="Reativar {{ p.nome }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </form>
+      {% endif %}
+      <button
+        type="button"
+        class="proto-text-btn participante-row-toggle"
+        data-row-panel-toggle="edit"
+        aria-controls="{{ panel_edit_id }}"
+        aria-expanded="false"
+        title="Editar"
+      >Editar</button>
+      {% if is_dono %}
+      <button
+        type="button"
+        class="proto-text-btn participante-row-toggle"
+        data-row-panel-toggle="acesso"
+        aria-controls="{{ panel_acesso_id }}"
+        aria-expanded="false"
+        title="Acesso"
+      >Acesso</button>
       {% endif %}
     </div>
   </div>
 
-  <div class="participante-edit-fields">
-    <label class="participante-field">
-      <span class="sr-only">Nome exibido</span>
-      <input type="text" name="nome" value="{{ p.nome }}" required maxlength="30" autocomplete="off" placeholder="Nome" title="Nome (máx. 30)" />
-    </label>
-    <label class="participante-field">
-      <span class="sr-only">Celular</span>
-      <input type="tel" name="celular" value="{{ p.celular|celular_fmt if p.celular else '' }}" placeholder="(11) 99999-9999" autocomplete="off" title="Celular" />
-    </label>
-  </div>
-</form>
-
-{% if is_dono %}
-<details class="participante-acesso" data-participante-acesso>
-  <summary class="participante-acesso-summary proto-text-btn">
-    {% if p.password_hash %}Trocar senha{% else %}Definir senha{% endif %}
-  </summary>
-  <div class="participante-acesso-panel">
-    <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <input type="hidden" name="acao" value="username" />
-      <label class="sr-only" for="user-{{ p.id }}">Username</label>
-      <input
-        id="user-{{ p.id }}"
-        class="input-compact"
-        type="text"
-        name="username"
-        value="{{ p.username or '' }}"
-        maxlength="24"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="username"
-        required
-      />
-      <button
-        type="submit"
-        class="cred-dono-save"
-        title="Salvar username"
-        aria-label="Salvar username de {{ p.nome }}"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
+  <div class="participante-row-panel" id="{{ panel_edit_id }}" data-row-panel="edit" hidden>
+    <div class="participante-edit-fields">
+      <label class="participante-field">
+        <span class="sr-only">Nome exibido</span>
+        <input form="{{ form_id }}" type="text" name="nome" value="{{ p.nome }}" required maxlength="30" autocomplete="off" placeholder="Nome" title="Nome (máx. 30)" />
+      </label>
+      <label class="participante-field">
+        <span class="sr-only">Celular</span>
+        <input form="{{ form_id }}" type="tel" name="celular" value="{{ p.celular|celular_fmt if p.celular else '' }}" placeholder="(11) 99999-9999" autocomplete="off" title="Celular" />
+      </label>
+      <button type="submit" form="{{ form_id }}" class="btn-save-icon participante-save-icon" title="Salvar" aria-label="Salvar {{ p.nome }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
         </svg>
       </button>
-    </form>
-    <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <input type="hidden" name="acao" value="senha" />
-      <label class="sr-only" for="senha-{{ p.id }}">Nova senha</label>
-      <div class="password-field cred-dono-pass">
-        <input
-          id="senha-{{ p.id }}"
-          class="input-compact"
-          type="password"
-          name="senha_nova"
-          minlength="8"
-          required
-          autocomplete="new-password"
-          placeholder="nova senha (mín. 8)"
-        />
-        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-      </div>
-      <button
-        type="submit"
-        class="cred-dono-save"
-        title="Salvar senha"
-        aria-label="Salvar senha de {{ p.nome }}"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-      </button>
-    </form>
-  </div>
-</details>
-{% endif %}
-
-<div class="participante-edit-actions">
-  <a class="btn secondary participante-link-btn" href="/p/{{ p.token }}" title="Abrir link privado" target="_blank" rel="noopener">Link</a>
-  <div class="participante-edit-actions-end">
-    {% if p.status == 'liberado' and not p.inativo_em %}
-    <form method="post" action="/admin/inativar" class="participante-bolao-status-form form-inativar">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon" title="Inativar (some da classificação e do Quem palpitou)" aria-label="Inativar {{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-      </button>
-    </form>
-    {% elif p.status == 'liberado' and p.inativo_em %}
-    <form method="post" action="/admin/reativar" class="participante-bolao-status-form">
-      <input type="hidden" name="participante_id" value="{{ p.id }}" />
-      <button type="submit" class="participante-status-icon participante-status-icon-reopen" title="Reativar no bolão" aria-label="Reativar {{ p.nome }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-    </form>
+    </div>
+    {% set evs = (audit_por_participante or {}).get(p.id|string, []) %}
+    {% if evs and (is_dono and ('sistema.ver' in admin_caps)) %}
+    <details class="participante-audit-block">
+      <summary>Atividade</summary>
+      <ul class="participante-audit-list">
+        {% for ev in evs %}
+        <li>
+          <time datetime="{{ ev.quando.iso }}" title="{{ ev.quando.iso }}">{{ ev.quando.label }}</time>
+          <span>{{ ev.autor }} · {{ ev.acao }}</span>
+          {% if ev.resumo %}<span class="admin-muted">{{ ev.resumo }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="proto-text-btn" href="/admin/sistema/atividade?entidade=participante&amp;entidade_id={{ p.id }}">Ver tudo</a>
+    </details>
     {% endif %}
-    <button type="submit" form="{{ form_id }}" class="btn-save-icon participante-save-icon" title="Salvar" aria-label="Salvar {{ p.nome }}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-        <polyline points="17 21 17 13 7 13 7 21" />
-        <polyline points="7 3 7 8 15 8" />
-      </svg>
-    </button>
   </div>
-</div>
 
-{% set evs = (audit_por_participante or {}).get(p.id|string, []) %}
-{% if evs and (is_dono and ('sistema.ver' in admin_caps)) %}
-<details class="participante-audit-block">
-  <summary>Atividade</summary>
-  <ul class="participante-audit-list">
-    {% for ev in evs %}
-    <li>
-      <time datetime="{{ ev.quando.iso }}" title="{{ ev.quando.iso }}">{{ ev.quando.label }}</time>
-      <span>{{ ev.autor }} · {{ ev.acao }}</span>
-      {% if ev.resumo %}<span class="admin-muted">{{ ev.resumo }}</span>{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  <a class="proto-text-btn" href="/admin/sistema/atividade?entidade=participante&amp;entidade_id={{ p.id }}">Ver tudo</a>
-</details>
-{% endif %}
+  {% if is_dono %}
+  <details class="participante-row-panel participante-acesso" id="{{ panel_acesso_id }}" data-row-panel="acesso" data-participante-acesso>
+    <summary class="sr-only">Acesso</summary>
+    <div class="participante-acesso-panel">
+      <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <input type="hidden" name="acao" value="username" />
+        <label class="sr-only" for="user-{{ p.id }}">Username</label>
+        <input
+          id="user-{{ p.id }}"
+          class="input-compact"
+          type="text"
+          name="username"
+          value="{{ p.username or '' }}"
+          maxlength="24"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="username"
+          required
+        />
+        <button
+          type="submit"
+          class="cred-dono-save"
+          title="Salvar username"
+          aria-label="Salvar username de {{ p.nome }}"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </form>
+      <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+        <input type="hidden" name="participante_id" value="{{ p.id }}" />
+        <input type="hidden" name="acao" value="senha" />
+        <label class="sr-only" for="senha-{{ p.id }}">Nova senha</label>
+        <div class="password-field cred-dono-pass">
+          <input
+            id="senha-{{ p.id }}"
+            class="input-compact"
+            type="password"
+            name="senha_nova"
+            minlength="8"
+            required
+            autocomplete="new-password"
+            placeholder="nova senha (mín. 8)"
+          />
+          <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button
+          type="submit"
+          class="cred-dono-save"
+          title="Salvar senha"
+          aria-label="Salvar senha de {{ p.nome }}"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </details>
+  {% endif %}
 </div>
 {%- endmacro %}
 
@@ -607,84 +646,74 @@
               <input id="participantes-filter" type="search" placeholder="Nome, @user ou celular…" autocomplete="off" enterkeyhint="search" />
             </label>
           </div>
-          <div class="participantes-grid" data-participantes-grid>
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista>
             <div class="participante-edit-wrap participante-create-wrap">
-            <div class="card participante-edit-card participante-create-card" data-nome="novo" data-celular="">
-              <div class="participante-edit-top">
-                <form
-                  id="avatar-padrao-form"
-                  method="post"
-                  action="/admin/avatar-padrao"
-                  enctype="multipart/form-data"
-                  class="participante-create-padrao-form"
-                >
-                  {% set padrao = avatar_padrao_url() %}
-                  <div class="participante-edit-avatar{% if not padrao %} participante-edit-avatar-novo{% endif %}" data-avatar-hover data-padrao-avatar>
-                    {% if padrao %}
-                    <img src="{{ padrao }}" alt="" data-avatar-preview />
-                    {% else %}
-                    <span class="participante-edit-avatar-fallback" data-avatar-fallback>+</span>
-                    {% endif %}
-                    <input
-                      id="avatar-padrao-file"
-                      class="participante-avatar-file"
-                      type="file"
-                      name="avatar"
-                      accept=".jpg,.jpeg,.png,.webp,image/*"
-                      required
-                      data-avatar-input
-                      data-padrao-auto
-                    />
-                    <div class="participante-avatar-hover">
-                      <label
-                        class="participante-avatar-hover-btn"
-                        for="avatar-padrao-file"
-                        title="Foto padrão"
-                        aria-label="Definir foto padrão do bolão"
-                        data-avatar-pick
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      </label>
+              <div class="participante-row participante-edit-card participante-create-card" data-nome="novo" data-celular="">
+                <div class="participante-col participante-col-nome">
+                  <form
+                    id="avatar-padrao-form"
+                    method="post"
+                    action="/admin/avatar-padrao"
+                    enctype="multipart/form-data"
+                    class="participante-row-form"
+                  >
+                    {% set padrao = avatar_padrao_url() %}
+                    <div class="participante-edit-avatar{% if not padrao %} participante-edit-avatar-novo{% endif %}" data-avatar-hover data-padrao-avatar>
+                      {% if padrao %}
+                      <img src="{{ padrao }}" alt="" data-avatar-preview />
+                      {% else %}
+                      <span class="participante-edit-avatar-fallback" data-avatar-fallback>+</span>
+                      {% endif %}
+                      <input
+                        id="avatar-padrao-file"
+                        class="participante-avatar-file"
+                        type="file"
+                        name="avatar"
+                        accept=".jpg,.jpeg,.png,.webp,image/*"
+                        required
+                        data-avatar-input
+                        data-padrao-auto
+                      />
+                      <div class="participante-avatar-hover">
+                        <label
+                          class="participante-avatar-hover-btn"
+                          for="avatar-padrao-file"
+                          title="Foto padrão"
+                          aria-label="Definir foto padrão do bolão"
+                          data-avatar-pick
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                </form>
-                <div class="participante-edit-meta">
-                  <div class="participante-status-row">
-                    <strong class="participante-edit-nome-inline">Cadastro</strong>
-                    <div class="participante-status-trailing">
-                      <span class="participante-status-tag status-novo">Novo</span>
+                  </form>
+                  <div class="participante-nome-stack">
+                    <div class="participante-status-row">
+                      <strong class="participante-edit-nome-inline">Cadastro</strong>
+                      <div class="participante-status-trailing">
+                        <span class="participante-status-tag status-novo">Novo</span>
+                      </div>
                     </div>
+                    <span class="participante-email-line">Manual · foto padrão</span>
                   </div>
-                  <span class="participante-meta-line">Manual · foto padrão</span>
+                </div>
+                {% if is_dono %}<div class="participante-col participante-col-user" aria-hidden="true"></div>{% endif %}
+                <div class="participante-col participante-create-fields">
+                  <form id="participante-create-form" method="post" action="/admin/participante" class="participante-create-inline">
+                    <label class="participante-field" for="novo-nome">
+                      <span class="sr-only">Nome exibido</span>
+                      <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome" title="Nome (máx. 30)" autocomplete="off" />
+                    </label>
+                    <label class="participante-field" for="novo-celular">
+                      <span class="sr-only">Celular</span>
+                      <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" title="Celular" autocomplete="off" />
+                    </label>
+                  </form>
+                </div>
+                <div class="participante-col participante-col-acoes">
+                  <button type="submit" form="participante-create-form" class="participante-create-btn" title="Criar" aria-label="Criar participante">Criar</button>
                 </div>
               </div>
-
-              <form
-                id="participante-create-form"
-                method="post"
-                action="/admin/participante"
-              >
-                <div class="participante-edit-fields">
-                  <label class="participante-field" for="novo-nome">
-                    <span class="sr-only">Nome exibido</span>
-                    <input id="novo-nome" type="text" name="nome" required maxlength="30" placeholder="Nome" title="Nome (máx. 30)" autocomplete="off" />
-                  </label>
-                  <label class="participante-field" for="novo-celular">
-                    <span class="sr-only">Celular</span>
-                    <input id="novo-celular" type="tel" name="celular" placeholder="(11) 99999-9999" title="Celular" autocomplete="off" />
-                  </label>
-                </div>
-
-              </form>
-            </div>
-            <div class="participante-edit-actions">
-              <span class="participante-create-spacer" aria-hidden="true"></span>
-              <div class="participante-edit-actions-end">
-                <button type="submit" form="participante-create-form" class="participante-create-btn" title="Criar" aria-label="Criar participante">
-                  Criar
-                </button>
-              </div>
-            </div>
             </div>
 
             {% for p in liberados %}
@@ -700,7 +729,7 @@
             <span class="participantes-count">{{ liberados_inativos|length }}</span>
           </h2>
           <p class="participantes-empty" style="margin-top:0">Não entram na classificação nem no contador de “Quem palpitou”.</p>
-          <div class="participantes-grid" data-participantes-grid>
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista>
             {% for p in liberados_inativos %}
             {{ participante_edit_card(p) }}
             {% endfor %}
@@ -1587,7 +1616,11 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   if (!section || !filter) return;
 
   const cards = () =>
-    Array.from(section.querySelectorAll(".participante-edit-card:not(.participante-create-card)"));
+    Array.from(
+      section.querySelectorAll(
+        ".participante-row.participante-edit-card:not(.participante-create-card)"
+      )
+    );
   const countEl = section.querySelector("[data-filter-count]");
   const total = Number(countEl?.dataset.filterTotal || cards().length) || 0;
 
@@ -1635,6 +1668,36 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   filter.addEventListener("search", applyFilter);
 })();
 
+(() => {
+  const closePanels = (wrap, except) => {
+    wrap.querySelectorAll("[data-row-panel]").forEach((panel) => {
+      if (except && panel === except) return;
+      if (panel.tagName === "DETAILS") panel.open = false;
+      else panel.hidden = true;
+    });
+    wrap.querySelectorAll("[data-row-panel-toggle]").forEach((btn) => {
+      if (except && btn.getAttribute("aria-controls") === except.id) return;
+      btn.setAttribute("aria-expanded", "false");
+      btn.classList.remove("is-open");
+    });
+  };
+
+  document.querySelectorAll(".participantes-dash [data-row-panel-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const wrap = btn.closest(".participante-edit-wrap");
+      const panel = document.getElementById(btn.getAttribute("aria-controls") || "");
+      if (!wrap || !panel) return;
+      const willOpen =
+        panel.tagName === "DETAILS" ? !panel.open : panel.hasAttribute("hidden");
+      closePanels(wrap, willOpen ? panel : null);
+      if (panel.tagName === "DETAILS") panel.open = willOpen;
+      else panel.hidden = !willOpen;
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      btn.classList.toggle("is-open", willOpen);
+    });
+  });
+})();
+
 {% if is_dono %}
 (() => {
   const params = new URLSearchParams(window.location.search);
@@ -1643,6 +1706,11 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   if (!first) return;
   first.open = true;
   const wrap = first.closest(".participante-edit-wrap");
+  const toggle = wrap?.querySelector('[data-row-panel-toggle="acesso"]');
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.classList.add("is-open");
+  }
   if (wrap) {
     wrap.classList.add("participante-edit-wrap--acesso-flash");
     try {
@@ -1659,16 +1727,17 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   const run = () => {
     document.querySelectorAll(".participantes-dash [data-avatar-input]").forEach((input) => {
       const card = input.closest(".participante-edit-card");
+      const form = input.closest("form");
       const wrap = input.closest("[data-avatar-hover]") || card?.querySelector("[data-avatar-hover]");
       if (input.hasAttribute("data-padrao-auto")) {
-        const form = document.getElementById("avatar-padrao-form");
+        const padraoForm = document.getElementById("avatar-padrao-form");
         if (window.thdfmBindAvatarCrop) {
           window.thdfmBindAvatarCrop(input, {
             preview: wrap || card?.querySelector(".participante-edit-avatar"),
             nameEl: null,
             nameEmpty: "Foto padrão",
             previewAttr: "data-avatar-preview",
-            autoSubmitForm: form,
+            autoSubmitForm: padraoForm,
           });
         }
         return;
@@ -1681,11 +1750,11 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
           nameEl: null,
           nameEmpty: "Trocar foto",
           previewAttr: "data-avatar-preview",
-          autoSubmitForm: card || null,
+          autoSubmitForm: form || null,
         });
       }
       input.addEventListener("change", () => {
-        const removerField = card?.querySelector("[data-remover-avatar]");
+        const removerField = form?.querySelector("[data-remover-avatar]");
         if (removerField) removerField.value = "";
       });
     });
@@ -1694,12 +1763,14 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
       if (wrap.dataset.avatarUiBound === "1") return;
       wrap.dataset.avatarUiBound = "1";
       const card = wrap.closest(".participante-edit-card");
+      const form = wrap.closest("form");
       const input = wrap.querySelector("[data-avatar-input]");
       const removeBtn = wrap.querySelector("[data-avatar-remove]");
-      const removerField = card?.querySelector("[data-remover-avatar]");
+      const removerField = form?.querySelector("[data-remover-avatar]");
       removeBtn?.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
+        if (!confirm("Remover foto deste participante?")) return;
         if (removerField) removerField.value = "1";
         const preview = wrap.querySelector("[data-avatar-preview]");
         const fallback = wrap.querySelector("[data-avatar-fallback]");
@@ -1715,8 +1786,8 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
         }
         removeBtn.hidden = true;
         if (input) input.value = "";
-        if (card && typeof card.requestSubmit === "function") card.requestSubmit();
-        else if (card) card.submit();
+        if (form && typeof form.requestSubmit === "function") form.requestSubmit();
+        else if (form) form.submit();
       });
     });
   };
