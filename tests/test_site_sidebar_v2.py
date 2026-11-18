@@ -61,6 +61,6 @@ def test_site_sidebar_v2_nao_mistura_modulos_admin(client: TestClient):
         "Site (visualização)",
     ):
         assert forbidden not in side_html
-    assert "Hall das Lendas" in side_html
+    assert "Hall da Fama" in side_html
     assert "Bolão CdB" in side_html
     assert "Grupo do WhatsApp" in side_html

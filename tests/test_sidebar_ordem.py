@@ -1,4 +1,4 @@
-"""Menu lateral: Hall das Lendas, Portal fixo e ordem arrastável persistida."""
+"""Menu lateral: Hall da Fama, Portal fixo e ordem arrastável persistida."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def test_site_sidebar_hall_lendas_e_portal_fixos(client: TestClient):
     assert r.status_code == 200
     html = r.text
     assert "site-hall-lendas" in html
-    assert "Hall das Lendas" in html
+    assert "Hall da Fama" in html
     # Público: link ativo para todos
     chunk = html.split("site-hall-lendas", 1)[1].split(">", 1)[0]
     assert "disabled" not in chunk

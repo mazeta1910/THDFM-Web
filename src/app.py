@@ -2483,7 +2483,7 @@ def legado_prototipo_perfil(request: Request):
     return RedirectResponse(f"/meu-perfil/editar{suffix}", status_code=301)
 
 
-# Protótipo removido — Hall das Lendas usa a tabela hall_lendas.
+# Protótipo removido — Hall da Fama usa a tabela hall_lendas.
 
 
 def _hall_lenda_publica(item: dict) -> dict:
@@ -2511,7 +2511,7 @@ def _participante_com_hall(part: dict | None) -> dict | None:
 
 @app.get("/hall-lendas", response_class=HTMLResponse)
 def hall_lendas_page(request: Request, pagina: int = 1):
-    """Hall das Lendas — mural público."""
+    """Hall da Fama — mural público."""
     from src.hall_lendas import HALL_POR_PAGINA
 
     try:

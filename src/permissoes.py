@@ -10,7 +10,7 @@ CAPABILITIES: dict[str, str] = {
     "listra.gestir": "Listra — gestão",
     "xonhometro.gestir": "Xonhômetro — gestão",
     "acervo.gestir": "Acervo — CRUD",
-    "hall.gestir": "Hall das Lendas — gestão",
+    "hall.gestir": "Hall da Fama — gestão",
     "grid.bugs": "Grid — reports de bugs",
     "usuarios.permissoes": "Usuários — editar permissões de operadores",
     # Só o Dono (não entra no DEFAULT_MODERADOR). Guard no backend em /admin/sistema/*.

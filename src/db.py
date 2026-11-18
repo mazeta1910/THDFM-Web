@@ -845,7 +845,7 @@ def _migrate_grid_streak_override(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_hall_lendas(conn: sqlite3.Connection) -> None:
-    """Hall das Lendas — uma ficha por participante (total doado + recado + moldura)."""
+    """Hall da Fama — uma ficha por participante (total doado + recado + moldura)."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS hall_lendas (
