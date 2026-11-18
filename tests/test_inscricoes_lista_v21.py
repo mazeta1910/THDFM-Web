@@ -65,12 +65,20 @@ def test_inscricoes_lista_densa_dono(client: TestClient):
     assert "data-page-prev" in r.text
     assert "data-page-next" in r.text
     assert "Remover foto deste participante?" in r.text
+    assert "participante-row-head" in r.text
+    assert ">@username<" in r.text or ">@username</div>" in r.text
+    assert ">Status<" in r.text or ">Status</div>" in r.text
+    assert ">Celular<" in r.text or ">Celular</div>" in r.text
+    assert ">Ações<" in r.text or ">Ações</div>" in r.text
 
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".participantes-lista {" in css
     assert "min-height: 42px" in css
     assert ".participante-edit-avatar {\n  position: relative;\n  width: 36px;" in css or "width: 36px;\n  height: 36px;" in css
     assert ".participantes-pager {" in css
+    assert ".participante-row-head {" in css
+    assert "position: sticky" in css
+    assert "grid-template-columns: auto minmax(0, 1fr) auto" in css
     assert "@media (max-width: 860px)" in css
     assert "@media (hover: none)" in css
 

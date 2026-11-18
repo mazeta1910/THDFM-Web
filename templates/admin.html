@@ -15,6 +15,18 @@
 {% set liberados = (liberados | selectattr('admin_login') | list) + (liberados | rejectattr('admin_login') | list) %}
 {% set recuperacao_pedidos = recuperacao_pedidos|default([]) %}
 
+{% macro participantes_lista_head() -%}
+<div class="participante-row participante-row-head" role="row">
+  <div class="participante-col participante-col-nome">Nome</div>
+  {% if is_dono %}<div class="participante-col participante-col-user">@username</div>{% endif %}
+  <div class="participante-col participante-col-status">Status</div>
+  <div class="participante-col participante-col-celular">Celular</div>
+  {% if is_dono %}<div class="participante-col participante-col-senha">Senha</div>{% endif %}
+  <div class="participante-col participante-col-desde">Desde</div>
+  <div class="participante-col participante-col-acoes">Ações</div>
+</div>
+{%- endmacro %}
+
 {% macro participante_edit_card(p) -%}
 {% set form_id = 'participante-edit-' ~ p.id %}
 {% set panel_edit_id = 'participante-panel-edit-' ~ p.id %}
@@ -87,20 +99,18 @@
         </div>
       </form>
       <div class="participante-nome-stack">
-        <div class="participante-status-row">
-          <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
-          <div class="participante-status-trailing">
-            {% if p.admin_login %}
-            <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
-            {% endif %}
-            <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-              {{ status_label }}
-            </span>
-          </div>
-        </div>
+        <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
         {% if p.email %}
         <span class="participante-email-line" title="{{ p.email|e }}">{{ p.email }}</span>
         {% endif %}
+      </div>
+      <div class="participante-status-trailing">
+        {% if p.admin_login %}
+        <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
+        {% endif %}
+        <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+          {{ status_label }}
+        </span>
       </div>
     </div>
 
@@ -652,6 +662,7 @@
             </label>
           </div>
           <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="10">
+            {{ participantes_lista_head() }}
             <div class="participante-edit-wrap participante-create-wrap">
               <div class="participante-row participante-edit-card participante-create-card" data-nome="novo" data-celular="">
                 <div class="participante-col participante-col-nome">
@@ -693,13 +704,11 @@
                     </div>
                   </form>
                   <div class="participante-nome-stack">
-                    <div class="participante-status-row">
-                      <strong class="participante-edit-nome-inline">Cadastro</strong>
-                      <div class="participante-status-trailing">
-                        <span class="participante-status-tag status-novo">Novo</span>
-                      </div>
-                    </div>
+                    <strong class="participante-edit-nome-inline">Cadastro</strong>
                     <span class="participante-email-line">Manual · foto padrão</span>
+                  </div>
+                  <div class="participante-status-trailing">
+                    <span class="participante-status-tag status-novo">Novo</span>
                   </div>
                 </div>
                 {% if is_dono %}<div class="participante-col participante-col-user" aria-hidden="true"></div>{% endif %}
@@ -744,6 +753,7 @@
           </h2>
           <p class="participantes-empty" style="margin-top:0">Não entram na classificação nem no contador de “Quem palpitou”.</p>
           <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="10">
+            {{ participantes_lista_head() }}
             {% for p in liberados_inativos %}
             {{ participante_edit_card(p) }}
             {% endfor %}
