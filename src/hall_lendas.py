@@ -1,4 +1,4 @@
-"""Hall das Lendas — constantes e formatação."""
+"""Hall da Fama — constantes e formatação."""
 
 from __future__ import annotations
 

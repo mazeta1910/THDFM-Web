@@ -1,4 +1,4 @@
-"""Hall das Lendas — mural público + admin Mazeta."""
+"""Hall da Fama — mural público + admin Mazeta."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ def test_hall_lendas_publico_sem_login(client: TestClient):
 
     r = client.get("/hall-lendas", follow_redirects=False)
     assert r.status_code == 200
-    assert "Hall das Lendas" in r.text
+    assert "Hall da Fama" in r.text
     assert "Ramos Lenda" in r.text
     assert "João JEC" in r.text
     assert "Segue o baile" in r.text
@@ -87,7 +87,7 @@ def test_hall_lendas_mazeta_ve_valores(client: TestClient):
 def test_sidebar_hall_lendas_publico(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
-    assert "Hall das Lendas" in r.text
+    assert "Hall da Fama" in r.text
     chunk = r.text.split("site-hall-lendas", 1)[1].split(">", 1)[0]
     assert 'href="/hall-lendas"' in chunk or 'href="/hall-lendas"' in r.text
     assert "disabled" not in chunk
@@ -107,7 +107,7 @@ def test_admin_hall_crud(client: TestClient):
 
     r = client.get("/admin/hall-lendas")
     assert r.status_code == 200
-    assert "Hall das Lendas" in r.text
+    assert "Hall da Fama" in r.text
     assert "Doador Admin" in r.text
     assert "data-hall-rich-form" in r.text
     assert "data-hall-rich-body" in r.text
