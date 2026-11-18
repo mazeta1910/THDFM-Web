@@ -504,6 +504,17 @@ def data_curta(value: str | None) -> str:
 
 
 TEMPLATES.env.filters["data_curta"] = data_curta
+TEMPLATES.env.globals["data_curta"] = data_curta
+
+
+def _participantes_admin_ctx(participantes: list[dict] | None = None) -> list[dict]:
+    """Enriquece participantes para o admin (data curta sem depender do filtro Jinja)."""
+    out: list[dict] = []
+    for raw in participantes or []:
+        p = dict(raw)
+        p["desde_curta"] = data_curta(p.get("inativo_em") or p.get("criado_em"))
+        out.append(p)
+    return out
 
 
 def _listra_marcar_destaque(texto: str, destaque: str) -> str:
@@ -671,6 +682,10 @@ def render(request: Request, name: str, **ctx):
     on_admin_area = path.startswith("/admin") and path != "/admin/login"
     force_admin_cookie = bool(is_adm and on_admin_area)
     ui = "admin" if force_admin_cookie else get_ui_mode(request)
+
+    # Garante filtro/global mesmo se o env Jinja for recriado em reload.
+    TEMPLATES.env.filters.setdefault("data_curta", data_curta)
+    TEMPLATES.env.globals.setdefault("data_curta", data_curta)
 
     ctx.setdefault("is_admin", is_adm)
     ctx.setdefault("ui_mode", ui)
@@ -7023,7 +7038,7 @@ def admin_home(request: Request):
         proxima_fase=proxima_fase,
         arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
-        participantes=db.list_participantes(),
+        participantes=_participantes_admin_ctx(db.list_participantes()),
         recuperacao_pedidos=[],  # Pedidos de link desligados (Esqueci senha)
         ultima_rodada=db.get_ultima_rodada_historico(),
         msg=request.query_params.get("msg"),

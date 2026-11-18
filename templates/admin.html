@@ -20,7 +20,13 @@
 {% set panel_edit_id = 'participante-panel-edit-' ~ p.id %}
 {% set panel_acesso_id = 'participante-panel-acesso-' ~ p.id %}
 {% set busca_txt = ((p.nome or '') ~ ' ' ~ (p.username or '') ~ ' ' ~ (p.celular or '') ~ ' ' ~ (p.email or '') ~ ' ' ~ (p.admin_login or ''))|lower %}
-{% set status_label = 'Inativo' if (p.status == 'liberado' and p.inativo_em) else ('Ok' if p.status == 'liberado' else ('Recusado' if p.recusado_em else ('Com comprovante' if p.status == 'comprovante' else 'Pendente'))) %}
+{% set status_label = (
+  'Inativo' if p.status == 'liberado' and p.inativo_em else
+  'Ok' if p.status == 'liberado' else
+  'Recusado' if p.recusado_em else
+  'Com comprovante' if p.status == 'comprovante' else
+  'Pendente'
+) %}
 <div class="participante-edit-wrap{% if p.inativo_em %} is-inativo{% endif %}" id="part-{{ p.id }}">
   <div
     class="participante-row participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
@@ -46,7 +52,7 @@
           {% if av %}
           <img src="{{ av }}" alt="" data-avatar-preview />
           {% else %}
-          <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ p.nome[:2]|upper }}</span>
+          <span class="participante-edit-avatar-fallback" data-avatar-fallback>{{ (p.nome or '?')[:2]|upper }}</span>
           {% endif %}
           <input
             id="{{ avatar_input_id }}"
@@ -123,8 +129,7 @@
     {% endif %}
 
     <div class="participante-col participante-col-desde" title="{% if p.inativo_em %}Inativo desde {{ p.inativo_em }}{% elif p.criado_em %}Desde {{ p.criado_em }}{% endif %}">
-      {% if p.inativo_em %}{{ p.inativo_em|data_curta }}
-      {% elif p.criado_em %}{{ p.criado_em|data_curta }}
+      {% if p.desde_curta %}{{ p.desde_curta }}
       {% else %}<span class="participante-muted">—</span>{% endif %}
     </div>
 
