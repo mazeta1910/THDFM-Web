@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Montar confrontos — Admin THDFM{% endblock %}
+{% block admin_topbar %}
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <a href="/admin/visao">Início</a>
+  <span aria-hidden="true">/</span>
+  <a href="/admin?sec=resultados">Resultados</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">Montar</span>
+</nav>
+<div class="admin-topbar-title-row">
+  <h1>Montar confrontos</h1>
+  <a class="proto-text-btn" href="/admin?sec=resultados" title="Voltar aos placares">← Resultados</a>
+</div>
+{% endblock %}
+{% block content %}
+<section class="admin-panel-page admin-montar-page">
+  {% if msg %}<p class="flash ok">{{ msg }}</p>{% endif %}
+  {% if erro %}<p class="flash erro">{{ erro }}</p>{% endif %}
+  {% include "partials/admin_arvore_block.html" %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const arvore = document.getElementById("admin-arvore");
+  if (!arvore) return;
+  let dragging = null;
+
+  const syncDropFromSelect = (chave) => {
+    chave.querySelectorAll(".admin-arvore-select").forEach((sel) => {
+      const slot = sel.dataset.slot;
+      const drop = chave.querySelector(`[data-drop-slot="${slot}"]`);
+      if (!drop) return;
+      const clube = sel.value;
+      if (!clube) {
+        drop.innerHTML = '<span class="admin-arvore-drop-placeholder">Arraste um classificado</span>';
+        drop.classList.remove("has-clube");
+        return;
+      }
+      drop.textContent = clube;
+      drop.classList.add("has-clube");
+      drop.dataset.clube = clube;
+    });
+  };
+
+  arvore.querySelectorAll(".admin-arvore-chave").forEach((chave) => {
+    syncDropFromSelect(chave);
+    chave.querySelectorAll(".admin-arvore-select").forEach((sel) => {
+      sel.addEventListener("change", () => syncDropFromSelect(chave));
+    });
+  });
+
+  arvore.querySelectorAll(".admin-arvore-chip[draggable]").forEach((chip) => {
+    chip.addEventListener("dragstart", (e) => {
+      dragging = chip.dataset.clube;
+      e.dataTransfer?.setData("text/plain", dragging || "");
+      chip.classList.add("is-dragging");
+    });
+    chip.addEventListener("dragend", () => {
+      chip.classList.remove("is-dragging");
+      dragging = null;
+      arvore.querySelectorAll(".admin-arvore-drop").forEach((d) => d.classList.remove("is-over"));
+    });
+  });
+
+  arvore.querySelectorAll("[data-drop-slot]").forEach((drop) => {
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("is-over");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("is-over");
+      const clube = dragging || e.dataTransfer?.getData("text/plain");
+      if (!clube) return;
+      const chave = drop.closest(".admin-arvore-chave");
+      const slot = drop.dataset.dropSlot;
+      const sel = chave?.querySelector(`.admin-arvore-select[data-slot="${slot}"]`);
+      if (!sel) return;
+      arvore.querySelectorAll(".admin-arvore-select").forEach((other) => {
+        if (other !== sel && other.value === clube) other.value = "";
+      });
+      sel.value = clube;
+      chave && syncDropFromSelect(chave);
+      arvore.querySelectorAll(".admin-arvore-chave").forEach(syncDropFromSelect);
+    });
+  });
+})();
+</script>
+{% endblock %}

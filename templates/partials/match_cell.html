@@ -24,8 +24,13 @@
 {% set _confirmado = confirmado|default(false) or fase_encerrada|default(false) %}
 {% set _readonly = readonly|default(false) or _confirmado %}
 {% set _encerrada = fase_encerrada|default(false) %}
+{% set _sem_horario = mode == 'admin' and inicio_input_name and not inicio_input_value %}
+{% set _estado = (
+  'confirmado' if _confirmado else
+  ('sem-horario' if _sem_horario else 'pendente')
+) %}
 <div
-  class="match-cell{% if _confirmado %} is-confirmado{% endif %}{% if _encerrada %} is-fase-encerrada{% endif %}"
+  class="match-cell{% if _confirmado %} is-confirmado{% endif %}{% if _encerrada %} is-fase-encerrada{% endif %}{% if _sem_horario and not _confirmado %} is-sem-horario{% endif %}"
   data-confronto="{{ confronto_id }}"
   {% if mode == 'admin' and jogo_id %}data-jogo-id="{{ jogo_id }}"{% endif %}
   {% if admin_attrs %} {{ admin_attrs|safe }}{% endif %}
@@ -35,52 +40,59 @@
 >
   <div class="match-cell-head">
     <span class="planilha-jogo-tag match-jogo-tag">
-      {% if jogo_tag_override|default('') %}{{ jogo_tag_override }}{% else %}JOGO ({{ jogo_num }}){% endif %}{% if inicio_lbl and mode != 'admin' %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}{% if _encerrada %} · <span class="match-travado-tag">Encerrado</span>{% elif _confirmado %} · <span class="match-travado-tag match-confirmado-tag">Confirmado</span>{% endif %}
+      {% if jogo_tag_override|default('') %}{{ jogo_tag_override }}{% else %}JOGO ({{ jogo_num }}){% endif %}{% if chave_rotulo|default('') %} · {{ chave_rotulo }}{% endif %}{% if inicio_lbl and mode != 'admin' %} · {{ inicio_lbl }}{% endif %}{% if travado_tag %} · <span class="match-travado-tag">{{ travado_tag }}</span>{% endif %}
     </span>
-    {% if mode == 'admin' and jogo_id and not _encerrada %}
-    <div class="match-cell-actions">
-      {% if _confirmado %}
-      <button
-        type="button"
-        class="match-cell-action match-cell-undo"
-        data-desfazer-jogo="{{ jogo_id }}"
-        title="Desfazer confirmação"
-        aria-label="Desfazer confirmação do jogo {{ jogo_num }}"
-      >
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="1 4 1 10 7 10" />
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-        </svg>
-      </button>
-      {% else %}
-      <button
-        type="button"
-        class="match-cell-action match-cell-confirm"
-        data-confirmar-jogo="{{ jogo_id }}"
-        title="Confirmar placar"
-        aria-label="Confirmar placar do jogo {{ jogo_num }}"
-        {% if val_m == '' or val_v == '' or val_m is none or val_v is none %}disabled{% endif %}
-      >
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </button>
+    <span class="match-cell-meta">
+      {% if mode == 'admin' and inicio_input_name %}
+      <label class="match-inicio-label match-inicio-compact{% if not inicio_input_value %} is-sem-horario{% endif %}">
+        <span class="sr-only">{{ inicio_label|default('Início') }}</span>
+        <input
+          type="datetime-local"
+          name="{{ inicio_input_name }}"
+          value="{{ inicio_input_value|default('') }}"
+          {% if _readonly %}readonly disabled{% endif %}
+          title="{{ inicio_label|default('Início') }}"
+        />
+      </label>
       {% endif %}
-    </div>
-    {% endif %}
+      {% if mode == 'admin' %}
+      <span class="match-estado-pill match-estado-{{ _estado }}">
+        {% if _estado == 'confirmado' %}✓ confirmado{% elif _estado == 'sem-horario' %}sem horário{% else %}pendente{% endif %}
+      </span>
+      {% endif %}
+      {% if mode == 'admin' and jogo_id and not _encerrada %}
+      <span class="match-cell-actions">
+        {% if _confirmado %}
+        <button
+          type="button"
+          class="match-cell-action match-cell-undo"
+          data-desfazer-jogo="{{ jogo_id }}"
+          title="Desfazer confirmação"
+          aria-label="Desfazer confirmação do jogo {{ jogo_num }}"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+        </button>
+        {% else %}
+        <button
+          type="button"
+          class="match-cell-action match-cell-confirm"
+          data-confirmar-jogo="{{ jogo_id }}"
+          title="Confirmar placar"
+          aria-label="Confirmar placar do jogo {{ jogo_num }}"
+          {% if val_m == '' or val_v == '' or val_m is none or val_v is none %}disabled{% endif %}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+        {% endif %}
+      </span>
+      {% endif %}
+    </span>
   </div>
-
-  {% if mode == 'admin' and inicio_input_name %}
-  <label class="match-inicio-label match-inicio-compact{% if not inicio_input_value %} is-sem-horario{% endif %}">
-    <span>{{ inicio_label|default('Início') }}</span>
-    <input
-      type="datetime-local"
-      name="{{ inicio_input_name }}"
-      value="{{ inicio_input_value|default('') }}"
-      {% if _readonly %}readonly disabled{% endif %}
-    />
-  </label>
-  {% endif %}
 
   {% if ref_lines %}
   <div class="match-ref">

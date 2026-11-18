@@ -116,6 +116,7 @@
         {% set admin_attrs = 'data-dash-perna="unico" data-confronto-admin="' ~ c.id ~ '" data-jogo-unico="1"' %}
         {% set classificado_preview = true %}
         {% set jogo_tag_override = 'Jogo' %}
+        {% set chave_rotulo = chave_rotulo %}
         {% include "partials/match_cell.html" %}
         {% endif %}
       </div>
@@ -150,11 +151,12 @@
         {% set admin_attrs = 'data-dash-perna="ida"' %}
         {% set classificado_preview = false %}
         {% set jogo_tag_override = 'Ida' %}
+        {% set chave_rotulo = chave_rotulo %}
         {% include "partials/match_cell.html" %}
         {% endif %}
       </div>
 
-      <div class="admin-dash-badge" aria-hidden="true">
+      <div class="admin-dash-divider" aria-hidden="true" title="{{ chave_rotulo }}">
         <span>{{ chave_rotulo }}</span>
       </div>
 
@@ -196,6 +198,7 @@
         {% set admin_attrs = 'data-dash-perna="volta" data-confronto-admin="' ~ c.id ~ '" data-ida-jogo="' ~ (c.ida.id if c.ida else '') ~ '"' %}
         {% set classificado_preview = true %}
         {% set jogo_tag_override = 'Volta' %}
+        {% set chave_rotulo = chave_rotulo %}
         {% include "partials/match_cell.html" %}
         {% endif %}
       </div>

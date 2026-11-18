@@ -6947,6 +6947,75 @@ def admin_logout(request: Request):
     return _redirect_acesso("entrar")
 
 
+def _build_arvore_fases(confrontos_por_fase: dict) -> list[dict]:
+    """Blocos da árvore (quartas/semis/final) — montar/remontar confrontos."""
+    arvore_fases: list[dict] = []
+    for f in FASES:
+        if f["id"] == "oitavas":
+            continue
+        origem = fase_anterior(f["id"])
+        classificados = db.classificados_da_fase(origem) if origem else []
+        n_chaves = int(f["slots"])
+        existentes = confrontos_por_fase.get(f["id"]) or []
+        pronto = len(classificados) >= n_chaves * 2
+        # Só mostra bloco com ação possível (montar/remontar) ou já cadastrado.
+        if not pronto and not existentes:
+            continue
+        arvore_fases.append(
+            {
+                "fase": f,
+                "origem": origem,
+                "classificados": classificados,
+                "n_chaves": n_chaves,
+                "n_clubes": n_chaves * 2,
+                "pronto": pronto,
+                "existentes": existentes,
+                "formato": fase_formato(f["id"]),
+            }
+        )
+    return arvore_fases
+
+
+def _admin_fases_ui() -> tuple[str, int, list[dict], dict, dict, dict, dict | None]:
+    fase_atual = db.get_fase_atual()
+    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
+    fases_ui = [
+        {
+            **f,
+            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
+            "encerrada": FASE_IDS.index(f["id"]) < fase_idx,
+            "ativa": f["id"] == fase_atual,
+        }
+        for f in FASES
+    ]
+    confrontos_por_fase = {
+        f["id"]: _enrich_confrontos(db.list_confrontos_completos(f["id"]))
+        for f in FASES
+    }
+    perna_default_por_fase = {
+        f["id"]: (
+            "unico"
+            if fase_formato(f["id"]) == "unico"
+            else _perna_default_confrontos(confrontos_por_fase.get(f["id"]) or [])
+        )
+        for f in FASES
+    }
+    formato_por_fase = {f["id"]: fase_formato(f["id"]) for f in FASES}
+    proxima_fase = None
+    if fase_idx + 1 < len(FASE_IDS):
+        pid = FASE_IDS[fase_idx + 1]
+        proxima_fase = next((f for f in FASES if f["id"] == pid), None)
+    return (
+        fase_atual,
+        fase_idx,
+        fases_ui,
+        confrontos_por_fase,
+        perna_default_por_fase,
+        formato_por_fase,
+        proxima_fase,
+    )
+
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_home(request: Request):
     if not admin_ok(request):
@@ -6971,59 +7040,16 @@ def admin_home(request: Request):
         except Exception:
             pass
     base = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
-    fase_atual = db.get_fase_atual()
-    fase_idx = FASE_IDS.index(fase_atual) if fase_atual in FASE_IDS else 0
-    fases_ui = [
-        {
-            **f,
-            "unlocked": FASE_IDS.index(f["id"]) <= fase_idx,
-            "encerrada": FASE_IDS.index(f["id"]) < fase_idx,
-            "ativa": f["id"] == fase_atual,
-        }
-        for f in FASES
-    ]
-    confrontos_por_fase = {
-        f["id"]: _enrich_confrontos(db.list_confrontos_completos(f["id"]))
-        for f in FASES
-    }
-    perna_default_por_fase = {
-        f["id"]: (
-            "unico"
-            if fase_formato(f["id"]) == "unico"
-            else _perna_default_confrontos(confrontos_por_fase.get(f["id"]) or [])
-        )
-        for f in FASES
-    }
+    (
+        fase_atual,
+        _fase_idx,
+        fases_ui,
+        confrontos_por_fase,
+        perna_default_por_fase,
+        formato_por_fase,
+        proxima_fase,
+    ) = _admin_fases_ui()
     perna_default = perna_default_por_fase.get(fase_atual, "ida")
-    formato_por_fase = {f["id"]: fase_formato(f["id"]) for f in FASES}
-    proxima_fase = None
-    if fase_idx + 1 < len(FASE_IDS):
-        pid = FASE_IDS[fase_idx + 1]
-        proxima_fase = next((f for f in FASES if f["id"] == pid), None)
-    arvore_fases = []
-    for f in FASES:
-        if f["id"] == "oitavas":
-            continue
-        origem = fase_anterior(f["id"])
-        classificados = db.classificados_da_fase(origem) if origem else []
-        n_chaves = int(f["slots"])
-        existentes = confrontos_por_fase.get(f["id"]) or []
-        pronto = len(classificados) >= n_chaves * 2
-        # Só mostra bloco com ação possível (montar/remontar) ou já cadastrado.
-        if not pronto and not existentes:
-            continue
-        arvore_fases.append(
-            {
-                "fase": f,
-                "origem": origem,
-                "classificados": classificados,
-                "n_chaves": n_chaves,
-                "n_clubes": n_chaves * 2,
-                "pronto": pronto,
-                "existentes": existentes,
-                "formato": fase_formato(f["id"]),
-            }
-        )
     return render(
         request,
         "admin.html",
@@ -7036,7 +7062,6 @@ def admin_home(request: Request):
         perna_default_por_fase=perna_default_por_fase,
         formato_por_fase=formato_por_fase,
         proxima_fase=proxima_fase,
-        arvore_fases=arvore_fases,
         trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
         participantes=_participantes_admin_ctx(db.list_participantes()),
         recuperacao_pedidos=[],  # Pedidos de link desligados (Esqueci senha)
@@ -7048,6 +7073,35 @@ def admin_home(request: Request):
         public_url_configurada=bool(PUBLIC_BASE_URL),
         audit_por_participante=_audit_map_participantes(),
         **_taxa_ctx(),
+    )
+
+
+@app.get("/admin/montar", response_class=HTMLResponse)
+def admin_montar(request: Request):
+    """Árvore / montar confrontos — separado de Resultados (placares)."""
+    if not admin_ok(request):
+        return _redirect_acesso("entrar")
+    (
+        fase_atual,
+        _fase_idx,
+        fases_ui,
+        confrontos_por_fase,
+        _perna_default_por_fase,
+        formato_por_fase,
+        _proxima_fase,
+    ) = _admin_fases_ui()
+    arvore_fases = _build_arvore_fases(confrontos_por_fase)
+    return render(
+        request,
+        "admin_montar.html",
+        fase_atual=fase_atual,
+        fases=fases_ui,
+        confrontos_por_fase=confrontos_por_fase,
+        formato_por_fase=formato_por_fase,
+        arvore_fases=arvore_fases,
+        trava_antes_min=TRAVA_PALPITE_ANTES_MIN,
+        msg=request.query_params.get("msg"),
+        erro=request.query_params.get("erro"),
     )
 
 
@@ -7956,7 +8010,7 @@ async def admin_arvore_montar(request: Request):
     fase = str(form.get("fase") or "").strip()
     meta = next((f for f in FASES if f["id"] == fase), None)
     if not meta or fase == "oitavas":
-        return RedirectResponse("/admin?erro=Fase+invalida+para+montar", status_code=303)
+        return RedirectResponse("/admin/montar?erro=Fase+invalida+para+montar", status_code=303)
     n_chaves = int(meta["slots"])
     origem = fase_anterior(fase)
     classificados = {
@@ -7970,22 +8024,22 @@ async def admin_arvore_montar(request: Request):
             b = str(form.get(f"chave_{i}_b") or "").strip()
             if not a or not b:
                 return RedirectResponse(
-                    f"/admin?erro=Preencha+todos+os+pares+de+{fase}",
+                    f"/admin/montar?erro=Preencha+todos+os+pares+de+{fase}",
                     status_code=303,
                 )
             if a == b:
                 return RedirectResponse(
-                    "/admin?erro=Clube+repetido+no+mesmo+confronto",
+                    "/admin/montar?erro=Clube+repetido+no+mesmo+confronto",
                     status_code=303,
                 )
             if a in usados or b in usados:
                 return RedirectResponse(
-                    "/admin?erro=Clube+usado+em+mais+de+uma+chave",
+                    "/admin/montar?erro=Clube+usado+em+mais+de+uma+chave",
                     status_code=303,
                 )
             if classificados and (a not in classificados or b not in classificados):
                 return RedirectResponse(
-                    "/admin?erro=Clube+fora+dos+classificados",
+                    "/admin/montar?erro=Clube+fora+dos+classificados",
                     status_code=303,
                 )
             usados.add(a)
@@ -8014,18 +8068,18 @@ async def admin_arvore_montar(request: Request):
     except ValueError as e:
         from urllib.parse import quote
 
-        return RedirectResponse(f"/admin?erro={quote(str(e))}", status_code=303)
+        return RedirectResponse(f"/admin/montar?erro={quote(str(e))}", status_code=303)
     except Exception as e:
         from urllib.parse import quote
 
         # IntegrityError etc. ao apagar jogos com palpites — agora tratado no db,
         # mas mantém mensagem clara se algo escapar.
         return RedirectResponse(
-            f"/admin?erro={quote(str(e) or 'Falha ao montar confrontos')}",
+            f"/admin/montar?erro={quote(str(e) or 'Falha ao montar confrontos')}",
             status_code=303,
         )
     return RedirectResponse(
-        f"/admin?msg={n_chaves}+confronto(s)+de+{fase}+montados",
+        f"/admin/montar?msg={n_chaves}+confronto(s)+de+{fase}+montados",
         status_code=303,
     )
 
