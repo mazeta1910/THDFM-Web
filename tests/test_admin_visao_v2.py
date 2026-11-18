@@ -78,7 +78,7 @@ def test_visao_css_contract():
     assert ".admin-visao-atalhos" in css
     assert ".admin-visao-cols" in css
     base = (ROOT_DIR / "templates/base.html").read_text(encoding="utf-8")
-    assert "style.css?v=383" in base
+    assert "style.css?v=384" in base
 
 
 def test_sistema_saude_html_nao_json(client: TestClient):

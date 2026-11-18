@@ -81,7 +81,7 @@ O site é **escuro por padrão**. Controles nativos do SO (`<select>`, lista de 
 
 ## Inscrições / gestão de participantes (obrigatório)
 
-1. A gestão é pelos **cards densos** (Liberados + Inativos no bolão) — sem card-resumo “Inscrições” (taxa/stats/PIX/link) nem faixa “Gestão de Participantes”.
+1. A gestão é por **lista densa (linha por participante)** (Liberados + Inativos no bolão) — sem card-resumo “Inscrições” (taxa/stats/PIX/link) nem faixa “Gestão de Participantes”.
 2. **Não** recriar colunas `inscricoes-cols`, Sem link / Link enviado, FABs de marcar link / Zap, nem seções **Aguardando liberação** / **Recusados** / botões Liberar·Recusar·Reabrir / checkbox “Já pagou”.
 3. Cadastro manual no admin cria já **liberado** (Ok). Fluxo de liberação fica para o cadastro externo (quando existir).
 4. Inativos **não** ganham coluna duplicada no topo: já aparecem em “Inativos no bolão”.

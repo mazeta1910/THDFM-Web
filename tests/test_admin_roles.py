@@ -339,10 +339,16 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     assert "data-participante-acesso" in r.text
     assert "cred-dono-save" in r.text
     assert "participante-acesso" in r.text
+    assert "participantes-lista" in r.text
+    assert "is-dono-lista" in r.text
+    assert "status-senha-ok" in r.text
+    assert 'data-row-panel-toggle="acesso"' in r.text
+    assert 'data-row-panel-toggle="edit"' in r.text
     assert "Redefinir e anotar no Zap" not in r.text
     assert "Gestão de credenciais" not in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".participante-acesso {" in css
+    assert ".participantes-lista {" in css
     assert ".cred-dono-row {" in css
 
     r2 = client.post(
@@ -404,8 +410,12 @@ def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
     nav = r3.text.split("admin-side-nav", 1)[-1].split("admin-side-sair", 1)[0]
     assert "Credenciais" not in nav
     assert "/admin/credenciais" not in nav
-    assert 'class="participante-acesso"' not in r3.text
+    assert "participante-acesso" not in r3.text
     assert "cred-dono-save" not in r3.text
-    assert "sem username" not in r3.text
-    assert "senha ok" not in r3.text
+    assert "participante-col-user" not in r3.text
+    assert "status-senha-ok" not in r3.text
+    assert "status-senha-off" not in r3.text
+    assert 'data-row-panel-toggle="acesso"' not in r3.text
     assert "@alvo.ok" not in r3.text
+    assert "participantes-lista" in r3.text
+    assert "is-dono-lista" not in r3.text

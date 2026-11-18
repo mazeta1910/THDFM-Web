@@ -489,6 +489,23 @@ TEMPLATES.env.filters["celular_wa"] = db.celular_whatsapp
 TEMPLATES.env.filters["wa_chat"] = db.url_whatsapp_chat
 
 
+def data_curta(value: str | None) -> str:
+    """Data curta pt-BR: ``2026-07-30 14:11:37`` → ``30/07/26``."""
+    if not value:
+        return ""
+    raw = str(value).strip()[:10]
+    partes = raw.split("-")
+    if len(partes) != 3:
+        return str(value).strip()
+    ano, mes, dia = partes
+    if len(ano) < 2:
+        return str(value).strip()
+    return f"{dia}/{mes}/{ano[-2:]}"
+
+
+TEMPLATES.env.filters["data_curta"] = data_curta
+
+
 def _listra_marcar_destaque(texto: str, destaque: str) -> str:
     """Marca o trecho compartilhável dentro do texto (HTML escapado)."""
     from markupsafe import Markup
