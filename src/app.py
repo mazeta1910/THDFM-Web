@@ -7021,21 +7021,13 @@ def admin_home(request: Request):
 
 @app.get("/admin/credenciais", response_class=HTMLResponse)
 def admin_credenciais(request: Request):
+    """Compat: Credenciais vive em Inscrições (acesso só Dono no card)."""
     negado = require_dono(request)
     if negado:
         return negado
-    partes = [
-        p
-        for p in db.list_participantes()
-        if db.participante_ativo_no_bolao(p)
-    ]
-    return render(
-        request,
-        "admin_credenciais.html",
-        participantes=partes,
-        msg=request.query_params.get("msg"),
-        erro=request.query_params.get("erro"),
-        **_taxa_ctx(),
+    return RedirectResponse(
+        "/admin?sec=inscricoes&foco=acesso",
+        status_code=303,
     )
 
 
@@ -7169,11 +7161,11 @@ def admin_credenciais_redefinir(
             )
     except ValueError as e:
         return RedirectResponse(
-            f"/admin/credenciais?erro={quote(str(e))}",
+            f"/admin?sec=inscricoes&foco=acesso&erro={quote(str(e))}",
             status_code=303,
         )
     return RedirectResponse(
-        f"/admin/credenciais?msg={quote(msg)}",
+        f"/admin?sec=inscricoes&foco=acesso&msg={quote(msg)}",
         status_code=303,
     )
 

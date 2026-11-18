@@ -11,7 +11,6 @@
 {% set on_transparencia = path.startswith('/transparencia') %}
 {% set on_admin_palpites = path.startswith('/admin/palpites') %}
 {% set on_admin_cobranca = path.startswith('/admin/cobranca') %}
-{% set on_admin_credenciais = path.startswith('/admin/credenciais') %}
 {% set on_admin_xonhometro = path.startswith('/admin/xonhometro') %}
 {% set on_admin_hall_lendas = path.startswith('/admin/hall-lendas') %}
 {% set on_hall_lendas = path.startswith('/hall-lendas') %}
@@ -31,7 +30,7 @@
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set on_permissoes = path.startswith('/admin/permissoes') %}
-{% set on_operacao = on_admin_resultados or on_admin_inscricoes or on_admin_palpites or on_admin_cobranca or on_admin_credenciais or on_permissoes %}
+{% set on_operacao = on_admin_resultados or on_admin_inscricoes or on_admin_palpites or on_admin_cobranca or on_permissoes %}
 {% set on_dados = on_admin_acervo %}
 {% set on_grid_mod = on_grid or on_grid_ranking or on_admin_reports or on_hall_lendas or on_admin_hall_lendas %}
 {% set pend_n = admin_pendentes_count|default(0) %}
@@ -115,9 +114,6 @@
               {{ ico('bell') }}<span>Cobranças</span>
               {% if cobranca_n %}<span class="admin-badge">{{ cobranca_n }}</span>{% endif %}
             </a>
-            {% if is_dono %}
-            <a class="admin-side-link {% if on_admin_credenciais %}active{% endif %}" href="/admin/credenciais" {% if on_admin_credenciais %}aria-current="page"{% endif %}>{{ ico('key') }}<span>Credenciais</span></a>
-            {% endif %}
             {% if is_dono or ('usuarios.permissoes' in admin_caps) %}
             <a class="admin-side-link {% if on_permissoes %}active{% endif %}" href="/admin/permissoes" {% if on_permissoes %}aria-current="page"{% endif %}>{{ ico('shield') }}<span>Permissões</span></a>
             {% endif %}

@@ -7117,6 +7117,49 @@ html[data-theme="dark"] .participante-status-tag.status-liberado {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.participante-meta-line code {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.participante-acesso {
+  margin: 0;
+  padding: 0.35rem 0.55rem 0.45rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+.participante-acesso > summary {
+  list-style: none;
+  cursor: pointer;
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+.participante-acesso > summary::-webkit-details-marker {
+  display: none;
+}
+.participante-acesso[open] > summary {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+.participante-acesso-panel {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+.participante-acesso .cred-dono-row {
+  margin: 0;
+}
+.participante-edit-wrap--acesso-flash {
+  outline: 2px solid rgba(232, 93, 4, 0.55);
+  outline-offset: 2px;
+}
 .participante-avatar-row {
   display: flex;
   flex-wrap: wrap;

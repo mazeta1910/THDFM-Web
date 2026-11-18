@@ -75,7 +75,7 @@ def test_moderador_nao_tem_chrome_toggle(client: TestClient):
     assert 'id="ui-mode-toggle"' not in r.text
 
 def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
-    """Credenciais não pode deixar Resultados ativo ao mesmo tempo."""
+    """Um item ativo por vez; Credenciais redireciona para Inscrições."""
     import re
 
     _login_admin(client, "mazeta", "senha-dono")
@@ -85,15 +85,23 @@ def test_menu_admin_um_item_ativo_por_vez(client: TestClient):
             'data-group="dados"', 1
         )[0]
         return re.findall(
-            r'class="admin-side-link active"[^>]*>.*?>(Inscrições|Resultados|Palpites|Credenciais|Cobranças)<',
+            r'class="admin-side-link active"[^>]*>.*?>(Inscrições|Resultados|Palpites|Cobranças)<',
             block,
             flags=re.S,
         )
 
+    r_redir = client.get("/admin/credenciais", follow_redirects=False)
+    assert r_redir.status_code == 303
+    assert "sec=inscricoes" in r_redir.headers["location"]
+    assert "foco=acesso" in r_redir.headers["location"]
+
     r = client.get("/admin/credenciais")
     assert r.status_code == 200
-    assert active_operacao_items(r.text) == ["Credenciais"]
+    assert active_operacao_items(r.text) == ["Inscrições"]
     assert 'data-group="operacao"' in r.text
+    assert "Credenciais" not in r.text.split("admin-side-nav", 1)[-1].split(
+        "admin-side-sair", 1
+    )[0]
 
     r2 = client.get("/admin?sec=resultados")
     assert active_operacao_items(r2.text) == ["Resultados"]
@@ -321,17 +329,21 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
     db.definir_credenciais(part["id"], "fulano.ok", "antiga123")
 
     _login_admin(client, "mazeta", "senha-dono")
-    r = client.get("/admin/credenciais")
+    r_redir = client.get("/admin/credenciais", follow_redirects=False)
+    assert r_redir.status_code == 303
+    assert r_redir.headers["location"] == "/admin?sec=inscricoes&foco=acesso"
+
+    r = client.get("/admin?sec=inscricoes&foco=acesso")
     assert r.status_code == 200
     assert "fulano.ok" in r.text
-    assert "Gestão de credenciais" in r.text
-    assert "data-cred-busca" in r.text
-    assert "data-cred-ir" in r.text
+    assert "data-participante-acesso" in r.text
     assert "cred-dono-save" in r.text
+    assert "participante-acesso" in r.text
     assert "Redefinir e anotar no Zap" not in r.text
+    assert "Gestão de credenciais" not in r.text
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
-    assert "grid-template-columns: repeat(auto-fill" in css
-    assert ".cred-dono-page {\n  max-width: 1100px;" in css or "max-width: 1100px" in css
+    assert ".participante-acesso {" in css
+    assert ".cred-dono-row {" in css
 
     r2 = client.post(
         "/admin/credenciais/redefinir",
@@ -343,8 +355,10 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
         follow_redirects=False,
     )
     assert r2.status_code == 303
-    assert "credenciais" in r2.headers["location"].casefold()
-    assert "senha" in unquote(r2.headers["location"]).casefold()
+    loc2 = unquote(r2.headers["location"]).casefold()
+    assert "sec=inscricoes" in loc2
+    assert "foco=acesso" in loc2
+    assert "senha" in loc2
     assert db.autenticar_por_username("fulano.ok", "nova45678")
     assert db.autenticar_por_username("fulano.ok", "antiga123") is None
 
@@ -358,7 +372,9 @@ def test_dono_acessa_credenciais_e_redefine(client: TestClient):
         follow_redirects=False,
     )
     assert r3.status_code == 303
-    assert "username" in unquote(r3.headers["location"]).casefold()
+    loc3 = unquote(r3.headers["location"]).casefold()
+    assert "sec=inscricoes" in loc3
+    assert "username" in loc3
     assert db.autenticar_por_username("fulano.novo", "nova45678")
     assert db.get_participante(part["id"])["username"] == "fulano.novo"
     # Senha permanece ao mudar só o username
@@ -383,7 +399,13 @@ def test_moderador_nao_acessa_credenciais_nem_apagar(client: TestClient):
     assert r2.status_code == 303
     assert db.get_participante(part["id"]) is not None
 
-    r3 = client.get("/admin")
+    r3 = client.get("/admin?sec=inscricoes")
     assert "is-moderador" in r3.text
     nav = r3.text.split("admin-side-nav", 1)[-1].split("admin-side-sair", 1)[0]
-    assert "/admin/credenciais" not in nav or "Credenciais" not in nav
+    assert "Credenciais" not in nav
+    assert "/admin/credenciais" not in nav
+    assert 'class="participante-acesso"' not in r3.text
+    assert "cred-dono-save" not in r3.text
+    assert "sem username" not in r3.text
+    assert "senha ok" not in r3.text
+    assert "@alvo.ok" not in r3.text
