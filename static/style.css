@@ -6859,7 +6859,10 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   font-size: 0.88rem;
 }
 .participantes-lista {
-  --part-row-cols: 2.1fr 1.05fr 1.05fr 0.6fr auto;
+  /* Tracks fixas (sem `auto`): cada .participante-row é um grid
+     independente — `auto`/`fr` puro faz o cabeçalho e as linhas
+     calcularem larguras diferentes e desalinharem as colunas. */
+  --part-row-cols: minmax(0, 1fr) minmax(0, 5.5rem) minmax(0, 9.5rem) minmax(0, 4.25rem) 9.75rem;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -6870,7 +6873,7 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   min-width: 0;
 }
 .participantes-lista.is-dono-lista {
-  --part-row-cols: 2.1fr 0.95fr 1.05fr 1.05fr 0.65fr 0.6fr auto;
+  --part-row-cols: minmax(0, 1fr) minmax(0, 7.25rem) minmax(0, 4.25rem) minmax(0, 9.5rem) minmax(0, 2.75rem) minmax(0, 4.25rem) 11rem;
 }
 .participante-edit-card {
   margin: 0;
@@ -6935,8 +6938,14 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
   white-space: normal;
+}
+.participante-edit-nome-inline {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .participante-row-form {
   margin: 0;
@@ -6973,8 +6982,9 @@ a.classificacao-player-link:focus-visible .classificacao-nome {
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
+  flex-wrap: nowrap;
 }
 .participante-col-status .participante-status-tag,
 .participante-col-senha .participante-status-tag {
@@ -7444,9 +7454,11 @@ button.participante-create-btn {
   margin: 0;
 }
 @media (max-width: 860px) {
-  .participantes-lista .participante-row,
-  .participantes-lista.is-dono-lista .participante-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+  .participantes-lista {
+    --part-row-cols: minmax(0, 1fr) 9.75rem;
+  }
+  .participantes-lista.is-dono-lista {
+    --part-row-cols: minmax(0, 1fr) minmax(0, 7.25rem) 11rem;
   }
   .participante-col-status,
   .participante-col-celular,
@@ -7455,15 +7467,17 @@ button.participante-create-btn {
     display: none;
   }
   .participantes-lista.is-dono-lista .participante-col-user {
-    display: block;
+    display: flex;
   }
   .participante-create-wrap .participante-create-fields {
     display: block;
     grid-column: 1 / -1;
   }
-  .participante-create-wrap .participante-row,
-  .participantes-lista.is-dono-lista .participante-create-wrap .participante-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .participante-create-wrap {
+    --part-row-cols: minmax(0, 1fr) 9.75rem;
+  }
+  .participantes-lista.is-dono-lista .participante-create-wrap {
+    --part-row-cols: minmax(0, 1fr) 11rem;
   }
   .participante-create-wrap .participante-col-user {
     display: none;

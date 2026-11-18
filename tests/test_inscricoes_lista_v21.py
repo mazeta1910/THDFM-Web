@@ -75,6 +75,10 @@ def test_inscricoes_lista_densa_dono(client: TestClient):
     assert ".participantes-lista {" in css
     assert "--part-row-cols:" in css
     assert "grid-template-columns: var(--part-row-cols)" in css
+    # Cabeçalho/rows são grids independentes: sem `auto` no fim (senão Ações
+    # do head ≠ Ações da row e todas as colunas driftam).
+    assert "minmax(0, 2.75rem) minmax(0, 4.25rem) 11rem" in css
+    assert "--part-row-cols: minmax(0, 1fr) minmax(0, 7.25rem)" in css
     assert ".participante-edit-wrap[hidden]" in css
     assert "min-height: 42px" in css
     assert ".participante-edit-avatar {\n  position: relative;\n  width: 36px;" in css or "width: 36px;\n  height: 36px;" in css
