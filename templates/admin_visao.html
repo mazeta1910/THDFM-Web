@@ -29,7 +29,7 @@
     <a href="/admin?sec=resultados">Resultados</a>
     <a href="/admin/cobranca?fase={{ _fase }}&perna={{ _perna }}">Cobranças</a>
     <a href="/admin/palpites">Palpites</a>
-    {% if is_dono %}<a href="/admin/credenciais">Credenciais</a>{% endif %}
+    {% if is_dono %}<a href="/admin?sec=inscricoes&foco=acesso">Acesso</a>{% endif %}
     {% if 'sistema.ver' in admin_caps %}<a href="/admin/sistema/rotas">Sistema</a>{% endif %}
   </nav>
 

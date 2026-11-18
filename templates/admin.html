@@ -17,7 +17,8 @@
 
 {% macro participante_edit_card(p) -%}
 {% set form_id = 'participante-edit-' ~ p.id %}
-<div class="participante-edit-wrap{% if p.inativo_em %} is-inativo{% endif %}">
+{% set busca_txt = ((p.nome or '') ~ ' ' ~ (p.username or '') ~ ' ' ~ (p.celular or '') ~ ' ' ~ (p.email or '') ~ ' ' ~ (p.admin_login or ''))|lower %}
+<div class="participante-edit-wrap{% if p.inativo_em %} is-inativo{% endif %}" id="part-{{ p.id }}">
 <form
   id="{{ form_id }}"
   method="post"
@@ -26,6 +27,9 @@
   class="card participante-edit-card{% if p.inativo_em %} participante-edit-card-inativo{% endif %}"
   data-nome="{{ p.nome|e }}"
   data-celular="{{ (p.celular or '')|e }}"
+  data-username="{{ (p.username or '')|e }}"
+  data-email="{{ (p.email or '')|e }}"
+  data-busca="{{ busca_txt|e }}"
 >
   <input type="hidden" name="participante_id" value="{{ p.id }}" />
   <input type="hidden" name="remover_avatar" value="" data-remover-avatar />
@@ -85,6 +89,13 @@
           </span>
         </div>
       </div>
+      {% if is_dono %}
+      <span class="participante-meta-line">
+        {% if p.username %}<code>@{{ p.username }}</code>{% else %}<em>sem username</em>{% endif %}
+        · {% if p.password_hash %}senha ok{% else %}sem senha{% endif %}
+        {% if p.email %} · {{ p.email }}{% endif %}
+      </span>
+      {% endif %}
       {% if p.inativo_em %}
       <span class="participante-meta-line">Inativo desde {{ p.inativo_em }}</span>
       {% elif p.criado_em %}
@@ -104,6 +115,77 @@
     </label>
   </div>
 </form>
+
+{% if is_dono %}
+<details class="participante-acesso" data-participante-acesso>
+  <summary class="participante-acesso-summary proto-text-btn">
+    {% if p.password_hash %}Trocar senha{% else %}Definir senha{% endif %}
+  </summary>
+  <div class="participante-acesso-panel">
+    <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+      <input type="hidden" name="participante_id" value="{{ p.id }}" />
+      <input type="hidden" name="acao" value="username" />
+      <label class="sr-only" for="user-{{ p.id }}">Username</label>
+      <input
+        id="user-{{ p.id }}"
+        class="input-compact"
+        type="text"
+        name="username"
+        value="{{ p.username or '' }}"
+        maxlength="24"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="username"
+        required
+      />
+      <button
+        type="submit"
+        class="cred-dono-save"
+        title="Salvar username"
+        aria-label="Salvar username de {{ p.nome }}"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+      </button>
+    </form>
+    <form method="post" action="/admin/credenciais/redefinir" class="cred-dono-row" autocomplete="off">
+      <input type="hidden" name="participante_id" value="{{ p.id }}" />
+      <input type="hidden" name="acao" value="senha" />
+      <label class="sr-only" for="senha-{{ p.id }}">Nova senha</label>
+      <div class="password-field cred-dono-pass">
+        <input
+          id="senha-{{ p.id }}"
+          class="input-compact"
+          type="password"
+          name="senha_nova"
+          minlength="8"
+          required
+          autocomplete="new-password"
+          placeholder="nova senha (mín. 8)"
+        />
+        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button
+        type="submit"
+        class="cred-dono-save"
+        title="Salvar senha"
+        aria-label="Salvar senha de {{ p.nome }}"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</details>
+{% endif %}
 
 <div class="participante-edit-actions">
   <a class="btn secondary participante-link-btn" href="/p/{{ p.token }}" title="Abrir link privado" target="_blank" rel="noopener">Link</a>
@@ -521,8 +603,8 @@
               <span class="participantes-count" data-filter-count data-filter-total="{{ liberados|length }}">{{ liberados|length }}</span>
             </h2>
             <label class="participantes-filter-wrap" for="participantes-filter">
-              <span class="sr-only">Buscar liberados por nome ou celular</span>
-              <input id="participantes-filter" type="search" placeholder="Nome ou celular…" autocomplete="off" enterkeyhint="search" />
+              <span class="sr-only">Buscar liberados por nome, username ou celular</span>
+              <input id="participantes-filter" type="search" placeholder="Nome, @user ou celular…" autocomplete="off" enterkeyhint="search" />
             </label>
           </div>
           <div class="participantes-grid" data-participantes-grid>
@@ -1525,11 +1607,21 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   const applyFilter = () => {
     const q = (filter.value || "").trim().toLocaleLowerCase("pt-BR");
     const qDigits = q.replace(/\D+/g, "");
+    const qUser = q.replace(/^@/, "");
     let visible = 0;
     cards().forEach((card) => {
       const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
       const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
-      const hit = !q || nomeBate(nome, q) || celularBate(celular, q, qDigits);
+      const username = (card.dataset.username || "").toLocaleLowerCase("pt-BR");
+      const email = (card.dataset.email || "").toLocaleLowerCase("pt-BR");
+      const busca = (card.dataset.busca || "").toLocaleLowerCase("pt-BR");
+      const hit =
+        !q ||
+        nomeBate(nome, q) ||
+        celularBate(celular, q, qDigits) ||
+        (qUser && username.includes(qUser)) ||
+        (email && email.includes(q)) ||
+        (busca && busca.includes(q));
       const wrap = card.closest(".participante-edit-wrap") || card;
       wrap.hidden = !hit;
       if (hit) visible += 1;
@@ -1542,6 +1634,26 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
   filter.addEventListener("input", applyFilter);
   filter.addEventListener("search", applyFilter);
 })();
+
+{% if is_dono %}
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("foco") !== "acesso") return;
+  const first = document.querySelector("[data-participante-acesso]");
+  if (!first) return;
+  first.open = true;
+  const wrap = first.closest(".participante-edit-wrap");
+  if (wrap) {
+    wrap.classList.add("participante-edit-wrap--acesso-flash");
+    try {
+      wrap.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (e) {
+      wrap.scrollIntoView();
+    }
+    window.setTimeout(() => wrap.classList.remove("participante-edit-wrap--acesso-flash"), 1600);
+  }
+})();
+{% endif %}
 
 (function bindParticipanteAvatars() {
   const run = () => {
