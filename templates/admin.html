@@ -651,7 +651,7 @@
               <input id="participantes-filter" type="search" placeholder="Nome, @user ou celular…" autocomplete="off" enterkeyhint="search" />
             </label>
           </div>
-          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="15">
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="10">
             <div class="participante-edit-wrap participante-create-wrap">
               <div class="participante-row participante-edit-card participante-create-card" data-nome="novo" data-celular="">
                 <div class="participante-col participante-col-nome">
@@ -743,7 +743,7 @@
             <span class="participantes-count">{{ liberados_inativos|length }}</span>
           </h2>
           <p class="participantes-empty" style="margin-top:0">Não entram na classificação nem no contador de “Quem palpitou”.</p>
-          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="15">
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="10">
             {% for p in liberados_inativos %}
             {{ participante_edit_card(p) }}
             {% endfor %}
@@ -1634,7 +1634,7 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
 })();
 
 (() => {
-  const PAGE_SIZE_DEFAULT = 15;
+  const PAGE_SIZE_DEFAULT = 10;
 
   const nomeBate = (nome, q) => {
     if (!q) return true;
