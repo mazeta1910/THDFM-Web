@@ -4146,14 +4146,15 @@ html[data-theme="light"] .admin-main {
   flex-direction: column;
   gap: 0.85rem;
   width: 100%;
-  max-width: 920px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }
 .admin-dash-status {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
+  margin: 0.35rem 0 0.15rem;
 }
 .admin-dash-pill {
   display: inline-flex;
@@ -4253,21 +4254,24 @@ html[data-theme="light"] .admin-main {
   /* Sem coluna fantasma ao lado do jogo único. */
   max-width: 100%;
 }
-.admin-dash-badge {
+.admin-dash-badge,
+.admin-dash-divider {
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
 }
+.admin-dash-divider span,
 .admin-dash-badge span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 4.6rem;
-  padding: 0.28rem 0.55rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 55%, #9aa3af);
-  color: #fff;
+  min-width: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -4279,6 +4283,13 @@ html[data-theme="light"] .admin-main {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: color-mix(in srgb, var(--card) 92%, var(--bg));
+}
+.admin-dash-leg .match-cell.is-confirmado {
+  border-color: color-mix(in srgb, #2f7d4a 45%, var(--border));
+  border-left: 3px solid #2f7d4a;
+}
+.admin-dash-leg .match-cell.is-sem-horario:not(.is-confirmado) {
+  border-left: 3px solid #c47a2c;
 }
 .admin-resultados-form.is-focus-ida .admin-dash-leg[data-dash-leg="volta"],
 .admin-resultados-form.is-focus-volta .admin-dash-leg[data-dash-leg="ida"] {
@@ -4300,7 +4311,8 @@ html[data-theme="light"] .admin-main {
     grid-template-columns: 1fr;
     gap: 0.45rem;
   }
-  .admin-dash-badge {
+  .admin-dash-badge,
+  .admin-dash-divider {
     order: -1;
     justify-content: flex-start;
   }
@@ -4350,6 +4362,154 @@ html[data-theme="light"] .admin-main {
   margin-left: auto;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+.placares-actions-sep {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.4rem;
+  background: var(--border);
+  margin: 0 0.15rem;
+}
+a.placares-btn-montar {
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+a.placares-btn-montar:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.admin-janela-pill-wrap {
+  position: relative;
+  margin: 0 0 0.65rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+button.admin-janela-pill {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0.28rem 0.7rem !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--border);
+  background: var(--card, var(--bg));
+  color: var(--text);
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+}
+button.admin-janela-pill:hover,
+button.admin-janela-pill[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+}
+.admin-janela-pop {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 20;
+  min-width: min(22rem, 92vw);
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card, var(--bg));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+.admin-janela-pop .admin-janela-padrao {
+  max-width: none;
+  flex: 1 1 auto;
+}
+.admin-fases-v2 .fases-panel-body {
+  padding: 0;
+}
+/* Sobrescreve .transparencia-nav { display:grid; 4 cols } — aqui a nav é coluna
+   (barra de fases + chips de perna), não 4 colunas de fase. */
+.admin-panel[data-panel="resultados"] #admin-placares-nav.transparencia-nav.admin-fases-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  grid-template-columns: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+}
+.admin-fases-tabs-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card, var(--bg));
+  width: 100%;
+}
+.admin-fases-tabs-row .transparencia-nav-fase {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0.55rem 0.4rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.82rem !important;
+  font-weight: 650;
+  opacity: 1;
+}
+.admin-fases-tabs-row .transparencia-nav-fase.is-encerrada {
+  opacity: 0.5;
+  font-style: italic;
+}
+.admin-fases-tabs-row .transparencia-nav-fase.active {
+  background: var(--accent);
+  color: #111;
+  opacity: 1;
+}
+.admin-fases-tabs-row .transparencia-nav-fase + .transparencia-nav-fase {
+  border-left: 1px solid var(--border) !important;
+}
+.admin-pernas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.admin-pernas-chips[hidden] {
+  display: none !important;
+}
+.admin-pernas-chips .transparencia-nav-pernas {
+  display: inline-flex;
+  gap: 0.35rem;
+  width: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.admin-pernas-chips .transparencia-nav-pernas button {
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  padding: 0.28rem 0.75rem !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem !important;
+  font-weight: 600;
+}
+.admin-pernas-chips .transparencia-nav-pernas button.active {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border)) !important;
+  color: var(--accent);
 }
 .placares-zerar-form {
   margin: 0;
@@ -4493,6 +4653,52 @@ html[data-theme="light"] .admin-main {
   border-radius: 10px;
   background: color-mix(in srgb, var(--card) 92%, var(--bg));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.admin-sticky-save[hidden] {
+  display: none !important;
+}
+.match-cell-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.match-estado-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.match-estado-pill.match-estado-confirmado {
+  color: #1f5c36;
+  border-color: color-mix(in srgb, #2f7d4a 40%, var(--border));
+  background: color-mix(in srgb, #b7e0c4 25%, var(--card));
+}
+.match-estado-pill.match-estado-sem-horario {
+  color: #9a5b14;
+  border-color: color-mix(in srgb, #c47a2c 45%, var(--border));
+  background: color-mix(in srgb, #f3d5a4 28%, var(--card));
+}
+.admin-resultados-form .match-team-row input[type="number"] {
+  width: 46px;
+  height: 36px;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 0.15rem;
+}
+.admin-resultados-form .match-team-row img.match-emblema,
+.admin-resultados-form .match-emblema {
+  width: 26px;
+  height: 26px;
 }
 .admin-sticky-dirty {
   margin-right: auto;

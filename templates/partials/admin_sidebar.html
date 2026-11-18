@@ -28,9 +28,10 @@
 {% set on_site_viz = on_classificacao or on_transparencia or on_regras or on_grupo_bans or on_grupo_listra or on_grupo_copypastas or on_xonhometro or on_grupo_cardapio or on_admin_xonhometro %}
 {% set on_sistema = path.startswith('/admin/sistema') %}
 {% set on_admin_resultados = on_admin_home and admin_sec == 'resultados' %}
+{% set on_admin_montar = path.startswith('/admin/montar') %}
 {% set on_admin_inscricoes = on_admin_home and admin_sec in ['inscricoes', 'participantes', 'cadastro'] %}
 {% set on_permissoes = path.startswith('/admin/permissoes') %}
-{% set on_operacao = on_admin_resultados or on_admin_inscricoes or on_admin_palpites or on_admin_cobranca or on_permissoes %}
+{% set on_operacao = on_admin_resultados or on_admin_montar or on_admin_inscricoes or on_admin_palpites or on_admin_cobranca or on_permissoes %}
 {% set on_dados = on_admin_acervo %}
 {% set on_grid_mod = on_grid or on_grid_ranking or on_admin_reports or on_hall_lendas or on_admin_hall_lendas %}
 {% set pend_n = admin_pendentes_count|default(0) %}
@@ -109,6 +110,7 @@
               {% if pend_n %}<span class="admin-badge">{{ pend_n }}</span>{% endif %}
             </a>
             <a href="/admin?sec=resultados" class="admin-side-link {% if on_admin_resultados %}active{% endif %}" data-sec="resultados" {% if on_admin_resultados %}aria-current="page"{% endif %}>{{ ico('resultados') }}<span>Resultados</span></a>
+            <a href="/admin/montar" class="admin-side-link {% if on_admin_montar %}active{% endif %}" {% if on_admin_montar %}aria-current="page"{% endif %}>{{ ico('grid') }}<span>Montar</span></a>
             <a class="admin-side-link {% if on_admin_palpites %}active{% endif %}" href="/admin/palpites" {% if on_admin_palpites %}aria-current="page"{% endif %}>{{ ico('palpites') }}<span>Palpites</span></a>
             <a class="admin-side-link {% if on_admin_cobranca %}active{% endif %}" href="/admin/cobranca" {% if on_admin_cobranca %}aria-current="page"{% endif %}>
               {{ ico('bell') }}<span>Cobranças</span>

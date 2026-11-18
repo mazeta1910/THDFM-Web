@@ -25,9 +25,23 @@ def test_admin_resultados_sem_janela_fase_cards(client):
     assert 'id="form-janela"' in r.text
     assert 'id="select-janela"' in r.text
     assert 'id="btn-atualizar-janela"' in r.text
+    assert 'id="btn-janela-pill"' in r.text
+    assert "admin-fases-tabs-row" in r.text
+    assert 'href="/admin/montar"' in r.text
+    assert "Árvore / próxima fase" not in r.text
+    assert 'id="admin-arvore"' not in r.text
     assert "match-cell" in r.text
     assert "admin-sticky-save" in r.text
     assert 'data-confirmar-jogo' in r.text or "Confirmado" in r.text
+
+
+def test_admin_montar_pagina(client):
+    login_admin(client)
+    r = client.get("/admin/montar")
+    assert r.status_code == 200
+    assert "Montar confrontos" in r.text
+    assert 'id="admin-arvore"' in r.text or "Nada para montar" in r.text
+    assert 'action="/admin/arvore/montar"' in r.text or "Nada para montar" in r.text
 
 
 def test_admin_resultados_dashboard_chaves(client):

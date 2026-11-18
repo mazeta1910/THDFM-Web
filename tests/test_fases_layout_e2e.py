@@ -176,22 +176,18 @@ def browser_page(live_base, client):
 def _geo(page: Page) -> dict:
     return page.evaluate(
         """() => {
-      const nav = document.querySelector('#admin-placares-nav, .transparencia-nav');
-      const tabs = [...document.querySelectorAll('#admin-placares-nav .transparencia-nav-fase')];
+      const nav = document.querySelector('#admin-placares-nav .admin-fases-tabs-row')
+        || document.querySelector('#admin-placares-nav, .transparencia-nav');
+      const tabs = [...document.querySelectorAll('#admin-placares-nav .admin-fases-tabs-row .transparencia-nav-fase, #admin-placares-nav .transparencia-nav-fase')];
       const tabRects = tabs.map(t => {
         const r = t.getBoundingClientRect();
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height, text: (t.textContent||'').trim() };
       });
       const navR = nav ? nav.getBoundingClientRect() : null;
-      // Colunas reais (desktop) ou soma das abas + bordas (mobile com display:contents).
+      // Resultados v2: abas de fase em grid 4 colunas (soma ≈ largura da barra).
       const cols = [...document.querySelectorAll('#admin-placares-nav .transparencia-nav-col')];
       const colDisplay = cols[0] ? getComputedStyle(cols[0]).display : '';
-      let fillSum = 0;
-      if (colDisplay === 'contents') {
-        fillSum = tabRects.reduce((s, t) => s + t.width, 0);
-      } else {
-        fillSum = cols.reduce((s, c) => s + c.getBoundingClientRect().width, 0);
-      }
+      let fillSum = tabRects.reduce((s, t) => s + t.width, 0);
       const uniqCard = document.querySelector(
         "[data-fase-panel='final']:not(.hidden) .admin-dash-chave.is-unico, " +
         "[data-fase-panel='final']:not(.hidden) .match-grid > .match-cell:only-child"
