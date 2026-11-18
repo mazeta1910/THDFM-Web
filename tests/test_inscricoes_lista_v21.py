@@ -60,7 +60,7 @@ def test_inscricoes_lista_densa_dono(client: TestClient):
     # data curta vem do ctx Python (não só do filtro Jinja)
     assert "participante-col-desde" in r.text
 
-    assert 'data-page-size="15"' in r.text
+    assert 'data-page-size="10"' in r.text
     assert "data-participantes-pager" in r.text
     assert "data-page-prev" in r.text
     assert "data-page-next" in r.text
