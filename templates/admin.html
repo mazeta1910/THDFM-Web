@@ -99,18 +99,20 @@
         </div>
       </form>
       <div class="participante-nome-stack">
-        <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
+        <div class="participante-status-row">
+          <strong class="participante-edit-nome-inline">{{ p.nome }}</strong>
+          <div class="participante-status-trailing">
+            {% if p.admin_login %}
+            <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
+            {% endif %}
+            <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
+              {{ status_label }}
+            </span>
+          </div>
+        </div>
         {% if p.email %}
         <span class="participante-email-line" title="{{ p.email|e }}">{{ p.email }}</span>
         {% endif %}
-      </div>
-      <div class="participante-status-trailing">
-        {% if p.admin_login %}
-        <span class="participante-status-tag status-admin" title="Conta ligada ao login admin {{ p.admin_login }}">Admin</span>
-        {% endif %}
-        <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% elif p.recusado_em and p.status != 'liberado' %} status-recusado{% endif %}">
-          {{ status_label }}
-        </span>
       </div>
     </div>
 
@@ -120,9 +122,7 @@
     </div>
     {% endif %}
 
-    <div class="participante-col participante-col-status">
-      <span class="participante-status-tag status-{{ p.status }}{% if p.inativo_em and p.status == 'liberado' %} status-inativo{% endif %}">{{ status_label }}</span>
-    </div>
+    <div class="participante-col participante-col-status">{{ status_label }}</div>
 
     <div class="participante-col participante-col-celular" title="{{ p.celular|celular_fmt if p.celular else '' }}">
       {% if p.celular %}{{ p.celular|celular_fmt }}{% else %}<span class="participante-muted">—</span>{% endif %}
@@ -704,11 +704,13 @@
                     </div>
                   </form>
                   <div class="participante-nome-stack">
-                    <strong class="participante-edit-nome-inline">Cadastro</strong>
+                    <div class="participante-status-row">
+                      <strong class="participante-edit-nome-inline">Cadastro</strong>
+                      <div class="participante-status-trailing">
+                        <span class="participante-status-tag status-novo">Novo</span>
+                      </div>
+                    </div>
                     <span class="participante-email-line">Manual · foto padrão</span>
-                  </div>
-                  <div class="participante-status-trailing">
-                    <span class="participante-status-tag status-novo">Novo</span>
                   </div>
                 </div>
                 {% if is_dono %}<div class="participante-col participante-col-user" aria-hidden="true"></div>{% endif %}

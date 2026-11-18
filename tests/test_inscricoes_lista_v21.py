@@ -73,12 +73,16 @@ def test_inscricoes_lista_densa_dono(client: TestClient):
 
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".participantes-lista {" in css
+    assert "--part-row-cols:" in css
+    assert "grid-template-columns: var(--part-row-cols)" in css
+    assert ".participante-edit-wrap[hidden]" in css
     assert "min-height: 42px" in css
     assert ".participante-edit-avatar {\n  position: relative;\n  width: 36px;" in css or "width: 36px;\n  height: 36px;" in css
     assert ".participantes-pager {" in css
+    assert ".participantes-pager[hidden]" in css
     assert ".participante-row-head {" in css
     assert "position: sticky" in css
-    assert "grid-template-columns: auto minmax(0, 1fr) auto" in css
+    assert "PAGE_SIZE_DEFAULT = 10" in (ROOT_DIR / "templates" / "admin.html").read_text(encoding="utf-8")
     assert "@media (max-width: 860px)" in css
     assert "@media (hover: none)" in css
 
