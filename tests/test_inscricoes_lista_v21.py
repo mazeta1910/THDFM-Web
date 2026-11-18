@@ -60,10 +60,19 @@ def test_inscricoes_lista_densa_dono(client: TestClient):
     # data curta vem do ctx Python (não só do filtro Jinja)
     assert "participante-col-desde" in r.text
 
+    assert 'data-page-size="15"' in r.text
+    assert "data-participantes-pager" in r.text
+    assert "data-page-prev" in r.text
+    assert "data-page-next" in r.text
+    assert "Remover foto deste participante?" in r.text
+
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".participantes-lista {" in css
-    assert "min-height: 36px" in css
+    assert "min-height: 42px" in css
+    assert ".participante-edit-avatar {\n  position: relative;\n  width: 36px;" in css or "width: 36px;\n  height: 36px;" in css
+    assert ".participantes-pager {" in css
     assert "@media (max-width: 860px)" in css
+    assert "@media (hover: none)" in css
 
 
 def test_admin_html_nao_depende_do_filtro_data_curta():

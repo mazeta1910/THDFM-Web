@@ -70,7 +70,7 @@
               aria-label="Trocar foto de {{ p.nome }}"
               data-avatar-pick
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </label>
             {% if p.avatar_path %}
             <button
@@ -80,7 +80,7 @@
               title="Remover foto"
               aria-label="Remover foto de {{ p.nome }}"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
             </button>
             {% endif %}
           </div>
@@ -651,7 +651,7 @@
               <input id="participantes-filter" type="search" placeholder="Nome, @user ou celular…" autocomplete="off" enterkeyhint="search" />
             </label>
           </div>
-          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista>
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="15">
             <div class="participante-edit-wrap participante-create-wrap">
               <div class="participante-row participante-edit-card participante-create-card" data-nome="novo" data-celular="">
                 <div class="participante-col participante-col-nome">
@@ -725,6 +725,15 @@
             {{ participante_edit_card(p) }}
             {% endfor %}
           </div>
+          <nav class="participantes-pager" data-participantes-pager hidden aria-label="Páginas dos liberados">
+            <button type="button" class="participantes-pager-btn" data-page-prev title="Anterior" aria-label="Página anterior">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="participantes-pager-label" data-page-label>1/1</span>
+            <button type="button" class="participantes-pager-btn" data-page-next title="Próxima" aria-label="Próxima página">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </nav>
         </section>
 
         {% if liberados_inativos %}
@@ -734,11 +743,20 @@
             <span class="participantes-count">{{ liberados_inativos|length }}</span>
           </h2>
           <p class="participantes-empty" style="margin-top:0">Não entram na classificação nem no contador de “Quem palpitou”.</p>
-          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista>
+          <div class="participantes-lista{% if is_dono %} is-dono-lista{% endif %}" data-participantes-lista data-page-size="15">
             {% for p in liberados_inativos %}
             {{ participante_edit_card(p) }}
             {% endfor %}
           </div>
+          <nav class="participantes-pager" data-participantes-pager hidden aria-label="Páginas dos inativos">
+            <button type="button" class="participantes-pager-btn" data-page-prev title="Anterior" aria-label="Página anterior">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="participantes-pager-label" data-page-label>1/1</span>
+            <button type="button" class="participantes-pager-btn" data-page-next title="Próxima" aria-label="Próxima página">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </nav>
         </section>
         {% endif %}
 
@@ -1616,18 +1634,7 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
 })();
 
 (() => {
-  const section = document.querySelector('[data-participantes-section="liberados"]');
-  const filter = document.getElementById("participantes-filter");
-  if (!section || !filter) return;
-
-  const cards = () =>
-    Array.from(
-      section.querySelectorAll(
-        ".participante-row.participante-edit-card:not(.participante-create-card)"
-      )
-    );
-  const countEl = section.querySelector("[data-filter-count]");
-  const total = Number(countEl?.dataset.filterTotal || cards().length) || 0;
+  const PAGE_SIZE_DEFAULT = 15;
 
   const nomeBate = (nome, q) => {
     if (!q) return true;
@@ -1642,35 +1649,115 @@ document.querySelectorAll("form.admin-resultados-form .match-panel").forEach((pa
     return false;
   };
 
-  const applyFilter = () => {
-    const q = (filter.value || "").trim().toLocaleLowerCase("pt-BR");
-    const qDigits = q.replace(/\D+/g, "");
-    const qUser = q.replace(/^@/, "");
-    let visible = 0;
-    cards().forEach((card) => {
-      const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
-      const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
-      const username = (card.dataset.username || "").toLocaleLowerCase("pt-BR");
-      const email = (card.dataset.email || "").toLocaleLowerCase("pt-BR");
-      const busca = (card.dataset.busca || "").toLocaleLowerCase("pt-BR");
-      const hit =
-        !q ||
-        nomeBate(nome, q) ||
-        celularBate(celular, q, qDigits) ||
-        (qUser && username.includes(qUser)) ||
-        (email && email.includes(q)) ||
-        (busca && busca.includes(q));
-      const wrap = card.closest(".participante-edit-wrap") || card;
-      wrap.hidden = !hit;
-      if (hit) visible += 1;
-    });
-    if (countEl) {
-      countEl.textContent = q ? `${visible}/${total}` : String(total);
-    }
+  const cardHit = (card, q, qDigits, qUser) => {
+    if (!q) return true;
+    const nome = (card.dataset.nome || "").toLocaleLowerCase("pt-BR");
+    const celular = (card.dataset.celular || "").toLocaleLowerCase("pt-BR");
+    const username = (card.dataset.username || "").toLocaleLowerCase("pt-BR");
+    const email = (card.dataset.email || "").toLocaleLowerCase("pt-BR");
+    const busca = (card.dataset.busca || "").toLocaleLowerCase("pt-BR");
+    return (
+      nomeBate(nome, q) ||
+      celularBate(celular, q, qDigits) ||
+      (qUser && username.includes(qUser)) ||
+      (email && email.includes(q)) ||
+      (busca && busca.includes(q))
+    );
   };
 
-  filter.addEventListener("input", applyFilter);
-  filter.addEventListener("search", applyFilter);
+  const bindLista = (lista, { filter = null, countEl = null } = {}) => {
+    if (!lista) return;
+    const section = lista.closest(".participantes-section");
+    const pager = section?.querySelector("[data-participantes-pager]");
+    const pageSize = Number(lista.dataset.pageSize || PAGE_SIZE_DEFAULT) || PAGE_SIZE_DEFAULT;
+    const totalAll = Number(countEl?.dataset.filterTotal || 0);
+    let page = 1;
+
+    const itemWraps = () =>
+      Array.from(lista.querySelectorAll(".participante-edit-wrap:not(.participante-create-wrap)"));
+
+    const apply = () => {
+      const q = filter
+        ? (filter.value || "").trim().toLocaleLowerCase("pt-BR")
+        : "";
+      const qDigits = q.replace(/\D+/g, "");
+      const qUser = q.replace(/^@/, "");
+      const wraps = itemWraps();
+      const matched = [];
+      wraps.forEach((wrap) => {
+        const card = wrap.querySelector(".participante-row.participante-edit-card");
+        const hit = !card || cardHit(card, q, qDigits, qUser);
+        wrap.dataset.filterHit = hit ? "1" : "0";
+        if (hit) matched.push(wrap);
+      });
+
+      const pages = Math.max(1, Math.ceil(matched.length / pageSize) || 1);
+      if (page > pages) page = pages;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+
+      wraps.forEach((wrap) => {
+        const hit = wrap.dataset.filterHit === "1";
+        if (!hit) {
+          wrap.hidden = true;
+          return;
+        }
+        const idx = matched.indexOf(wrap);
+        wrap.hidden = idx < start || idx >= end;
+      });
+
+      if (countEl) {
+        countEl.textContent = q ? `${matched.length}/${totalAll || wraps.length}` : String(totalAll || wraps.length);
+      }
+
+      if (pager) {
+        const label = pager.querySelector("[data-page-label]");
+        const prev = pager.querySelector("[data-page-prev]");
+        const next = pager.querySelector("[data-page-next]");
+        const show = matched.length > pageSize;
+        pager.hidden = !show;
+        if (label) label.textContent = `${page}/${pages}`;
+        if (prev) prev.disabled = page <= 1;
+        if (next) next.disabled = page >= pages;
+      }
+    };
+
+    pager?.querySelector("[data-page-prev]")?.addEventListener("click", () => {
+      if (page > 1) {
+        page -= 1;
+        apply();
+      }
+    });
+    pager?.querySelector("[data-page-next]")?.addEventListener("click", () => {
+      page += 1;
+      apply();
+    });
+
+    if (filter) {
+      filter.addEventListener("input", () => {
+        page = 1;
+        apply();
+      });
+      filter.addEventListener("search", () => {
+        page = 1;
+        apply();
+      });
+    }
+
+    apply();
+    return { apply };
+  };
+
+  const liberadosSection = document.querySelector('[data-participantes-section="liberados"]');
+  const liberadosLista = liberadosSection?.querySelector("[data-participantes-lista]");
+  bindLista(liberadosLista, {
+    filter: document.getElementById("participantes-filter"),
+    countEl: liberadosSection?.querySelector("[data-filter-count]"),
+  });
+
+  const inativosSection = document.querySelector('[data-participantes-section="inativos"]');
+  const inativosLista = inativosSection?.querySelector("[data-participantes-lista]");
+  bindLista(inativosLista);
 })();
 
 (() => {
